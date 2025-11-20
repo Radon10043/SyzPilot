@@ -1,0 +1,44 @@
+FROM ubuntu:22.04
+
+WORKDIR /home
+SHELL [ "/bin/bash", "-c" ]
+
+ENV GOPATH=/usr/local/go/bin
+ENV PATH=$GOPATH:$PATH
+ENV TZ=Asia/Shanghai
+
+# Download following files to the docker/ and build the image by COPY command will save time:
+# wget -P docker https://go.dev/dl/go1.23.6.linux-amd64.tar.gz
+# wget -P docker https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/LLVM-19.1.7-Linux-X64.tar.xz
+# wget -P docker https://github.com/google/flatbuffers/archive/refs/tags/v2.0.8.tar.gz
+COPY go1.23.6.linux-amd64.tar.gz v2.0.8.tar.gz /home/
+
+# Install basic packages
+RUN apt-get update
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
+RUN apt-get install -y sudo wget curl git vim build-essential make gcc g++ flex bison bc debootstrap
+RUN apt-get install -y qemu-system-x86 xz-utils cmake gdb libdw-dev libssl-dev sqlite3 libsqlite3-dev
+RUN apt-get install -y python3 python3-pip python3-dev language-pack-en-base rsync file devscripts equivs
+RUN apt-get install -y config-package-dev debhelper-compat adb fastboot libncurses5 cloc openssh-server
+RUN apt-get install -y dwarves unzip gettext ccache git-email cpio gawk lsb-release software-properties-common gnupg
+RUN apt-get install -y gcc-arm-linux-gnueabi gcc-aarch64-linux-gnu gcc-mips64el-linux-gnuabi64
+RUN apt-get install -y gcc-powerpc64le-linux-gnu gcc-riscv64-linux-gnu gcc-s390x-linux-gnu
+
+# Install LLVM-19
+RUN wget https://apt.llvm.org/llvm.sh
+RUN chmod +x llvm.sh
+RUN ./llvm.sh 19 all
+RUN rm llvm.sh
+
+# Install golang-1.23.6
+RUN tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz && \
+    rm go1.23.6.linux-amd64.tar.gz
+
+# Install flatbuffers-2.0.8
+RUN tar -xzvf v2.0.8.tar.gz && \
+    pushd flatbuffers-2.0.8 && \
+    cmake -G "Unix Makefiles" && \
+    make -j && \
+    make install && \
+    popd && \
+    rm -rf v2.0.8.tar.gz
