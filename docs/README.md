@@ -1,3 +1,22 @@
 # cloud
 
-I like final fantasy VII
+We use linux v6.12 as an example.
+
+```bash
+cd $KERNEL
+cp $FUZZER/configs/syzbot.config .config
+make CC=clang-19 olddefconfig modules_prepare all -j16
+python3 scripts/clang-tools/gen_compile_commands.py
+```
+
+Build analyzer:
+
+```bash
+make
+```
+
+Analyze kernel code:
+
+```bash
+./bin/analyzer -i $KERNEL/compile_commands.json
+```
