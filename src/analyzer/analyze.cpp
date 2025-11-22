@@ -1,5 +1,8 @@
 #include <iostream>
+#include <memory>
 #include <string>
+#include <thread>
+#include <vector>
 
 #include <clang/AST/ASTConsumer.h>
 #include <clang/AST/RecursiveASTVisitor.h>
@@ -10,18 +13,27 @@
 #include <clang/Tooling/JSONCompilationDatabase.h>
 #include <clang/Tooling/Tooling.h>
 #include <llvm/Support/CommandLine.h>
+#include <llvm/Support/FileSystem.h>
+#include <llvm/Support/Path.h>
 
 #include "db.hpp"
+#include <unistd.h>
 
 using namespace clang;
 using namespace clang::tooling;
 using namespace llvm;
 
-static DatabaseManager DBMgr("data/kernel.db");
+/* global variables */
+static DatabaseManager *DBMgr = nullptr;
+std::mutex DBMutex;
 
 class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
 public:
     explicit MyASTVisitor(ASTContext *ctx) : ctx(ctx) {}
+
+    std::vector<FuncInfo> &getFunctions() {
+        return funcs;
+    }
 
     bool VisitFunctionDecl(FunctionDecl *fd) {
         SourceManager &sm = ctx->getSourceManager();
@@ -49,15 +61,16 @@ public:
             line = fsl.getSpellingLineNumber();
         }
 
-        /* insert into database if function name and code are not empty */
+        /* add to vector if function name and code are not empty */
         if (!fn.empty() && !code.empty())
-            DBMgr.insertFunction(fn, fp, line, code);
+            funcs.push_back({fn, fp, line, code});
 
         return true;
     }
 
 private:
     ASTContext *ctx;
+    std::vector<FuncInfo> funcs;
 };
 
 class MyASTConsumer : public ASTConsumer {
@@ -66,6 +79,13 @@ public:
 
     void HandleTranslationUnit(ASTContext &ctx) override {
         visitor.TraverseDecl(ctx.getTranslationUnitDecl());
+        const auto &funcs = visitor.getFunctions();
+        if (funcs.empty())
+            return;
+        if (DBMgr) {
+            std::lock_guard<std::mutex> lock(DBMutex);
+            DBMgr->bulkInsertFuncs(funcs);
+        }
     }
 
 private:
@@ -80,16 +100,30 @@ public:
 };
 
 /**
+ * worker thread function, for parallel analysis
+ */
+void workThread(const CompilationDatabase &compilations, std::vector<std::string> files) {
+    ClangTool tool(compilations, files);
+    tool.run(newFrontendActionFactory<MyFrontendAction>().get());
+}
+
+/**
  * command line options
  */
 static cl::OptionCategory MyToolCategory("Kernel analyzer options");
 static cl::opt<std::string> DatabasePath("i", cl::desc("path to compile_commands.json"), cl::value_desc("path"),
                                          cl::Required, cl::cat(MyToolCategory));
+static cl::opt<int> ParallelJobs("j", cl::desc("number of parallel jobs (default: 1)"), cl::init(1),
+                                 cl::cat(MyToolCategory));
 
 int main(int argc, const char **argv) {
     /* parse command line options */
     cl::HideUnrelatedOptions(MyToolCategory);
     cl::ParseCommandLineOptions(argc, argv, "Kernel analyzer\n");
+
+    /* TODO: specify database path via command line */
+    DatabaseManager mgr("data/kernel.db");
+    DBMgr = &mgr;
 
     /* load compile_commands.json specified by user */
     std::string err;
@@ -107,7 +141,34 @@ int main(int argc, const char **argv) {
         if (f.find(".c") != std::string::npos || f.find(".h") != std::string::npos)
             targetFiles.push_back(f);
 
-    /* start analyze */
-    ClangTool tool(*compilations, targetFiles);
-    return tool.run(newFrontendActionFactory<MyFrontendAction>().get());
+    /* switch work directory to compile_commands.json's directory to avoid errors like 'cannot open file xxx' */
+    StringRef workdir = sys::path::parent_path(DatabasePath);
+    outs() << "Changing working directory to " << workdir << "\n";
+    if (chdir(workdir.str().c_str()) != 0) {
+        errs() << "Failed to change directory to " << workdir << "\n";
+    }
+
+    /* split target files */
+    size_t sz = targetFiles.size();
+    int jobs = ParallelJobs;
+    std::vector<std::thread> threads;
+    size_t batchSize = sz / jobs;
+    size_t rem = sz % jobs;
+    size_t start = 0;
+    for (int i = 0; i < jobs; i++) {
+        size_t cnt = batchSize + (i < (int)rem ? 1 : 0);
+        std::vector<std::string> threadFiles(targetFiles.begin() + start, targetFiles.begin() + start + cnt);
+        threads.emplace_back(workThread, std::cref(*compilations), std::move(threadFiles));
+        start += cnt;
+    }
+
+    /* start parallel analysis */
+    for (auto &t : threads)
+        if (t.joinable())
+            t.join();
+
+    /* wipe butt */
+    DBMgr = nullptr;
+    outs() << "Analysis completed.\n";
+    return 0;
 }

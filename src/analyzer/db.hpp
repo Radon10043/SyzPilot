@@ -4,6 +4,13 @@
 
 #include <llvm/Support/raw_ostream.h>
 
+struct FuncInfo {
+    std::string name; /* function name */
+    std::string file; /* file path     */
+    int line;         /* line number   */
+    std::string code; /* function code */
+};
+
 class DatabaseManager {
 public:
     DatabaseManager() = default;
@@ -57,19 +64,24 @@ public:
     }
 
     /**
-     * insert a function record into the database
+     * insert functions into the database
      */
-    void insertFunction(const std::string &name, const std::string &file, int line, const std::string &code) {
-        sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_STATIC);
-        sqlite3_bind_text(stmt, 2, file.c_str(), -1, SQLITE_STATIC);
-        sqlite3_bind_int(stmt, 3, line);
-        sqlite3_bind_text(stmt, 4, code.c_str(), -1, SQLITE_STATIC);
-
-        if (sqlite3_step(stmt) != SQLITE_DONE) {
-            llvm::errs() << "Failed to execute statement: " << sqlite3_errmsg(db) << "\n";
+    void bulkInsertFuncs(const std::vector<FuncInfo> &funcs) {
+        char *err = nullptr;
+        sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
+        for (auto &func : funcs) {
+            sqlite3_bind_text(stmt, 1, func.name.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(stmt, 2, func.file.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_int(stmt, 3, func.line);
+            sqlite3_bind_text(stmt, 4, func.code.c_str(), -1, SQLITE_STATIC);
+            if (sqlite3_step(stmt) != SQLITE_DONE)
+                llvm::errs() << "Insert error: " << sqlite3_errmsg(db) << "\n";
+            sqlite3_reset(stmt);
         }
-
-        sqlite3_reset(stmt);
+        if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, &err) != SQLITE_OK) {
+            llvm::errs() << "Commit error: " << err << "\n";
+            sqlite3_free(err);
+        }
     }
 
 private:
