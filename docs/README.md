@@ -18,5 +18,5 @@ make
 Analyze kernel code:
 
 ```bash
-./bin/analyzer -i $KERNEL/compile_commands.json
+./bin/analyzer -i $KERNEL/compile_commands.json -j 16
 ```
