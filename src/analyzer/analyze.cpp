@@ -35,6 +35,10 @@ public:
         return funcs;
     }
 
+    std::vector<RecordInfo> &getRecords() {
+        return records;
+    }
+
     bool VisitFunctionDecl(FunctionDecl *fd) {
         SourceManager &sm = ctx->getSourceManager();
 
@@ -68,9 +72,48 @@ public:
         return true;
     }
 
+    bool VisitRecordDecl(RecordDecl *rd) {
+        SourceManager &sm = ctx->getSourceManager();
+
+        /* skip includes */
+        if (!sm.isInMainFile(rd->getBeginLoc()))
+            return true;
+
+        /* only process definitions */
+        if (!rd->isThisDeclarationADefinition())
+            return true;
+
+        /* skip the anonymous records */
+        if (rd->getNameAsString().empty())
+            return true;
+
+        /* get info of the record (struct or union) */
+        std::string name = rd->getNameAsString();
+        std::string type = rd->isStruct() ? "struct" : (rd->isUnion() ? "union" : "unknown");
+        SourceRange sr = rd->getSourceRange();
+        std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, ctx->getLangOpts()).str();
+        FullSourceLoc fsl = ctx->getFullLoc(rd->getBeginLoc());
+        std::string fp;
+        int line = -1;
+        if (fsl.isValid()) {
+            SourceLocation sl = sm.getExpansionLoc(rd->getBeginLoc());
+            FileID fid = sm.getFileID(sl);
+            const FileEntry *fe = sm.getFileEntryForID(fid);
+            fp = fe->tryGetRealPathName().str();
+            line = fsl.getSpellingLineNumber();
+        }
+
+        /* add to vector if record name and code are not empty */
+        if (!name.empty() && !code.empty())
+            records.push_back({name, type, fp, line, code});
+
+        return true;
+    }
+
 private:
     ASTContext *ctx;
     std::vector<FuncInfo> funcs;
+    std::vector<RecordInfo> records;
 };
 
 class MyASTConsumer : public ASTConsumer {
@@ -80,12 +123,16 @@ public:
     void HandleTranslationUnit(ASTContext &ctx) override {
         visitor.TraverseDecl(ctx.getTranslationUnitDecl());
         const auto &funcs = visitor.getFunctions();
-        if (funcs.empty())
+        const auto &records = visitor.getRecords();
+        if (!DBMgr)
             return;
-        if (DBMgr) {
-            std::lock_guard<std::mutex> lock(DBMutex);
+
+        /* insert functions, records into the database */
+        std::lock_guard<std::mutex> lock(DBMutex);
+        if (!funcs.empty())
             DBMgr->bulkInsertFuncs(funcs);
-        }
+        if (!records.empty())
+            DBMgr->bulkInsertRecords(records);
     }
 
 private:

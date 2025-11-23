@@ -11,11 +11,19 @@ struct FuncInfo {
     std::string code; /* function code */
 };
 
+struct RecordInfo {
+    std::string name; /* record name      */
+    std::string type; /* struct or union  */
+    std::string file; /* file path        */
+    int line;         /* line number      */
+    std::string code; /* record code      */
+};
+
 class DatabaseManager {
 public:
     DatabaseManager() = default;
 
-    DatabaseManager(const std::string &dbPath) : db(nullptr), stmt(nullptr) {
+    DatabaseManager(const std::string &dbPath) : db(nullptr), insertFuncStmt(nullptr), insertRecStmt(nullptr) {
         if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
             llvm::errs() << "Cannot open database: " << sqlite3_errmsg(db) << "\n";
             exit(1);
@@ -25,6 +33,7 @@ public:
         char *err = nullptr;
         sqlite3_exec(db, "PRAGMA synchronous = OFF; PRAGMA journal_mode = WAL;", nullptr, nullptr, &err);
 
+        // Create functions table
         const char *sql = "CREATE TABLE IF NOT EXISTS functions ("
                           "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                           "name TEXT NOT NULL, "
@@ -36,31 +45,36 @@ public:
             sqlite3_free(err);
             exit(1);
         }
+        const char *insertFuncSql = "INSERT INTO functions (name, file, line, code) VALUES (?, ?, ?, ?);";
+        if (sqlite3_prepare_v2(db, insertFuncSql, -1, &insertFuncStmt, nullptr) != SQLITE_OK) {
+            llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
+            exit(1);
+        }
 
-        const char *insertSQL = "INSERT INTO functions (name, file, line, code) VALUES (?, ?, ?, ?);";
-        if (sqlite3_prepare_v2(db, insertSQL, -1, &stmt, nullptr) != SQLITE_OK) {
+        // Create records table
+        const char *recSql = "CREATE TABLE IF NOT EXISTS records ("
+                          "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                          "name TEXT NOT NULL, "
+                          "type TEXT NOT NULL, "
+                          "file TEXT NOT NULL, "
+                          "line INTEGER NOT NULL, "
+                          "code TEXT NOT NULL);";
+        if (sqlite3_exec(db, recSql, 0, 0, 0) != SQLITE_OK) {
+            llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
+            sqlite3_free(err);
+            exit(1);
+        }
+        const char *insertRecSql = "INSERT INTO records (name, type, file, line, code) VALUES (?, ?, ?, ?, ?);";
+        if (sqlite3_prepare_v2(db, insertRecSql, -1, &insertRecStmt, nullptr) != SQLITE_OK) {
             llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
     }
 
     ~DatabaseManager() {
-        sqlite3_finalize(stmt);
+        sqlite3_finalize(insertFuncStmt);
+        sqlite3_finalize(insertRecStmt);
         sqlite3_close(db);
-    }
-
-    /**
-     * begin a transaction
-     */
-    void beginTransaction() {
-        sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
-    }
-
-    /**
-     * commit a transaction
-     */
-    void commitTransaction() {
-        sqlite3_exec(db, "COMMIT;", nullptr, nullptr, nullptr);
     }
 
     /**
@@ -70,13 +84,13 @@ public:
         char *err = nullptr;
         sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
         for (auto &func : funcs) {
-            sqlite3_bind_text(stmt, 1, func.name.c_str(), -1, SQLITE_STATIC);
-            sqlite3_bind_text(stmt, 2, func.file.c_str(), -1, SQLITE_STATIC);
-            sqlite3_bind_int(stmt, 3, func.line);
-            sqlite3_bind_text(stmt, 4, func.code.c_str(), -1, SQLITE_STATIC);
-            if (sqlite3_step(stmt) != SQLITE_DONE)
+            sqlite3_bind_text(insertFuncStmt, 1, func.name.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(insertFuncStmt, 2, func.file.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_int(insertFuncStmt, 3, func.line);
+            sqlite3_bind_text(insertFuncStmt, 4, func.code.c_str(), -1, SQLITE_STATIC);
+            if (sqlite3_step(insertFuncStmt) != SQLITE_DONE)
                 llvm::errs() << "Insert error: " << sqlite3_errmsg(db) << "\n";
-            sqlite3_reset(stmt);
+            sqlite3_reset(insertFuncStmt);
         }
         if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, &err) != SQLITE_OK) {
             llvm::errs() << "Commit error: " << err << "\n";
@@ -84,7 +98,26 @@ public:
         }
     }
 
+    /**
+     * insert records into the database
+     */
+    void bulkInsertRecords(const std::vector<RecordInfo> &records) {
+        char* err = nullptr;
+        sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
+        for (auto &record : records) {
+            sqlite3_bind_text(insertRecStmt, 1, record.name.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(insertRecStmt, 2, record.type.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(insertRecStmt, 3, record.file.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_int(insertRecStmt, 4, record.line);
+            sqlite3_bind_text(insertRecStmt, 5, record.code.c_str(), -1, SQLITE_STATIC);
+            if (sqlite3_step(insertRecStmt) != SQLITE_DONE)
+                llvm::errs() << "Insert error: " << sqlite3_errmsg(db) << "\n";
+            sqlite3_reset(insertRecStmt);
+        }
+    }
+
 private:
     sqlite3 *db;
-    sqlite3_stmt *stmt;
+    sqlite3_stmt *insertFuncStmt;
+    sqlite3_stmt *insertRecStmt;
 };
