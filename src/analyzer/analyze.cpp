@@ -39,6 +39,10 @@ public:
         return records;
     }
 
+    std::vector<EnumInfo> &getEnums() {
+        return enums;
+    }
+
     bool VisitFunctionDecl(FunctionDecl *fd) {
         SourceManager &sm = ctx->getSourceManager();
 
@@ -110,10 +114,48 @@ public:
         return true;
     }
 
+    bool VisitEnumDecl(EnumDecl *ed) {
+        SourceManager &sm = ctx->getSourceManager();
+
+        /* skip includes */
+        if (!sm.isInMainFile(ed->getBeginLoc()))
+            return true;
+
+        /* only process definitions */
+        if (!ed->isThisDeclarationADefinition())
+            return true;
+
+        /* skip the anonymous enums */
+        if (ed->getNameAsString().empty())
+            return true;
+
+        /* get info of the enum */
+        std::string name = ed->getNameAsString();
+        SourceRange sr = ed->getSourceRange();
+        std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, ctx->getLangOpts()).str();
+        FullSourceLoc fsl = ctx->getFullLoc(ed->getBeginLoc());
+        std::string fp;
+        int line = -1;
+        if (fsl.isValid()) {
+            SourceLocation sl = sm.getExpansionLoc(ed->getBeginLoc());
+            FileID fid = sm.getFileID(sl);
+            const FileEntry *fe = sm.getFileEntryForID(fid);
+            fp = fe->tryGetRealPathName().str();
+            line = fsl.getSpellingLineNumber();
+        }
+
+        /* add to vector if enum name and code are not empty */
+        if (!name.empty() && !code.empty())
+            enums.push_back({name, fp, line, code});
+
+        return true;
+    }
+
 private:
     ASTContext *ctx;
     std::vector<FuncInfo> funcs;
     std::vector<RecordInfo> records;
+    std::vector<EnumInfo> enums;
 };
 
 class MyASTConsumer : public ASTConsumer {
@@ -124,6 +166,7 @@ public:
         visitor.TraverseDecl(ctx.getTranslationUnitDecl());
         const auto &funcs = visitor.getFunctions();
         const auto &records = visitor.getRecords();
+        const auto &enums = visitor.getEnums();
         if (!DBMgr)
             return;
 
@@ -133,6 +176,8 @@ public:
             DBMgr->bulkInsertFuncs(funcs);
         if (!records.empty())
             DBMgr->bulkInsertRecords(records);
+        if (!enums.empty())
+            DBMgr->bulkInsertEnums(enums);
     }
 
 private:

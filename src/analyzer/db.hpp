@@ -19,6 +19,13 @@ struct RecordInfo {
     std::string code; /* record code      */
 };
 
+struct EnumInfo {
+    std::string name; /* enum name       */
+    std::string file; /* file path      */
+    int line;         /* line number    */
+    std::string code; /* enum code      */
+};
+
 class DatabaseManager {
 public:
     DatabaseManager() = default;
@@ -34,13 +41,13 @@ public:
         sqlite3_exec(db, "PRAGMA synchronous = OFF; PRAGMA journal_mode = WAL;", nullptr, nullptr, &err);
 
         // Create functions table
-        const char *sql = "CREATE TABLE IF NOT EXISTS functions ("
-                          "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                          "name TEXT NOT NULL, "
-                          "file TEXT NOT NULL, "
-                          "line INTEGER NOT NULL, "
-                          "code TEXT NOT NULL);";
-        if (sqlite3_exec(db, sql, 0, 0, 0) != SQLITE_OK) {
+        const char *funcSql = "CREATE TABLE IF NOT EXISTS functions ("
+                              "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                              "name TEXT NOT NULL, "
+                              "file TEXT NOT NULL, "
+                              "line INTEGER NOT NULL, "
+                              "code TEXT NOT NULL);";
+        if (sqlite3_exec(db, funcSql, 0, 0, 0) != SQLITE_OK) {
             llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
             sqlite3_free(err);
             exit(1);
@@ -53,12 +60,12 @@ public:
 
         // Create records table
         const char *recSql = "CREATE TABLE IF NOT EXISTS records ("
-                          "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                          "name TEXT NOT NULL, "
-                          "type TEXT NOT NULL, "
-                          "file TEXT NOT NULL, "
-                          "line INTEGER NOT NULL, "
-                          "code TEXT NOT NULL);";
+                             "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                             "name TEXT NOT NULL, "
+                             "type TEXT NOT NULL, "
+                             "file TEXT NOT NULL, "
+                             "line INTEGER NOT NULL, "
+                             "code TEXT NOT NULL);";
         if (sqlite3_exec(db, recSql, 0, 0, 0) != SQLITE_OK) {
             llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
             sqlite3_free(err);
@@ -69,11 +76,29 @@ public:
             llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
+
+        const char *enumSql = "CREATE TABLE IF NOT EXISTS enums ("
+                              "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                              "name TEXT NOT NULL, "
+                              "file TEXT NOT NULL, "
+                              "line INTEGER NOT NULL, "
+                              "code TEXT NOT NULL);";
+        if (sqlite3_exec(db, enumSql, 0, 0, 0) != SQLITE_OK) {
+            llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
+            sqlite3_free(err);
+            exit(1);
+        }
+        const char *insertEnumSql = "INSERT INTO enums (name, file, line, code) VALUES (?, ?, ?, ?);";
+        if (sqlite3_prepare_v2(db, insertEnumSql, -1, &insertEnumStmt, nullptr) != SQLITE_OK) {
+            llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
+            exit(1);
+        }
     }
 
     ~DatabaseManager() {
         sqlite3_finalize(insertFuncStmt);
         sqlite3_finalize(insertRecStmt);
+        sqlite3_finalize(insertEnumStmt);
         sqlite3_close(db);
     }
 
@@ -102,7 +127,7 @@ public:
      * insert records into the database
      */
     void bulkInsertRecords(const std::vector<RecordInfo> &records) {
-        char* err = nullptr;
+        char *err = nullptr;
         sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
         for (auto &record : records) {
             sqlite3_bind_text(insertRecStmt, 1, record.name.c_str(), -1, SQLITE_STATIC);
@@ -116,8 +141,30 @@ public:
         }
     }
 
+    /**
+     * insert enums into the database
+     */
+    void bulkInsertEnums(const std::vector<EnumInfo> &enums) {
+        char *err = nullptr;
+        sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
+        for (auto &enm : enums) {
+            sqlite3_bind_text(insertEnumStmt, 1, enm.name.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(insertEnumStmt, 2, enm.file.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_int(insertEnumStmt, 3, enm.line);
+            sqlite3_bind_text(insertEnumStmt, 4, enm.code.c_str(), -1, SQLITE_STATIC);
+            if (sqlite3_step(insertEnumStmt) != SQLITE_DONE)
+                llvm::errs() << "Insert error: " << sqlite3_errmsg(db) << "\n";
+            sqlite3_reset(insertEnumStmt);
+        }
+        if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, &err) != SQLITE_OK) {
+            llvm::errs() << "Commit error: " << err << "\n";
+            sqlite3_free(err);
+        }
+    }
+
 private:
     sqlite3 *db;
     sqlite3_stmt *insertFuncStmt;
     sqlite3_stmt *insertRecStmt;
+    sqlite3_stmt *insertEnumStmt;
 };
