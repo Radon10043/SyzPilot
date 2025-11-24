@@ -37,17 +37,35 @@ class DatabaseManager {
 public:
     DatabaseManager() = default;
 
-    DatabaseManager(const std::string &dbPath) : db(nullptr), insertFuncStmt(nullptr), insertRecStmt(nullptr) {
+    DatabaseManager(const std::string &dbPath)
+        : db(nullptr), insertFuncStmt(nullptr), insertRecStmt(nullptr), insertEnumStmt(nullptr),
+          insertTypedefStmt(nullptr) {
         if (sqlite3_open(dbPath.c_str(), &db) != SQLITE_OK) {
             llvm::errs() << "Cannot open database: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
 
         /* Enable WAL to speed up writes */
-        char *err = nullptr;
-        sqlite3_exec(db, "PRAGMA synchronous = OFF; PRAGMA journal_mode = WAL;", nullptr, nullptr, &err);
+        sqlite3_exec(db, "PRAGMA synchronous = OFF; PRAGMA journal_mode = WAL;", nullptr, nullptr, nullptr);
 
-        /* create functions table */
+        createFuncTable();
+        createRecTable();
+        createEnumTable();
+        createTypedefTable();
+    }
+
+    ~DatabaseManager() {
+        sqlite3_finalize(insertFuncStmt);
+        sqlite3_finalize(insertRecStmt);
+        sqlite3_finalize(insertEnumStmt);
+        sqlite3_finalize(insertTypedefStmt);
+        sqlite3_close(db);
+    }
+
+    /**
+     * create functions table
+     */
+    void createFuncTable() {
         const char *funcSql = "CREATE TABLE IF NOT EXISTS functions ("
                               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                               "name TEXT NOT NULL, "
@@ -56,7 +74,6 @@ public:
                               "code TEXT NOT NULL);";
         if (sqlite3_exec(db, funcSql, 0, 0, 0) != SQLITE_OK) {
             llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
-            sqlite3_free(err);
             exit(1);
         }
         const char *insertFuncSql = "INSERT INTO functions (name, file, line, code) VALUES (?, ?, ?, ?);";
@@ -64,8 +81,12 @@ public:
             llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
+    }
 
-        /* create records table */
+    /**
+     * create records table
+     */
+    void createRecTable() {
         const char *recSql = "CREATE TABLE IF NOT EXISTS records ("
                              "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                              "name TEXT NOT NULL, "
@@ -75,7 +96,6 @@ public:
                              "code TEXT NOT NULL);";
         if (sqlite3_exec(db, recSql, 0, 0, 0) != SQLITE_OK) {
             llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
-            sqlite3_free(err);
             exit(1);
         }
         const char *insertRecSql = "INSERT INTO records (name, type, file, line, code) VALUES (?, ?, ?, ?, ?);";
@@ -83,8 +103,12 @@ public:
             llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
+    }
 
-        /* create enums table */
+    /**
+     * create enums table
+     */
+    void createEnumTable() {
         const char *enumSql = "CREATE TABLE IF NOT EXISTS enums ("
                               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                               "name TEXT NOT NULL, "
@@ -93,7 +117,6 @@ public:
                               "code TEXT NOT NULL);";
         if (sqlite3_exec(db, enumSql, 0, 0, 0) != SQLITE_OK) {
             llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
-            sqlite3_free(err);
             exit(1);
         }
         const char *insertEnumSql = "INSERT INTO enums (name, file, line, code) VALUES (?, ?, ?, ?);";
@@ -101,8 +124,12 @@ public:
             llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
+    }
 
-        /* create typedefs table */
+    /**
+     * create typedefs table
+     */
+    void createTypedefTable() {
         const char *typedefSql = "CREATE TABLE IF NOT EXISTS typedefs ("
                                  "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                                  "name TEXT NOT NULL, "
@@ -111,7 +138,6 @@ public:
                                  "code TEXT NOT NULL);";
         if (sqlite3_exec(db, typedefSql, 0, 0, 0) != SQLITE_OK) {
             llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
-            sqlite3_free(err);
             exit(1);
         }
         const char *insertTypedefSql = "INSERT INTO typedefs (name, file, line, code) VALUES (?, ?, ?, ?);";
@@ -119,14 +145,6 @@ public:
             llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
-    }
-
-    ~DatabaseManager() {
-        sqlite3_finalize(insertFuncStmt);
-        sqlite3_finalize(insertRecStmt);
-        sqlite3_finalize(insertEnumStmt);
-        sqlite3_finalize(insertTypedefStmt);
-        sqlite3_close(db);
     }
 
     /**
@@ -165,6 +183,10 @@ public:
             if (sqlite3_step(insertRecStmt) != SQLITE_DONE)
                 llvm::errs() << "Insert error: " << sqlite3_errmsg(db) << "\n";
             sqlite3_reset(insertRecStmt);
+        }
+        if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, &err) != SQLITE_OK) {
+            llvm::errs() << "Commit error: " << err << "\n";
+            sqlite3_free(err);
         }
     }
 
