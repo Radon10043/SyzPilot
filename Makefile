@@ -1,7 +1,7 @@
 CXX := ccache g++
 
 LLVM_CONFIG := llvm-config-19
-CXX_FLAGS := $(shell $(LLVM_CONFIG) --cxxflags) -fno-rtti -O2 -g
+CXX_FLAGS := $(shell $(LLVM_CONFIG) --cxxflags) -fno-rtti -O2
 LD_FLAGS := $(shell $(LLVM_CONFIG) --ldflags)
 LLVM_LIBS := $(shell $(LLVM_CONFIG) --libs)
 # CLANG_LIBS := -lclang-cpp
