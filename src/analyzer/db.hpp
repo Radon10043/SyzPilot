@@ -26,6 +26,13 @@ struct EnumInfo {
     std::string code; /* enum code      */
 };
 
+struct TypedefInfo {
+    std::string name; /* typedef name    */
+    std::string file; /* file path      */
+    int line;         /* line number    */
+    std::string code; /* typedef code   */
+};
+
 class DatabaseManager {
 public:
     DatabaseManager() = default;
@@ -36,11 +43,11 @@ public:
             exit(1);
         }
 
-        // Enable WAL to speed up writes
+        /* Enable WAL to speed up writes */
         char *err = nullptr;
         sqlite3_exec(db, "PRAGMA synchronous = OFF; PRAGMA journal_mode = WAL;", nullptr, nullptr, &err);
 
-        // Create functions table
+        /* create functions table */
         const char *funcSql = "CREATE TABLE IF NOT EXISTS functions ("
                               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                               "name TEXT NOT NULL, "
@@ -58,7 +65,7 @@ public:
             exit(1);
         }
 
-        // Create records table
+        /* create records table */
         const char *recSql = "CREATE TABLE IF NOT EXISTS records ("
                              "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                              "name TEXT NOT NULL, "
@@ -77,6 +84,7 @@ public:
             exit(1);
         }
 
+        /* create enums table */
         const char *enumSql = "CREATE TABLE IF NOT EXISTS enums ("
                               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                               "name TEXT NOT NULL, "
@@ -93,12 +101,31 @@ public:
             llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
+
+        /* create typedefs table */
+        const char *typedefSql = "CREATE TABLE IF NOT EXISTS typedefs ("
+                                 "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                                 "name TEXT NOT NULL, "
+                                 "file TEXT NOT NULL, "
+                                 "line INTEGER NOT NULL, "
+                                 "code TEXT NOT NULL);";
+        if (sqlite3_exec(db, typedefSql, 0, 0, 0) != SQLITE_OK) {
+            llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
+            sqlite3_free(err);
+            exit(1);
+        }
+        const char *insertTypedefSql = "INSERT INTO typedefs (name, file, line, code) VALUES (?, ?, ?, ?);";
+        if (sqlite3_prepare_v2(db, insertTypedefSql, -1, &insertTypedefStmt, nullptr) != SQLITE_OK) {
+            llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
+            exit(1);
+        }
     }
 
     ~DatabaseManager() {
         sqlite3_finalize(insertFuncStmt);
         sqlite3_finalize(insertRecStmt);
         sqlite3_finalize(insertEnumStmt);
+        sqlite3_finalize(insertTypedefStmt);
         sqlite3_close(db);
     }
 
@@ -162,9 +189,31 @@ public:
         }
     }
 
+    /**
+     * insert typedefs into the database
+     */
+    void bulkInsertTypedefs(const std::vector<TypedefInfo> &typedefs) {
+        char *err = nullptr;
+        sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
+        for (auto &td : typedefs) {
+            sqlite3_bind_text(insertTypedefStmt, 1, td.name.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(insertTypedefStmt, 2, td.file.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_int(insertTypedefStmt, 3, td.line);
+            sqlite3_bind_text(insertTypedefStmt, 4, td.code.c_str(), -1, SQLITE_STATIC);
+            if (sqlite3_step(insertTypedefStmt) != SQLITE_DONE)
+                llvm::errs() << "Insert error: " << sqlite3_errmsg(db) << "\n";
+            sqlite3_reset(insertTypedefStmt);
+        }
+        if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, &err) != SQLITE_OK) {
+            llvm::errs() << "Commit error: " << err << "\n";
+            sqlite3_free(err);
+        }
+    }
+
 private:
     sqlite3 *db;
     sqlite3_stmt *insertFuncStmt;
     sqlite3_stmt *insertRecStmt;
     sqlite3_stmt *insertEnumStmt;
+    sqlite3_stmt *insertTypedefStmt;
 };

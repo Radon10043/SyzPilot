@@ -43,6 +43,10 @@ public:
         return enums;
     }
 
+    std::vector<TypedefInfo> &getTypedefs() {
+        return typedefs;
+    }
+
     bool VisitFunctionDecl(FunctionDecl *fd) {
         SourceManager &sm = ctx->getSourceManager();
 
@@ -151,11 +155,41 @@ public:
         return true;
     }
 
+    bool VisitTypedefDecl(TypedefDecl *td) {
+        SourceManager &sm = ctx->getSourceManager();
+
+        /* skip includes */
+        if (!sm.isInMainFile(td->getBeginLoc()))
+            return true;
+
+        /* get info of the typedef */
+        std::string name = td->getNameAsString();
+        SourceRange sr = td->getSourceRange();
+        std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, ctx->getLangOpts()).str();
+        FullSourceLoc fsl = ctx->getFullLoc(td->getBeginLoc());
+        std::string fp;
+        int line = -1;
+        if (fsl.isValid()) {
+            SourceLocation sl = sm.getExpansionLoc(td->getBeginLoc());
+            FileID fid = sm.getFileID(sl);
+            const FileEntry *fe = sm.getFileEntryForID(fid);
+            fp = fe->tryGetRealPathName().str();
+            line = fsl.getSpellingLineNumber();
+        }
+
+        /* add to vector if typedef name and code are not empty */
+        if (!name.empty() && !code.empty())
+            typedefs.push_back({name, fp, line, code});
+
+        return true;
+    }
+
 private:
     ASTContext *ctx;
     std::vector<FuncInfo> funcs;
     std::vector<RecordInfo> records;
     std::vector<EnumInfo> enums;
+    std::vector<TypedefInfo> typedefs;
 };
 
 class MyASTConsumer : public ASTConsumer {
@@ -167,6 +201,7 @@ public:
         const auto &funcs = visitor.getFunctions();
         const auto &records = visitor.getRecords();
         const auto &enums = visitor.getEnums();
+        const auto &typedefs = visitor.getTypedefs();
         if (!DBMgr)
             return;
 
@@ -178,6 +213,8 @@ public:
             DBMgr->bulkInsertRecords(records);
         if (!enums.empty())
             DBMgr->bulkInsertEnums(enums);
+        if (!typedefs.empty())
+            DBMgr->bulkInsertTypedefs(typedefs);
     }
 
 private:
