@@ -163,7 +163,8 @@ public:
             return true;
 
         /* get info of the typedef */
-        std::string name = td->getNameAsString();
+        std::string typ = td->getNameAsString();
+        std::string def = td->getUnderlyingType().getAsString();
         SourceRange sr = td->getSourceRange();
         std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, ctx->getLangOpts()).str();
         FullSourceLoc fsl = ctx->getFullLoc(td->getBeginLoc());
@@ -177,9 +178,9 @@ public:
             line = fsl.getSpellingLineNumber();
         }
 
-        /* add to vector if typedef name and code are not empty */
-        if (!name.empty() && !code.empty())
-            typedefs.push_back({name, fp, line, code});
+        /* add to vector if old name (typ) and new name (def) are not empty */
+        if (!typ.empty() && !def.empty())
+            typedefs.push_back({typ, def, fp, line, code});
 
         return true;
     }

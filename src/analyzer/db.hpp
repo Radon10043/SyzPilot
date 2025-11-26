@@ -27,10 +27,11 @@ struct EnumInfo {
 };
 
 struct TypedefInfo {
-    std::string name; /* typedef name    */
-    std::string file; /* file path      */
-    int line;         /* line number    */
-    std::string code; /* typedef code   */
+    std::string typ;   /* old name       */
+    std::string def;   /* new name       */
+    std::string file;  /* file path      */
+    int line;          /* line number    */
+    std::string code;  /* typedef code   */
 };
 
 class DatabaseManager {
@@ -132,7 +133,8 @@ public:
     void createTypedefTable() {
         const char *typedefSql = "CREATE TABLE IF NOT EXISTS typedefs ("
                                  "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                                 "name TEXT NOT NULL, "
+                                 "type TEXT NOT NULL, "
+                                 "define TEXT NOT NULL, "
                                  "file TEXT NOT NULL, "
                                  "line INTEGER NOT NULL, "
                                  "code TEXT NOT NULL);";
@@ -140,7 +142,7 @@ public:
             llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
-        const char *insertTypedefSql = "INSERT INTO typedefs (name, file, line, code) VALUES (?, ?, ?, ?);";
+        const char *insertTypedefSql = "INSERT INTO typedefs (type, define, file, line, code) VALUES (?, ?, ?, ?, ?);";
         if (sqlite3_prepare_v2(db, insertTypedefSql, -1, &insertTypedefStmt, nullptr) != SQLITE_OK) {
             llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
@@ -218,10 +220,11 @@ public:
         char *err = nullptr;
         sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
         for (auto &td : typedefs) {
-            sqlite3_bind_text(insertTypedefStmt, 1, td.name.c_str(), -1, SQLITE_STATIC);
-            sqlite3_bind_text(insertTypedefStmt, 2, td.file.c_str(), -1, SQLITE_STATIC);
-            sqlite3_bind_int(insertTypedefStmt, 3, td.line);
-            sqlite3_bind_text(insertTypedefStmt, 4, td.code.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(insertTypedefStmt, 1, td.typ.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(insertTypedefStmt, 2, td.def.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(insertTypedefStmt, 3, td.file.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_int(insertTypedefStmt, 4, td.line);
+            sqlite3_bind_text(insertTypedefStmt, 5, td.code.c_str(), -1, SQLITE_STATIC);
             if (sqlite3_step(insertTypedefStmt) != SQLITE_DONE)
                 llvm::errs() << "Insert error: " << sqlite3_errmsg(db) << "\n";
             sqlite3_reset(insertTypedefStmt);
