@@ -49,10 +49,10 @@ public:
         /* Enable WAL to speed up writes */
         sqlite3_exec(db, "PRAGMA synchronous = OFF; PRAGMA journal_mode = WAL;", nullptr, nullptr, nullptr);
 
-        createFuncTable();
-        createRecTable();
-        createEnumTable();
-        createTypedefTable();
+        prepareFuncTable();
+        prepareRecTable();
+        prepareEnumTable();
+        prepareTypedefTable();
     }
 
     ~DatabaseManager() {
@@ -64,9 +64,9 @@ public:
     }
 
     /**
-     * create functions table
+     * prepare functions table
      */
-    void createFuncTable() {
+    void prepareFuncTable() {
         const char *funcSql = "CREATE TABLE IF NOT EXISTS functions ("
                               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                               "name TEXT NOT NULL, "
@@ -85,9 +85,9 @@ public:
     }
 
     /**
-     * create records table
+     * prepare records table
      */
-    void createRecTable() {
+    void prepareRecTable() {
         const char *recSql = "CREATE TABLE IF NOT EXISTS records ("
                              "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                              "name TEXT NOT NULL, "
@@ -107,9 +107,9 @@ public:
     }
 
     /**
-     * create enums table
+     * prepare enums table
      */
-    void createEnumTable() {
+    void prepareEnumTable() {
         const char *enumSql = "CREATE TABLE IF NOT EXISTS enums ("
                               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                               "name TEXT NOT NULL, "
@@ -128,9 +128,9 @@ public:
     }
 
     /**
-     * create typedefs table
+     * prepare typedefs table
      */
-    void createTypedefTable() {
+    void prepareTypedefTable() {
         const char *typedefSql = "CREATE TABLE IF NOT EXISTS typedefs ("
                                  "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                                  "type TEXT NOT NULL, "
