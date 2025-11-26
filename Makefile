@@ -12,9 +12,14 @@ CLANG_LIBS := -lclangTooling -lclangFrontend -lclangSerialization \
 
 SQLITE_LIBS := -lsqlite3
 
+GO := go
+GOFLAGS := -ldflags "-s -w"
+HOSTOS := linux
+HOSTARCH := amd64
+
 .PHONY: all clean
 
-all: analyzer
+all: analyzer generator
 
 clean:
 	rm -rf bin/*
@@ -29,3 +34,6 @@ analyzer: prepare
 		-Wl,--start-group $(CLANG_LIBS) -Wl,--end-group \
 		$(LLVM_LIBS) \
 		$(SQLITE_LIBS)
+
+generator: prepare
+	GOOS=$(HOSTOS) GOARCH=$(HOSTARCH) $(GO) build $(GOFLAGS) -o bin/generator src/generator/main.go
