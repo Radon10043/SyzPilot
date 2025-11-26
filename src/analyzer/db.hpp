@@ -27,11 +27,18 @@ struct EnumInfo {
 };
 
 struct TypedefInfo {
-    std::string typ;   /* old name       */
-    std::string def;   /* new name       */
-    std::string file;  /* file path      */
-    int line;          /* line number    */
-    std::string code;  /* typedef code   */
+    std::string typ;  /* old name       */
+    std::string def;  /* new name       */
+    std::string file; /* file path      */
+    int line;         /* line number    */
+    std::string code; /* typedef code   */
+};
+
+struct GlobalVarInfo {
+    std::string name; /* variable name  */
+    std::string file; /* file path      */
+    int line;         /* line number    */
+    std::string code; /* variable code  */
 };
 
 class DatabaseManager {
@@ -53,6 +60,7 @@ public:
         prepareRecTable();
         prepareEnumTable();
         prepareTypedefTable();
+        prepareGlobalVarTable();
     }
 
     ~DatabaseManager() {
@@ -150,6 +158,27 @@ public:
     }
 
     /**
+     * prepare global variables table
+     */
+    void prepareGlobalVarTable() {
+        const char *globalVarSql = "CREATE TABLE IF NOT EXISTS globalVars ("
+                                   "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                                   "name TEXT NOT NULL, "
+                                   "file TEXT NOT NULL, "
+                                   "line INTEGER NOT NULL, "
+                                   "code TEXT NOT NULL);";
+        if (sqlite3_exec(db, globalVarSql, 0, 0, 0) != SQLITE_OK) {
+            llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
+            exit(1);
+        }
+        const char *insertGlobalVarSql = "INSERT INTO globalVars (name, file, line, code) VALUES (?, ?, ?, ?);";
+        if (sqlite3_prepare_v2(db, insertGlobalVarSql, -1, &insertGlobalVarStmt, nullptr) != SQLITE_OK) {
+            llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
+            exit(1);
+        }
+    }
+
+    /**
      * insert functions into the database
      */
     void bulkInsertFuncs(const std::vector<FuncInfo> &funcs) {
@@ -235,10 +264,32 @@ public:
         }
     }
 
+    /**
+     * insert global variables into the database
+     */
+    void bulkInsertGlobalVars(const std::vector<GlobalVarInfo> &globalVars) {
+        char *err = nullptr;
+        sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
+        for (auto &gv : globalVars) {
+            sqlite3_bind_text(insertGlobalVarStmt, 1, gv.name.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(insertGlobalVarStmt, 2, gv.file.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_int(insertGlobalVarStmt, 3, gv.line);
+            sqlite3_bind_text(insertGlobalVarStmt, 4, gv.code.c_str(), -1, SQLITE_STATIC);
+            if (sqlite3_step(insertGlobalVarStmt) != SQLITE_DONE)
+                llvm::errs() << "Insert error: " << sqlite3_errmsg(db) << "\n";
+            sqlite3_reset(insertGlobalVarStmt);
+        }
+        if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, &err) != SQLITE_OK) {
+            llvm::errs() << "Commit error: " << err << "\n";
+            sqlite3_free(err);
+        }
+    }
+
 private:
     sqlite3 *db;
     sqlite3_stmt *insertFuncStmt;
     sqlite3_stmt *insertRecStmt;
     sqlite3_stmt *insertEnumStmt;
     sqlite3_stmt *insertTypedefStmt;
+    sqlite3_stmt *insertGlobalVarStmt;
 };

@@ -47,6 +47,10 @@ public:
         return typedefs;
     }
 
+    std::vector<GlobalVarInfo> &getGlobalVars() {
+        return globalVars;
+    }
+
     bool VisitFunctionDecl(FunctionDecl *fd) {
         SourceManager &sm = ctx->getSourceManager();
 
@@ -185,12 +189,55 @@ public:
         return true;
     }
 
+    bool VisitVarDecl(VarDecl *vd) {
+        SourceManager &sm = ctx->getSourceManager();
+
+        /* skip includes */
+        if (!sm.isInMainFile(vd->getBeginLoc()))
+            return true;
+
+        /* we only focus on global variables */
+        if (!vd->hasGlobalStorage())
+            return true;
+
+        /* we only focus on global variables that are file variables */
+        if (!vd->isFileVarDecl())
+            return true;
+
+        /* skip variables that are only declarations */
+        if (vd->isThisDeclarationADefinition() == VarDecl::DeclarationOnly)
+            return true;
+
+        /* get info of the global variable */
+        std::string name = vd->getNameAsString();
+        std::string type = vd->getType().getAsString();
+        FullSourceLoc fsl = ctx->getFullLoc(vd->getBeginLoc());
+        SourceRange sr = vd->getSourceRange();
+        std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, ctx->getLangOpts()).str();
+        std::string fp;
+        int line = -1;
+        if (fsl.isValid()) {
+            SourceLocation sl = sm.getExpansionLoc(vd->getBeginLoc());
+            FileID fid = sm.getFileID(sl);
+            const FileEntry *fe = sm.getFileEntryForID(fid);
+            fp = fe->tryGetRealPathName().str();
+            line = fsl.getSpellingLineNumber();
+        }
+
+        /* add to vector if name and code are not empty */
+        if (!name.empty() && !code.empty())
+            globalVars.push_back({name, fp, line, code});
+
+        return true;
+    }
+
 private:
     ASTContext *ctx;
     std::vector<FuncInfo> funcs;
     std::vector<RecordInfo> records;
     std::vector<EnumInfo> enums;
     std::vector<TypedefInfo> typedefs;
+    std::vector<GlobalVarInfo> globalVars;
 };
 
 class MyASTConsumer : public ASTConsumer {
@@ -203,6 +250,7 @@ public:
         const auto &records = visitor.getRecords();
         const auto &enums = visitor.getEnums();
         const auto &typedefs = visitor.getTypedefs();
+        const auto &globalVars = visitor.getGlobalVars();
         if (!DBMgr)
             return;
 
@@ -216,6 +264,8 @@ public:
             DBMgr->bulkInsertEnums(enums);
         if (!typedefs.empty())
             DBMgr->bulkInsertTypedefs(typedefs);
+        if (!globalVars.empty())
+            DBMgr->bulkInsertGlobalVars(globalVars);
     }
 
 private:
