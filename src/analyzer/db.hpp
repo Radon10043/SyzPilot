@@ -82,12 +82,12 @@ public:
                               "line INTEGER NOT NULL, "
                               "code TEXT NOT NULL);";
         if (sqlite3_exec(db, funcSql, 0, 0, 0) != SQLITE_OK) {
-            llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
+            llvm::errs() << "Failed to create 'functions' table: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
         const char *insertFuncSql = "INSERT INTO functions (name, file, line, code) VALUES (?, ?, ?, ?);";
         if (sqlite3_prepare_v2(db, insertFuncSql, -1, &insertFuncStmt, nullptr) != SQLITE_OK) {
-            llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
+            llvm::errs() << "Failed to prepare insert functions statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
     }
@@ -104,12 +104,12 @@ public:
                              "line INTEGER NOT NULL, "
                              "code TEXT NOT NULL);";
         if (sqlite3_exec(db, recSql, 0, 0, 0) != SQLITE_OK) {
-            llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
+            llvm::errs() << "Failed to create 'records' table: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
         const char *insertRecSql = "INSERT INTO records (name, type, file, line, code) VALUES (?, ?, ?, ?, ?);";
         if (sqlite3_prepare_v2(db, insertRecSql, -1, &insertRecStmt, nullptr) != SQLITE_OK) {
-            llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
+            llvm::errs() << "Failed to prepare insert records statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
     }
@@ -125,12 +125,12 @@ public:
                               "line INTEGER NOT NULL, "
                               "code TEXT NOT NULL);";
         if (sqlite3_exec(db, enumSql, 0, 0, 0) != SQLITE_OK) {
-            llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
+            llvm::errs() << "Failed to create 'enums' table: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
         const char *insertEnumSql = "INSERT INTO enums (name, file, line, code) VALUES (?, ?, ?, ?);";
         if (sqlite3_prepare_v2(db, insertEnumSql, -1, &insertEnumStmt, nullptr) != SQLITE_OK) {
-            llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
+            llvm::errs() << "Failed to prepare insert enums statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
     }
@@ -147,12 +147,12 @@ public:
                                  "line INTEGER NOT NULL, "
                                  "code TEXT NOT NULL);";
         if (sqlite3_exec(db, typedefSql, 0, 0, 0) != SQLITE_OK) {
-            llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
+            llvm::errs() << "Failed to create 'typedefs' table: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
         const char *insertTypedefSql = "INSERT INTO typedefs (type, define, file, line, code) VALUES (?, ?, ?, ?, ?);";
         if (sqlite3_prepare_v2(db, insertTypedefSql, -1, &insertTypedefStmt, nullptr) != SQLITE_OK) {
-            llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
+            llvm::errs() << "Failed to prepare insert typedefs statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
     }
@@ -168,12 +168,12 @@ public:
                                    "line INTEGER NOT NULL, "
                                    "code TEXT NOT NULL);";
         if (sqlite3_exec(db, globalVarSql, 0, 0, 0) != SQLITE_OK) {
-            llvm::errs() << "Failed to create table: " << sqlite3_errmsg(db) << "\n";
+            llvm::errs() << "Failed to create 'globalVars' table: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
         const char *insertGlobalVarSql = "INSERT INTO globalVars (name, file, line, code) VALUES (?, ?, ?, ?);";
         if (sqlite3_prepare_v2(db, insertGlobalVarSql, -1, &insertGlobalVarStmt, nullptr) != SQLITE_OK) {
-            llvm::errs() << "Failed to prepare statement: " << sqlite3_errmsg(db) << "\n";
+            llvm::errs() << "Failed to prepare insert global variables statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
     }
@@ -190,11 +190,11 @@ public:
             sqlite3_bind_int(insertFuncStmt, 3, func.line);
             sqlite3_bind_text(insertFuncStmt, 4, func.code.c_str(), -1, SQLITE_STATIC);
             if (sqlite3_step(insertFuncStmt) != SQLITE_DONE)
-                llvm::errs() << "Insert error: " << sqlite3_errmsg(db) << "\n";
+                llvm::errs() << "Insert functions error: " << sqlite3_errmsg(db) << "\n";
             sqlite3_reset(insertFuncStmt);
         }
         if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, &err) != SQLITE_OK) {
-            llvm::errs() << "Commit error: " << err << "\n";
+            llvm::errs() << "Commit functions error: " << err << "\n";
             sqlite3_free(err);
         }
     }
@@ -212,11 +212,11 @@ public:
             sqlite3_bind_int(insertRecStmt, 4, record.line);
             sqlite3_bind_text(insertRecStmt, 5, record.code.c_str(), -1, SQLITE_STATIC);
             if (sqlite3_step(insertRecStmt) != SQLITE_DONE)
-                llvm::errs() << "Insert error: " << sqlite3_errmsg(db) << "\n";
+                llvm::errs() << "Insert records error: " << sqlite3_errmsg(db) << "\n";
             sqlite3_reset(insertRecStmt);
         }
         if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, &err) != SQLITE_OK) {
-            llvm::errs() << "Commit error: " << err << "\n";
+            llvm::errs() << "Commit records error: " << err << "\n";
             sqlite3_free(err);
         }
     }
@@ -233,11 +233,11 @@ public:
             sqlite3_bind_int(insertEnumStmt, 3, enm.line);
             sqlite3_bind_text(insertEnumStmt, 4, enm.code.c_str(), -1, SQLITE_STATIC);
             if (sqlite3_step(insertEnumStmt) != SQLITE_DONE)
-                llvm::errs() << "Insert error: " << sqlite3_errmsg(db) << "\n";
+                llvm::errs() << "Insert enums error: " << sqlite3_errmsg(db) << "\n";
             sqlite3_reset(insertEnumStmt);
         }
         if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, &err) != SQLITE_OK) {
-            llvm::errs() << "Commit error: " << err << "\n";
+            llvm::errs() << "Commit enums error: " << err << "\n";
             sqlite3_free(err);
         }
     }
@@ -255,11 +255,11 @@ public:
             sqlite3_bind_int(insertTypedefStmt, 4, td.line);
             sqlite3_bind_text(insertTypedefStmt, 5, td.code.c_str(), -1, SQLITE_STATIC);
             if (sqlite3_step(insertTypedefStmt) != SQLITE_DONE)
-                llvm::errs() << "Insert error: " << sqlite3_errmsg(db) << "\n";
+                llvm::errs() << "Insert typedefs error: " << sqlite3_errmsg(db) << "\n";
             sqlite3_reset(insertTypedefStmt);
         }
         if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, &err) != SQLITE_OK) {
-            llvm::errs() << "Commit error: " << err << "\n";
+            llvm::errs() << "Commit typedefs error: " << err << "\n";
             sqlite3_free(err);
         }
     }
@@ -276,11 +276,11 @@ public:
             sqlite3_bind_int(insertGlobalVarStmt, 3, gv.line);
             sqlite3_bind_text(insertGlobalVarStmt, 4, gv.code.c_str(), -1, SQLITE_STATIC);
             if (sqlite3_step(insertGlobalVarStmt) != SQLITE_DONE)
-                llvm::errs() << "Insert error: " << sqlite3_errmsg(db) << "\n";
+                llvm::errs() << "Insert global variables error: " << sqlite3_errmsg(db) << "\n";
             sqlite3_reset(insertGlobalVarStmt);
         }
         if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, &err) != SQLITE_OK) {
-            llvm::errs() << "Commit error: " << err << "\n";
+            llvm::errs() << "Commit global variables error: " << err << "\n";
             sqlite3_free(err);
         }
     }
