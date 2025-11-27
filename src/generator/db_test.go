@@ -9,8 +9,9 @@ import (
 	"github.com/Radon10043/cloud/src/generator"
 )
 
-// change working directory to project root
-func ChangeToProjectRoot() {
+// init function
+func init() {
+	// change working directory to project root
 	_, file, _, _ := runtime.Caller(0)
 	root := filepath.Join(filepath.Dir(file), "..", "..")
 	err := os.Chdir(root)
@@ -20,7 +21,6 @@ func ChangeToProjectRoot() {
 }
 
 func TestFindFunction(t *testing.T) {
-	ChangeToProjectRoot()
 	db := generator.Database{Path: "data/kernel.db"}
 	err := db.Connect()
 	if err != nil {
@@ -37,7 +37,6 @@ func TestFindFunction(t *testing.T) {
 }
 
 func TestFindStruct(t *testing.T) {
-	ChangeToProjectRoot()
 	db := generator.Database{Path: "data/kernel.db"}
 	err := db.Connect()
 	if err != nil {
@@ -57,7 +56,6 @@ func TestFindStruct(t *testing.T) {
 }
 
 func TestFindUnion(t *testing.T) {
-	ChangeToProjectRoot()
 	db := generator.Database{Path: "data/kernel.db"}
 	err := db.Connect()
 	if err != nil {
@@ -72,6 +70,54 @@ func TestFindUnion(t *testing.T) {
 	}
 	if rec.Code == "" {
 		t.Error("Record code is empty")
+	}
+	db.Close()
+}
+
+func TestFindEnum(t *testing.T) {
+	db := generator.Database{Path: "data/kernel.db"}
+	err := db.Connect()
+	if err != nil {
+		t.Fatalf("Database connection failed: %v", err)
+	}
+	enum, err := db.GetEnum("bbr_mode")
+	if err != nil {
+		t.Errorf("Error retrieving enum code: %v", err)
+	}
+	if enum.Code == "" {
+		t.Error("Enum code is empty")
+	}
+	db.Close()
+}
+
+func TestFindTypedef(t *testing.T) {
+	db := generator.Database{Path: "data/kernel.db"}
+	err := db.Connect()
+	if err != nil {
+		t.Fatalf("Database connection failed: %v", err)
+	}
+	td, err := db.GetTypedef("unative_t")
+	if err != nil {
+		t.Errorf("Error retrieving typedef code: %v", err)
+	}
+	if td.Code == "" {
+		t.Error("Typedef code is empty")
+	}
+	db.Close()
+}
+
+func TestFindGlobalVar(t *testing.T) {
+	db := generator.Database{Path: "data/kernel.db"}
+	err := db.Connect()
+	if err != nil {
+		t.Fatalf("Database connection failed: %v", err)
+	}
+	gv, err := db.GetGlobalVar("dvb_frontend_fops")
+	if err != nil {
+		t.Errorf("Error retrieving global variable code: %v", err)
+	}
+	if gv.Code == "" {
+		t.Error("Global variable code is empty")
 	}
 	db.Close()
 }

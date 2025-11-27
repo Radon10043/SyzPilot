@@ -27,6 +27,31 @@ type Record struct {
 	Code string // record code
 }
 
+type Enum struct {
+	Id   int    // unique enum ID
+	Name string // enum name
+	File string // file where the enum is located
+	Line int    // line number in the file
+	Code string // enum code
+}
+
+type Typedef struct {
+	Id     int    // unique typedef ID
+	Type   string // old name in typedef
+	Define string // new name in typedef
+	File   string // file where the typedef is located
+	Line   int    // line number in the file
+	Code   string // typedef code
+}
+
+type GlobalVar struct {
+	Id   int    // unique global variable ID
+	Name string // global variable name
+	File string // file where the global variable is located
+	Line int    // line number in the file
+	Code string // global variable code
+}
+
 // connect to the SQLite database
 func (db *Database) Connect() error {
 	gormDB, err := gorm.Open(sqlite.Open(db.Path), &gorm.Config{})
@@ -52,6 +77,41 @@ func (db *Database) GetRecord(name string) (Record, error) {
 		return rec, gorm.ErrRecordNotFound
 	}
 	return rec, nil
+}
+
+// get enum data by enum name
+func (db *Database) GetEnum(name string) (Enum, error) {
+	var enum Enum
+	db.gormDB.Where("name = ?", name).First(&enum)
+	if enum.Id == 0 {
+		return enum, gorm.ErrRecordNotFound
+	}
+	return enum, nil
+}
+
+// get typedef data by define (new name)
+func (db *Database) GetTypedef(def string) (Typedef, error) {
+	var td Typedef
+	db.gormDB.Where("define = ?", def).First(&td)
+	if td.Id == 0 {
+		return td, gorm.ErrRecordNotFound
+	}
+	return td, nil
+}
+
+// specify table name for GlobalVar model
+func (GlobalVar) TableName() string {
+	return "globalVars"
+}
+
+// get global variable data by variable name
+func (db *Database) GetGlobalVar(name string) (GlobalVar, error) {
+	var gv GlobalVar
+	db.gormDB.Where("name = ?", name).First(&gv)
+	if gv.Id == 0 {
+		return gv, gorm.ErrRecordNotFound
+	}
+	return gv, nil
 }
 
 // close the database connection
