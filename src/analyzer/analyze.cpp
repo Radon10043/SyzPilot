@@ -167,8 +167,8 @@ public:
             return true;
 
         /* get info of the typedef */
-        std::string typ = td->getNameAsString();
-        std::string def = td->getUnderlyingType().getAsString();
+        std::string typ = td->getUnderlyingType().getAsString();
+        std::string def = td->getNameAsString();
         SourceRange sr = td->getSourceRange();
         std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, ctx->getLangOpts()).str();
         FullSourceLoc fsl = ctx->getFullLoc(td->getBeginLoc());
