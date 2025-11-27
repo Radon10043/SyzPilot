@@ -1,4 +1,4 @@
-package generator_test
+package database_test
 
 import (
 	"os"
@@ -6,14 +6,14 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/Radon10043/cloud/src/generator"
+	"github.com/Radon10043/cloud/src/generator/database"
 )
 
 // init function
 func init() {
 	// change working directory to project root
 	_, file, _, _ := runtime.Caller(0)
-	root := filepath.Join(filepath.Dir(file), "..", "..")
+	root := filepath.Join(filepath.Dir(file), "..", "..", "..")
 	err := os.Chdir(root)
 	if err != nil {
 		panic(err)
@@ -21,7 +21,7 @@ func init() {
 }
 
 func TestFindFunction(t *testing.T) {
-	db := generator.Database{Path: "data/kernel.db"}
+	db := database.Database{Path: "data/kernel.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)
@@ -37,7 +37,7 @@ func TestFindFunction(t *testing.T) {
 }
 
 func TestFindStruct(t *testing.T) {
-	db := generator.Database{Path: "data/kernel.db"}
+	db := database.Database{Path: "data/kernel.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)
@@ -56,7 +56,7 @@ func TestFindStruct(t *testing.T) {
 }
 
 func TestFindUnion(t *testing.T) {
-	db := generator.Database{Path: "data/kernel.db"}
+	db := database.Database{Path: "data/kernel.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)
@@ -75,7 +75,7 @@ func TestFindUnion(t *testing.T) {
 }
 
 func TestFindEnum(t *testing.T) {
-	db := generator.Database{Path: "data/kernel.db"}
+	db := database.Database{Path: "data/kernel.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)
@@ -91,7 +91,7 @@ func TestFindEnum(t *testing.T) {
 }
 
 func TestFindTypedef(t *testing.T) {
-	db := generator.Database{Path: "data/kernel.db"}
+	db := database.Database{Path: "data/kernel.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)
@@ -107,7 +107,7 @@ func TestFindTypedef(t *testing.T) {
 }
 
 func TestFindGlobalVar(t *testing.T) {
-	db := generator.Database{Path: "data/kernel.db"}
+	db := database.Database{Path: "data/kernel.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)

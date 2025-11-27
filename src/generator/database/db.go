@@ -1,4 +1,4 @@
-package generator
+package database
 
 import (
 	"gorm.io/driver/sqlite"
@@ -112,6 +112,13 @@ func (db *Database) GetGlobalVar(name string) (GlobalVar, error) {
 		return gv, gorm.ErrRecordNotFound
 	}
 	return gv, nil
+}
+
+// get all global variables from the database
+func (db *Database) GetAllGlobalVar() ([]GlobalVar, error) {
+	var gvs []GlobalVar
+	result := db.gormDB.Find(&gvs)
+	return gvs, result.Error
 }
 
 // close the database connection
