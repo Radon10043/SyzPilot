@@ -1,7 +1,7 @@
 CXX := ccache g++
 
 LLVM_CONFIG := llvm-config-19
-CXX_FLAGS := $(shell $(LLVM_CONFIG) --cxxflags) -fno-rtti -O2
+CXX_FLAGS :=
 LD_FLAGS := $(shell $(LLVM_CONFIG) --ldflags)
 LLVM_LIBS := $(shell $(LLVM_CONFIG) --libs)
 # CLANG_LIBS := -lclang-cpp
@@ -13,9 +13,17 @@ CLANG_LIBS := -lclangTooling -lclangFrontend -lclangSerialization \
 SQLITE_LIBS := -lsqlite3
 
 GO := go
-GOFLAGS := -ldflags "-s -w"
+GOFLAGS :=
 HOSTOS := linux
 HOSTARCH := amd64
+
+ifeq ("$(DEBUG)", "true")
+	CXX_FLAGS := $(shell $(LLVM_CONFIG) --cxxflags) -fno-rtti -O0 -g
+	GOFLAGS = -gcflags "all=-N -l"
+else
+	CXX_FLAGS := $(shell $(LLVM_CONFIG) --cxxflags) -fno-rtti -O2
+	GOFLAGS := -ldflags "-s -w"
+endif
 
 .PHONY: all clean
 
