@@ -35,3 +35,43 @@ func TestFindFunction(t *testing.T) {
 	}
 	db.Close()
 }
+
+func TestFindStruct(t *testing.T) {
+	ChangeToProjectRoot()
+	db := generator.Database{Path: "data/kernel.db"}
+	err := db.Connect()
+	if err != nil {
+		t.Fatalf("Database connection failed: %v", err)
+	}
+	rec, err := db.GetRecord("sound_unit")
+	if err != nil {
+		t.Errorf("Error retrieving record code: %v", err)
+	}
+	if rec.Type != "struct" {
+		t.Errorf("Expected record type 'struct', got '%s'", rec.Type)
+	}
+	if rec.Code == "" {
+		t.Error("Record code is empty")
+	}
+	db.Close()
+}
+
+func TestFindUnion(t *testing.T) {
+	ChangeToProjectRoot()
+	db := generator.Database{Path: "data/kernel.db"}
+	err := db.Connect()
+	if err != nil {
+		t.Fatalf("Database connection failed: %v", err)
+	}
+	rec, err := db.GetRecord("ipvs_sockaddr")
+	if err != nil {
+		t.Errorf("Error retrieving record code: %v", err)
+	}
+	if rec.Type != "union" {
+		t.Errorf("Expected record type 'union', got '%s'", rec.Type)
+	}
+	if rec.Code == "" {
+		t.Error("Record code is empty")
+	}
+	db.Close()
+}
