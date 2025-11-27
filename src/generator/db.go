@@ -25,14 +25,14 @@ func (db *Database) Connect() error {
 	return err
 }
 
-// get function code by function name
-func (db *Database) GetFunctionCode(funcName string) (string, error) {
+// get function data by function name
+func (db *Database) GetFunction(name string) (Function, error) {
 	var fun Function
-	db.gormDB.Where("name = ?", funcName).First(&fun)
-	if fun.Code == "" {
-		return "", gorm.ErrRecordNotFound
+	db.gormDB.Where("name = ?", name).First(&fun)
+	if fun.Id == 0 {
+		return fun, gorm.ErrRecordNotFound
 	}
-	return fun.Code, nil
+	return fun, nil
 }
 
 // close the database connection
