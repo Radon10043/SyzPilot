@@ -35,6 +35,7 @@ func init() {
 	testAgent = agent.Agent{
 		Context: context.Background(),
 		Model:   llm,
+		Tools:   agent.MyTools,
 	}
 
 }
@@ -44,8 +45,25 @@ func TestQuery(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Agent query failed: %v", err)
 	}
-	if response == "" {
+	if response == nil {
 		t.Error("Agent response is empty")
 	}
 	fmt.Println("Agent response: ", response)
+}
+
+func TestFuncCalling(t *testing.T) {
+	_, err := testAgent.Query("What is the tomorrow weather in New York?")
+	if err != nil {
+		t.Fatalf("Agent query failed: %v", err)
+	}
+	resp2, err := testAgent.ExecuteToolCalls()
+	if err != nil {
+		t.Fatalf("ExecuteToolCalls failed: %v", err)
+	}
+	testAgent.Messages = append(testAgent.Messages, resp2)
+	resp3, err := testAgent.Model.GenerateContent(testAgent.Context, testAgent.Messages)
+	if err != nil {
+		t.Fatalf("Model GenerateContent failed: %v", err)
+	}
+	fmt.Println("Agent response: ", resp3.Choices[0].Content)
 }
