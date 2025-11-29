@@ -6,6 +6,7 @@ import (
 	"github.com/Radon10043/cloud/src/generator/database"
 )
 
+// tool: get code of the function by its name
 type GetFuncCodeByName struct {
 	db *database.Database
 }

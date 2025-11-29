@@ -79,6 +79,26 @@ func (db *Database) GetRecord(name string) (Record, error) {
 	return rec, nil
 }
 
+// get struct data by struct name
+func (db *Database) GetStruct(name string) (Record, error) {
+	var rec Record
+	db.gormDB.Where("name = ? AND type = ?", name, "struct").First(&rec)
+	if rec.Id == 0 {
+		return rec, gorm.ErrRecordNotFound
+	}
+	return rec, nil
+}
+
+// get union data by union name
+func (db *Database) GetUnion(name string) (Record, error) {
+	var rec Record
+	db.gormDB.Where("name = ? AND type = ?", name, "union").First(&rec)
+	if rec.Id == 0 {
+		return rec, gorm.ErrRecordNotFound
+	}
+	return rec, nil
+}
+
 // get enum data by enum name
 func (db *Database) GetEnum(name string) (Enum, error) {
 	var enum Enum

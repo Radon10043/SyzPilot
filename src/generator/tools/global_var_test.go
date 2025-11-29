@@ -13,7 +13,7 @@ import (
 	"github.com/tmc/langchaingo/tools"
 )
 
-func TestGetFuncCodeByName(t *testing.T) {
+func TestGetGlobalVarCodeByName(t *testing.T) {
 	db := database.Database{Path: filepath.Join(root, "data", "kernel.db")}
 	err := db.Connect()
 	if err != nil {
@@ -22,14 +22,14 @@ func TestGetFuncCodeByName(t *testing.T) {
 	defer func() {
 		_ = db.Close()
 	}()
-	funcTools := []tools.Tool{
-		myTools.NewGetFuncCodeByNameTool(&db),
+	globalVarTools := []tools.Tool{
+		myTools.NewGetGlobalVarCodeByNameTool(&db),
 	}
 	ctx := context.Background()
-	agent := agents.NewOpenAIFunctionsAgent(llm, funcTools)
+	agent := agents.NewOpenAIFunctionsAgent(llm, globalVarTools)
 	executor := agents.NewExecutor(agent)
 	res, err := chains.Call(ctx, executor, map[string]interface{}{
-		"input": "What's the code of pppox_ioctl function?",
+		"input": "What's the code of global variable dvb_frontend_fops?",
 	})
 	if err != nil {
 		t.Fatal(err)
