@@ -61,6 +61,10 @@ func (sc *SyzCheck) CleanWorkdir() error {
 	if err != nil {
 		return err
 	}
+	err = w.Reset(&git.ResetOptions{Mode: git.HardReset})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
