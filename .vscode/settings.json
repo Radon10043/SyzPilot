@@ -68,5 +68,9 @@
         "ios": "cpp",
         "locale": "cpp",
         "print": "cpp"
-    }
+    },
+    // "workbench.colorTheme": "Catppuccin Latte",
+    // "workbench.iconTheme": "catppuccin-latte"
+    "workbench.colorTheme": "One Dark Pro",
+    "workbench.iconTheme": "vscode-icons"
 }
