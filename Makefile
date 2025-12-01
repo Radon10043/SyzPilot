@@ -27,13 +27,13 @@ endif
 
 .PHONY: all clean
 
-all: analyzer generator
+all: analyzer generator syz-check
 
 clean:
 	rm -rf bin/*
 
 prepare:
-	mkdir -p bin
+	@mkdir -p bin
 
 analyzer: prepare
 	$(CXX) $(CXX_FLAGS) src/analyzer/analyze.cpp \
@@ -45,3 +45,7 @@ analyzer: prepare
 
 generator: prepare
 	GOOS=$(HOSTOS) GOARCH=$(HOSTARCH) $(GO) build $(GOFLAGS) -o bin/generator src/generator/main.go
+
+syz-check: prepare
+	cd syzkaller/ && \
+	GOOS=$(HOSTOS) GOARCH=$(HOSTARCH) $(GO) build $(GOFLAGS) -o $(PWD)/bin/syz-check $(PWD)/syzkaller/tools/syz-check/
