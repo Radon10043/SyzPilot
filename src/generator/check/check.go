@@ -3,6 +3,7 @@ package check
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os/exec"
 	"path/filepath"
 
@@ -42,7 +43,7 @@ func (sc *SyzCheck) CheckWorkdir() error {
 		return err
 	}
 	if head.Hash().String()[:8] != "4b25d554" {
-		fmt.Println("I use syzkaller 4b25d554 btw :)")
+		log.Println("I use syzkaller 4b25d554 btw :)")
 	}
 	return nil
 }

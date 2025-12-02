@@ -1,36 +1,68 @@
 package tools
 
 import (
-	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 
-	"github.com/Radon10043/cloud/src/generator/check"
+	"github.com/tmc/langchaingo/llms"
 )
 
-type CheckSpecValidity struct {
-	sc *check.SyzCheck
-}
-
-func NewCheckSpecValidityTool(sc *check.SyzCheck) *CheckSpecValidity {
-	return &CheckSpecValidity{sc: sc}
-}
-
-func (t CheckSpecValidity) Name() string { return "check_spec_validity" }
-func (t CheckSpecValidity) Description() string {
-	return "Check the validity of syzlang specification, return error message if invalid."
-}
-func (t CheckSpecValidity) Call(ctx context.Context, input string) (string, error) {
-	t.sc.CleanWorkdir()
-	path := filepath.Join(t.sc.Workdir, "sys", "linux", "spec.txt")
-	os.WriteFile(path, []byte(input), 0644)
-	_, stderr, err := t.sc.ExtractConst()
+// CheckSpecValidity check the validity of the given specification
+func CheckSpecValidity(spec string) (string, error) {
+	SC.CleanWorkdir()
+	path := filepath.Join(SC.Workdir, "sys", "linux", "spec.txt")
+	os.WriteFile(path, []byte(spec), 0644)
+	_, stderr, err := SC.ExtractConst()
 	if err != nil {
 		return stderr.String(), err
 	}
-	_, stderr, err = t.sc.CheckValidity()
+	_, stderr, err = SC.CheckValidity()
 	if err != nil {
 		return stderr.String(), err
 	}
 	return "Specification is valid.", nil
+}
+
+// ExecCheckSpecValidity execute the check_spec_validity tool call
+func ExecCheckSpecValidity(tc llms.ToolCall) (llms.MessageContent, error) {
+	var args struct {
+		Spec string `json:"spec"`
+	}
+	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
+		return llms.MessageContent{}, err
+	}
+	resp, err := CheckSpecValidity(args.Spec)
+	if err != nil {
+		return llms.MessageContent{}, err
+	}
+	tcResp := llms.MessageContent{
+		Role: llms.ChatMessageTypeTool,
+		Parts: []llms.ContentPart{
+			llms.ToolCallResponse{
+				ToolCallID: tc.ID,
+				Name:       tc.FunctionCall.Name,
+				Content:    resp,
+			},
+		},
+	}
+	return tcResp, nil
+}
+
+var CheckSpecValidityTool = llms.Tool{
+	Type: "function",
+	Function: &llms.FunctionDefinition{
+		Name:        "check_spec_validity",
+		Description: "Check the validity of the given specification.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"spec": map[string]interface{}{
+					"type":        "string",
+					"description": "The specification to check.",
+				},
+			},
+			"required": []string{"spec"},
+		},
+	},
 }

@@ -2,15 +2,13 @@ package tools_test
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"testing"
 
+	"github.com/Radon10043/cloud/src/generator/agent"
 	"github.com/Radon10043/cloud/src/generator/database"
 	myTools "github.com/Radon10043/cloud/src/generator/tools"
-	"github.com/tmc/langchaingo/agents"
-	"github.com/tmc/langchaingo/chains"
-	"github.com/tmc/langchaingo/tools"
+	"github.com/tmc/langchaingo/llms"
 )
 
 func TestGetStructCodeByName(t *testing.T) {
@@ -19,19 +17,31 @@ func TestGetStructCodeByName(t *testing.T) {
 	defer func() {
 		_ = db.Close()
 	}()
-	structTools := []tools.Tool{
-		myTools.NewGetStructCodeByNameTool(&db),
+	myTools.DB = &db
+	structTools := []llms.Tool{
+		myTools.GetStructCodeByNameTool,
 	}
 	ctx := context.Background()
-	agent := agents.NewOpenAIFunctionsAgent(llm, structTools)
-	executor := agents.NewExecutor(agent)
-	res, err := chains.Call(ctx, executor, map[string]interface{}{
-		"input": "What's the code of struct sound_unit?",
-	})
+	myAgent := agent.Agent{
+		Ctx:      ctx,
+		Model:    llm,
+		Tools:    structTools,
+		Messages: []llms.MessageContent{},
+	}
+	myAgent.AddHumanMessage("What's the code of struct sound_unit?")
+	_, err := myAgent.Query()
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(res["output"])
+	err = myAgent.ExecTools()
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := myAgent.Query()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Response of agent: %v\n", response.Choices[0].Content)
 }
 
 func TestGetUnionCodeByName(t *testing.T) {
@@ -40,17 +50,29 @@ func TestGetUnionCodeByName(t *testing.T) {
 	defer func() {
 		_ = db.Close()
 	}()
-	unionTools := []tools.Tool{
-		myTools.NewGetUnionCodeByNameTool(&db),
+	myTools.DB = &db
+	unionTools := []llms.Tool{
+		myTools.GetUnionCodeByNameTool,
 	}
 	ctx := context.Background()
-	agent := agents.NewOpenAIFunctionsAgent(llm, unionTools)
-	executor := agents.NewExecutor(agent)
-	res, err := chains.Call(ctx, executor, map[string]interface{}{
-		"input": "What's the code of union ipvs_sockaddr?",
-	})
+	myAgent := agent.Agent{
+		Ctx:      ctx,
+		Model:    llm,
+		Tools:    unionTools,
+		Messages: []llms.MessageContent{},
+	}
+	myAgent.AddHumanMessage("What's the code of union ipvs_sockaddr?")
+	_, err := myAgent.Query()
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(res["output"])
+	err = myAgent.ExecTools()
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := myAgent.Query()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Response of agent: %v\n", response.Choices[0].Content)
 }

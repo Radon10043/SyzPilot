@@ -2,15 +2,13 @@ package tools_test
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"testing"
 
+	"github.com/Radon10043/cloud/src/generator/agent"
 	"github.com/Radon10043/cloud/src/generator/database"
 	myTools "github.com/Radon10043/cloud/src/generator/tools"
-	"github.com/tmc/langchaingo/agents"
-	"github.com/tmc/langchaingo/chains"
-	"github.com/tmc/langchaingo/tools"
+	"github.com/tmc/langchaingo/llms"
 )
 
 func TestGetTypedefCodeByDefine(t *testing.T) {
@@ -22,19 +20,31 @@ func TestGetTypedefCodeByDefine(t *testing.T) {
 	defer func() {
 		_ = db.Close()
 	}()
-	typedefTools := []tools.Tool{
-		myTools.NewGetTypedefCodeByDefineTool(&db),
+	myTools.DB = &db
+	typedefTools := []llms.Tool{
+		myTools.GetTypedefCodeByDefineTool,
 	}
 	ctx := context.Background()
-	agent := agents.NewOpenAIFunctionsAgent(llm, typedefTools)
-	executor := agents.NewExecutor(agent)
-	res, err := chains.Call(ctx, executor, map[string]interface{}{
-		"input": "What's the code of typedef unative_t?",
-	})
+	myAgent := agent.Agent{
+		Ctx:      ctx,
+		Model:    llm,
+		Tools:    typedefTools,
+		Messages: []llms.MessageContent{},
+	}
+	myAgent.AddHumanMessage("What's the code of typedef unative_t?")
+	_, err = myAgent.Query()
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(res["output"])
+	err = myAgent.ExecTools()
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := myAgent.Query()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Response of agent: %v\n", response.Choices[0].Content)
 }
 
 func TestGetTypedefTypeByDefine(t *testing.T) {
@@ -46,17 +56,29 @@ func TestGetTypedefTypeByDefine(t *testing.T) {
 	defer func() {
 		_ = db.Close()
 	}()
-	typedefTools := []tools.Tool{
-		myTools.NewGetTypedefTypeByDefineTool(&db),
+	myTools.DB = &db
+	typedefTools := []llms.Tool{
+		myTools.GetTypedefTypeByDefineTool,
 	}
 	ctx := context.Background()
-	agent := agents.NewOpenAIFunctionsAgent(llm, typedefTools)
-	executor := agents.NewExecutor(agent)
-	res, err := chains.Call(ctx, executor, map[string]interface{}{
-		"input": "What's the type of typedef unative_t?",
-	})
+	myAgent := agent.Agent{
+		Ctx:      ctx,
+		Model:    llm,
+		Tools:    typedefTools,
+		Messages: []llms.MessageContent{},
+	}
+	myAgent.AddHumanMessage("What's the type of typedef unative_t?")
+	_, err = myAgent.Query()
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(res["output"])
+	err = myAgent.ExecTools()
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := myAgent.Query()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Response of agent: %v\n", response.Choices[0].Content)
 }

@@ -28,7 +28,7 @@ func init() {
 	llm, err = openai.New(
 		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
 		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
-		openai.WithModel("gpt-5-nano"),
+		openai.WithModel("gemini-2.5-flash"),
 	)
 	if err != nil {
 		panic(err)

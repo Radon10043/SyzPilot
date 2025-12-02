@@ -2,15 +2,13 @@ package tools_test
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"testing"
 
+	"github.com/Radon10043/cloud/src/generator/agent"
 	"github.com/Radon10043/cloud/src/generator/database"
 	myTools "github.com/Radon10043/cloud/src/generator/tools"
-	"github.com/tmc/langchaingo/agents"
-	"github.com/tmc/langchaingo/chains"
-	"github.com/tmc/langchaingo/tools"
+	"github.com/tmc/langchaingo/llms"
 )
 
 func TestGetEnumCodeByName(t *testing.T) {
@@ -22,17 +20,29 @@ func TestGetEnumCodeByName(t *testing.T) {
 	defer func() {
 		_ = db.Close()
 	}()
-	enumTools := []tools.Tool{
-		myTools.NewGetEnumCodeByNameTool(&db),
+	myTools.DB = &db
+	enumTools := []llms.Tool{
+		myTools.GetEnumCodeByNameTool,
 	}
 	ctx := context.Background()
-	agent := agents.NewOpenAIFunctionsAgent(llm, enumTools)
-	executor := agents.NewExecutor(agent)
-	res, err := chains.Call(ctx, executor, map[string]interface{}{
-		"input": "What's the code of enum bbr_mode?",
-	})
+	myAgent := agent.Agent{
+		Ctx:      ctx,
+		Model:    llm,
+		Tools:    enumTools,
+		Messages: []llms.MessageContent{},
+	}
+	myAgent.AddHumanMessage("What's the code of enum bbr_mode?")
+	_, err = myAgent.Query()
 	if err != nil {
 		t.Fatal(err)
 	}
-	fmt.Println(res["output"])
+	err = myAgent.ExecTools()
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := myAgent.Query()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Response of agent: %v\n", response.Choices[0].Content)
 }

@@ -1,49 +1,112 @@
 package tools
 
 import (
-	"context"
+	"encoding/json"
 
 	"github.com/Radon10043/cloud/src/generator/database"
+	"github.com/tmc/langchaingo/llms"
 )
 
-// tool: get code of the struct by its name
-type GetStructCodeByName struct {
-	db *database.Database
-}
-
-func NewGetStructCodeByNameTool(db *database.Database) *GetStructCodeByName {
-	return &GetStructCodeByName{db: db}
-}
-
-func (t GetStructCodeByName) Name() string { return "get_struct_code_by_name" }
-func (t GetStructCodeByName) Description() string {
-	return "Retrieve the code of a struct given its name."
-}
-func (t GetStructCodeByName) Call(ctx context.Context, input string) (string, error) {
-	record, err := t.db.GetStruct(input)
+// GetStructEntryByName get the struct entry by struct name
+func GetStructEntryByName(name string) (database.Record, error) {
+	entry, err := DB.GetStruct(name)
 	if err != nil {
-		return "", err
+		return database.Record{}, err
 	}
-	return record.Code, nil
+	return entry, nil
 }
 
-// tool: get code of the union by its name
-type GetUnionCodeByName struct {
-	db *database.Database
-}
-
-func NewGetUnionCodeByNameTool(db *database.Database) *GetUnionCodeByName {
-	return &GetUnionCodeByName{db: db}
-}
-
-func (t GetUnionCodeByName) Name() string { return "get_union_code_by_name" }
-func (t GetUnionCodeByName) Description() string {
-	return "Retrieve the code of a union given its name."
-}
-func (t GetUnionCodeByName) Call(ctx context.Context, input string) (string, error) {
-	record, err := t.db.GetUnion(input)
+// ExecGetStructCodeByName execute the get_struct_code_by_name tool call
+func ExecGetStructCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
+	var args struct {
+		StructName string `json:"struct_name"`
+	}
+	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
+		return llms.MessageContent{}, err
+	}
+	resp, err := GetStructEntryByName(args.StructName)
 	if err != nil {
-		return "", err
+		return llms.MessageContent{}, err
 	}
-	return record.Code, nil
+	tcResp := llms.MessageContent{
+		Role: llms.ChatMessageTypeTool,
+		Parts: []llms.ContentPart{
+			llms.ToolCallResponse{
+				ToolCallID: tc.ID,
+				Name:       tc.FunctionCall.Name,
+				Content:    resp.Code,
+			},
+		},
+	}
+	return tcResp, nil
+}
+
+var GetStructCodeByNameTool = llms.Tool{
+	Type: "function",
+	Function: &llms.FunctionDefinition{
+		Name:        "get_struct_code_by_name",
+		Description: "Retrieve the code of a struct given its name.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"struct_name": map[string]interface{}{
+					"type":        "string",
+					"description": "The name of the struct to retrieve the code for.",
+				},
+			},
+			"required": []string{"struct_name"},
+		},
+	},
+}
+
+// GetUnionEntryByName get the union entry by union name
+func GetUnionEntryByName(name string) (database.Record, error) {
+	entry, err := DB.GetUnion(name)
+	if err != nil {
+		return database.Record{}, err
+	}
+	return entry, nil
+}
+
+// ExecGetUnionCodeByName execute the get_union_code_by_name tool call
+func ExecGetUnionCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
+	var args struct {
+		UnionName string `json:"union_name"`
+	}
+	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
+		return llms.MessageContent{}, err
+	}
+	resp, err := GetUnionEntryByName(args.UnionName)
+	if err != nil {
+		return llms.MessageContent{}, err
+	}
+	tcResp := llms.MessageContent{
+		Role: llms.ChatMessageTypeTool,
+		Parts: []llms.ContentPart{
+			llms.ToolCallResponse{
+				ToolCallID: tc.ID,
+				Name:       tc.FunctionCall.Name,
+				Content:    resp.Code,
+			},
+		},
+	}
+	return tcResp, nil
+}
+
+var GetUnionCodeByNameTool = llms.Tool{
+	Type: "function",
+	Function: &llms.FunctionDefinition{
+		Name:        "get_union_code_by_name",
+		Description: "Retrieve the code of a union given its name.",
+		Parameters: map[string]interface{}{
+			"type": "object",
+			"properties": map[string]interface{}{
+				"union_name": map[string]interface{}{
+					"type":        "string",
+					"description": "The name of the union to retrieve the code for.",
+				},
+			},
+			"required": []string{"union_name"},
+		},
+	},
 }
