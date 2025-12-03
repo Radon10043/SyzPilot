@@ -104,26 +104,6 @@ public:
     explicit MyASTVisitor(ASTContext *astCtx, std::shared_ptr<AnalysisContext> anaCtx)
         : astCtx(astCtx), anaCtx(anaCtx) {}
 
-    std::vector<FuncInfo> &getFunctions() {
-        return funcs;
-    }
-
-    std::vector<RecordInfo> &getRecords() {
-        return records;
-    }
-
-    std::vector<EnumInfo> &getEnums() {
-        return enums;
-    }
-
-    std::vector<TypedefInfo> &getTypedefs() {
-        return typedefs;
-    }
-
-    std::vector<GlobalVarInfo> &getGlobalVars() {
-        return globalVars;
-    }
-
     bool VisitFunctionDecl(FunctionDecl *fd) {
         SourceManager &sm = astCtx->getSourceManager();
 
@@ -152,7 +132,7 @@ public:
 
         /* add to vector if function name and code are not empty */
         if (!fn.empty() && !code.empty())
-            funcs.push_back({fn, fp, line, code});
+            anaCtx->funcs.push_back({fn, fp, line, code});
 
         return true;
     }
@@ -190,7 +170,7 @@ public:
 
         /* add to vector if record name and code are not empty */
         if (!name.empty() && !code.empty())
-            records.push_back({name, type, fp, line, code});
+            anaCtx->records.push_back({name, type, fp, line, code});
 
         return true;
     }
@@ -227,7 +207,7 @@ public:
 
         /* add to vector if enum name and code are not empty */
         if (!name.empty() && !code.empty())
-            enums.push_back({name, fp, line, code});
+            anaCtx->enums.push_back({name, fp, line, code});
 
         return true;
     }
@@ -257,7 +237,7 @@ public:
 
         /* add to vector if old name (typ) and new name (def) are not empty */
         if (!typ.empty() && !def.empty())
-            typedefs.push_back({typ, def, fp, line, code});
+            anaCtx->typedefs.push_back({typ, def, fp, line, code});
 
         return true;
     }
@@ -299,7 +279,7 @@ public:
 
         /* add to vector if name and code are not empty */
         if (!name.empty() && !code.empty())
-            globalVars.push_back({name, fp, line, code});
+            anaCtx->globalVars.push_back({name, fp, line, code});
 
         return true;
     }
@@ -307,11 +287,6 @@ public:
 private:
     ASTContext *astCtx;
     std::shared_ptr<AnalysisContext> anaCtx;
-    std::vector<FuncInfo> funcs;
-    std::vector<RecordInfo> records;
-    std::vector<EnumInfo> enums;
-    std::vector<TypedefInfo> typedefs;
-    std::vector<GlobalVarInfo> globalVars;
 };
 
 class MyASTConsumer : public ASTConsumer {
@@ -321,15 +296,16 @@ public:
 
     void HandleTranslationUnit(ASTContext &astCtx) override {
         visitor.TraverseDecl(astCtx.getTranslationUnitDecl());
-        const auto &funcs = visitor.getFunctions();
-        const auto &records = visitor.getRecords();
-        const auto &enums = visitor.getEnums();
-        const auto &typedefs = visitor.getTypedefs();
-        const auto &globalVars = visitor.getGlobalVars();
+        const auto &funcs = anaCtx->funcs;
+        const auto &records = anaCtx->records;
+        const auto &enums = anaCtx->enums;
+        const auto &typedefs = anaCtx->typedefs;
+        const auto &globalVars = anaCtx->globalVars;
+        const auto &macros = anaCtx->macros;
         if (!DBMgr)
             return;
 
-        /* insert functions, records into the database */
+        /* insert functions, records, etc. into the database */
         std::lock_guard<std::mutex> lock(DBMutex);
         if (!funcs.empty())
             DBMgr->bulkInsertFuncs(funcs);
@@ -341,8 +317,8 @@ public:
             DBMgr->bulkInsertTypedefs(typedefs);
         if (!globalVars.empty())
             DBMgr->bulkInsertGlobalVars(globalVars);
-        if (!anaCtx->macros.empty())
-            DBMgr->bulkInsertMacroDefs(anaCtx->macros);
+        if (!macros.empty())
+            DBMgr->bulkInsertMacroDefs(macros);
     }
 
 private:
