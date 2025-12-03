@@ -10,15 +10,26 @@ import (
 )
 
 type Agent struct {
-	Ctx      context.Context       // context for llm operations
-	Model    *openai.LLM           // model instance
-	Tools    []llms.Tool           // available tools
-	Messages []llms.MessageContent // message history
+	SystemPrompt string                // system prompt for the agent
+	Ctx          context.Context       // context for llm operations
+	Model        *openai.LLM           // model instance
+	Tools        []llms.Tool           // available tools
+	Messages     []llms.MessageContent // message history
 }
 
 // CleanMessages clear the message history of the agent
 func (a *Agent) CleanMessages() {
 	a.Messages = []llms.MessageContent{}
+}
+
+// AddSystemMessage appends a system message to the agent's message history
+func (a *Agent) AddSystemMessage(input string) error {
+	if len(a.Messages) != 0 {
+		return fmt.Errorf("system message can only be added to empty message history")
+	}
+	msg := llms.TextParts(llms.ChatMessageTypeSystem, input)
+	a.Messages = append(a.Messages, msg)
+	return nil
 }
 
 // AddHumanMessage appends a human message to the agent's message history
@@ -73,6 +84,8 @@ func (a *Agent) ExecTools() error {
 			tcResp, err = myTools.ExecGetTypedefTypeByDefine(tc)
 		case "get_typedef_code_by_define":
 			tcResp, err = myTools.ExecGetTypedefCodeByDefine(tc)
+		case "get_macro_def_code_by_name":
+			tcResp, err = myTools.ExecGetMacroDefCodeByName(tc)
 		case "check_spec_validity":
 			tcResp, err = myTools.ExecCheckSpecValidity(tc)
 		default:

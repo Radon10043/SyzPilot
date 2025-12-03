@@ -32,10 +32,7 @@ func ExecCheckSpecValidity(tc llms.ToolCall) (llms.MessageContent, error) {
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := CheckSpecValidity(args.Spec)
-	if err != nil {
-		return llms.MessageContent{}, err
-	}
+	resp, _ := CheckSpecValidity(args.Spec)
 	tcResp := llms.MessageContent{
 		Role: llms.ChatMessageTypeTool,
 		Parts: []llms.ContentPart{

@@ -79,8 +79,9 @@ func TestCheckInvalid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to write spec file: %v", err)
 	}
-	_, _, err = sc.ExtractConst()
+	_, stderr, err := sc.ExtractConst()
 	if err == nil {
 		t.Fatal("`make extract` should be failed, but success.")
 	}
+	t.Logf("stderr: %v", stderr.String())
 }

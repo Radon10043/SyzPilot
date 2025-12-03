@@ -52,6 +52,14 @@ type GlobalVar struct {
 	Code string // global variable code
 }
 
+type MacroDef struct {
+	Id   int    // unique macro definition ID
+	Name string // macro name
+	File string // file where the macro is located
+	Line int    // line number in the file
+	Code string // macro code
+}
+
 // connect to the SQLite database
 func (db *Database) Connect() error {
 	gormDB, err := gorm.Open(sqlite.Open(db.Path), &gorm.Config{})
@@ -139,6 +147,21 @@ func (db *Database) GetAllGlobalVar() ([]GlobalVar, error) {
 	var gvs []GlobalVar
 	result := db.gormDB.Find(&gvs)
 	return gvs, result.Error
+}
+
+// get macro definition data by macro name
+func (db *Database) GetMacroDef(name string) (MacroDef, error) {
+	var md MacroDef
+	db.gormDB.Where("name = ?", name).First(&md)
+	if md.Id == 0 {
+		return md, gorm.ErrRecordNotFound
+	}
+	return md, nil
+}
+
+// specify table name for MacroDef model
+func (MacroDef) TableName() string {
+	return "macroDefs"
 }
 
 // close the database connection

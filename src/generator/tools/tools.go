@@ -17,5 +17,6 @@ var ToolList = []llms.Tool{
 	GetUnionCodeByNameTool,
 	GetTypedefCodeByDefineTool,
 	GetTypedefTypeByDefineTool,
+	GetMacroDefCodeByNameTool,
 	CheckSpecValidityTool,
 }
