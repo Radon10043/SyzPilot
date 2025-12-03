@@ -60,10 +60,6 @@ public:
         if (sm.isWrittenInBuiltinFile(md->getLocation()))
             return;
 
-        /* skip includes */
-        if (!sm.isInMainFile(loc))
-            return;
-
         const MacroInfo *mi = md->getMacroInfo();
         if (!mi)
             return;
@@ -107,10 +103,6 @@ public:
     bool VisitFunctionDecl(FunctionDecl *fd) {
         SourceManager &sm = astCtx->getSourceManager();
 
-        /* skip includes */
-        if (!sm.isInMainFile(fd->getBeginLoc()))
-            return true;
-
         /* only process functions with a body */
         if (!fd->hasBody())
             return true;
@@ -139,10 +131,6 @@ public:
 
     bool VisitRecordDecl(RecordDecl *rd) {
         SourceManager &sm = astCtx->getSourceManager();
-
-        /* skip includes */
-        if (!sm.isInMainFile(rd->getBeginLoc()))
-            return true;
 
         /* only process definitions */
         if (!rd->isThisDeclarationADefinition())
@@ -178,10 +166,6 @@ public:
     bool VisitEnumDecl(EnumDecl *ed) {
         SourceManager &sm = astCtx->getSourceManager();
 
-        /* skip includes */
-        if (!sm.isInMainFile(ed->getBeginLoc()))
-            return true;
-
         /* only process definitions */
         if (!ed->isThisDeclarationADefinition())
             return true;
@@ -215,10 +199,6 @@ public:
     bool VisitTypedefDecl(TypedefDecl *td) {
         SourceManager &sm = astCtx->getSourceManager();
 
-        /* skip includes */
-        if (!sm.isInMainFile(td->getBeginLoc()))
-            return true;
-
         /* get info of the typedef */
         std::string typ = td->getUnderlyingType().getAsString();
         std::string def = td->getNameAsString();
@@ -244,10 +224,6 @@ public:
 
     bool VisitVarDecl(VarDecl *vd) {
         SourceManager &sm = astCtx->getSourceManager();
-
-        /* skip includes */
-        if (!sm.isInMainFile(vd->getBeginLoc()))
-            return true;
 
         /* we only focus on global variables */
         if (!vd->hasGlobalStorage())

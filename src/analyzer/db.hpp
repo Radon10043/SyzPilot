@@ -85,18 +85,23 @@ public:
      * prepare functions table
      */
     void prepareFuncTable() {
-        const char *funcSql = "CREATE TABLE IF NOT EXISTS functions ("
-                              "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                              "name TEXT NOT NULL, "
-                              "file TEXT NOT NULL, "
-                              "line INTEGER NOT NULL, "
-                              "code TEXT NOT NULL);";
-        if (sqlite3_exec(db, funcSql, 0, 0, 0) != SQLITE_OK) {
+        const char *tableSql = "CREATE TABLE IF NOT EXISTS functions ("
+                               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                               "name TEXT NOT NULL, "
+                               "file TEXT NOT NULL, "
+                               "line INTEGER NOT NULL, "
+                               "code TEXT NOT NULL, "
+                               "UNIQUE(name, file, line));";
+        if (sqlite3_exec(db, tableSql, 0, 0, 0) != SQLITE_OK) {
             llvm::errs() << "Failed to create 'functions' table: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
-        const char *insertFuncSql = "INSERT INTO functions (name, file, line, code) VALUES (?, ?, ?, ?);";
-        if (sqlite3_prepare_v2(db, insertFuncSql, -1, &insertFuncStmt, nullptr) != SQLITE_OK) {
+        /* create an index so that we can boost query performance */
+        const char *indexSql = "CREATE INDEX IF NOT EXISTS idxFuncName ON functions(name)";
+        if (sqlite3_exec(db, indexSql, 0, 0, 0) != SQLITE_OK)
+            llvm::errs() << "Failed to create index on 'functions' table: " << sqlite3_errmsg(db) << "\n";
+        const char *insertSql = "INSERT OR IGNORE INTO functions (name, file, line, code) VALUES (?, ?, ?, ?);";
+        if (sqlite3_prepare_v2(db, insertSql, -1, &insertFuncStmt, nullptr) != SQLITE_OK) {
             llvm::errs() << "Failed to prepare insert functions statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
@@ -106,19 +111,23 @@ public:
      * prepare records table
      */
     void prepareRecTable() {
-        const char *recSql = "CREATE TABLE IF NOT EXISTS records ("
-                             "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                             "name TEXT NOT NULL, "
-                             "type TEXT NOT NULL, "
-                             "file TEXT NOT NULL, "
-                             "line INTEGER NOT NULL, "
-                             "code TEXT NOT NULL);";
-        if (sqlite3_exec(db, recSql, 0, 0, 0) != SQLITE_OK) {
+        const char *tableSql = "CREATE TABLE IF NOT EXISTS records ("
+                               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                               "name TEXT NOT NULL, "
+                               "type TEXT NOT NULL, "
+                               "file TEXT NOT NULL, "
+                               "line INTEGER NOT NULL, "
+                               "code TEXT NOT NULL, "
+                               "UNIQUE(name, file, line));";
+        if (sqlite3_exec(db, tableSql, 0, 0, 0) != SQLITE_OK) {
             llvm::errs() << "Failed to create 'records' table: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
-        const char *insertRecSql = "INSERT INTO records (name, type, file, line, code) VALUES (?, ?, ?, ?, ?);";
-        if (sqlite3_prepare_v2(db, insertRecSql, -1, &insertRecStmt, nullptr) != SQLITE_OK) {
+        const char *indexSql = "CREATE INDEX IF NOT EXISTS idxRecName ON records(name)";
+        if (sqlite3_exec(db, indexSql, 0, 0, 0) != SQLITE_OK)
+            llvm::errs() << "Failed to create index on 'records' table: " << sqlite3_errmsg(db) << "\n";
+        const char *insertSql = "INSERT OR IGNORE INTO records (name, type, file, line, code) VALUES (?, ?, ?, ?, ?);";
+        if (sqlite3_prepare_v2(db, insertSql, -1, &insertRecStmt, nullptr) != SQLITE_OK) {
             llvm::errs() << "Failed to prepare insert records statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
@@ -128,18 +137,22 @@ public:
      * prepare enums table
      */
     void prepareEnumTable() {
-        const char *enumSql = "CREATE TABLE IF NOT EXISTS enums ("
-                              "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                              "name TEXT NOT NULL, "
-                              "file TEXT NOT NULL, "
-                              "line INTEGER NOT NULL, "
-                              "code TEXT NOT NULL);";
-        if (sqlite3_exec(db, enumSql, 0, 0, 0) != SQLITE_OK) {
+        const char *tableSql = "CREATE TABLE IF NOT EXISTS enums ("
+                               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                               "name TEXT NOT NULL, "
+                               "file TEXT NOT NULL, "
+                               "line INTEGER NOT NULL, "
+                               "code TEXT NOT NULL, "
+                               "UNIQUE(name, file, line));";
+        if (sqlite3_exec(db, tableSql, 0, 0, 0) != SQLITE_OK) {
             llvm::errs() << "Failed to create 'enums' table: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
-        const char *insertEnumSql = "INSERT INTO enums (name, file, line, code) VALUES (?, ?, ?, ?);";
-        if (sqlite3_prepare_v2(db, insertEnumSql, -1, &insertEnumStmt, nullptr) != SQLITE_OK) {
+        const char *indexSql = "CREATE INDEX IF NOT EXISTS idxEnumName ON enums(name)";
+        if (sqlite3_exec(db, indexSql, 0, 0, 0) != SQLITE_OK)
+            llvm::errs() << "Failed to create index on 'enums' table: " << sqlite3_errmsg(db) << "\n";
+        const char *insertSql = "INSERT OR IGNORE INTO enums (name, file, line, code) VALUES (?, ?, ?, ?);";
+        if (sqlite3_prepare_v2(db, insertSql, -1, &insertEnumStmt, nullptr) != SQLITE_OK) {
             llvm::errs() << "Failed to prepare insert enums statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
@@ -149,19 +162,24 @@ public:
      * prepare typedefs table
      */
     void prepareTypedefTable() {
-        const char *typedefSql = "CREATE TABLE IF NOT EXISTS typedefs ("
-                                 "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                                 "type TEXT NOT NULL, "
-                                 "define TEXT NOT NULL, "
-                                 "file TEXT NOT NULL, "
-                                 "line INTEGER NOT NULL, "
-                                 "code TEXT NOT NULL);";
-        if (sqlite3_exec(db, typedefSql, 0, 0, 0) != SQLITE_OK) {
+        const char *tableSql = "CREATE TABLE IF NOT EXISTS typedefs ("
+                               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                               "type TEXT NOT NULL, "
+                               "define TEXT NOT NULL, "
+                               "file TEXT NOT NULL, "
+                               "line INTEGER NOT NULL, "
+                               "code TEXT NOT NULL, "
+                               "UNIQUE(type, define, file, line));";
+        if (sqlite3_exec(db, tableSql, 0, 0, 0) != SQLITE_OK) {
             llvm::errs() << "Failed to create 'typedefs' table: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
-        const char *insertTypedefSql = "INSERT INTO typedefs (type, define, file, line, code) VALUES (?, ?, ?, ?, ?);";
-        if (sqlite3_prepare_v2(db, insertTypedefSql, -1, &insertTypedefStmt, nullptr) != SQLITE_OK) {
+        const char *indexSql = "CREATE INDEX IF NOT EXISTS idxTypedefDefine ON typedefs(define)";
+        if (sqlite3_exec(db, indexSql, 0, 0, 0) != SQLITE_OK)
+            llvm::errs() << "Failed to create index on 'typedefs' table: " << sqlite3_errmsg(db) << "\n";
+        const char *insertSql =
+            "INSERT OR IGNORE INTO typedefs (type, define, file, line, code) VALUES (?, ?, ?, ?, ?);";
+        if (sqlite3_prepare_v2(db, insertSql, -1, &insertTypedefStmt, nullptr) != SQLITE_OK) {
             llvm::errs() << "Failed to prepare insert typedefs statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
@@ -171,18 +189,23 @@ public:
      * prepare global variables table
      */
     void prepareGlobalVarTable() {
-        const char *globalVarSql = "CREATE TABLE IF NOT EXISTS globalVars ("
-                                   "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                                   "name TEXT NOT NULL, "
-                                   "file TEXT NOT NULL, "
-                                   "line INTEGER NOT NULL, "
-                                   "code TEXT NOT NULL);";
-        if (sqlite3_exec(db, globalVarSql, 0, 0, 0) != SQLITE_OK) {
+        const char *tableSql = "CREATE TABLE IF NOT EXISTS globalVars ("
+                               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                               "name TEXT NOT NULL, "
+                               "file TEXT NOT NULL, "
+                               "line INTEGER NOT NULL, "
+                               "code TEXT NOT NULL, "
+                               "UNIQUE(name, file, line));";
+        if (sqlite3_exec(db, tableSql, 0, 0, 0) != SQLITE_OK) {
             llvm::errs() << "Failed to create 'globalVars' table: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
-        const char *insertGlobalVarSql = "INSERT INTO globalVars (name, file, line, code) VALUES (?, ?, ?, ?);";
-        if (sqlite3_prepare_v2(db, insertGlobalVarSql, -1, &insertGlobalVarStmt, nullptr) != SQLITE_OK) {
+        const char *indexSql = "CREATE INDEX IF NOT EXISTS idxGlobalVarName ON globalVars(name)";
+        if (sqlite3_exec(db, indexSql, 0, 0, 0) != SQLITE_OK)
+            llvm::errs() << "Failed to create index on 'globalVars' table: " << sqlite3_errmsg(db) << "\n";
+        const char *insertSql =
+            "INSERT OR IGNORE INTO globalVars (name, file, line, code) VALUES (?, ?, ?, ?);";
+        if (sqlite3_prepare_v2(db, insertSql, -1, &insertGlobalVarStmt, nullptr) != SQLITE_OK) {
             llvm::errs() << "Failed to prepare insert global variables statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
@@ -192,18 +215,22 @@ public:
      * prepare macro definitions table
      */
     void prepareMacroDefTable() {
-        const char *macroDefSql = "CREATE TABLE IF NOT EXISTS macroDefs ("
-                                   "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                                   "name TEXT NOT NULL, "
-                                   "file TEXT NOT NULL, "
-                                   "line INTEGER NOT NULL, "
-                                   "code TEXT NOT NULL);";
-        if (sqlite3_exec(db, macroDefSql, 0, 0, 0) != SQLITE_OK) {
+        const char *tableSql = "CREATE TABLE IF NOT EXISTS macroDefs ("
+                               "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                               "name TEXT NOT NULL, "
+                               "file TEXT NOT NULL, "
+                               "line INTEGER NOT NULL, "
+                               "code TEXT NOT NULL,"
+                               "UNIQUE(name, file, line));";
+        if (sqlite3_exec(db, tableSql, 0, 0, 0) != SQLITE_OK) {
             llvm::errs() << "Failed to create 'macroDefs' table: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
-        const char *insertMacroDefSql = "INSERT INTO macroDefs (name, file, line, code) VALUES (?, ?, ?, ?);";
-        if (sqlite3_prepare_v2(db, insertMacroDefSql, -1, &insertMacroDefStmt, nullptr) != SQLITE_OK) {
+        const char *indexSql = "CREATE INDEX IF NOT EXISTS idxMacroDefName ON macroDefs(name)";
+        if (sqlite3_exec(db, indexSql, 0, 0, 0) != SQLITE_OK)
+            llvm::errs() << "Failed to create index on 'macroDefs' table: " << sqlite3_errmsg(db) << "\n";
+        const char *insertSql = "INSERT OR IGNORE INTO macroDefs (name, file, line, code) VALUES (?, ?, ?, ?);";
+        if (sqlite3_prepare_v2(db, insertSql, -1, &insertMacroDefStmt, nullptr) != SQLITE_OK) {
             llvm::errs() << "Failed to prepare insert macro definitions statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
