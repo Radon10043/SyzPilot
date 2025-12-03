@@ -72,5 +72,9 @@
     // "workbench.colorTheme": "Catppuccin Latte",
     // "workbench.iconTheme": "catppuccin-latte"
     "workbench.colorTheme": "One Dark Pro",
-    "workbench.iconTheme": "vscode-icons"
+    "workbench.iconTheme": "vscode-icons",
+    "go.testFlags": [
+        "-v"
+    ],
+    "go.testTimeout": "5m"
 }
