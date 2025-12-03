@@ -9,6 +9,7 @@
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Frontend/FrontendActions.h>
 #include <clang/Lex/Lexer.h>
+#include <clang/Lex/PPCallbacks.h>
 #include <clang/Tooling/CommonOptionsParser.h>
 #include <clang/Tooling/JSONCompilationDatabase.h>
 #include <clang/Tooling/Tooling.h>
@@ -27,9 +28,81 @@ using namespace llvm;
 static DatabaseManager *DBMgr = nullptr;
 std::mutex DBMutex;
 
+struct AnalysisContext {
+    std::vector<FuncInfo> funcs;
+    std::vector<RecordInfo> records;
+    std::vector<EnumInfo> enums;
+    std::vector<TypedefInfo> typedefs;
+    std::vector<GlobalVarInfo> globalVars;
+    std::vector<MacroDefInfo> macros;
+};
+
+class MacroCallback : public PPCallbacks {
+public:
+    explicit MacroCallback(std::shared_ptr<AnalysisContext> ctx, SourceManager &sm) : ctx(ctx), sm(sm) {}
+
+    void MacroDefined(const Token &macroNameTok, const MacroDirective *md) override {
+        SourceLocation loc = macroNameTok.getLocation();
+
+        /* skip invalid locations */
+        if (loc.isInvalid())
+            return;
+
+        /* skip built-in macros */
+        if (md->getMacroInfo()->isBuiltinMacro())
+            return;
+
+        /* skip macros from command line (e.g., -DXXXX) */
+        if (sm.isWrittenInCommandLineFile(md->getLocation()))
+            return;
+
+        /* skip macros in built-in files */
+        if (sm.isWrittenInBuiltinFile(md->getLocation()))
+            return;
+
+        /* skip includes */
+        if (!sm.isInMainFile(loc))
+            return;
+
+        const MacroInfo *mi = md->getMacroInfo();
+        if (!mi)
+            return;
+
+        /* TODO: get info of the macro */
+        std::string name = macroNameTok.getIdentifierInfo()->getName().str();
+        SourceRange sr = mi->getDefinitionLoc();
+        std::string code =
+            Lexer::getSourceText(CharSourceRange::getTokenRange(mi->getDefinitionLoc(), mi->getDefinitionEndLoc()), sm,
+                                 LangOptions())
+                .str();
+        FullSourceLoc fsl = FullSourceLoc(loc, sm);
+        std::string fp;
+        int line = -1;
+        if (fsl.isValid()) {
+            SourceLocation sl = sm.getExpansionLoc(loc);
+            FileID fid = sm.getFileID(sl);
+            const FileEntry *fe = sm.getFileEntryForID(fid);
+            fp = fe->tryGetRealPathName().str();
+            line = fsl.getSpellingLineNumber();
+        }
+
+        /* add to context if macro name and code are not empty */
+        if (!name.empty() && !code.empty()) {
+            std::lock_guard<std::mutex> lock(DBMutex);
+            code = "#define " + code;   /* add #define prefix to ensure the completeness */
+            ctx->macros.push_back({name, fp, line, code});
+        }
+    }
+
+private:
+    std::shared_ptr<AnalysisContext> ctx;
+    SourceManager &sm;
+};
+
 class MyASTVisitor : public RecursiveASTVisitor<MyASTVisitor> {
 public:
-    explicit MyASTVisitor(ASTContext *ctx) : ctx(ctx) {}
+    explicit MyASTVisitor(ASTContext *astCtx, std::shared_ptr<AnalysisContext> anaCtx)
+        : astCtx(astCtx), anaCtx(anaCtx) {}
 
     std::vector<FuncInfo> &getFunctions() {
         return funcs;
@@ -52,7 +125,7 @@ public:
     }
 
     bool VisitFunctionDecl(FunctionDecl *fd) {
-        SourceManager &sm = ctx->getSourceManager();
+        SourceManager &sm = astCtx->getSourceManager();
 
         /* skip includes */
         if (!sm.isInMainFile(fd->getBeginLoc()))
@@ -65,8 +138,8 @@ public:
         /* get info of the function */
         std::string fn = fd->getNameAsString();
         SourceRange sr = fd->getSourceRange();
-        std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, ctx->getLangOpts()).str();
-        FullSourceLoc fsl = ctx->getFullLoc(fd->getBeginLoc());
+        std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, astCtx->getLangOpts()).str();
+        FullSourceLoc fsl = astCtx->getFullLoc(fd->getBeginLoc());
         std::string fp;
         int line = -1;
         if (fsl.isValid()) {
@@ -85,7 +158,7 @@ public:
     }
 
     bool VisitRecordDecl(RecordDecl *rd) {
-        SourceManager &sm = ctx->getSourceManager();
+        SourceManager &sm = astCtx->getSourceManager();
 
         /* skip includes */
         if (!sm.isInMainFile(rd->getBeginLoc()))
@@ -103,8 +176,8 @@ public:
         std::string name = rd->getNameAsString();
         std::string type = rd->isStruct() ? "struct" : (rd->isUnion() ? "union" : "unknown");
         SourceRange sr = rd->getSourceRange();
-        std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, ctx->getLangOpts()).str();
-        FullSourceLoc fsl = ctx->getFullLoc(rd->getBeginLoc());
+        std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, astCtx->getLangOpts()).str();
+        FullSourceLoc fsl = astCtx->getFullLoc(rd->getBeginLoc());
         std::string fp;
         int line = -1;
         if (fsl.isValid()) {
@@ -123,7 +196,7 @@ public:
     }
 
     bool VisitEnumDecl(EnumDecl *ed) {
-        SourceManager &sm = ctx->getSourceManager();
+        SourceManager &sm = astCtx->getSourceManager();
 
         /* skip includes */
         if (!sm.isInMainFile(ed->getBeginLoc()))
@@ -140,8 +213,8 @@ public:
         /* get info of the enum */
         std::string name = ed->getNameAsString();
         SourceRange sr = ed->getSourceRange();
-        std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, ctx->getLangOpts()).str();
-        FullSourceLoc fsl = ctx->getFullLoc(ed->getBeginLoc());
+        std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, astCtx->getLangOpts()).str();
+        FullSourceLoc fsl = astCtx->getFullLoc(ed->getBeginLoc());
         std::string fp;
         int line = -1;
         if (fsl.isValid()) {
@@ -160,7 +233,7 @@ public:
     }
 
     bool VisitTypedefDecl(TypedefDecl *td) {
-        SourceManager &sm = ctx->getSourceManager();
+        SourceManager &sm = astCtx->getSourceManager();
 
         /* skip includes */
         if (!sm.isInMainFile(td->getBeginLoc()))
@@ -170,8 +243,8 @@ public:
         std::string typ = td->getUnderlyingType().getAsString();
         std::string def = td->getNameAsString();
         SourceRange sr = td->getSourceRange();
-        std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, ctx->getLangOpts()).str();
-        FullSourceLoc fsl = ctx->getFullLoc(td->getBeginLoc());
+        std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, astCtx->getLangOpts()).str();
+        FullSourceLoc fsl = astCtx->getFullLoc(td->getBeginLoc());
         std::string fp;
         int line = -1;
         if (fsl.isValid()) {
@@ -190,7 +263,7 @@ public:
     }
 
     bool VisitVarDecl(VarDecl *vd) {
-        SourceManager &sm = ctx->getSourceManager();
+        SourceManager &sm = astCtx->getSourceManager();
 
         /* skip includes */
         if (!sm.isInMainFile(vd->getBeginLoc()))
@@ -211,9 +284,9 @@ public:
         /* get info of the global variable */
         std::string name = vd->getNameAsString();
         std::string type = vd->getType().getAsString();
-        FullSourceLoc fsl = ctx->getFullLoc(vd->getBeginLoc());
+        FullSourceLoc fsl = astCtx->getFullLoc(vd->getBeginLoc());
         SourceRange sr = vd->getSourceRange();
-        std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, ctx->getLangOpts()).str();
+        std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, astCtx->getLangOpts()).str();
         std::string fp;
         int line = -1;
         if (fsl.isValid()) {
@@ -232,7 +305,8 @@ public:
     }
 
 private:
-    ASTContext *ctx;
+    ASTContext *astCtx;
+    std::shared_ptr<AnalysisContext> anaCtx;
     std::vector<FuncInfo> funcs;
     std::vector<RecordInfo> records;
     std::vector<EnumInfo> enums;
@@ -242,10 +316,11 @@ private:
 
 class MyASTConsumer : public ASTConsumer {
 public:
-    explicit MyASTConsumer(ASTContext *ctx) : visitor(ctx) {}
+    explicit MyASTConsumer(ASTContext *astCtx, std::shared_ptr<AnalysisContext> anaCtx)
+        : visitor(astCtx, anaCtx), anaCtx(anaCtx) {}
 
-    void HandleTranslationUnit(ASTContext &ctx) override {
-        visitor.TraverseDecl(ctx.getTranslationUnitDecl());
+    void HandleTranslationUnit(ASTContext &astCtx) override {
+        visitor.TraverseDecl(astCtx.getTranslationUnitDecl());
         const auto &funcs = visitor.getFunctions();
         const auto &records = visitor.getRecords();
         const auto &enums = visitor.getEnums();
@@ -266,17 +341,31 @@ public:
             DBMgr->bulkInsertTypedefs(typedefs);
         if (!globalVars.empty())
             DBMgr->bulkInsertGlobalVars(globalVars);
+        if (!anaCtx->macros.empty())
+            DBMgr->bulkInsertMacroDefs(anaCtx->macros);
     }
 
 private:
     MyASTVisitor visitor;
+    std::shared_ptr<AnalysisContext> anaCtx;
 };
 
 class MyFrontendAction : public ASTFrontendAction {
 public:
-    std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &ci, StringRef sr) override {
-        return std::make_unique<MyASTConsumer>(&ci.getASTContext());
+    MyFrontendAction() : anaCtx(std::make_shared<AnalysisContext>()) {}
+
+    /* register callbacks for preprocessor */
+    bool BeginSourceFileAction(CompilerInstance &ci) override {
+        ci.getPreprocessor().addPPCallbacks(std::make_unique<MacroCallback>(anaCtx, ci.getSourceManager()));
+        return true;
     }
+
+    std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &ci, StringRef sr) override {
+        return std::make_unique<MyASTConsumer>(&ci.getASTContext(), anaCtx);
+    }
+
+private:
+    std::shared_ptr<AnalysisContext> anaCtx;
 };
 
 /**

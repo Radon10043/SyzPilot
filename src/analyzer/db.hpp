@@ -41,6 +41,13 @@ struct GlobalVarInfo {
     std::string code; /* variable code  */
 };
 
+struct MacroDefInfo {
+    std::string name; /* macro name     */
+    std::string file; /* file path      */
+    int line;         /* line number    */
+    std::string code; /* macro code     */
+};
+
 class DatabaseManager {
 public:
     DatabaseManager() = default;
@@ -61,6 +68,7 @@ public:
         prepareEnumTable();
         prepareTypedefTable();
         prepareGlobalVarTable();
+        prepareMacroDefTable();
     }
 
     ~DatabaseManager() {
@@ -68,6 +76,8 @@ public:
         sqlite3_finalize(insertRecStmt);
         sqlite3_finalize(insertEnumStmt);
         sqlite3_finalize(insertTypedefStmt);
+        sqlite3_finalize(insertGlobalVarStmt);
+        sqlite3_finalize(insertMacroDefStmt);
         sqlite3_close(db);
     }
 
@@ -179,6 +189,27 @@ public:
     }
 
     /**
+     * prepare macro definitions table
+     */
+    void prepareMacroDefTable() {
+        const char *macroDefSql = "CREATE TABLE IF NOT EXISTS macroDefs ("
+                                   "id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                                   "name TEXT NOT NULL, "
+                                   "file TEXT NOT NULL, "
+                                   "line INTEGER NOT NULL, "
+                                   "code TEXT NOT NULL);";
+        if (sqlite3_exec(db, macroDefSql, 0, 0, 0) != SQLITE_OK) {
+            llvm::errs() << "Failed to create 'macroDefs' table: " << sqlite3_errmsg(db) << "\n";
+            exit(1);
+        }
+        const char *insertMacroDefSql = "INSERT INTO macroDefs (name, file, line, code) VALUES (?, ?, ?, ?);";
+        if (sqlite3_prepare_v2(db, insertMacroDefSql, -1, &insertMacroDefStmt, nullptr) != SQLITE_OK) {
+            llvm::errs() << "Failed to prepare insert macro definitions statement: " << sqlite3_errmsg(db) << "\n";
+            exit(1);
+        }
+    }
+
+    /**
      * insert functions into the database
      */
     void bulkInsertFuncs(const std::vector<FuncInfo> &funcs) {
@@ -285,6 +316,27 @@ public:
         }
     }
 
+    /**
+     * insert macro definitions into the database
+     */
+    void bulkInsertMacroDefs(const std::vector<MacroDefInfo> &macroDefs) {
+        char *err = nullptr;
+        sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
+        for (auto &md : macroDefs) {
+            sqlite3_bind_text(insertMacroDefStmt, 1, md.name.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(insertMacroDefStmt, 2, md.file.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_int(insertMacroDefStmt, 3, md.line);
+            sqlite3_bind_text(insertMacroDefStmt, 4, md.code.c_str(), -1, SQLITE_STATIC);
+            if (sqlite3_step(insertMacroDefStmt) != SQLITE_DONE)
+                llvm::errs() << "Insert macro definitions error: " << sqlite3_errmsg(db) << "\n";
+            sqlite3_reset(insertMacroDefStmt);
+        }
+        if (sqlite3_exec(db, "COMMIT;", nullptr, nullptr, &err) != SQLITE_OK) {
+            llvm::errs() << "Commit macro definitions error: " << err << "\n";
+            sqlite3_free(err);
+        }
+    }
+
 private:
     sqlite3 *db;
     sqlite3_stmt *insertFuncStmt;
@@ -292,4 +344,5 @@ private:
     sqlite3_stmt *insertEnumStmt;
     sqlite3_stmt *insertTypedefStmt;
     sqlite3_stmt *insertGlobalVarStmt;
+    sqlite3_stmt *insertMacroDefStmt;
 };
