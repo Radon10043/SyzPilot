@@ -27,7 +27,8 @@ func CheckSpecValidity(spec string) (string, error) {
 // ExecCheckSpecValidity execute the check_spec_validity tool call
 func ExecCheckSpecValidity(tc llms.ToolCall) (llms.MessageContent, error) {
 	var args struct {
-		Spec string `json:"spec"`
+		Spec     string `json:"spec"`
+		Rational string `json:"rational"`
 	}
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
@@ -58,8 +59,12 @@ var CheckSpecValidityTool = llms.Tool{
 					"type":        "string",
 					"description": "The specification to check.",
 				},
+				"rational": map[string]interface{}{
+					"type":        "string",
+					"description": "The rationale for choosing this function call with these parameters",
+				},
 			},
-			"required": []string{"spec"},
+			"required": []string{"spec", "rational"},
 		},
 	},
 }

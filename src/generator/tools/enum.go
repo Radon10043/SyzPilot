@@ -11,13 +11,17 @@ import (
 func ExecGetEnumCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 	var args struct {
 		EnumName string `json:"enum_name"`
+		Rational string `json:"rational"`
 	}
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
 	resp, err := GetEnumEntryByName(args.EnumName)
+	var respContent string = ""
 	if err != nil {
-		return llms.MessageContent{}, err
+		respContent = err.Error() // likely not found error
+	} else {
+		respContent = resp.Code
 	}
 	tcResp := llms.MessageContent{
 		Role: llms.ChatMessageTypeTool,
@@ -25,7 +29,7 @@ func ExecGetEnumCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 			llms.ToolCallResponse{
 				ToolCallID: tc.ID,
 				Name:       tc.FunctionCall.Name,
-				Content:    resp.Code,
+				Content:    respContent,
 			},
 		},
 	}
@@ -53,8 +57,12 @@ var GetEnumCodeByNameTool = llms.Tool{
 					"type":        "string",
 					"description": "The name of the enum to retrieve the code for.",
 				},
+				"rational": map[string]interface{}{
+					"type":        "string",
+					"description": "The rationale for choosing this function call with these parameters",
+				},
 			},
-			"required": []string{"enum_name"},
+			"required": []string{"enum_name", "rational"},
 		},
 	},
 }

@@ -25,8 +25,11 @@ func ExecGetStructCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 		return llms.MessageContent{}, err
 	}
 	resp, err := GetStructEntryByName(args.StructName)
+	var respContent string = ""
 	if err != nil {
-		return llms.MessageContent{}, err
+		respContent = err.Error() // likely not found error
+	} else {
+		respContent = resp.Code
 	}
 	tcResp := llms.MessageContent{
 		Role: llms.ChatMessageTypeTool,
@@ -34,7 +37,7 @@ func ExecGetStructCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 			llms.ToolCallResponse{
 				ToolCallID: tc.ID,
 				Name:       tc.FunctionCall.Name,
-				Content:    resp.Code,
+				Content:    respContent,
 			},
 		},
 	}
@@ -72,13 +75,17 @@ func GetUnionEntryByName(name string) (database.Record, error) {
 func ExecGetUnionCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 	var args struct {
 		UnionName string `json:"union_name"`
+		Rational  string `json:"rational"`
 	}
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
 	resp, err := GetUnionEntryByName(args.UnionName)
+	var respContent string = ""
 	if err != nil {
-		return llms.MessageContent{}, err
+		respContent = err.Error() // likely not found error
+	} else {
+		respContent = resp.Code
 	}
 	tcResp := llms.MessageContent{
 		Role: llms.ChatMessageTypeTool,
@@ -86,7 +93,7 @@ func ExecGetUnionCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 			llms.ToolCallResponse{
 				ToolCallID: tc.ID,
 				Name:       tc.FunctionCall.Name,
-				Content:    resp.Code,
+				Content:    respContent,
 			},
 		},
 	}
@@ -105,8 +112,12 @@ var GetUnionCodeByNameTool = llms.Tool{
 					"type":        "string",
 					"description": "The name of the union to retrieve the code for.",
 				},
+				"rational": map[string]interface{}{
+					"type":        "string",
+					"description": "The rationale for choosing this function call with these parameters",
+				},
 			},
-			"required": []string{"union_name"},
+			"required": []string{"union_name", "rational"},
 		},
 	},
 }

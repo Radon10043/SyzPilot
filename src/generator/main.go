@@ -120,6 +120,7 @@ func genSpecLoop(kAgent *agent.Agent, gvEntry *database.GlobalVar) *llms.Content
 	kAgent.AddHumanMessage(gvEntry.Code)
 	var response *llms.ContentResponse = nil
 	for {
+		logger.Printf("Query agent ...\n")
 		response, err = kAgent.Query()
 		if err != nil {
 			logger.Fatalf("failed to run agent: %v\n", err)
@@ -211,7 +212,10 @@ func main() {
 		Messages:     []llms.MessageContent{},
 	}
 	for _, gvEntry := range queue[:1] { // TODO: remove [:1] to process all entries
+		gvEntry, _ = db.GetGlobalVar("_ctl_fops")
 		response := genSpecLoop(&kAgent, &gvEntry)
 		log.Printf("Final response: %s\n", response.Choices[0].Content)
+		outPath := filepath.Join(*flagOutdir, gvEntry.Name+".txt")
+		os.WriteFile(outPath, []byte(response.Choices[0].Content), 0644)
 	}
 }

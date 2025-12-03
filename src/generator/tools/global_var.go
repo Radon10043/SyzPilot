@@ -19,14 +19,18 @@ func GetGlobalVarEntryByName(name string) (database.GlobalVar, error) {
 // ExecGetGlobalVarCodeByName execute the get_global_var_code_by_name tool call
 func ExecGetGlobalVarCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 	var args struct {
-		VarName string `json:"var_name"`
+		VarName  string `json:"var_name"`
+		Rational string `json:"rational"`
 	}
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
 	resp, err := GetGlobalVarEntryByName(args.VarName)
+	var respContent string = ""
 	if err != nil {
-		return llms.MessageContent{}, err
+		respContent = err.Error() // likely not found error
+	} else {
+		respContent = resp.Code
 	}
 	tcResp := llms.MessageContent{
 		Role: llms.ChatMessageTypeTool,
@@ -34,7 +38,7 @@ func ExecGetGlobalVarCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 			llms.ToolCallResponse{
 				ToolCallID: tc.ID,
 				Name:       tc.FunctionCall.Name,
-				Content:    resp.Code,
+				Content:    respContent,
 			},
 		},
 	}
@@ -53,8 +57,12 @@ var GetGlobalVarCodeByNameTool = llms.Tool{
 					"type":        "string",
 					"description": "The name of the global variable to retrieve the code for.",
 				},
+				"rational": map[string]interface{}{
+					"type":        "string",
+					"description": "The rationale for choosing this function call with these parameters",
+				},
 			},
-			"required": []string{"var_name"},
+			"required": []string{"var_name", "rational"},
 		},
 	},
 }

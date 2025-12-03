@@ -20,13 +20,17 @@ func GetMacroDefEntryByName(name string) (database.MacroDef, error) {
 func ExecGetMacroDefCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 	var args struct {
 		MacroName string `json:"macro_name"`
+		Rational  string `json:"rational"`
 	}
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
 	resp, err := GetMacroDefEntryByName(args.MacroName)
+	var respContent string = ""
 	if err != nil {
-		return llms.MessageContent{}, err
+		respContent = err.Error() // likely not found error
+	} else {
+		respContent = resp.Code
 	}
 	tcResp := llms.MessageContent{
 		Role: llms.ChatMessageTypeTool,
@@ -34,7 +38,7 @@ func ExecGetMacroDefCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 			llms.ToolCallResponse{
 				ToolCallID: tc.ID,
 				Name:       tc.FunctionCall.Name,
-				Content:    resp.Code,
+				Content:    respContent,
 			},
 		},
 	}
@@ -53,8 +57,12 @@ var GetMacroDefCodeByNameTool = llms.Tool{
 					"type":        "string",
 					"description": "The name of the macro definition to retrieve the code for.",
 				},
+				"rational": map[string]interface{}{
+					"type":        "string",
+					"description": "The rationale for choosing this function call with these parameters",
+				},
 			},
-			"required": []string{"macro_name"},
+			"required": []string{"macro_name", "rational"},
 		},
 	},
 }
