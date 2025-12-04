@@ -20,6 +20,7 @@ func GetStructEntryByName(name string) (database.Record, error) {
 func ExecGetStructCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 	var args struct {
 		StructName string `json:"struct_name"`
+		Rational   string `json:"rational"`
 	}
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
@@ -56,8 +57,12 @@ var GetStructCodeByNameTool = llms.Tool{
 					"type":        "string",
 					"description": "The name of the struct to retrieve the code for.",
 				},
+				"rational": map[string]interface{}{
+					"type":        "string",
+					"description": "The rationale for choosing this function call with these parameters",
+				},
 			},
-			"required": []string{"struct_name"},
+			"required": []string{"struct_name", "rational"},
 		},
 	},
 }
