@@ -76,5 +76,6 @@
     "go.testFlags": [
         "-v"
     ],
-    "go.testTimeout": "5m"
+    "go.testTimeout": "5m",
+    "sqliteViewer.maxFileSize": 600
 }
