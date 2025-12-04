@@ -12,7 +12,7 @@ import (
 )
 
 func TestGetTypedefCodeByDefine(t *testing.T) {
-	db := database.Database{Path: filepath.Join(root, "data", "kernel.db")}
+	db := database.Database{Path: filepath.Join(root, "data", "database", "linux.db")}
 	err := db.Connect()
 	if err != nil {
 		t.Fatal(err)
@@ -48,7 +48,7 @@ func TestGetTypedefCodeByDefine(t *testing.T) {
 }
 
 func TestGetTypedefTypeByDefine(t *testing.T) {
-	db := database.Database{Path: filepath.Join(root, "data", "kernel.db")}
+	db := database.Database{Path: filepath.Join(root, "data", "database", "linux.db")}
 	err := db.Connect()
 	if err != nil {
 		t.Fatal(err)

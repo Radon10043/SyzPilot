@@ -21,7 +21,7 @@ func init() {
 }
 
 func TestFindFunction(t *testing.T) {
-	db := database.Database{Path: "data/kernel.db"}
+	db := database.Database{Path: "data/database/linux.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)
@@ -37,7 +37,7 @@ func TestFindFunction(t *testing.T) {
 }
 
 func TestFindStruct(t *testing.T) {
-	db := database.Database{Path: "data/kernel.db"}
+	db := database.Database{Path: "data/database/linux.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)
@@ -56,7 +56,7 @@ func TestFindStruct(t *testing.T) {
 }
 
 func TestFindUnion(t *testing.T) {
-	db := database.Database{Path: "data/kernel.db"}
+	db := database.Database{Path: "data/database/linux.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)
@@ -75,7 +75,7 @@ func TestFindUnion(t *testing.T) {
 }
 
 func TestFindEnum(t *testing.T) {
-	db := database.Database{Path: "data/kernel.db"}
+	db := database.Database{Path: "data/database/linux.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)
@@ -91,7 +91,7 @@ func TestFindEnum(t *testing.T) {
 }
 
 func TestFindTypedef(t *testing.T) {
-	db := database.Database{Path: "data/kernel.db"}
+	db := database.Database{Path: "data/database/linux.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)
@@ -107,7 +107,7 @@ func TestFindTypedef(t *testing.T) {
 }
 
 func TestFindGlobalVar(t *testing.T) {
-	db := database.Database{Path: "data/kernel.db"}
+	db := database.Database{Path: "data/database/linux.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)
@@ -123,7 +123,7 @@ func TestFindGlobalVar(t *testing.T) {
 }
 
 func TestFindMacroDef(t *testing.T) {
-	db := database.Database{Path: "data/kernel.db"}
+	db := database.Database{Path: "data/database/linux.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)

@@ -12,7 +12,7 @@ import (
 )
 
 func TestGetStructCodeByName(t *testing.T) {
-	db := database.Database{Path: filepath.Join(root, "data", "kernel.db")}
+	db := database.Database{Path: filepath.Join(root, "data", "database", "linux.db")}
 	db.Connect()
 	defer func() {
 		_ = db.Close()
@@ -45,7 +45,7 @@ func TestGetStructCodeByName(t *testing.T) {
 }
 
 func TestGetUnionCodeByName(t *testing.T) {
-	db := database.Database{Path: filepath.Join(root, "data", "kernel.db")}
+	db := database.Database{Path: filepath.Join(root, "data", "database", "linux.db")}
 	db.Connect()
 	defer func() {
 		_ = db.Close()
