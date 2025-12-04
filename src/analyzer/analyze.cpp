@@ -85,7 +85,7 @@ public:
         /* add to context if macro name and code are not empty */
         if (!name.empty() && !code.empty()) {
             std::lock_guard<std::mutex> lock(DBMutex);
-            code = "#define " + code;   /* add #define prefix to ensure the completeness */
+            code = "#define " + code; /* add #define prefix to ensure the completeness */
             ctx->macros.push_back({name, fp, line, code});
         }
     }
@@ -334,6 +334,8 @@ static cl::opt<std::string> DatabasePath("i", cl::desc("path to compile_commands
                                          cl::Required, cl::cat(MyToolCategory));
 static cl::opt<int> ParallelJobs("j", cl::desc("number of parallel jobs (default: 1)"), cl::init(1),
                                  cl::cat(MyToolCategory));
+static cl::opt<std::string> OutDBPath("o", cl::desc("path to output database (default: data/kernel.db)"),
+                                      cl::init("data/kernel.db"), cl::value_desc("path"), cl::cat(MyToolCategory));
 
 int main(int argc, const char **argv) {
     /* parse command line options */
@@ -341,7 +343,7 @@ int main(int argc, const char **argv) {
     cl::ParseCommandLineOptions(argc, argv, "Kernel analyzer\n");
 
     /* TODO: specify database path via command line */
-    DatabaseManager mgr("data/kernel.db");
+    DatabaseManager mgr(OutDBPath);
     DBMgr = &mgr;
 
     /* load compile_commands.json specified by user */
