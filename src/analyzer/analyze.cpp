@@ -136,7 +136,7 @@ public:
         if (!rd->isThisDeclarationADefinition())
             return true;
 
-        /* skip the anonymous records */
+        /* TODO: should we skip the anonymous records? */
         if (rd->getNameAsString().empty())
             return true;
 
@@ -170,28 +170,26 @@ public:
         if (!ed->isThisDeclarationADefinition())
             return true;
 
-        /* skip the anonymous enums */
-        if (ed->getNameAsString().empty())
-            return true;
-
-        /* get info of the enum */
-        std::string name = ed->getNameAsString();
+        /* get info of each enumerator */
+        std::string emName = ed->getNameAsString();
         SourceRange sr = ed->getSourceRange();
         std::string code = Lexer::getSourceText(CharSourceRange::getTokenRange(sr), sm, astCtx->getLangOpts()).str();
-        FullSourceLoc fsl = astCtx->getFullLoc(ed->getBeginLoc());
-        std::string fp;
-        int line = -1;
-        if (fsl.isValid()) {
-            SourceLocation sl = sm.getExpansionLoc(ed->getBeginLoc());
-            FileID fid = sm.getFileID(sl);
-            const FileEntry *fe = sm.getFileEntryForID(fid);
-            fp = fe->tryGetRealPathName().str();
-            line = fsl.getSpellingLineNumber();
+        for (auto *ec : ed->enumerators()) {
+            std::string etName = ec->getNameAsString();
+            FullSourceLoc fsl = astCtx->getFullLoc(ec->getBeginLoc());
+            std::string fp;
+            int line = -1;
+            if (fsl.isValid()) {
+                SourceLocation sl = sm.getExpansionLoc(ec->getBeginLoc());
+                FileID fid = sm.getFileID(sl);
+                const FileEntry *fe = sm.getFileEntryForID(fid);
+                fp = fe->tryGetRealPathName().str();
+                line = fsl.getSpellingLineNumber();
+            }
+            /* add to vector if enumerator's name is not empty */
+            if (!etName.empty())
+                anaCtx->enums.push_back({etName, emName, fp, line, code});
         }
-
-        /* add to vector if enum name and code are not empty */
-        if (!name.empty() && !code.empty())
-            anaCtx->enums.push_back({name, fp, line, code});
 
         return true;
     }

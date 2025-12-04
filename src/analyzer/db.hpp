@@ -20,10 +20,11 @@ struct RecordInfo {
 };
 
 struct EnumInfo {
-    std::string name; /* enum name       */
-    std::string file; /* file path      */
-    int line;         /* line number    */
-    std::string code; /* enum code      */
+    std::string enumerator; /* enumerator name */
+    std::string specifier;  /* specifier name  */
+    std::string file;       /* file path       */
+    int line;               /* line number     */
+    std::string code;       /* enum code       */
 };
 
 struct TypedefInfo {
@@ -139,19 +140,20 @@ public:
     void prepareEnumTable() {
         const char *tableSql = "CREATE TABLE IF NOT EXISTS enums ("
                                "id INTEGER PRIMARY KEY AUTOINCREMENT, "
-                               "name TEXT NOT NULL, "
+                               "enumerator TEXT NOT NULL, "
+                               "specifier TEXT NOT NULL, "
                                "file TEXT NOT NULL, "
                                "line INTEGER NOT NULL, "
                                "code TEXT NOT NULL, "
-                               "UNIQUE(name, file, line));";
+                               "UNIQUE(enumerator, file, line));";
         if (sqlite3_exec(db, tableSql, 0, 0, 0) != SQLITE_OK) {
             llvm::errs() << "Failed to create 'enums' table: " << sqlite3_errmsg(db) << "\n";
             exit(1);
         }
-        const char *indexSql = "CREATE INDEX IF NOT EXISTS idxEnumName ON enums(name)";
+        const char *indexSql = "CREATE INDEX IF NOT EXISTS idxEnumerator ON enums(enumerator)";
         if (sqlite3_exec(db, indexSql, 0, 0, 0) != SQLITE_OK)
             llvm::errs() << "Failed to create index on 'enums' table: " << sqlite3_errmsg(db) << "\n";
-        const char *insertSql = "INSERT OR IGNORE INTO enums (name, file, line, code) VALUES (?, ?, ?, ?);";
+        const char *insertSql = "INSERT OR IGNORE INTO enums (enumerator, specifier, file, line, code) VALUES (?, ?, ?, ?, ?);";
         if (sqlite3_prepare_v2(db, insertSql, -1, &insertEnumStmt, nullptr) != SQLITE_OK) {
             llvm::errs() << "Failed to prepare insert enums statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
@@ -203,8 +205,7 @@ public:
         const char *indexSql = "CREATE INDEX IF NOT EXISTS idxGlobalVarName ON globalVars(name)";
         if (sqlite3_exec(db, indexSql, 0, 0, 0) != SQLITE_OK)
             llvm::errs() << "Failed to create index on 'globalVars' table: " << sqlite3_errmsg(db) << "\n";
-        const char *insertSql =
-            "INSERT OR IGNORE INTO globalVars (name, file, line, code) VALUES (?, ?, ?, ?);";
+        const char *insertSql = "INSERT OR IGNORE INTO globalVars (name, file, line, code) VALUES (?, ?, ?, ?);";
         if (sqlite3_prepare_v2(db, insertSql, -1, &insertGlobalVarStmt, nullptr) != SQLITE_OK) {
             llvm::errs() << "Failed to prepare insert global variables statement: " << sqlite3_errmsg(db) << "\n";
             exit(1);
@@ -286,10 +287,11 @@ public:
         char *err = nullptr;
         sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, nullptr);
         for (auto &enm : enums) {
-            sqlite3_bind_text(insertEnumStmt, 1, enm.name.c_str(), -1, SQLITE_STATIC);
-            sqlite3_bind_text(insertEnumStmt, 2, enm.file.c_str(), -1, SQLITE_STATIC);
-            sqlite3_bind_int(insertEnumStmt, 3, enm.line);
-            sqlite3_bind_text(insertEnumStmt, 4, enm.code.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(insertEnumStmt, 1, enm.enumerator.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(insertEnumStmt, 2, enm.specifier.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_text(insertEnumStmt, 3, enm.file.c_str(), -1, SQLITE_STATIC);
+            sqlite3_bind_int(insertEnumStmt, 4, enm.line);
+            sqlite3_bind_text(insertEnumStmt, 5, enm.code.c_str(), -1, SQLITE_STATIC);
             if (sqlite3_step(insertEnumStmt) != SQLITE_DONE)
                 llvm::errs() << "Insert enums error: " << sqlite3_errmsg(db) << "\n";
             sqlite3_reset(insertEnumStmt);
