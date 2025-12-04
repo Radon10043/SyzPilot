@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"flag"
 	"log"
@@ -108,8 +109,29 @@ func genMaterialQueue(db *database.Database) []database.GlobalVar {
 	return queue
 }
 
+// checkSpecValidity check the validity of a syscall spec, return whether it is valid and error message if any
+func checkSpecValidity(sc *check.SyzCheck, spec string) (bytes.Buffer, bytes.Buffer, error) {
+	err := sc.CleanWorkdir()
+	if err != nil {
+		log.Fatalf("failed to clean syzkaller workdir: %v\n", err)
+	}
+	err = sc.AddSpec(spec)
+	if err != nil {
+		log.Fatalf("failed to add spec to syzkaller workdir: %v\n", err)
+	}
+	stdout, stderr, err := sc.ExtractConst()
+	if err != nil {
+		return stdout, stderr, err
+	}
+	stdout, stderr, err = sc.CheckValidity()
+	if err != nil {
+		return stdout, stderr, err
+	}
+	return stdout, stderr, nil
+}
+
 // genSpecLoop start a loop to generate syscall spec based on a global variable
-func genSpecLoop(kAgent *agent.Agent, gvEntry *database.GlobalVar) *llms.ContentResponse {
+func genSpecLoop(kAgent *agent.Agent, gvEntry *database.GlobalVar, sc *check.SyzCheck) *llms.ContentResponse {
 	logger := log.New(os.Stdout, "["+gvEntry.Name+"] ", log.LstdFlags|log.Lmsgprefix)
 	logger.Printf("Starting to generate specs \n")
 	kAgent.CleanMessages()
@@ -119,6 +141,7 @@ func genSpecLoop(kAgent *agent.Agent, gvEntry *database.GlobalVar) *llms.Content
 	}
 	kAgent.AddHumanMessage(gvEntry.Code)
 	var response *llms.ContentResponse = nil
+	// generation loop
 	for {
 		logger.Printf("Query agent ...\n")
 		response, err = kAgent.Query()
@@ -137,7 +160,39 @@ func genSpecLoop(kAgent *agent.Agent, gvEntry *database.GlobalVar) *llms.Content
 			logger.Fatalf("failed to execute tools: %v\n", err)
 		}
 	}
-	log.Printf("Loop stop reason: %v", response.Choices[0].StopReason)
+	log.Printf("Generation loop stop reason: %v", response.Choices[0].StopReason)
+	// fix loop
+	for {
+		logger.Printf("Checking validity of spec ...\n")
+		spec := response.Choices[0].Content
+		if spec == "" {
+			logger.Fatalf("empty spec, stop.\n")
+		}
+		stdout, stderr, err := checkSpecValidity(sc, spec)
+		if err == nil {
+			logger.Printf("Spec is valid!\n")
+			break
+		}
+		logger.Printf("Spec is invalid, trying to fix ...\n")
+		kAgent.AddHumanMessage(stdout.String() + "\n\n" + stderr.String())
+		for {
+			response, err = kAgent.Query()
+			if err != nil {
+				logger.Fatalf("failed to run agent in fix loop: %v\n", err)
+			}
+			logger.Printf("AI Response: %s\n", response.Choices[0].Content)
+			if len(response.Choices[0].ToolCalls) == 0 {
+				break
+			}
+			for _, tc := range response.Choices[0].ToolCalls {
+				logger.Printf("Tool Call: %v\n", tc.FunctionCall)
+			}
+			err = kAgent.ExecTools()
+			if err != nil {
+				logger.Fatalf("failed to execute tools in fix loop: %v\n", err)
+			}
+		}
+	}
 	return response
 }
 
@@ -211,10 +266,11 @@ func main() {
 		Model:        llm,
 		Tools:        myTools.ToolList,
 		Messages:     []llms.MessageContent{},
+		Temperature:  0.2,
 	}
 	for _, gvEntry := range queue[:1] { // TODO: remove [:1] to process all entries
 		gvEntry, _ = db.GetGlobalVar("_ctl_fops")
-		response := genSpecLoop(&kAgent, &gvEntry)
+		response := genSpecLoop(&kAgent, &gvEntry, &sc)
 		log.Printf("Final response: %s\n", response.Choices[0].Content)
 		outPath := filepath.Join(*flagOutdir, gvEntry.Name+".txt")
 		os.WriteFile(outPath, []byte(response.Choices[0].Content), 0644)

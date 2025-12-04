@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -63,6 +64,21 @@ func (sc *SyzCheck) CleanWorkdir() error {
 		return err
 	}
 	err = w.Reset(&git.ResetOptions{Mode: git.HardReset})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// AddSpec add a syscall spec to sc.Workdir/sys/linux/
+func (sc *SyzCheck) AddSpec(spec string) error {
+	sysDir := filepath.Join(sc.Workdir, "sys", "linux")
+	file, err := os.CreateTemp(sysDir, "spec-*.txt")
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	_, err = file.WriteString(spec)
 	if err != nil {
 		return err
 	}

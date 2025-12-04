@@ -6,6 +6,7 @@ import (
 	"os"
 
 	myTools "github.com/Radon10043/cloud/src/generator/tools"
+	"github.com/Radon10043/cloud/src/generator/utils"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"
 )
@@ -16,6 +17,7 @@ type Agent struct {
 	Model        *openai.LLM           // model instance
 	Tools        []llms.Tool           // available tools
 	Messages     []llms.MessageContent // message history
+	Temperature  float32               // temperature for llm
 }
 
 // CleanMessages clear the message history of the agent
@@ -49,7 +51,8 @@ func (a *Agent) SaveMessages(path string) error {
 	for _, msg := range a.Messages {
 		fmt.Fprintf(f, "========== ROLE: %v ==========\n", msg.Role)
 		for _, part := range msg.Parts {
-			fmt.Fprintf(f, "%v\n", part)
+			str := utils.PartToString(part)
+			fmt.Fprintf(f, "%v\n", str)
 		}
 	}
 	return nil
@@ -58,7 +61,7 @@ func (a *Agent) SaveMessages(path string) error {
 // Query query the llm with the current messages and update the history
 func (a *Agent) Query() (*llms.ContentResponse, error) {
 	// query the llm with existing messages
-	response, err := a.Model.GenerateContent(a.Ctx, a.Messages, llms.WithTools(a.Tools))
+	response, err := a.Model.GenerateContent(a.Ctx, a.Messages, llms.WithTools(a.Tools), llms.WithTemperature(float64(a.Temperature)))
 	if err != nil {
 		return nil, err
 	}
@@ -69,6 +72,27 @@ func (a *Agent) Query() (*llms.ContentResponse, error) {
 		aiResponse.Parts = append(aiResponse.Parts, tc)
 	}
 	a.Messages = append(a.Messages, aiResponse)
+	return response, nil
+}
+
+// QueryLoop query the llm in a loop until there is no tool call in the response,
+// return the final response and error if any
+func (a *Agent) QueryLoop() (*llms.ContentResponse, error) {
+	var response *llms.ContentResponse
+	var err error
+	for {
+		response, err = a.Query()
+		if err != nil {
+			return nil, err
+		}
+		if len(response.Choices[0].ToolCalls) == 0 {
+			break
+		}
+		err = a.ExecTools()
+		if err != nil {
+			return nil, err
+		}
+	}
 	return response, nil
 }
 
