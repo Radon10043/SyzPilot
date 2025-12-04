@@ -168,6 +168,8 @@ func genSpecLoop(kAgent *agent.Agent, gvEntry *database.GlobalVar, sc *check.Syz
 		if spec == "" {
 			logger.Fatalf("empty spec, stop.\n")
 		}
+		spec = strings.Replace(spec, "```syzlang", "", 1)
+		spec = strings.Replace(spec, "```", "", 1)
 		stdout, stderr, err := checkSpecValidity(sc, spec)
 		if err == nil {
 			logger.Printf("Spec is valid!\n")
@@ -272,8 +274,11 @@ func main() {
 		gvEntry, _ = db.GetGlobalVar("_ctl_fops")
 		response := genSpecLoop(&kAgent, &gvEntry, &sc)
 		log.Printf("Final response: %s\n", response.Choices[0].Content)
+		spec := response.Choices[0].Content
+		spec = strings.Replace(spec, "```syzlang", "", 1)
+		spec = strings.Replace(spec, "```", "", 1)
 		outPath := filepath.Join(*flagOutdir, gvEntry.Name+".txt")
-		os.WriteFile(outPath, []byte(response.Choices[0].Content), 0644)
+		os.WriteFile(outPath, []byte(spec), 0644)
 		msgPath := filepath.Join(*flagOutdir, gvEntry.Name+".messages.txt")
 		kAgent.SaveMessages(msgPath)
 	}
