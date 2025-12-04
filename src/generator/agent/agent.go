@@ -3,6 +3,7 @@ package agent
 import (
 	"context"
 	"fmt"
+	"os"
 
 	myTools "github.com/Radon10043/cloud/src/generator/tools"
 	"github.com/tmc/langchaingo/llms"
@@ -36,6 +37,22 @@ func (a *Agent) AddSystemMessage(input string) error {
 func (a *Agent) AddHumanMessage(input string) {
 	msg := llms.TextParts(llms.ChatMessageTypeHuman, input)
 	a.Messages = append(a.Messages, msg)
+}
+
+// SaveMessages saves the current message history to a file
+func (a *Agent) SaveMessages(path string) error {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	for _, msg := range a.Messages {
+		fmt.Fprintf(f, "========== ROLE: %v ==========\n", msg.Role)
+		for _, part := range msg.Parts {
+			fmt.Fprintf(f, "%v\n", part)
+		}
+	}
+	return nil
 }
 
 // Query query the llm with the current messages and update the history
@@ -72,8 +89,8 @@ func (a *Agent) ExecTools() error {
 			tcResp, err = myTools.ExecGetCurrentWeather(tc)
 		case "get_func_code_by_name":
 			tcResp, err = myTools.ExecGetFuncCodeByName(tc)
-		case "get_enum_code_by_name":
-			tcResp, err = myTools.ExecGetEnumCodeByName(tc)
+		case "get_enum_code_by_enumerator":
+			tcResp, err = myTools.ExecGetEnumCodeByEnumerator(tc)
 		case "get_struct_code_by_name":
 			tcResp, err = myTools.ExecGetStructCodeByName(tc)
 		case "get_union_code_by_name":

@@ -107,10 +107,10 @@ func (db *Database) GetUnion(name string) (Record, error) {
 	return rec, nil
 }
 
-// get enum data by enum name
-func (db *Database) GetEnum(name string) (Enum, error) {
+// get enum data by enumerator
+func (db *Database) GetEnum(enumerator string) (Enum, error) {
 	var enum Enum
-	db.gormDB.Where("name = ?", name).First(&enum)
+	db.gormDB.Where("enumerator = ?", enumerator).First(&enum)
 	if enum.Id == 0 {
 		return enum, gorm.ErrRecordNotFound
 	}

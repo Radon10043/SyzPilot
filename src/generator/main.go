@@ -108,7 +108,7 @@ func genMaterialQueue(db *database.Database) []database.GlobalVar {
 	return queue
 }
 
-// genSpecLoop run the agent loop to generate syscall spec based on a global variable
+// genSpecLoop start a loop to generate syscall spec based on a global variable
 func genSpecLoop(kAgent *agent.Agent, gvEntry *database.GlobalVar) *llms.ContentResponse {
 	logger := log.New(os.Stdout, "["+gvEntry.Name+"] ", log.LstdFlags|log.Lmsgprefix)
 	logger.Printf("Starting to generate specs \n")
@@ -137,6 +137,7 @@ func genSpecLoop(kAgent *agent.Agent, gvEntry *database.GlobalVar) *llms.Content
 			logger.Fatalf("failed to execute tools: %v\n", err)
 		}
 	}
+	log.Printf("Loop stop reason: %v", response.Choices[0].StopReason)
 	return response
 }
 
@@ -217,5 +218,7 @@ func main() {
 		log.Printf("Final response: %s\n", response.Choices[0].Content)
 		outPath := filepath.Join(*flagOutdir, gvEntry.Name+".txt")
 		os.WriteFile(outPath, []byte(response.Choices[0].Content), 0644)
+		msgPath := filepath.Join(*flagOutdir, gvEntry.Name+".messages.txt")
+		kAgent.SaveMessages(msgPath)
 	}
 }

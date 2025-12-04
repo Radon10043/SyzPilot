@@ -11,7 +11,7 @@ import (
 	"github.com/tmc/langchaingo/llms"
 )
 
-func TestGetEnumCodeByName(t *testing.T) {
+func TestGetEnumCodeByEnumerator(t *testing.T) {
 	db := database.Database{Path: filepath.Join(root, "data", "kernel.db")}
 	err := db.Connect()
 	if err != nil {
@@ -22,7 +22,7 @@ func TestGetEnumCodeByName(t *testing.T) {
 	}()
 	myTools.DB = &db
 	enumTools := []llms.Tool{
-		myTools.GetEnumCodeByNameTool,
+		myTools.GetEnumCodeByEnumeratorTool,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
@@ -31,7 +31,7 @@ func TestGetEnumCodeByName(t *testing.T) {
 		Tools:    enumTools,
 		Messages: []llms.MessageContent{},
 	}
-	myAgent.AddHumanMessage("What's the code of enum bbr_mode?")
+	myAgent.AddHumanMessage("What's the enum code of enumerator DM_VERSION_CMD?")
 	_, err = myAgent.Query()
 	if err != nil {
 		t.Fatal(err)

@@ -11,12 +11,11 @@ var SC *check.SyzCheck
 
 var ToolList = []llms.Tool{
 	GetFuncCodeByNameTool,
-	GetEnumCodeByNameTool,
+	GetEnumCodeByEnumeratorTool,
 	GetGlobalVarCodeByNameTool,
 	GetStructCodeByNameTool,
 	GetUnionCodeByNameTool,
 	GetTypedefCodeByDefineTool,
 	GetTypedefTypeByDefineTool,
 	GetMacroDefCodeByNameTool,
-	CheckSpecValidityTool,
 }

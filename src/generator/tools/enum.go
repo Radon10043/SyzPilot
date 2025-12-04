@@ -7,16 +7,16 @@ import (
 	"github.com/tmc/langchaingo/llms"
 )
 
-// ExecGetEnumCodeByName execute the get_enum_code_by_name tool call
-func ExecGetEnumCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
+// ExecGetEnumCodeByEnumerator execute the get_enum_code_by_enumerator tool call
+func ExecGetEnumCodeByEnumerator(tc llms.ToolCall) (llms.MessageContent, error) {
 	var args struct {
-		EnumName string `json:"enum_name"`
-		Rational string `json:"rational"`
+		Enumerator string `json:"enumerator"`
+		Rational   string `json:"rational"`
 	}
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := GetEnumEntryByName(args.EnumName)
+	resp, err := GetEnumEntryByEnumerator(args.Enumerator)
 	var respContent string = ""
 	if err != nil {
 		respContent = err.Error() // likely not found error
@@ -36,33 +36,33 @@ func ExecGetEnumCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 	return tcResp, nil
 }
 
-// GetEnumEntry get the enum entry by enum name
-func GetEnumEntryByName(name string) (database.Enum, error) {
-	entry, err := DB.GetEnum(name)
+// GetEnumEntry get the enum entry by enumerator
+func GetEnumEntryByEnumerator(enumerator string) (database.Enum, error) {
+	entry, err := DB.GetEnum(enumerator)
 	if err != nil {
 		return database.Enum{}, err
 	}
 	return entry, nil
 }
 
-var GetEnumCodeByNameTool = llms.Tool{
+var GetEnumCodeByEnumeratorTool = llms.Tool{
 	Type: "function",
 	Function: &llms.FunctionDefinition{
-		Name:        "get_enum_code_by_name",
-		Description: "Retrieve the code of an enum given its name.",
+		Name:        "get_enum_code_by_enumerator",
+		Description: "Retrieve the code of an enum given its enumerator.",
 		Parameters: map[string]interface{}{
 			"type": "object",
 			"properties": map[string]interface{}{
-				"enum_name": map[string]interface{}{
+				"enumerator": map[string]interface{}{
 					"type":        "string",
-					"description": "The name of the enum to retrieve the code for.",
+					"description": "The name of the enumerator to retrieve the code for.",
 				},
 				"rational": map[string]interface{}{
 					"type":        "string",
 					"description": "The rationale for choosing this function call with these parameters",
 				},
 			},
-			"required": []string{"enum_name", "rational"},
+			"required": []string{"enumerator", "rational"},
 		},
 	},
 }
