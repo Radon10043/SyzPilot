@@ -29,8 +29,14 @@ var (
 	flagExtractKernel = flag.String("extract-kernel", "", "Kernel version used for spec extraction")
 	flagCheckKernel   = flag.String("check-kernel", "", "Kernel version used for spec checking")
 	flagSyzkaller     = flag.String("syzkaller", "syzkaller/", "Path to the syzkaller directory")
+	flagBlackList     = flag.String("blacklist", "data/blacklist.txt", "Path to the global variable blacklist file")
 
-	keys = []string{".ioctl", ".unlocked_ioctl"} // global variable keys of interest
+	// global variable keys of interest
+	keys = []string{
+		".ioctl", ".unlocked_ioctl", ".compat_ioctl", ".mmap", ".uring_cmd",
+		".setsockopt", ".getsockopt", ".recvmsg", ".sendmsg",
+	}
+	// TODO: if ioctl functions are analyzed, skip it to avoid redundancy
 )
 
 // toAbsaPath convert a path to absolute path
@@ -90,8 +96,8 @@ func checkFlags() {
 	}
 }
 
-// genMaterialQueue generate material queue from database
-func genMaterialQueue(db *database.Database) []database.GlobalVar {
+// createQueue creates a queue includes global variables that includes interested keys
+func createQueue(db *database.Database) []database.GlobalVar {
 	var queue []database.GlobalVar
 	gvs, err := db.GetAllGlobalVar()
 	if err != nil {
@@ -107,6 +113,34 @@ func genMaterialQueue(db *database.Database) []database.GlobalVar {
 		queue = append(queue, gv)
 	}
 	return queue
+}
+
+// minimizeQueue minimize the queue by removing redundant global variables, i.e. those
+// whose syscall spec have existed in syzkaller.
+// TODO: currently we use a blacklist file to filter redundant global variables, is there
+// a more efficient way to do this?
+func minimizeQueue(queue *[]database.GlobalVar) ([]database.GlobalVar, error) {
+	var minimizedQueue []database.GlobalVar
+	blacklist := make(map[string]bool)
+	data, err := os.ReadFile(*flagBlackList)
+	if err != nil {
+		log.Fatalf("failed to read blacklist file: %v\n", err)
+	}
+	lines := strings.Split(string(data), "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" {
+			continue
+		}
+		blacklist[line] = true
+	}
+	for _, gv := range *queue {
+		if _, found := blacklist[gv.Name]; found {
+			continue
+		}
+		minimizedQueue = append(minimizedQueue, gv)
+	}
+	return minimizedQueue, nil
 }
 
 // checkSpecValidity check the validity of a syscall spec, return whether it is valid and error message if any
@@ -246,10 +280,15 @@ func main() {
 
 	// create a queue that used to prompt llm for spec generation
 	log.Println("Generating material queue ...")
-	queue := genMaterialQueue(&db)
+	queue := createQueue(&db)
+	log.Printf("Material queue length: %d\n", len(queue))
 
-	// TODO: filter data in queue to avoid redundancy, e.g. skip ioctls whose spec
-	// have existed in syzkaller. Is there a efficiency way to filter them?
+	// minimize the queue to avoid redundant specification
+	queue, err = minimizeQueue(&queue)
+	if err != nil {
+		log.Fatalf("failed to minimize material queue: %v\n", err)
+	}
+	log.Printf("Minimized material queue length: %d\n", len(queue))
 
 	// construct prompt template for agent, we have checked the validity of system prompt file in
 	// checkFlags function, so it is okay to ignore error here
