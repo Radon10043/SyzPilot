@@ -61,7 +61,12 @@ func (a *Agent) SaveMessages(path string) error {
 // Query query the llm with the current messages and update the history
 func (a *Agent) Query() (*llms.ContentResponse, error) {
 	// query the llm with existing messages
-	response, err := a.Model.GenerateContent(a.Ctx, a.Messages, llms.WithTools(a.Tools), llms.WithTemperature(float64(a.Temperature)))
+	response, err := a.Model.GenerateContent(
+		a.Ctx,
+		a.Messages,
+		llms.WithTools(a.Tools),
+		llms.WithTemperature(float64(a.Temperature)),
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -108,29 +113,10 @@ func (a *Agent) ExecTools() error {
 		// execute the tool based on its name
 		tcResp := llms.MessageContent{}
 		err := error(nil)
-		switch tc.FunctionCall.Name {
-		case "get_current_weather":
-			tcResp, err = myTools.ExecGetCurrentWeather(tc)
-		case "get_func_code_by_name":
-			tcResp, err = myTools.ExecGetFuncCodeByName(tc)
-		case "get_enum_code_by_enumerator":
-			tcResp, err = myTools.ExecGetEnumCodeByEnumerator(tc)
-		case "get_struct_code_by_name":
-			tcResp, err = myTools.ExecGetStructCodeByName(tc)
-		case "get_union_code_by_name":
-			tcResp, err = myTools.ExecGetUnionCodeByName(tc)
-		case "get_global_var_code_by_name":
-			tcResp, err = myTools.ExecGetGlobalVarCodeByName(tc)
-		case "get_typedef_type_by_define":
-			tcResp, err = myTools.ExecGetTypedefTypeByDefine(tc)
-		case "get_typedef_code_by_define":
-			tcResp, err = myTools.ExecGetTypedefCodeByDefine(tc)
-		case "get_macro_def_code_by_name":
-			tcResp, err = myTools.ExecGetMacroDefCodeByName(tc)
-		case "check_spec_validity":
-			tcResp, err = myTools.ExecCheckSpecValidity(tc)
-		default:
-			err = fmt.Errorf("unknown tool: %s", tc.FunctionCall.Name)
+		if myTools.ToolExecutor[tc.FunctionCall.Name] == nil {
+			err = fmt.Errorf("no executor found for tool: %s", tc.FunctionCall.Name)
+		} else {
+			tcResp, err = myTools.ToolExecutor[tc.FunctionCall.Name](tc)
 		}
 		if err != nil {
 			return err

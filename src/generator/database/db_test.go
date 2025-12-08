@@ -74,13 +74,29 @@ func TestFindUnion(t *testing.T) {
 	db.Close()
 }
 
-func TestFindEnum(t *testing.T) {
+func TestFindEnumByEnumerator(t *testing.T) {
 	db := database.Database{Path: "data/database/linux.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)
 	}
-	enum, err := db.GetEnum("bbr_mode")
+	enum, err := db.GetEnumByEnumerator("BBR_STARTUP")
+	if err != nil {
+		t.Errorf("Error retrieving enum code: %v", err)
+	}
+	if enum.Code == "" {
+		t.Error("Enum code is empty")
+	}
+	db.Close()
+}
+
+func TestFindEnumBySpecifier(t *testing.T) {
+	db := database.Database{Path: "data/database/linux.db"}
+	err := db.Connect()
+	if err != nil {
+		t.Fatalf("Database connection failed: %v", err)
+	}
+	enum, err := db.GetEnumBySpecifier("bbr_mode")
 	if err != nil {
 		t.Errorf("Error retrieving enum code: %v", err)
 	}

@@ -46,3 +46,39 @@ func TestGetEnumCodeByEnumerator(t *testing.T) {
 	}
 	t.Logf("Response of agent: %v\n", response.Choices[0].Content)
 }
+
+func TestGetEnumCodeBySpecifier(t *testing.T) {
+	db := database.Database{Path: filepath.Join(root, "data", "database", "linux.db")}
+	err := db.Connect()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_ = db.Close()
+	}()
+	myTools.DB = &db
+	enumTools := []llms.Tool{
+		myTools.GetEnumCodeBySpecifierTool,
+	}
+	ctx := context.Background()
+	myAgent := agent.Agent{
+		Ctx:      ctx,
+		Model:    llm,
+		Tools:    enumTools,
+		Messages: []llms.MessageContent{},
+	}
+	myAgent.AddHumanMessage("What's the enum code of specifier bbr_mode?")
+	_, err = myAgent.Query()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = myAgent.ExecTools()
+	if err != nil {
+		t.Fatal(err)
+	}
+	response, err := myAgent.Query()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Logf("Response of agent: %v\n", response.Choices[0].Content)
+}

@@ -30,6 +30,7 @@ var (
 	flagCheckKernel   = flag.String("check-kernel", "", "Kernel version used for spec checking")
 	flagSyzkaller     = flag.String("syzkaller", "syzkaller/", "Path to the syzkaller directory")
 	flagBlackList     = flag.String("blacklist", "data/blacklist.txt", "Path to the global variable blacklist file")
+	flagResume        = flag.Bool("resume", true, "Whether to resume from previous interrupted run")
 
 	// global variable keys of interest
 	keys = []string{
@@ -115,14 +116,14 @@ func createQueue(db *database.Database) []database.GlobalVar {
 	return queue
 }
 
-// minimizeQueue minimize the queue by removing redundant global variables, i.e. those
-// whose syscall spec have existed in syzkaller.
-// TODO: currently we use a blacklist file to filter redundant global variables, is there
-// a more efficient way to do this?
-func minimizeQueue(queue *[]database.GlobalVar) ([]database.GlobalVar, error) {
-	var minimizedQueue []database.GlobalVar
+// createBlacklist create a blacklist which includes redundant global variables, i.e. those
+// whose syscall spec have existed in syzkaller or generated before
+// TODO: currently we use a blacklist file to specify global variables whose spec have existed
+// in syzkaller, is there a more efficient way to do this, such as querying syzkaller's database?
+func createBlacklist(blPath string, outdir string, resume bool) (map[string]bool, error) {
+	// read blacklist file
 	blacklist := make(map[string]bool)
-	data, err := os.ReadFile(*flagBlackList)
+	data, err := os.ReadFile(blPath)
 	if err != nil {
 		log.Fatalf("failed to read blacklist file: %v\n", err)
 	}
@@ -134,6 +135,28 @@ func minimizeQueue(queue *[]database.GlobalVar) ([]database.GlobalVar, error) {
 		}
 		blacklist[line] = true
 	}
+	// if resume is enabled, read output directory to find already generated specs
+	if resume {
+		files, err := os.ReadDir(outdir)
+		if err != nil {
+			log.Fatalf("failed to read output directory: %v\n", err)
+		}
+		for _, file := range files {
+			fn := file.Name()
+			parts := strings.SplitN(fn, "#", 2)
+			if len(parts) != 2 {
+				continue
+			}
+			gvName := parts[0]
+			blacklist[gvName] = true
+		}
+	}
+	return blacklist, nil
+}
+
+// minimizeQueue minimize the queue by removing global variables in blacklist
+func minimizeQueue(queue *[]database.GlobalVar, blacklist map[string]bool) ([]database.GlobalVar, error) {
+	var minimizedQueue []database.GlobalVar
 	for _, gv := range *queue {
 		if _, found := blacklist[gv.Name]; found {
 			continue
@@ -194,7 +217,7 @@ func genSpecLoop(kAgent *agent.Agent, gvEntry *database.GlobalVar, sc *check.Syz
 			logger.Fatalf("failed to execute tools: %v\n", err)
 		}
 	}
-	log.Printf("Generation loop stop reason: %v", response.Choices[0].StopReason)
+	logger.Printf("Generation loop stop reason: %v", response.Choices[0].StopReason)
 	// fix loop
 	for {
 		logger.Printf("Checking validity of spec ...\n")
@@ -284,8 +307,12 @@ func main() {
 	queue := createQueue(&db)
 	log.Printf("Material queue length: %d\n", len(queue))
 
-	// minimize the queue to avoid redundant specification
-	queue, err = minimizeQueue(&queue)
+	// construct blacklist and minimize the queue via blacklist to avoid redundant specification
+	blacklist, err := createBlacklist(*flagBlackList, *flagOutdir, *flagResume)
+	if err != nil {
+		log.Fatalf("failed to create blacklist: %v\n", err)
+	}
+	queue, err = minimizeQueue(&queue, blacklist)
 	if err != nil {
 		log.Fatalf("failed to minimize material queue: %v\n", err)
 	}
@@ -310,8 +337,7 @@ func main() {
 		Messages:     []llms.MessageContent{},
 		Temperature:  0.2,
 	}
-	for _, gvEntry := range queue[:1] { // TODO: remove [:1] to process all entries
-		gvEntry, _ = db.GetGlobalVar("_ctl_fops")
+	for _, gvEntry := range queue {
 		response := genSpecLoop(&kAgent, &gvEntry, &sc)
 		log.Printf("Final response: %s\n", response.Choices[0].Content)
 		spec := response.Choices[0].Content
