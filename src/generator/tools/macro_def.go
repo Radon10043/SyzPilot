@@ -50,14 +50,14 @@ var GetMacroDefCodeByNameTool = llms.Tool{
 	Function: &llms.FunctionDefinition{
 		Name:        "get_macro_def_code_by_name",
 		Description: "Retrieve the code of a macro definition given its name.",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"macro_name": map[string]interface{}{
+			"properties": map[string]any{
+				"macro_name": map[string]any{
 					"type":        "string",
 					"description": "The name of the macro definition to retrieve the code for.",
 				},
-				"rational": map[string]interface{}{
+				"rational": map[string]any{
 					"type":        "string",
 					"description": "The rationale for choosing this function call with these parameters",
 				},

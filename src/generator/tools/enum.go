@@ -50,14 +50,14 @@ var GetEnumCodeByEnumeratorTool = llms.Tool{
 	Function: &llms.FunctionDefinition{
 		Name:        "get_enum_code_by_enumerator",
 		Description: "Retrieve the code of an enum given its enumerator.",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"enumerator": map[string]interface{}{
+			"properties": map[string]any{
+				"enumerator": map[string]any{
 					"type":        "string",
 					"description": "The name of the enumerator to retrieve the code for.",
 				},
-				"rational": map[string]interface{}{
+				"rational": map[string]any{
 					"type":        "string",
 					"description": "The rationale for choosing this function call with these parameters",
 				},

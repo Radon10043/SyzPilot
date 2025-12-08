@@ -50,14 +50,14 @@ var GetTypedefCodeByDefineTool = llms.Tool{
 	Function: &llms.FunctionDefinition{
 		Name:        "get_typedef_code_by_define",
 		Description: "Retrieve the code of a typedef given its define.",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"typedef_define": map[string]interface{}{
+			"properties": map[string]any{
+				"typedef_define": map[string]any{
 					"type":        "string",
 					"description": "The define of the typedef to retrieve the code for.",
 				},
-				"rational": map[string]interface{}{
+				"rational": map[string]any{
 					"type":        "string",
 					"description": "The rationale for choosing this function call with these parameters",
 				},
@@ -100,10 +100,10 @@ var GetTypedefTypeByDefineTool = llms.Tool{
 	Function: &llms.FunctionDefinition{
 		Name:        "get_typedef_type_by_define",
 		Description: "Retrieve the type of a typedef given its define.",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"typedef_define": map[string]interface{}{
+			"properties": map[string]any{
+				"typedef_define": map[string]any{
 					"type":        "string",
 					"description": "The define of the typedef to retrieve the type for.",
 				},

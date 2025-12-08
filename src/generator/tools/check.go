@@ -52,14 +52,14 @@ var CheckSpecValidityTool = llms.Tool{
 	Function: &llms.FunctionDefinition{
 		Name:        "check_spec_validity",
 		Description: "Check the validity of the given specification.",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"spec": map[string]interface{}{
+			"properties": map[string]any{
+				"spec": map[string]any{
 					"type":        "string",
 					"description": "The specification to check.",
 				},
-				"rational": map[string]interface{}{
+				"rational": map[string]any{
 					"type":        "string",
 					"description": "The rationale for choosing this function call with these parameters",
 				},

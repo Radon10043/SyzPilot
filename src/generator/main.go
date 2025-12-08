@@ -48,7 +48,7 @@ func toAbsPath(path string) string {
 	return absPath
 }
 
-// keyGound check if any key is found in the code
+// keyFound check if any key is found in the code
 func keyFound(code string) bool {
 	for _, key := range keys {
 		if strings.Contains(code, key) {
@@ -126,8 +126,8 @@ func minimizeQueue(queue *[]database.GlobalVar) ([]database.GlobalVar, error) {
 	if err != nil {
 		log.Fatalf("failed to read blacklist file: %v\n", err)
 	}
-	lines := strings.Split(string(data), "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(string(data), "\n")
+	for line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
@@ -233,7 +233,7 @@ func genSpecLoop(kAgent *agent.Agent, gvEntry *database.GlobalVar, sc *check.Syz
 }
 
 func main() {
-	var err error
+	// parse flags and check their validity
 	flag.Parse()
 	checkFlags()
 	*flagEnv = toAbsPath(*flagEnv)
@@ -245,6 +245,7 @@ func main() {
 	*flagSyzkaller = toAbsPath(*flagSyzkaller)
 
 	// load environment variables from .env file
+	var err error
 	err = godotenv.Load(*flagEnv)
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -316,9 +317,16 @@ func main() {
 		spec := response.Choices[0].Content
 		spec = strings.Replace(spec, "```syzlang", "", 1)
 		spec = strings.Replace(spec, "```", "", 1)
-		outPath := filepath.Join(*flagOutdir, gvEntry.Name+".txt")
-		os.WriteFile(outPath, []byte(spec), 0644)
-		msgPath := filepath.Join(*flagOutdir, gvEntry.Name+".messages.txt")
-		kAgent.SaveMessages(msgPath)
+		var (
+			fn string // file name
+			fp string // file path
+		)
+		// save spec and messages
+		fn = gvEntry.Name + "#" + *flagModel + ".txt"
+		fp = filepath.Join(*flagOutdir, fn)
+		os.WriteFile(fp, []byte(spec), 0644)
+		fn = gvEntry.Name + "#" + *flagModel + ".msg"
+		fp = filepath.Join(*flagOutdir, fn)
+		kAgent.SaveMessages(fp)
 	}
 }

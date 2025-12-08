@@ -50,14 +50,14 @@ var GetStructCodeByNameTool = llms.Tool{
 	Function: &llms.FunctionDefinition{
 		Name:        "get_struct_code_by_name",
 		Description: "Retrieve the code of a struct given its name.",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"struct_name": map[string]interface{}{
+			"properties": map[string]any{
+				"struct_name": map[string]any{
 					"type":        "string",
 					"description": "The name of the struct to retrieve the code for.",
 				},
-				"rational": map[string]interface{}{
+				"rational": map[string]any{
 					"type":        "string",
 					"description": "The rationale for choosing this function call with these parameters",
 				},
@@ -110,14 +110,14 @@ var GetUnionCodeByNameTool = llms.Tool{
 	Function: &llms.FunctionDefinition{
 		Name:        "get_union_code_by_name",
 		Description: "Retrieve the code of a union given its name.",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"union_name": map[string]interface{}{
+			"properties": map[string]any{
+				"union_name": map[string]any{
 					"type":        "string",
 					"description": "The name of the union to retrieve the code for.",
 				},
-				"rational": map[string]interface{}{
+				"rational": map[string]any{
 					"type":        "string",
 					"description": "The rationale for choosing this function call with these parameters",
 				},

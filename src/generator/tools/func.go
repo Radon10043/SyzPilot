@@ -50,14 +50,14 @@ var GetFuncCodeByNameTool = llms.Tool{
 	Function: &llms.FunctionDefinition{
 		Name:        "get_func_code_by_name",
 		Description: "Retrieve the code of a function given its name.",
-		Parameters: map[string]interface{}{
+		Parameters: map[string]any{
 			"type": "object",
-			"properties": map[string]interface{}{
-				"function_name": map[string]interface{}{
+			"properties": map[string]any{
+				"function_name": map[string]any{
 					"type":        "string",
 					"description": "The name of the function to retrieve the code for.",
 				},
-				"rational": map[string]interface{}{
+				"rational": map[string]any{
 					"type":        "string",
 					"description": "The rationale for choosing this function call with these parameters",
 				},
