@@ -64,7 +64,7 @@ public:
         if (!mi)
             return;
 
-        /* TODO: get info of the macro */
+        /* get info of the macro */
         std::string name = macroNameTok.getIdentifierInfo()->getName().str();
         SourceRange sr = mi->getDefinitionLoc();
         std::string code =
@@ -235,6 +235,10 @@ public:
         if (vd->isThisDeclarationADefinition() == VarDecl::DeclarationOnly)
             return true;
 
+        /* skip variables that are not initialized */
+        if (!vd->hasInit())
+            return true;
+
         /* get info of the global variable */
         std::string name = vd->getNameAsString();
         std::string type = vd->getType().getAsString();
@@ -342,7 +346,6 @@ int main(int argc, const char **argv) {
     cl::HideUnrelatedOptions(MyToolCategory);
     cl::ParseCommandLineOptions(argc, argv, "Kernel analyzer\n");
 
-    /* TODO: specify database path via command line */
     DatabaseManager mgr(OutDBPath);
     DBMgr = &mgr;
 
