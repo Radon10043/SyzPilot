@@ -51,7 +51,7 @@ func (a *Agent) SaveMessages(path string) error {
 	for _, msg := range a.Messages {
 		fmt.Fprintf(f, "========== ROLE: %v ==========\n", msg.Role)
 		for _, part := range msg.Parts {
-			str := utils.PartToString(part)
+			str := utils.Part2string(part)
 			fmt.Fprintf(f, "%v\n", str)
 		}
 	}
