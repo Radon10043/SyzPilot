@@ -60,14 +60,14 @@ type MacroDef struct {
 	Code string // macro code
 }
 
-// connect to the SQLite database
+// Connect connect to the SQLite database
 func (db *Database) Connect() error {
 	gormDB, err := gorm.Open(sqlite.Open(db.Path), &gorm.Config{})
 	db.gormDB = gormDB
 	return err
 }
 
-// get function data by function name
+// GetFunction get function data by function name
 func (db *Database) GetFunction(name string) (Function, error) {
 	var fun Function
 	db.gormDB.Where("name = ?", name).First(&fun)
@@ -77,7 +77,7 @@ func (db *Database) GetFunction(name string) (Function, error) {
 	return fun, nil
 }
 
-// get record data by record name
+// GetRecord get record data by record name
 func (db *Database) GetRecord(name string) (Record, error) {
 	var rec Record
 	db.gormDB.Where("name = ?", name).First(&rec)
@@ -159,7 +159,7 @@ func (db *Database) GetAllGlobalVar() ([]GlobalVar, error) {
 	return gvs, result.Error
 }
 
-// get macro definition data by macro name
+// GetMacroDef get macro definition data by macro name
 func (db *Database) GetMacroDef(name string) (MacroDef, error) {
 	var md MacroDef
 	db.gormDB.Where("name = ?", name).First(&md)
@@ -169,12 +169,19 @@ func (db *Database) GetMacroDef(name string) (MacroDef, error) {
 	return md, nil
 }
 
+// GetMacroDefByPrefix get macro definitions by name prefix
+func (db *Database) GetMacroDefByPrefix(prefix string) ([]MacroDef, error) {
+	var mds []MacroDef
+	result := db.gormDB.Where("name LIKE ?", prefix+"%").Find(&mds)
+	return mds, result.Error
+}
+
 // specify table name for MacroDef model
 func (MacroDef) TableName() string {
 	return "macroDefs"
 }
 
-// close the database connection
+// Close close the database connection
 func (db *Database) Close() error {
 	sqlDB, err := db.gormDB.DB()
 	if err != nil {
