@@ -154,18 +154,18 @@ func TestFindMacroDef(t *testing.T) {
 	db.Close()
 }
 
-func TestFindMacroDefByPrefix(t *testing.T) {
+func TestFindMacroDefByPattern(t *testing.T) {
 	db := database.Database{Path: "data/database/linux.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)
 	}
-	mds, err := db.GetMacroDefByPrefix("MEDIA_PAD_FL_")
+	mds, err := db.GetMacroDefByPattern("MEDIA_PAD_FL_*")
 	if err != nil {
-		t.Errorf("Error retrieving macro definitions by prefix: %v", err)
+		t.Errorf("Error retrieving macro definitions by pattern: %v", err)
 	}
 	if len(mds) != 3 {
-		t.Error("Expected 3 macro definitions with prefix 'MEDIA_PAD_FL_', got ", len(mds))
+		t.Error("Expected 3 macro definitions with pattern 'MEDIA_PAD_FL_*', got ", len(mds))
 	}
 	db.Close()
 }

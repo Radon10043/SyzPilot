@@ -45,7 +45,7 @@ func TestGetMacroDefCodeByName(t *testing.T) {
 	t.Logf("Response of agent: %v\n", response.Choices[0].Content)
 }
 
-func TestGetMacroDefCodesByPrefix(t *testing.T) {
+func TestGetMacroDefCodesByPattern(t *testing.T) {
 	db := database.Database{Path: filepath.Join(root, "data", "database", "linux.db")}
 	err := db.Connect()
 	if err != nil {
@@ -54,7 +54,7 @@ func TestGetMacroDefCodesByPrefix(t *testing.T) {
 	defer db.Close()
 	myTools.DB = &db
 	macroDefTools := []llms.Tool{
-		myTools.GetMacroDefCodesByPrefixTool,
+		myTools.GetMacroDefCodesByPatternTool,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
@@ -63,7 +63,7 @@ func TestGetMacroDefCodesByPrefix(t *testing.T) {
 		Tools:    macroDefTools,
 		Messages: []llms.MessageContent{},
 	}
-	myAgent.AddHumanMessage("What are the codes of macro definitions starting with 'MEDIA_PAD_FL_'?")
+	myAgent.AddHumanMessage("Output codes of all macro definitions whose have prefix `MEDIA_PAD_FL_`?")
 	_, err = myAgent.Query()
 	if err != nil {
 		t.Fatal(err)

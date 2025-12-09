@@ -68,25 +68,25 @@ var GetMacroDefCodeByNameTool = llms.Tool{
 	},
 }
 
-// GetMacroDefEntriesByPrefix get macro definition entries by name prefix
-func GetMacroDefEntriesByPrefix(prefix string) ([]database.MacroDef, error) {
-	entries, err := DB.GetMacroDefByPrefix(prefix)
+// GetMacroDefEntriesByPattern get macro definition entries by name pattern
+func GetMacroDefEntriesByPattern(pattern string) ([]database.MacroDef, error) {
+	entries, err := DB.GetMacroDefByPattern(pattern)
 	if err != nil {
 		return nil, err
 	}
 	return entries, nil
 }
 
-// ExecGetMacroDefCodesByPrefix execute the get_macro_def_codes_by_prefix tool call
-func ExecGetMacroDefCodesByPrefix(tc llms.ToolCall) (llms.MessageContent, error) {
+// ExecGetMacroDefCodesByPattern execute the get_macro_def_codes_by_pattern tool call
+func ExecGetMacroDefCodesByPattern(tc llms.ToolCall) (llms.MessageContent, error) {
 	var args struct {
-		MacroPrefix string `json:"macro_prefix"`
-		Rational    string `json:"rational"`
+		MacroPattern string `json:"macro_pattern"`
+		Rational     string `json:"rational"`
 	}
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := GetMacroDefEntriesByPrefix(args.MacroPrefix)
+	resp, err := GetMacroDefEntriesByPattern(args.MacroPattern)
 	var respContent string = ""
 	if err != nil {
 		respContent = err.Error() // likely not found error
@@ -110,24 +110,24 @@ func ExecGetMacroDefCodesByPrefix(tc llms.ToolCall) (llms.MessageContent, error)
 	return tcResp, nil
 }
 
-var GetMacroDefCodesByPrefixTool = llms.Tool{
+var GetMacroDefCodesByPatternTool = llms.Tool{
 	Type: "function",
 	Function: &llms.FunctionDefinition{
-		Name:        "get_macro_def_codes_by_prefix",
-		Description: "Retrieve the codes of macro definitions given a name prefix.",
+		Name:        "get_macro_def_codes_by_pattern",
+		Description: "Retrieve the codes of macro definitions given a name pattern, like `MEDIA_PAD_FL_*`.",
 		Parameters: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"macro_prefix": map[string]any{
+				"macro_pattern": map[string]any{
 					"type":        "string",
-					"description": "The prefix of the macro definitions to retrieve the codes for.",
+					"description": "The pattern of the macro definitions to retrieve the codes for.",
 				},
 				"rational": map[string]any{
 					"type":        "string",
 					"description": "The rationale for choosing this function call with these parameters",
 				},
 			},
-			"required": []string{"macro_prefix", "rational"},
+			"required": []string{"macro_pattern", "rational"},
 		},
 	},
 }

@@ -169,10 +169,10 @@ func (db *Database) GetMacroDef(name string) (MacroDef, error) {
 	return md, nil
 }
 
-// GetMacroDefByPrefix get macro definitions by name prefix
-func (db *Database) GetMacroDefByPrefix(prefix string) ([]MacroDef, error) {
+// GetMacroDefByPattern get macro definitions by name pattern (case sensitive)
+func (db *Database) GetMacroDefByPattern(pattern string) ([]MacroDef, error) {
 	var mds []MacroDef
-	result := db.gormDB.Where("name LIKE ?", prefix+"%").Find(&mds)
+	result := db.gormDB.Where("name GLOB ?", pattern).Find(&mds)
 	return mds, result.Error
 }
 
