@@ -19,6 +19,7 @@ var ToolList = []llms.Tool{
 	GetTypedefCodeByDefineTool,
 	GetTypedefTypeByDefineTool,
 	GetMacroDefCodeByNameTool,
+	GetMacroDefCodesByPrefixTool,
 }
 
 var ToolExecutor = map[string]func(tc llms.ToolCall) (llms.MessageContent, error){
