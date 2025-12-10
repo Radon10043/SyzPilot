@@ -1,0 +1,32 @@
+{
+    "include": [],
+    "resource": [],
+    "define": [],
+    "syscall": [],
+    "flags": [],
+    "struct": [],
+    "union": [],
+    "type-alias": [],
+    "type-template": [],
+    "todo": [
+        "openat$dm_ctl",
+        "ioctl$DM_VERSION",
+        "ioctl$DM_REMOVE_ALL",
+        "ioctl$DM_LIST_DEVICES",
+        "ioctl$DM_DEV_CREATE",
+        "ioctl$DM_DEV_REMOVE",
+        "ioctl$DM_DEV_RENAME",
+        "ioctl$DM_DEV_SUSPEND",
+        "ioctl$DM_DEV_STATUS",
+        "ioctl$DM_DEV_WAIT",
+        "ioctl$DM_TABLE_LOAD",
+        "ioctl$DM_TABLE_CLEAR",
+        "ioctl$DM_TABLE_DEPS",
+        "ioctl$DM_TABLE_STATUS",
+        "ioctl$DM_LIST_VERSIONS",
+        "ioctl$DM_TARGET_MSG",
+        "ioctl$DM_DEV_SET_GEOMETRY",
+        "ioctl$DM_DEV_ARM_POLL",
+        "ioctl$DM_GET_TARGET_VERSION"
+    ]
+}

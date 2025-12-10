@@ -1,0 +1,42 @@
+{
+    "include": [
+        "include <linux/dm-ioctl.h>"
+    ],
+    "resource": [
+        "resource fd_dm[fd]"
+    ],
+    "define": [],
+    "syscall": [
+        "openat$dm(fd const[AT_FDCWD], file ptr[in, string[\"/dev/mapper/control\"]], flags flags[open_flags], mode const[0]) fd_dm",
+        "ioctl$DM_VERSION(fd fd_dm, cmd const[DM_VERSION], arg ptr[inout, dm_ioctl])",
+        "ioctl$DM_REMOVE_ALL(fd fd_dm, cmd const[DM_REMOVE_ALL], arg ptr[inout, dm_ioctl])",
+        "ioctl$DM_LIST_DEVICES(fd fd_dm, cmd const[DM_LIST_DEVICES], arg ptr[inout, dm_ioctl_list_devices])",
+        "ioctl$DM_DEV_CREATE(fd fd_dm, cmd const[DM_DEV_CREATE], arg ptr[inout, dm_ioctl])",
+        "ioctl$DM_DEV_REMOVE(fd fd_dm, cmd const[DM_DEV_REMOVE], arg ptr[inout, dm_ioctl])",
+        "ioctl$DM_DEV_RENAME(fd fd_dm, cmd const[DM_DEV_RENAME], arg ptr[inout, dm_ioctl])",
+        "ioctl$DM_DEV_SUSPEND(fd fd_dm, cmd const[DM_DEV_SUSPEND], arg ptr[inout, dm_ioctl])",
+        "ioctl$DM_DEV_STATUS(fd fd_dm, cmd const[DM_DEV_STATUS], arg ptr[inout, dm_ioctl])",
+        "ioctl$DM_DEV_WAIT(fd fd_dm, cmd const[DM_DEV_WAIT], arg ptr[inout, dm_ioctl])",
+        "ioctl$DM_DEV_SET_GEOMETRY(fd fd_dm, cmd const[DM_DEV_SET_GEOMETRY], arg ptr[inout, dm_ioctl])",
+        "ioctl$DM_DEV_ARM_POLL(fd fd_dm, cmd const[DM_DEV_ARM_POLL], arg ptr[inout, dm_ioctl])",
+        "ioctl$DM_TABLE_LOAD(fd fd_dm, cmd const[DM_TABLE_LOAD], arg ptr[inout, dm_ioctl_table_load])",
+        "ioctl$DM_TABLE_CLEAR(fd fd_dm, cmd const[DM_TABLE_CLEAR], arg ptr[inout, dm_ioctl])",
+        "ioctl$DM_TABLE_DEPS(fd fd_dm, cmd const[DM_TABLE_DEPS], arg ptr[inout, dm_ioctl])",
+        "ioctl$DM_TABLE_STATUS(fd fd_dm, cmd const[DM_TABLE_STATUS], arg ptr[inout, dm_ioctl_table_load])",
+        "ioctl$DM_LIST_VERSIONS(fd fd_dm, cmd const[DM_LIST_VERSIONS], arg ptr[inout, dm_ioctl])",
+        "ioctl$DM_TARGET_MSG(fd fd_dm, cmd const[DM_TARGET_MSG], arg ptr[inout, dm_ioctl])",
+        "ioctl$DM_GET_TARGET_VERSION(fd fd_dm, cmd const[DM_GET_TARGET_VERSION], arg ptr[inout, dm_ioctl])"
+    ],
+    "flags": [],
+    "struct": [
+        "dm_ioctl {\n\tversion\t\tarray[int32, 3]\n\tdata_size\tint32\n\tdata_start\tint32\n\ttarget_count\tint32\n\topen_count\tint32\n\tflags\t\tint32\n\tevent_nr\tint32\n\tpadding\t\tint32\n\tdev\t\tint64\n\tname\t\tstring[128]\n\tuuid\t\tstring[129]\n\tdata\t\tarray[int8, 7]\n}",
+        "dm_ioctl_list_devices {\n\tversion\t\tarray[int32, 3]\n\tdata_size\tint32\n\tdata_start\tint32\n\ttarget_count\tint32\n\topen_count\tint32\n\tflags\t\tint32\n\tevent_nr\tint32\n\tpadding\t\tint32\n\tdev\t\tint64\n\tname\t\tstring[128]\n\tuuid\t\tstring[129]\n\tdata\t\tarray[dm_name_list, 2]\n}",
+        "dm_name_list {\n\tdev\t\tint64\n\tnext\t\tint32\n\tname\t\tstring\n}",
+        "dm_ioctl_table_load {\n\tversion\t\tarray[int32, 3]\n\tdata_size\tint32\n\tdata_start\tint32\n\ttarget_count\tint32\n\topen_count\tint32\n\tflags\t\tint32\n\tevent_nr\tint32\n\tpadding\t\tint32\n\tdev\t\tint64\n\tname\t\tstring[128]\n\tuuid\t\tstring[129]\n\tdata\t\tarray[dm_target_spec, 2]\n}",
+        "dm_target_spec {\n\tsector_start\tint64\n\tlength\t\tint64\n\tstatus\t\tint32\n\tnext\t\tint32\n\ttarget_type\tstring[16]\n}"
+    ],
+    "union": [],
+    "type-alias": [],
+    "type-template": [],
+    "todo": []
+}
