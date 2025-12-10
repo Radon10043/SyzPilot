@@ -113,8 +113,10 @@ func ExecGetMacroDefCodesByPattern(tc llms.ToolCall) (llms.MessageContent, error
 var GetMacroDefCodesByPatternTool = llms.Tool{
 	Type: "function",
 	Function: &llms.FunctionDefinition{
-		Name:        "get_macro_def_codes_by_pattern",
-		Description: "Retrieve the codes of macro definitions given a name pattern, like `MEDIA_PAD_FL_*`.",
+		Name: "get_macro_def_codes_by_pattern",
+		Description: "Retrieve the source codes of macro definitions whose names match a specific pattern using SQLite GLOB syntax. " +
+			"IMPORTANT: This is CASE-SENSITIVE. Use Unix-style wildcards: '*' (matches any sequence), '?' (matches single char), and '[...]' (matches char set). " +
+			"Do NOT use SQL '%' syntax.",
 		Parameters: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
