@@ -25,7 +25,7 @@ func init() {
 }
 
 func TestJson2syzlang(t *testing.T) {
-	jpath := filepath.Join(root, "data", "test", "dev_cec_gen.json")
+	jpath := filepath.Join(root, "data", "test", "dev_md_gen.json")
 	jbyte, err := os.ReadFile(jpath)
 	if err != nil {
 		t.Fatalf("Failed to read JSON file: %v", err)

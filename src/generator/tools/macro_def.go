@@ -10,7 +10,7 @@ import (
 
 // GetMacroDefEntryByName get the macro definition entry by macro name
 func GetMacroDefEntryByName(name string) (database.MacroDef, error) {
-	entry, err := DB.GetMacroDef(name)
+	entry, err := DB.GetMacroDefByName(name)
 	if err != nil {
 		return database.MacroDef{}, err
 	}
@@ -57,6 +57,57 @@ var GetMacroDefCodeByNameTool = llms.Tool{
 				"macro_name": map[string]any{
 					"type":        "string",
 					"description": "The name of the macro definition to retrieve the code for.",
+				},
+				"rational": map[string]any{
+					"type":        "string",
+					"description": "The rationale for choosing this function call with these parameters",
+				},
+			},
+			"required": []string{"macro_name", "rational"},
+		},
+	},
+}
+
+// ExecGetMacroDefLocByName execute the get_macro_def_loc_by_name tool call
+func ExecGetMacroDefLocByName(tc llms.ToolCall) (llms.MessageContent, error) {
+	var args struct {
+		MacroName string `json:"macro_name"`
+		Rational  string `json:"rational"`
+	}
+	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
+		return llms.MessageContent{}, err
+	}
+	resp, err := GetMacroDefEntryByName(args.MacroName)
+	var respContent string = ""
+	if err != nil {
+		respContent = err.Error() // likely not found error
+	} else {
+		respContent = resp.File + ":" + string(rune(resp.Line))
+	}
+	tcResp := llms.MessageContent{
+		Role: llms.ChatMessageTypeTool,
+		Parts: []llms.ContentPart{
+			llms.ToolCallResponse{
+				ToolCallID: tc.ID,
+				Name:       tc.FunctionCall.Name,
+				Content:    respContent,
+			},
+		},
+	}
+	return tcResp, nil
+}
+
+var GetMacroDefLocByNameTool = llms.Tool{
+	Type: "function",
+	Function: &llms.FunctionDefinition{
+		Name:        "get_macro_def_loc_by_name",
+		Description: "Retrieve the file location of a macro definition given its name.",
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"macro_name": map[string]any{
+					"type":        "string",
+					"description": "The name of the macro definition to retrieve the location for.",
 				},
 				"rational": map[string]any{
 					"type":        "string",

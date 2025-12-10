@@ -3,7 +3,9 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -13,31 +15,40 @@ import (
 	"github.com/Radon10043/cloud/src/generator/check"
 	"github.com/Radon10043/cloud/src/generator/database"
 	myTools "github.com/Radon10043/cloud/src/generator/tools"
+	"github.com/Radon10043/cloud/src/generator/utils"
 	"github.com/joho/godotenv"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"
 )
 
-var (
-	// command-line flags
-	flagModel         = flag.String("model", "gemini-2.5-pro", "The model to use")
-	flagEnv           = flag.String("env", ".env", "Path to .env file")
-	flagDb            = flag.String("db", "", "Path to the database file")
-	flagSystemPrompt  = flag.String("system-prompt", "data/prompts/system.md", "Path to the system prompt file")
-	flagOutdir        = flag.String("outdir", "", "Path to the output directory")
-	flagCheckBin      = flag.String("check-bin", "bin/syz-check", "Path to the syz-check binary")
-	flagExtractKernel = flag.String("extract-kernel", "", "Kernel version used for spec extraction")
-	flagCheckKernel   = flag.String("check-kernel", "", "Kernel version used for spec checking")
-	flagSyzkaller     = flag.String("syzkaller", "syzkaller/", "Path to the syzkaller directory")
-	flagBlackList     = flag.String("blacklist", "data/blacklist.txt", "Path to the global variable blacklist file")
-	flagResume        = flag.Bool("resume", true, "Whether to resume from previous interrupted run")
+type progConfig struct {
+	// agent configs
+	Model string
+	Env   string
+	Db    string
 
-	// global variable keys of interest
+	// kernel configs
+	Outdir        string
+	CheckBin      string
+	ExtractKernel string
+	CheckKernel   string
+	Syzkaller     string
+	BlackList     string
+	Resume        bool
+	Prefix        string
+
+	// prompt configs
+	OtlSysPrompt string
+	GenSysPrompt string
+	FixSysPrompt string
+}
+
+// global variables
+var (
 	keys = []string{
 		".ioctl", ".unlocked_ioctl", ".compat_ioctl", ".mmap", ".uring_cmd",
 		".setsockopt", ".getsockopt", ".recvmsg", ".sendmsg",
 	}
-	// TODO: if ioctl functions are analyzed, skip it to avoid redundancy
 )
 
 // toAbsaPath convert a path to absolute path
@@ -57,44 +68,6 @@ func keyFound(code string) bool {
 		}
 	}
 	return false
-}
-
-// checkFlags check validity of flags
-func checkFlags() {
-	_, err := os.Stat(*flagEnv)
-	if err != nil {
-		log.Fatalf("failed to get stat of env file: %v\n", err)
-	}
-	_, err = os.Stat(*flagDb)
-	if err != nil {
-		log.Fatalf("failed to get stat of database file: %v\n", err)
-	}
-	_, err = os.Stat(*flagSystemPrompt)
-	if err != nil {
-		log.Fatalf("failed to get stat of system prompt file %v\n", err)
-	}
-	if *flagOutdir == "" {
-		log.Fatalf("output directory cannot be empty.")
-	}
-	_, err = os.Stat(*flagCheckBin)
-	if err != nil {
-		log.Fatalf("failed to get stat of syz-check binary: %v\n", err)
-	}
-	_, err = os.Stat(*flagExtractKernel)
-	if err != nil {
-		log.Fatalf("failed to get stat of extract kernel source: %v\n", err)
-	}
-	vmlinuxPath := filepath.Join(*flagCheckKernel, "vmlinux")
-	_, err = os.Stat(vmlinuxPath)
-	if err != nil {
-		log.Fatalf("failed to get stat of vmlinux in check kernel: %v\n", err)
-	}
-	sc := check.SyzCheck{
-		Workdir: *flagSyzkaller,
-	}
-	if err := sc.CheckWorkdir(); err != nil {
-		log.Fatalf("syzkaller's directory is invalid: %v\n", err)
-	}
 }
 
 // createQueue creates a queue includes global variables that includes interested keys
@@ -117,13 +90,13 @@ func createQueue(db *database.Database) []database.GlobalVar {
 }
 
 // createBlacklist create a blacklist which includes redundant global variables, i.e. those
-// whose syscall spec have existed in syzkaller or generated before
+// whose syscall spec have existed in syzkaller
 // TODO: currently we use a blacklist file to specify global variables whose spec have existed
 // in syzkaller, is there a more efficient way to do this, such as querying syzkaller's database?
-func createBlacklist(blPath string, outdir string, resume bool) (map[string]bool, error) {
+func createBlacklist(cfg *progConfig) (map[string]bool, error) {
 	// read blacklist file
 	blacklist := make(map[string]bool)
-	data, err := os.ReadFile(blPath)
+	data, err := os.ReadFile(cfg.BlackList)
 	if err != nil {
 		log.Fatalf("failed to read blacklist file: %v\n", err)
 	}
@@ -134,22 +107,6 @@ func createBlacklist(blPath string, outdir string, resume bool) (map[string]bool
 			continue
 		}
 		blacklist[line] = true
-	}
-	// if resume is enabled, read output directory to find already generated specs
-	if resume {
-		files, err := os.ReadDir(outdir)
-		if err != nil {
-			log.Fatalf("failed to read output directory: %v\n", err)
-		}
-		for _, file := range files {
-			fn := file.Name()
-			parts := strings.SplitN(fn, "#", 2)
-			if len(parts) != 2 {
-				continue
-			}
-			gvName := parts[0]
-			blacklist[gvName] = true
-		}
 	}
 	return blacklist, nil
 }
@@ -187,18 +144,191 @@ func checkSpecValidity(sc *check.SyzCheck, spec string) (bytes.Buffer, bytes.Buf
 	return stdout, stderr, nil
 }
 
-// genSpecLoop start a loop to generate syscall spec based on a global variable
-func genSpecLoop(kAgent *agent.Agent, gvEntry *database.GlobalVar, sc *check.SyzCheck) *llms.ContentResponse {
-	logger := log.New(os.Stdout, "["+gvEntry.Name+"] ", log.LstdFlags|log.Lmsgprefix)
-	logger.Printf("Starting to generate specs \n")
+// writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a global variable
+func writeSpec(
+	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, sc *check.SyzCheck, cfg *progConfig,
+) string {
+	logger := log.New(os.Stdout, "["+gvEntry.Name+"][outline] ", log.LstdFlags|log.Lmsgprefix)
+	outline := collectOutline(kAgent, (*sysPromptMap)["outline"], gvEntry, cfg, logger)
+	logger = log.New(os.Stdout, "["+gvEntry.Name+"][generate] ", log.LstdFlags|log.Lmsgprefix)
+	jsonSpec := collectSpec(kAgent, (*sysPromptMap)["generate"], gvEntry, cfg, outline, logger)
+	logger = log.New(os.Stdout, "["+gvEntry.Name+"][fix] ", log.LstdFlags|log.Lmsgprefix)
+	syzSpec := fixSpec(kAgent, (*sysPromptMap)["fix"], sc, gvEntry, cfg, jsonSpec, logger)
+	return syzSpec
+}
+
+// fixSpec start a loop to fix invalid syscall spec, also with the help of agent
+func fixSpec(
+	kAgent *agent.Agent, sysPrompt string, sc *check.SyzCheck, gvEntry *database.GlobalVar, cfg *progConfig, jsonSpec string, logger *log.Logger,
+) string {
+	var (
+		spec  string
+		found bool
+	)
+	fdir := filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model)
+	_ = os.MkdirAll(fdir, 0755)
+	fp := filepath.Join(fdir, "spec.txt")
+
+	// if spec.txt exists and resume is enabled, reuse existing spec
+	if _, err := os.Stat(fp); err == nil && cfg.Resume {
+		logger.Printf("Spec file exists, reuse existing.\n")
+		buf, err := os.ReadFile(fp)
+		if err != nil {
+			logger.Fatalf("failed to read spec file: %v\n", err)
+		}
+		spec = string(buf)
+	} else { // otherwise, convert json spec to syzlang and write to spec.txt
+		spec, err = utils.Json2syzlang(jsonSpec)
+		if err != nil {
+			logger.Fatalf("failed to convert json spec to syzlang: %v\n", err)
+		}
+		err = os.WriteFile(fp, []byte(spec), 0644)
+		if err != nil {
+			logger.Fatalf("failed to write spec file: %v\n", err)
+		}
+	}
+
+	// make agent ready for fix loop
 	kAgent.CleanMessages()
-	err := kAgent.AddSystemMessage(kAgent.SystemPrompt)
+	err := kAgent.AddSystemMessage(sysPrompt)
 	if err != nil {
 		logger.Fatalf("failed to add system prompt to agent: %v\n", err)
 	}
-	kAgent.AddHumanMessage(gvEntry.Code)
-	var response *llms.ContentResponse = nil
-	// generation loop
+
+	// check validity of spec and prompt agent to fix it if invalid
+	buf, err := os.ReadFile(cfg.Prefix)
+	if err != nil {
+		logger.Fatalf("failed to read prefix file: %v\n", err)
+	}
+	prefix := string(buf)
+	for {
+		logger.Printf("Checking validity of spec ...\n")
+		if spec == "" {
+			logger.Fatalf("empty spec, stop.\n")
+		}
+		stdout, stderr, err := checkSpecValidity(sc, prefix+"\n\n"+spec)
+		if err == nil {
+			logger.Printf("Spec is valid!\n")
+			break
+		}
+		logger.Printf(
+			"Spec is invalid, trying to fix.\n"+
+				"========== stdout ==========\n%s\n"+
+				"========== stderr ==========\n%s\n",
+			stdout.String(), stderr.String(),
+		)
+		specBlock := fmt.Sprintf("```syzlang\n%s\n```\n", spec)
+		errmsgBlock := fmt.Sprintf("```\n%s\n%s\n```\n", stdout.String(), stderr.String())
+		kAgent.AddHumanMessage(specBlock + "\n" + errmsgBlock)
+		response := fixSpecLoop(kAgent, logger)
+		spec, found = utils.ExtractFirstCodeFence(response.Choices[0].Content, "syzlang")
+		if !found {
+			logger.Fatalf("failed to extract syzlang code fence from fix response.\n")
+		}
+		err = os.WriteFile(fp, []byte(spec), 0644)
+		if err != nil {
+			logger.Fatalf("failed to write spec file: %v\n", err)
+		}
+	}
+
+	return spec
+}
+
+// fixSpecLoop run a loop to fix invalid syscall spec
+func fixSpecLoop(kAgent *agent.Agent, logger *log.Logger) *llms.ContentResponse {
+	var (
+		response *llms.ContentResponse
+		err      error
+	)
+
+	// prompt agent to fix spec
+	for {
+		response, err = kAgent.Query()
+		if err != nil {
+			logger.Fatalf("failed to run agent in fix loop: %v\n", err)
+		}
+		logger.Printf("AI Response: %s\n", response.Choices[0].Content)
+		if len(response.Choices[0].ToolCalls) == 0 {
+			break
+		}
+		for _, tc := range response.Choices[0].ToolCalls {
+			logger.Printf("Tool Call: %v\n", tc.FunctionCall)
+		}
+		err = kAgent.ExecTools()
+		if err != nil {
+			logger.Fatalf("failed to execute tools in fix loop: %v\n", err)
+		}
+	}
+
+	return response
+}
+
+// collectSpec prompt agent to generate syscall spec or reuse existing spec for a global variable
+func collectSpec(
+	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, cfg *progConfig, outline string, logger *log.Logger,
+) string {
+	fdir := filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model)
+	_ = os.MkdirAll(fdir, 0755)
+	fp := filepath.Join(fdir, "spec.json")
+
+	// if spec.json exist and resume is enabled, reuse existing spec
+	if _, err := os.Stat(fp); err == nil && cfg.Resume {
+		logger.Printf("Spec file exists, reuse existing.\n")
+		buf, err := os.ReadFile(fp)
+		if err != nil {
+			logger.Fatalf("failed to read spec file: %v\n", err)
+		}
+		outline = string(buf)
+	}
+	outlineMap := make(map[string]any)
+	err := json.Unmarshal([]byte(outline), &outlineMap)
+	if err != nil {
+		logger.Fatalf("failed to parse outline json: %v\n", err)
+	}
+
+	// prompt agent to generate spec iteratively until all todo tasks are done
+	var found bool
+	todoNum := len(outlineMap["todo"].([]any))
+	for todoNum > 0 {
+		kAgent.CleanMessages()
+		response := genSpec(kAgent, sysPrompt, gvEntry, outline, logger)
+		outline, found = utils.ExtractFirstCodeFence(response.Choices[0].Content, "json")
+		if !found {
+			logger.Fatalf("failed to extract json code fence from generate response.\n")
+		}
+		err := os.WriteFile(fp, []byte(outline), 0644)
+		if err != nil {
+			logger.Fatalf("failed to write spec file: %v\n", err)
+		}
+		err = json.Unmarshal([]byte(outline), &outlineMap)
+		if err != nil {
+			logger.Fatalf("failed to parse outline json: %v\n", err)
+		}
+		todoNum = len(outlineMap["todo"].([]any))
+	}
+	logger.Printf("All todo tasks are done.\n")
+
+	return outline
+}
+
+// genSpec prompt agent to generate syscall spec iteratively
+func genSpec(
+	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, outline string, logger *log.Logger,
+) *llms.ContentResponse {
+	var (
+		response *llms.ContentResponse
+		err      error
+	)
+
+	// make agent ready for spec generation stage
+	err = kAgent.AddSystemMessage(sysPrompt)
+	if err != nil {
+		logger.Fatalf("failed to add system prompt to agent: %v\n", err)
+	}
+
+	// prompt agent to generate syscall spec
+	humanMsg := fmt.Sprintf("```c\n%s\n```\n\n```json\n%s```\n", gvEntry.Code, outline)
+	kAgent.AddHumanMessage(humanMsg)
 	for {
 		logger.Printf("Query agent ...\n")
 		response, err = kAgent.Query()
@@ -218,70 +348,237 @@ func genSpecLoop(kAgent *agent.Agent, gvEntry *database.GlobalVar, sc *check.Syz
 		}
 	}
 	logger.Printf("Generation loop stop reason: %v", response.Choices[0].StopReason)
-	// fix loop
-	for {
-		logger.Printf("Checking validity of spec ...\n")
-		spec := response.Choices[0].Content
-		if spec == "" {
-			logger.Fatalf("empty spec, stop.\n")
+
+	return response
+}
+
+// collectOutline prompt agent to outline todo tasks or reuse existing outline for a global variable
+func collectOutline(
+	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, cfg *progConfig, logger *log.Logger,
+) string {
+	var (
+		outline string
+		found   bool
+	)
+	fdir := filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model)
+	_ = os.MkdirAll(fdir, 0755)
+	fp := filepath.Join(fdir, "outline.json")
+
+	// if outline.json doesn't exist or resume is disabled, prompt agent to outline todo tasks
+	if _, err := os.Stat(fp); err != nil || !cfg.Resume {
+		kAgent.CleanMessages()
+		response := genOutline(kAgent, sysPrompt, gvEntry, logger)
+		outline, found = utils.ExtractFirstCodeFence(response.Choices[0].Content, "json")
+		if !found {
+			logger.Fatalf("failed to extract json code fence from outline response.\n")
 		}
-		spec = strings.Replace(spec, "```syzlang", "", 1)
-		spec = strings.Replace(spec, "```", "", 1)
-		stdout, stderr, err := checkSpecValidity(sc, spec)
-		if err == nil {
-			logger.Printf("Spec is valid!\n")
+		_, err := utils.Json2syzlang(outline)
+		if err != nil {
+			logger.Fatalf("failed to generate valid json: %v\n", err)
+		}
+		err = os.WriteFile(fp, []byte(outline), 0644)
+		if err != nil {
+			logger.Fatalf("failed to write outline file: %v\n", err)
+		}
+	} else {
+		logger.Printf("Outline file exists, reuse existing and skip outline stage.\n")
+		data, err := os.ReadFile(fp)
+		if err != nil {
+			logger.Fatalf("failed to read outline file: %v\n", err)
+		}
+		outline = string(data)
+	}
+
+	return outline
+}
+
+// genOutline prompt agent to outline todo tasks for a global variable
+func genOutline(kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, logger *log.Logger) *llms.ContentResponse {
+	var (
+		response *llms.ContentResponse
+		err      error
+	)
+
+	// make agent ready for outline stage
+	err = kAgent.AddSystemMessage(sysPrompt)
+	if err != nil {
+		logger.Fatalf("failed to add system prompt to agent: %v\n", err)
+	}
+
+	// prompt agent to outline todo tasks
+	kAgent.AddHumanMessage(gvEntry.Code)
+	for {
+		response, err = kAgent.Query()
+		if err != nil {
+			logger.Fatalf("failed to run agent in outline stage: %v\n", err)
+		}
+		logger.Printf("AI Response: %s\n", response.Choices[0].Content)
+		if len(response.Choices[0].ToolCalls) == 0 {
 			break
 		}
-		logger.Printf("Spec is invalid, trying to fix ...\n")
-		kAgent.AddHumanMessage(stdout.String() + "\n\n" + stderr.String())
-		for {
-			response, err = kAgent.Query()
-			if err != nil {
-				logger.Fatalf("failed to run agent in fix loop: %v\n", err)
-			}
-			logger.Printf("AI Response: %s\n", response.Choices[0].Content)
-			if len(response.Choices[0].ToolCalls) == 0 {
-				break
-			}
-			for _, tc := range response.Choices[0].ToolCalls {
-				logger.Printf("Tool Call: %v\n", tc.FunctionCall)
-			}
-			err = kAgent.ExecTools()
-			if err != nil {
-				logger.Fatalf("failed to execute tools in fix loop: %v\n", err)
-			}
+		for _, tc := range response.Choices[0].ToolCalls {
+			logger.Printf("Tool Call: %v\n", tc.FunctionCall)
+		}
+		err = kAgent.ExecTools()
+		if err != nil {
+			logger.Fatalf("failed to execute tools in outline stage: %v\n", err)
 		}
 	}
+
 	return response
+}
+
+// setConfigs parse command-line flags and set program configurations
+func setConfigs() *progConfig {
+	// command-line flags
+	var cfg progConfig
+	flag.StringVar(&cfg.Model, "model", "gemini-2.5-pro", "The model to use")
+	flag.StringVar(&cfg.Env, "env", ".env", "Path to .env file")
+	flag.StringVar(&cfg.Db, "db", "", "Path to the database file")
+	flag.StringVar(&cfg.Outdir, "outdir", "", "Path to the output directory")
+	flag.StringVar(&cfg.CheckBin, "check-bin", "bin/syz-check", "Path to the syz-check binary")
+	flag.StringVar(&cfg.ExtractKernel, "extract-kernel", "", "Path to kernel used for spec extraction")
+	flag.StringVar(&cfg.CheckKernel, "check-kernel", "", "Path to kernel used for spec checking")
+	flag.StringVar(&cfg.Syzkaller, "syzkaller", "syzkaller/", "Path to the syzkaller directory")
+	flag.StringVar(&cfg.BlackList, "blacklist", "data/blacklist.txt", "Path to the global variable blacklist file")
+	flag.BoolVar(&cfg.Resume, "resume", true, "Whether to resume from previous interrupted run")
+	flag.StringVar(&cfg.Prefix, "prefix", "data/prefix.txt", "Path to the prefix file for syscall syz spec")
+	// TODO: add -max-fix to limit the number of fix attempts
+	flag.StringVar(
+		&cfg.OtlSysPrompt,
+		"otl-system-prompt",
+		"data/prompts/outline/instruction.md,"+
+			"data/prompts/outline/example_media.md,"+
+			"data/prompts/outline/example_ppp.md",
+		"Path to the outline system prompt file(s), use comma to separate multiple files",
+	)
+	flag.StringVar(
+		&cfg.GenSysPrompt,
+		"gen-system-prompt",
+		"data/prompts/generate/instruction.md,"+
+			"data/prompts/generate/example_media.md,"+
+			"data/prompts/generate/example_ppp.md",
+		"Path to the generate system prompt file(s), use comma to separate multiple files",
+	)
+	flag.StringVar(
+		&cfg.FixSysPrompt,
+		"fix-system-prompt",
+		"data/prompts/fix/instruction.md,"+
+			"data/prompts/fix/example_media.md,"+
+			"data/prompts/fix/example_ppp.md",
+		"Path to the fix system prompt file(s), use comma to separate multiple files",
+	)
+	flag.Parse()
+	return &cfg
+}
+
+// checkConfig check validity of flags
+func checkConfig(cfg *progConfig) {
+	// check validity of -env
+	_, err := os.Stat(cfg.Env)
+	if err != nil {
+		log.Fatalf("failed to get stat of env file: %v\n", err)
+	}
+
+	// -db
+	_, err = os.Stat(cfg.Db)
+	if err != nil {
+		log.Fatalf("failed to get stat of database file: %v\n", err)
+	}
+
+	// -outdir
+	if cfg.Outdir == "" {
+		log.Fatalf("output directory cannot be empty.")
+	}
+
+	// -check-bin
+	_, err = os.Stat(cfg.CheckBin)
+	if err != nil {
+		log.Fatalf("failed to get stat of syz-check binary: %v\n", err)
+	}
+
+	// -extract-kernel
+	_, err = os.Stat(cfg.ExtractKernel)
+	if err != nil {
+		log.Fatalf("failed to get stat of extract kernel source: %v\n", err)
+	}
+
+	// -check-kernel
+	vmlinuxPath := filepath.Join(cfg.CheckKernel, "vmlinux")
+	_, err = os.Stat(vmlinuxPath)
+	if err != nil {
+		log.Fatalf("failed to get stat of vmlinux in check kernel: %v\n", err)
+	}
+
+	// -syzkaller
+	sc := check.SyzCheck{
+		Workdir: cfg.Syzkaller,
+	}
+	if err := sc.CheckWorkdir(); err != nil {
+		log.Fatalf("syzkaller's directory is invalid: %v\n", err)
+	}
+
+	// -prefix
+	_, err = os.Stat(cfg.Prefix)
+	if err != nil {
+		log.Fatalf("failed to get stat of prefix file: %v\n", err)
+	}
+
+	// -otl-system-prompt
+	otlSysPromptFiles := strings.SplitSeq(cfg.OtlSysPrompt, ",")
+	for f := range otlSysPromptFiles {
+		_, err = os.Stat(f)
+		if err != nil {
+			log.Fatalf("failed to get stat of system prompt file %v\n", err)
+		}
+	}
+
+	// -gen-system-prompt
+	genSysPromptFiles := strings.SplitSeq(cfg.GenSysPrompt, ",")
+	for f := range genSysPromptFiles {
+		_, err = os.Stat(f)
+		if err != nil {
+			log.Fatalf("failed to get stat of system prompt file %v\n", err)
+		}
+	}
+
+	// -fix-system-prompt
+	fixSysPromptFiles := strings.SplitSeq(cfg.FixSysPrompt, ",")
+	for f := range fixSysPromptFiles {
+		_, err = os.Stat(f)
+		if err != nil {
+			log.Fatalf("failed to get stat of system prompt file %v\n", err)
+		}
+	}
 }
 
 func main() {
 	// parse flags and check their validity
-	flag.Parse()
-	checkFlags()
-	*flagEnv = toAbsPath(*flagEnv)
-	*flagDb = toAbsPath(*flagDb)
-	*flagOutdir = toAbsPath(*flagOutdir)
-	*flagCheckBin = toAbsPath(*flagCheckBin)
-	*flagExtractKernel = toAbsPath(*flagExtractKernel)
-	*flagCheckKernel = toAbsPath(*flagCheckKernel)
-	*flagSyzkaller = toAbsPath(*flagSyzkaller)
+	cfg := setConfigs()
+	cfg.Env = toAbsPath(cfg.Env)
+	cfg.Db = toAbsPath(cfg.Db)
+	cfg.Outdir = toAbsPath(cfg.Outdir)
+	cfg.CheckBin = toAbsPath(cfg.CheckBin)
+	cfg.ExtractKernel = toAbsPath(cfg.ExtractKernel)
+	cfg.CheckKernel = toAbsPath(cfg.CheckKernel)
+	cfg.Syzkaller = toAbsPath(cfg.Syzkaller)
+	checkConfig(cfg)
 
 	// load environment variables from .env file
 	var err error
-	err = godotenv.Load(*flagEnv)
+	err = godotenv.Load(cfg.Env)
 	if err != nil {
 		log.Fatal("Error loading .env file")
 	}
 
 	// create output directory
-	err = os.MkdirAll(*flagOutdir, 0755)
+	err = os.MkdirAll(cfg.Outdir, 0755)
 	if err != nil {
 		log.Fatalf("failed to create output directory: %v\n", err)
 	}
 
 	// connect to the database
-	db := database.Database{Path: *flagDb}
+	db := database.Database{Path: cfg.Db}
 	err = db.Connect()
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v\n", err)
@@ -291,10 +588,10 @@ func main() {
 
 	// create a SyzCheck instances
 	sc := check.SyzCheck{
-		Bin:              *flagCheckBin,
-		KernelForExtract: *flagExtractKernel,
-		KernelForCheck:   *flagCheckKernel,
-		Workdir:          *flagSyzkaller,
+		Bin:              cfg.CheckBin,
+		KernelForExtract: cfg.ExtractKernel,
+		KernelForCheck:   cfg.CheckKernel,
+		Workdir:          cfg.Syzkaller,
 	}
 	err = sc.CheckWorkdir()
 	if err != nil {
@@ -308,7 +605,7 @@ func main() {
 	log.Printf("Material queue length: %d\n", len(queue))
 
 	// construct blacklist and minimize the queue via blacklist to avoid redundant specification
-	blacklist, err := createBlacklist(*flagBlackList, *flagOutdir, *flagResume)
+	blacklist, err := createBlacklist(cfg)
 	if err != nil {
 		log.Fatalf("failed to create blacklist: %v\n", err)
 	}
@@ -318,41 +615,52 @@ func main() {
 	}
 	log.Printf("Minimized material queue length: %d\n", len(queue))
 
-	// construct prompt template for agent, we have checked the validity of system prompt file in
-	// checkFlags function, so it is okay to ignore error here
-	sysPrompt, _ := os.ReadFile(*flagSystemPrompt)
+	// construct system prompt map, we have checked the validity of system prompt file(s) in
+	// checkConfig function, so it is okay to ignore error here
+	sysPromptMap := make(map[string]string)
+	spmWrtFunc := func(filesWithComma string, key string) {
+		files := strings.SplitSeq(filesWithComma, ",")
+		var sb strings.Builder
+		for file := range files {
+			data, _ := os.ReadFile(toAbsPath(file))
+			sb.WriteString(string(data) + "\n")
+		}
+		sysPromptMap[key] = sb.String()
+	}
+	spmWrtFunc(cfg.OtlSysPrompt, "outline")
+	spmWrtFunc(cfg.GenSysPrompt, "generate")
+	spmWrtFunc(cfg.FixSysPrompt, "fix")
+
+	// init agent and start writing syscall specs
+	buf, _ := os.ReadFile(cfg.Prefix)
+	prefix := string(buf) // prefix for syz spec
 	llm, err := openai.New(
 		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
 		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
-		openai.WithModel(*flagModel),
+		openai.WithModel(cfg.Model),
 	)
 	if err != nil {
 		log.Fatalf("failed to create llm: %v\n", err)
 	}
 	kAgent := agent.Agent{
-		SystemPrompt: string(sysPrompt),
-		Ctx:          context.Background(),
-		Model:        llm,
-		Tools:        myTools.ToolList,
-		Messages:     []llms.MessageContent{},
-		Temperature:  0.2,
+		Ctx:         context.Background(),
+		Model:       llm,
+		Tools:       myTools.ToolList,
+		Messages:    []llms.MessageContent{},
+		Temperature: 0.2,
 	}
 	for _, gvEntry := range queue {
-		response := genSpecLoop(&kAgent, &gvEntry, &sc)
-		log.Printf("Final response: %s\n", response.Choices[0].Content)
-		spec := response.Choices[0].Content
-		spec = strings.Replace(spec, "```syzlang", "", 1)
-		spec = strings.Replace(spec, "```", "", 1)
-		var (
-			fn string // file name
-			fp string // file path
-		)
-		// save spec and messages
-		fn = gvEntry.Name + "#" + *flagModel + ".txt"
-		fp = filepath.Join(*flagOutdir, fn)
-		os.WriteFile(fp, []byte(spec), 0644)
-		fn = gvEntry.Name + "#" + *flagModel + ".msg"
-		fp = filepath.Join(*flagOutdir, fn)
-		kAgent.SaveMessages(fp)
+		fp := filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, "spec#comp.txt")
+		if _, err := os.Stat(fp); err == nil && cfg.Resume {
+			log.Printf("Complete spec for global variable %s exists, reuse existing and skip generation.\n", gvEntry.Name)
+			continue
+		}
+		spec := writeSpec(&kAgent, &sysPromptMap, &gvEntry, &sc, cfg)
+		compSpec := prefix + "\n\n" + spec
+		err := os.WriteFile(fp, []byte(compSpec), 0644)
+		if err != nil {
+			log.Fatalf("failed to write final spec file: %v\n", err)
+		}
+		log.Printf("Spec for global variable %s has been generated successfully.\n", gvEntry.Name)
 	}
 }

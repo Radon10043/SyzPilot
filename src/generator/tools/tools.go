@@ -20,6 +20,7 @@ var ToolList = []llms.Tool{
 	GetTypedefTypeByDefineTool,
 	GetMacroDefCodeByNameTool,
 	GetMacroDefCodesByPatternTool,
+	GetMacroDefLocByNameTool,
 }
 
 var ToolExecutor = map[string]func(tc llms.ToolCall) (llms.MessageContent, error){
@@ -34,4 +35,5 @@ var ToolExecutor = map[string]func(tc llms.ToolCall) (llms.MessageContent, error
 	"get_typedef_type_by_define":     ExecGetTypedefTypeByDefine,
 	"get_macro_def_code_by_name":     ExecGetMacroDefCodeByName,
 	"get_macro_def_codes_by_pattern": ExecGetMacroDefCodesByPattern,
+	"get_macro_def_loc_by_name":      ExecGetMacroDefLocByName,
 }

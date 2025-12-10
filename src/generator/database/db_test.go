@@ -138,13 +138,13 @@ func TestFindGlobalVar(t *testing.T) {
 	db.Close()
 }
 
-func TestFindMacroDef(t *testing.T) {
+func TestFindMacroDefByName(t *testing.T) {
 	db := database.Database{Path: "data/database/linux.db"}
 	err := db.Connect()
 	if err != nil {
 		t.Fatalf("Database connection failed: %v", err)
 	}
-	md, err := db.GetMacroDef("EXT4_EPOCH_BITS")
+	md, err := db.GetMacroDefByName("EXT4_EPOCH_BITS")
 	if err != nil {
 		t.Errorf("Error retrieving macro definition code: %v", err)
 	}

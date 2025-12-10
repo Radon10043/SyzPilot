@@ -159,8 +159,8 @@ func (db *Database) GetAllGlobalVar() ([]GlobalVar, error) {
 	return gvs, result.Error
 }
 
-// GetMacroDef get macro definition data by macro name
-func (db *Database) GetMacroDef(name string) (MacroDef, error) {
+// GetMacroDefByName get macro definition data by macro name
+func (db *Database) GetMacroDefByName(name string) (MacroDef, error) {
 	var md MacroDef
 	db.gormDB.Where("name = ?", name).First(&md)
 	if md.Id == 0 {

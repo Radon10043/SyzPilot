@@ -1,11 +1,15 @@
 package utils
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/tmc/langchaingo/llms"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/ast"
+	"github.com/yuin/goldmark/text"
 )
 
 type jsonSpec struct {
@@ -42,9 +46,9 @@ func Json2syzlang(jstr string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to parse JSON: %w", err)
 	}
+
 	var sb strings.Builder
-	// helper function to write specification
-	wrtFunc := func(lines []string, prefix string) {
+	wrtFunc := func(lines []string, prefix string) { // helper function to convert json spec to syz spec
 		if len(lines) == 0 {
 			return
 		}
@@ -63,5 +67,40 @@ func Json2syzlang(jstr string) (string, error) {
 	wrtFunc(jspec.TypeAlias, "")
 	wrtFunc(jspec.TypeTemplate, "")
 	wrtFunc(jspec.Todo, "# TODO: ")
+
 	return sb.String(), nil
+}
+
+// FindFirstCodeFence extracts the first fenced code block with the specified language from the given Markdown content.
+func ExtractFirstCodeFence(markdownContent string, targetLang string) (string, bool) {
+	src := []byte(markdownContent)
+	md := goldmark.New()
+	reader := text.NewReader(src)
+	doc := md.Parser().Parse(reader)
+	code := ""
+	found := false
+	walkFunc := func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		if !entering || found {
+			return ast.WalkContinue, nil
+		}
+		if n.Kind() != ast.KindFencedCodeBlock {
+			return ast.WalkContinue, nil
+		}
+		codeBlock := n.(*ast.FencedCodeBlock)
+		lang := string(codeBlock.Language(src))
+		if !strings.EqualFold(lang, targetLang) {
+			return ast.WalkContinue, nil
+		}
+		var buf bytes.Buffer
+		lines := codeBlock.Lines()
+		for i := 0; i < lines.Len(); i++ {
+			line := lines.At(i)
+			buf.Write(line.Value(src))
+		}
+		code = buf.String()
+		found = true
+		return ast.WalkStop, nil
+	}
+	ast.Walk(doc, walkFunc)
+	return code, found
 }

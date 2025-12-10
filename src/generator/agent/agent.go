@@ -12,12 +12,11 @@ import (
 )
 
 type Agent struct {
-	SystemPrompt string                // system prompt for the agent
-	Ctx          context.Context       // context for llm operations
-	Model        *openai.LLM           // model instance
-	Tools        []llms.Tool           // available tools
-	Messages     []llms.MessageContent // message history
-	Temperature  float32               // temperature for llm
+	Ctx         context.Context       // context for llm operations
+	Model       *openai.LLM           // model instance
+	Tools       []llms.Tool           // available tools
+	Messages    []llms.MessageContent // message history
+	Temperature float32               // temperature for llm
 }
 
 // CleanMessages clear the message history of the agent
