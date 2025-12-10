@@ -41,6 +41,7 @@ type progConfig struct {
 	OtlSysPrompt string
 	GenSysPrompt string
 	FixSysPrompt string
+	MaxFix       int
 }
 
 // global variables
@@ -145,22 +146,23 @@ func checkSpecValidity(sc *check.SyzCheck, spec string) (bytes.Buffer, bytes.Buf
 }
 
 // writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a global variable
+// return the final syzlang spec and whether it is valid
 func writeSpec(
 	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, sc *check.SyzCheck, cfg *progConfig,
-) string {
+) (string, bool) {
 	logger := log.New(os.Stdout, "["+gvEntry.Name+"][outline] ", log.LstdFlags|log.Lmsgprefix)
 	outline := collectOutline(kAgent, (*sysPromptMap)["outline"], gvEntry, cfg, logger)
 	logger = log.New(os.Stdout, "["+gvEntry.Name+"][generate] ", log.LstdFlags|log.Lmsgprefix)
 	jsonSpec := collectSpec(kAgent, (*sysPromptMap)["generate"], gvEntry, cfg, outline, logger)
 	logger = log.New(os.Stdout, "["+gvEntry.Name+"][fix] ", log.LstdFlags|log.Lmsgprefix)
-	syzSpec := fixSpec(kAgent, (*sysPromptMap)["fix"], sc, gvEntry, cfg, jsonSpec, logger)
-	return syzSpec
+	syzSpec, valid := fixSpec(kAgent, (*sysPromptMap)["fix"], sc, gvEntry, cfg, jsonSpec, logger)
+	return syzSpec, valid
 }
 
 // fixSpec start a loop to fix invalid syscall spec, also with the help of agent
 func fixSpec(
 	kAgent *agent.Agent, sysPrompt string, sc *check.SyzCheck, gvEntry *database.GlobalVar, cfg *progConfig, jsonSpec string, logger *log.Logger,
-) string {
+) (string, bool) {
 	var (
 		spec  string
 		found bool
@@ -201,7 +203,8 @@ func fixSpec(
 		logger.Fatalf("failed to read prefix file: %v\n", err)
 	}
 	prefix := string(buf)
-	for {
+	valid := false
+	for i := 0; i < cfg.MaxFix; i++ { // limit the number of fix attempts
 		logger.Printf("Checking validity of spec ...\n")
 		if spec == "" {
 			logger.Fatalf("empty spec, stop.\n")
@@ -209,6 +212,7 @@ func fixSpec(
 		stdout, stderr, err := checkSpecValidity(sc, prefix+"\n\n"+spec)
 		if err == nil {
 			logger.Printf("Spec is valid!\n")
+			valid = true
 			break
 		}
 		logger.Printf(
@@ -231,7 +235,7 @@ func fixSpec(
 		}
 	}
 
-	return spec
+	return spec, valid
 }
 
 // fixSpecLoop run a loop to fix invalid syscall spec
@@ -443,7 +447,7 @@ func setConfigs() *progConfig {
 	flag.StringVar(&cfg.BlackList, "blacklist", "data/blacklist.txt", "Path to the global variable blacklist file")
 	flag.BoolVar(&cfg.Resume, "resume", true, "Whether to resume from previous interrupted run")
 	flag.StringVar(&cfg.Prefix, "prefix", "data/prefix.txt", "Path to the prefix file for syscall syz spec")
-	// TODO: add -max-fix to limit the number of fix attempts
+	flag.IntVar(&cfg.MaxFix, "max-fix", 10, "Maximum number of fix attempts for invalid specs")
 	flag.StringVar(
 		&cfg.OtlSysPrompt,
 		"otl-system-prompt",
@@ -655,8 +659,11 @@ func main() {
 			log.Printf("Complete spec for global variable %s exists, reuse existing and skip generation.\n", gvEntry.Name)
 			continue
 		}
-		spec := writeSpec(&kAgent, &sysPromptMap, &gvEntry, &sc, cfg)
+		spec, valid := writeSpec(&kAgent, &sysPromptMap, &gvEntry, &sc, cfg)
 		compSpec := prefix + "\n\n" + spec
+		if !valid {
+			compSpec = fmt.Sprintf("# NOTE: failed to fix spec after %d attempts\n%s", cfg.MaxFix, compSpec)
+		}
 		err := os.WriteFile(fp, []byte(compSpec), 0644)
 		if err != nil {
 			log.Fatalf("failed to write final spec file: %v\n", err)
