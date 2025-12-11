@@ -17,6 +17,7 @@ type Agent struct {
 	Tools       []llms.Tool           // available tools
 	Messages    []llms.MessageContent // message history
 	Temperature float32               // temperature for llm
+	MaxTokens   int                   // max tokens for single response of llm
 }
 
 // CleanMessages clear the message history of the agent
@@ -65,6 +66,7 @@ func (a *Agent) Query() (*llms.ContentResponse, error) {
 		a.Messages,
 		llms.WithTools(a.Tools),
 		llms.WithTemperature(float64(a.Temperature)),
+		llms.WithMaxTokens(a.MaxTokens),
 	)
 	if err != nil {
 		return nil, err

@@ -86,7 +86,7 @@ func (sc *SyzCheck) AddSpec(spec string) error {
 }
 
 // ExtractConst run `make extract` to extract constants from kernel source, return stdout, stderr, and error of the command
-func (sc *SyzCheck) ExtractConst() (bytes.Buffer, bytes.Buffer, error) {
+func (sc *SyzCheck) ExtractConst() (*bytes.Buffer, *bytes.Buffer, error) {
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(
 		"make",
@@ -100,14 +100,14 @@ func (sc *SyzCheck) ExtractConst() (bytes.Buffer, bytes.Buffer, error) {
 	cmd.Stdout = &stdout
 	err := cmd.Run()
 	if err != nil {
-		return stdout, stderr, err
+		return &stdout, &stderr, err
 	}
-	return stdout, stderr, nil
+	return &stdout, &stderr, nil
 }
 
 // CheckValidity run syz-check to check validity of existing specs under sc.Workdir/sys/$OS/*.txt,
 // return stdout, stderr, and error of the command
-func (sc *SyzCheck) CheckValidity() (bytes.Buffer, bytes.Buffer, error) {
+func (sc *SyzCheck) CheckValidity() (*bytes.Buffer, *bytes.Buffer, error) {
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(sc.Bin, "-obj-amd64="+filepath.Join(sc.KernelForCheck, "vmlinux"))
 	cmd.Dir = sc.Workdir
@@ -115,7 +115,7 @@ func (sc *SyzCheck) CheckValidity() (bytes.Buffer, bytes.Buffer, error) {
 	cmd.Stdout = &stdout
 	err := cmd.Run()
 	if err != nil {
-		return stdout, stderr, err
+		return &stdout, &stderr, err
 	}
-	return stdout, stderr, nil
+	return &stdout, &stderr, nil
 }

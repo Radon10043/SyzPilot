@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -9,6 +10,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/Radon10043/cloud/src/generator/agent"
@@ -125,7 +127,7 @@ func minimizeQueue(queue *[]database.GlobalVar, blacklist map[string]bool) ([]da
 }
 
 // checkSpecValidity check the validity of a syscall spec, return whether it is valid and error message if any
-func checkSpecValidity(sc *check.SyzCheck, spec string) (bytes.Buffer, bytes.Buffer, error) {
+func checkSpecValidity(sc *check.SyzCheck, spec string) (*bytes.Buffer, *bytes.Buffer, error) {
 	err := sc.CleanWorkdir()
 	if err != nil {
 		log.Fatalf("failed to clean syzkaller workdir: %v\n", err)
@@ -145,7 +147,7 @@ func checkSpecValidity(sc *check.SyzCheck, spec string) (bytes.Buffer, bytes.Buf
 	return stdout, stderr, nil
 }
 
-// writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a global variable
+// writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a global variable,
 // return the final syzlang spec and whether it is valid
 func writeSpec(
 	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, sc *check.SyzCheck, cfg *progConfig,
@@ -222,8 +224,8 @@ func fixSpec(
 			stdout.String(), stderr.String(),
 		)
 		specBlock := fmt.Sprintf("```syzlang\n%s\n```\n", spec)
-		errmsgBlock := fmt.Sprintf("```\n%s\n%s\n```\n", stdout.String(), stderr.String())
-		kAgent.AddHumanMessage(specBlock + "\n" + errmsgBlock)
+		errBlock := createErrBlock(stdout, stderr, cfg, logger)
+		kAgent.AddHumanMessage(specBlock + "\n" + errBlock)
 		response := fixSpecLoop(kAgent, logger)
 		spec, found = utils.ExtractFirstCodeBlock(response.Choices[0].Content, "syzlang")
 		if !found {
@@ -236,6 +238,86 @@ func fixSpec(
 	}
 
 	return spec, valid
+}
+
+// createErrBlock create an error block from stdout and stderr of `make extract` or `syz-check`
+func createErrBlock(stdout *bytes.Buffer, stderr *bytes.Buffer, cfg *progConfig, logger *log.Logger) string {
+	fmtStdout, err := formatMessages(stdout, cfg.Prefix, logger)
+	if err != nil {
+		logger.Fatalf("failed to extract error messages: %v\n", err)
+	}
+	fmtStderr, err := formatMessages(stderr, cfg.Prefix, logger)
+	if err != nil {
+		logger.Fatalf("failed to extract error messages: %v\n", err)
+	}
+
+	// format error message block, mainly adjust line numbers according to prefix length
+	var errBlock strings.Builder
+	errBlock.WriteString("```\n")
+	for _, msg := range fmtStdout {
+		errBlock.WriteString(msg + "\n")
+	}
+	for _, msg := range fmtStderr {
+		errBlock.WriteString(msg + "\n")
+	}
+	errBlock.WriteString("```\n")
+
+	return errBlock.String()
+}
+
+// formatMessages format error messages from stdout/stderr of `make extract` or `syz-check`, specifically
+// adjust line numbers according to prefix length
+func formatMessages(buf *bytes.Buffer, prefix string, logger *log.Logger) ([]string, error) {
+	type specError struct {
+		Path   string
+		Line   int
+		Column int
+		Issue  string
+	}
+
+	// a helper function to split a raw error message into path, line number, column number, and issue
+	splitHelper := func(str string) *specError {
+		tmp := strings.Split(str, ":")
+		// number of elements should greater than 4, specifically:
+		// 0: file path; 1: line number; 2: column number; 3-n: error message
+		if len(tmp) < 4 {
+			return nil
+		}
+		path := tmp[0]
+		issue := strings.Join(tmp[3:], ":")
+		line, err := strconv.Atoi(tmp[1])
+		if err != nil {
+			return nil
+		}
+		column, err := strconv.Atoi(tmp[2])
+		if err != nil {
+			return nil
+		}
+		return &specError{
+			Path:   path,
+			Line:   line,
+			Column: column,
+			Issue:  issue,
+		}
+	}
+
+	// adjust line numbers in error messages
+	prefixLines := strings.Split(prefix, "\n")
+	prefixLineLen := len(prefixLines)
+	var msgs []string
+	scanner := bufio.NewScanner(buf)
+	for scanner.Scan() {
+		line := scanner.Text()
+		se := splitHelper(line)
+		if se == nil {
+			msgs = append(msgs, line)
+		} else {
+			se.Line -= prefixLineLen
+			msgs = append(msgs, fmt.Sprintf("%s:%d:%d:%s", se.Path, se.Line, se.Column, se.Issue))
+		}
+	}
+
+	return msgs, scanner.Err()
 }
 
 // fixSpecLoop run a loop to fix invalid syscall spec
@@ -472,8 +554,7 @@ func setConfigs() *progConfig {
 		&cfg.FixSysPrompt,
 		"fix-system-prompt",
 		"data/prompts/fix/instruction.md,"+
-			"data/prompts/fix/example_media.md,"+
-			"data/prompts/fix/example_ppp.md",
+			"data/prompts/fix/example_v4l2.md,",
 		"Path to the fix system prompt file(s), use comma to separate multiple files",
 	)
 	flag.Parse()
@@ -482,40 +563,25 @@ func setConfigs() *progConfig {
 
 // checkConfig check validity of flags
 func checkConfig(cfg *progConfig) {
-	// check validity of -env
-	_, err := os.Stat(cfg.Env)
-	if err != nil {
-		log.Fatalf("failed to get stat of env file: %v\n", err)
+	// a helper function to check file existence
+	fileExistHelper := func(path string, title string) {
+		_, err := os.Stat(path)
+		if err != nil {
+			log.Fatalf("%s: %s: %v\n", title, path, err)
+		}
 	}
-
-	// -db
-	_, err = os.Stat(cfg.Db)
-	if err != nil {
-		log.Fatalf("failed to get stat of database file: %v\n", err)
-	}
+	fileExistHelper(cfg.Env, "-env")
+	fileExistHelper(cfg.Db, "-db")
+	fileExistHelper(cfg.CheckBin, "-check-bin")
+	fileExistHelper(cfg.ExtractKernel, "-extract-kernel")
+	vmlinuxPath := filepath.Join(cfg.CheckKernel, "vmlinux")
+	fileExistHelper(vmlinuxPath, "-check-kernel")
+	fileExistHelper(cfg.Syzkaller, "-syzkaller")
+	fileExistHelper(cfg.Prefix, "-prefix")
 
 	// -outdir
 	if cfg.Outdir == "" {
-		log.Fatalf("output directory cannot be empty.")
-	}
-
-	// -check-bin
-	_, err = os.Stat(cfg.CheckBin)
-	if err != nil {
-		log.Fatalf("failed to get stat of syz-check binary: %v\n", err)
-	}
-
-	// -extract-kernel
-	_, err = os.Stat(cfg.ExtractKernel)
-	if err != nil {
-		log.Fatalf("failed to get stat of extract kernel source: %v\n", err)
-	}
-
-	// -check-kernel
-	vmlinuxPath := filepath.Join(cfg.CheckKernel, "vmlinux")
-	_, err = os.Stat(vmlinuxPath)
-	if err != nil {
-		log.Fatalf("failed to get stat of vmlinux in check kernel: %v\n", err)
+		log.Fatalf("-outdir: cannot be empty.")
 	}
 
 	// -syzkaller
@@ -523,45 +589,23 @@ func checkConfig(cfg *progConfig) {
 		Workdir: cfg.Syzkaller,
 	}
 	if err := sc.CheckWorkdir(); err != nil {
-		log.Fatalf("syzkaller's directory is invalid: %v\n", err)
+		log.Fatalf("-syzkaller: directory is invalid: %v\n", err)
 	}
 
-	// -prefix
-	_, err = os.Stat(cfg.Prefix)
-	if err != nil {
-		log.Fatalf("failed to get stat of prefix file: %v\n", err)
+	// system prompt files
+	for f := range strings.SplitSeq(cfg.OtlSysPrompt, ",") {
+		fileExistHelper(f, "-otl-system-prompt")
 	}
-
-	// -otl-system-prompt
-	otlSysPromptFiles := strings.SplitSeq(cfg.OtlSysPrompt, ",")
-	for f := range otlSysPromptFiles {
-		_, err = os.Stat(f)
-		if err != nil {
-			log.Fatalf("failed to get stat of system prompt file %v\n", err)
-		}
+	for f := range strings.SplitSeq(cfg.GenSysPrompt, ",") {
+		fileExistHelper(f, "-gen-system-prompt")
 	}
-
-	// -gen-system-prompt
-	genSysPromptFiles := strings.SplitSeq(cfg.GenSysPrompt, ",")
-	for f := range genSysPromptFiles {
-		_, err = os.Stat(f)
-		if err != nil {
-			log.Fatalf("failed to get stat of system prompt file %v\n", err)
-		}
-	}
-
-	// -fix-system-prompt
-	fixSysPromptFiles := strings.SplitSeq(cfg.FixSysPrompt, ",")
-	for f := range fixSysPromptFiles {
-		_, err = os.Stat(f)
-		if err != nil {
-			log.Fatalf("failed to get stat of system prompt file %v\n", err)
-		}
+	for f := range strings.SplitSeq(cfg.FixSysPrompt, ",") {
+		fileExistHelper(f, "-fix-system-prompt")
 	}
 }
 
 func main() {
-	// parse flags and check their validity
+	// parse flags
 	cfg := setConfigs()
 	cfg.Env = toAbsPath(cfg.Env)
 	cfg.Db = toAbsPath(cfg.Db)
@@ -570,6 +614,25 @@ func main() {
 	cfg.ExtractKernel = toAbsPath(cfg.ExtractKernel)
 	cfg.CheckKernel = toAbsPath(cfg.CheckKernel)
 	cfg.Syzkaller = toAbsPath(cfg.Syzkaller)
+	cfg.BlackList = toAbsPath(cfg.BlackList)
+	cfg.Prefix = toAbsPath(cfg.Prefix)
+	fabs := ""
+	for f := range strings.SplitSeq(cfg.OtlSysPrompt, ",") {
+		fabs += toAbsPath(f) + ","
+	}
+	cfg.OtlSysPrompt = strings.TrimRight(fabs, ",")
+	fabs = ""
+	for f := range strings.SplitSeq(cfg.GenSysPrompt, ",") {
+		fabs += toAbsPath(f) + ","
+	}
+	cfg.GenSysPrompt = strings.TrimRight(fabs, ",")
+	fabs = ""
+	for f := range strings.SplitSeq(cfg.FixSysPrompt, ",") {
+		fabs += toAbsPath(f) + ","
+	}
+	cfg.FixSysPrompt = strings.TrimRight(fabs, ",")
+
+	// check validity of flags
 	checkConfig(cfg)
 
 	// load environment variables from .env file
@@ -656,6 +719,7 @@ func main() {
 		Tools:       myTools.ToolList,
 		Messages:    []llms.MessageContent{},
 		Temperature: 0.2,
+		MaxTokens:   128 << 10, // 128k
 	}
 	for _, gvEntry := range queue {
 		fp := filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, "spec#comp.txt")

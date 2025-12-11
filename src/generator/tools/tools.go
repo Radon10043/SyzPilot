@@ -24,16 +24,16 @@ var ToolList = []llms.Tool{
 }
 
 var ToolExecutor = map[string]func(tc llms.ToolCall) (llms.MessageContent, error){
-	// "get_current_weather":               ExecGetCurrentWeather,
-	"get_func_code_by_name":          ExecGetFuncCodeByName,
-	"get_enum_code_by_enumerator":    ExecGetEnumCodeByEnumerator,
-	"get_enum_code_by_specifier":     ExecGetEnumCodeBySpecifier,
-	"get_struct_code_by_name":        ExecGetStructCodeByName,
-	"get_union_code_by_name":         ExecGetUnionCodeByName,
-	"get_global_var_code_by_name":    ExecGetGlobalVarCodeByName,
-	"get_typedef_code_by_define":     ExecGetTypedefCodeByDefine,
-	"get_typedef_type_by_define":     ExecGetTypedefTypeByDefine,
-	"get_macro_def_code_by_name":     ExecGetMacroDefCodeByName,
-	"get_macro_def_codes_by_pattern": ExecGetMacroDefCodesByPattern,
-	"get_macro_def_loc_by_name":      ExecGetMacroDefLocByName,
+	// Toys[0].Function.Name:                       ExecGetCurrentWeather,
+	GetFuncCodeByNameTool.Function.Name:         ExecGetFuncCodeByName,
+	GetEnumCodeByEnumeratorTool.Function.Name:   ExecGetEnumCodeByEnumerator,
+	GetEnumCodeBySpecifierTool.Function.Name:    ExecGetEnumCodeBySpecifier,
+	GetStructCodeByNameTool.Function.Name:       ExecGetStructCodeByName,
+	GetUnionCodeByNameTool.Function.Name:        ExecGetUnionCodeByName,
+	GetGlobalVarCodeByNameTool.Function.Name:    ExecGetGlobalVarCodeByName,
+	GetTypedefCodeByDefineTool.Function.Name:    ExecGetTypedefCodeByDefine,
+	GetTypedefTypeByDefineTool.Function.Name:    ExecGetTypedefTypeByDefine,
+	GetMacroDefCodeByNameTool.Function.Name:     ExecGetMacroDefCodeByName,
+	GetMacroDefCodesByPatternTool.Function.Name: ExecGetMacroDefCodesByPattern,
+	GetMacroDefLocByNameTool.Function.Name:      ExecGetMacroDefLocByName,
 }
