@@ -17,7 +17,7 @@ func GetTypedefEntryByDefine(define string, db *database.Database) (database.Typ
 }
 
 // ExecGetTypedefCodeByDefine execute the get_typedef_code_by_define tool call
-func ExecGetTypedefCodeByDefine(tc llms.ToolCall) (llms.MessageContent, error) {
+func ExecGetTypedefCodeByDefine(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		TypedefDefine string `json:"typedef_define"`
 		Rational      string `json:"rational"`
@@ -25,7 +25,7 @@ func ExecGetTypedefCodeByDefine(tc llms.ToolCall) (llms.MessageContent, error) {
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := GetTypedefEntryByDefine(args.TypedefDefine, DB)
+	resp, err := GetTypedefEntryByDefine(args.TypedefDefine, th.Db)
 	var respContent string = ""
 	if err != nil {
 		respContent = err.Error() // likely not found error
@@ -68,14 +68,14 @@ var GetTypedefCodeByDefineTool = llms.Tool{
 }
 
 // ExecGetTypedefTypeByDefine execute the get_typedef_type_by_define tool call
-func ExecGetTypedefTypeByDefine(tc llms.ToolCall) (llms.MessageContent, error) {
+func ExecGetTypedefTypeByDefine(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		TypedefDefine string `json:"typedef_define"`
 	}
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := GetTypedefEntryByDefine(args.TypedefDefine, DB)
+	resp, err := GetTypedefEntryByDefine(args.TypedefDefine, th.Db)
 	var respContent string = ""
 	if err != nil {
 		respContent = err.Error() // likely not found error

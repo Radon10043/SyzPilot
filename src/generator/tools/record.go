@@ -8,8 +8,8 @@ import (
 )
 
 // GetStructEntryByName get the struct entry by struct name
-func GetStructEntryByName(name string) (database.Record, error) {
-	entry, err := DB.GetStruct(name)
+func GetStructEntryByName(name string, db *database.Database) (database.Record, error) {
+	entry, err := db.GetStruct(name)
 	if err != nil {
 		return database.Record{}, err
 	}
@@ -17,7 +17,7 @@ func GetStructEntryByName(name string) (database.Record, error) {
 }
 
 // ExecGetStructCodeByName execute the get_struct_code_by_name tool call
-func ExecGetStructCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
+func ExecGetStructCodeByName(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		StructName string `json:"struct_name"`
 		Rational   string `json:"rational"`
@@ -25,7 +25,7 @@ func ExecGetStructCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := GetStructEntryByName(args.StructName)
+	resp, err := GetStructEntryByName(args.StructName, th.Db)
 	var respContent string = ""
 	if err != nil {
 		respContent = err.Error() // likely not found error
@@ -68,8 +68,8 @@ var GetStructCodeByNameTool = llms.Tool{
 }
 
 // GetUnionEntryByName get the union entry by union name
-func GetUnionEntryByName(name string) (database.Record, error) {
-	entry, err := DB.GetUnion(name)
+func GetUnionEntryByName(name string, db *database.Database) (database.Record, error) {
+	entry, err := db.GetUnion(name)
 	if err != nil {
 		return database.Record{}, err
 	}
@@ -77,7 +77,7 @@ func GetUnionEntryByName(name string) (database.Record, error) {
 }
 
 // ExecGetUnionCodeByName execute the get_union_code_by_name tool call
-func ExecGetUnionCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
+func ExecGetUnionCodeByName(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		UnionName string `json:"union_name"`
 		Rational  string `json:"rational"`
@@ -85,7 +85,7 @@ func ExecGetUnionCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := GetUnionEntryByName(args.UnionName)
+	resp, err := GetUnionEntryByName(args.UnionName, th.Db)
 	var respContent string = ""
 	if err != nil {
 		respContent = err.Error() // likely not found error

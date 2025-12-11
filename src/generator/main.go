@@ -150,20 +150,20 @@ func checkSpecValidity(sc *check.SyzCheck, spec string) (*bytes.Buffer, *bytes.B
 // writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a global variable,
 // return the final syzlang spec and whether it is valid
 func writeSpec(
-	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, sc *check.SyzCheck, cfg *progConfig,
+	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *progConfig,
 ) (string, bool) {
 	logger := log.New(os.Stdout, "["+gvEntry.Name+"][outline] ", log.LstdFlags|log.Lmsgprefix)
 	outline := collectOutline(kAgent, (*sysPromptMap)["outline"], gvEntry, cfg, logger)
 	logger = log.New(os.Stdout, "["+gvEntry.Name+"][generate] ", log.LstdFlags|log.Lmsgprefix)
 	jsonSpec := collectSpec(kAgent, (*sysPromptMap)["generate"], gvEntry, cfg, outline, logger)
 	logger = log.New(os.Stdout, "["+gvEntry.Name+"][fix] ", log.LstdFlags|log.Lmsgprefix)
-	syzSpec, valid := fixSpec(kAgent, (*sysPromptMap)["fix"], sc, gvEntry, cfg, jsonSpec, logger)
+	syzSpec, valid := fixSpec(kAgent, (*sysPromptMap)["fix"], gvEntry, cfg, jsonSpec, logger)
 	return syzSpec, valid
 }
 
 // fixSpec start a loop to fix invalid syscall spec, also with the help of agent
 func fixSpec(
-	kAgent *agent.Agent, sysPrompt string, sc *check.SyzCheck, gvEntry *database.GlobalVar, cfg *progConfig, jsonSpec string, logger *log.Logger,
+	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, cfg *progConfig, jsonSpec string, logger *log.Logger,
 ) (string, bool) {
 	var (
 		spec  string
@@ -211,7 +211,7 @@ func fixSpec(
 		if spec == "" {
 			logger.Fatalf("empty spec, stop.\n")
 		}
-		stdout, stderr, err := checkSpecValidity(sc, prefix+"\n\n"+spec)
+		stdout, stderr, err := checkSpecValidity(kAgent.ToolHelper.Sc, prefix+"\n\n"+spec)
 		if err == nil {
 			logger.Printf("Spec is valid!\n")
 			valid = true
@@ -604,6 +604,78 @@ func checkConfig(cfg *progConfig) {
 	}
 }
 
+// createAgent creates an agent for kernel syscal spec generation, return the agent instance and error
+func createAgent(db *database.Database, sc *check.SyzCheck, cfg *progConfig) (*agent.Agent, error) {
+	llm, err := openai.New(
+		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
+		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
+		openai.WithModel(cfg.Model),
+	)
+	if err != nil {
+		return nil, err
+	}
+	toolMap := map[string]myTools.ToolExec{
+		myTools.GetFuncCodeByNameTool.Function.Name: {
+			Tool: myTools.GetFuncCodeByNameTool,
+			Exec: myTools.ExecGetFuncCodeByName,
+		},
+		myTools.GetEnumCodeByEnumeratorTool.Function.Name: {
+			Tool: myTools.GetEnumCodeByEnumeratorTool,
+			Exec: myTools.ExecGetEnumCodeByEnumerator,
+		},
+		myTools.GetEnumCodeBySpecifierTool.Function.Name: {
+			Tool: myTools.GetEnumCodeBySpecifierTool,
+			Exec: myTools.ExecGetEnumCodeBySpecifier,
+		},
+		myTools.GetStructCodeByNameTool.Function.Name: {
+			Tool: myTools.GetStructCodeByNameTool,
+			Exec: myTools.ExecGetStructCodeByName,
+		},
+		myTools.GetUnionCodeByNameTool.Function.Name: {
+			Tool: myTools.GetUnionCodeByNameTool,
+			Exec: myTools.ExecGetUnionCodeByName,
+		},
+		myTools.GetGlobalVarCodeByNameTool.Function.Name: {
+			Tool: myTools.GetGlobalVarCodeByNameTool,
+			Exec: myTools.ExecGetGlobalVarCodeByName,
+		},
+		myTools.GetTypedefCodeByDefineTool.Function.Name: {
+			Tool: myTools.GetTypedefCodeByDefineTool,
+			Exec: myTools.ExecGetTypedefCodeByDefine,
+		},
+		myTools.GetTypedefTypeByDefineTool.Function.Name: {
+			Tool: myTools.GetTypedefTypeByDefineTool,
+			Exec: myTools.ExecGetTypedefTypeByDefine,
+		},
+		myTools.GetMacroDefCodeByNameTool.Function.Name: {
+			Tool: myTools.GetMacroDefCodeByNameTool,
+			Exec: myTools.ExecGetMacroDefCodeByName,
+		},
+		myTools.GetMacroDefCodesByPatternTool.Function.Name: {
+			Tool: myTools.GetMacroDefCodesByPatternTool,
+			Exec: myTools.ExecGetMacroDefCodesByPattern,
+		},
+		myTools.GetMacroDefLocByNameTool.Function.Name: {
+			Tool: myTools.GetMacroDefLocByNameTool,
+			Exec: myTools.ExecGetMacroDefLocByName,
+		},
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: db,
+		Sc: sc,
+	}
+	kAgent := agent.Agent{
+		Ctx:         context.Background(),
+		Model:       llm,
+		Messages:    []llms.MessageContent{},
+		Temperature: 0.2,
+		MaxTokens:   128 << 10, // 128k
+		ToolMap:     toolMap,
+		ToolHelper:  toolHelper,
+	}
+	return &kAgent, nil
+}
+
 func main() {
 	// parse flags
 	cfg := setConfigs()
@@ -655,7 +727,6 @@ func main() {
 		log.Fatalf("failed to connect to database: %v\n", err)
 	}
 	defer db.Close()
-	myTools.DB = &db
 
 	// create a SyzCheck instances
 	sc := check.SyzCheck{
@@ -668,7 +739,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("syzkaller workdir check failed: %v\n", err)
 	}
-	myTools.SC = &sc
 
 	// create a queue that used to prompt llm for spec generation
 	log.Println("Generating material queue ...")
@@ -702,32 +772,20 @@ func main() {
 	spmWrtFunc(cfg.GenSysPrompt, "generate")
 	spmWrtFunc(cfg.FixSysPrompt, "fix")
 
-	// init agent and start writing syscall specs
+	// init an agent and start writing syscall specs
+	kAgent, err := createAgent(&db, &sc, cfg)
+	if err != nil {
+		log.Fatalf("failed to create agent: %v\n", err)
+	}
 	buf, _ := os.ReadFile(cfg.Prefix)
 	prefix := string(buf) // prefix for syz spec
-	llm, err := openai.New(
-		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
-		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
-		openai.WithModel(cfg.Model),
-	)
-	if err != nil {
-		log.Fatalf("failed to create llm: %v\n", err)
-	}
-	kAgent := agent.Agent{
-		Ctx:         context.Background(),
-		Model:       llm,
-		Tools:       myTools.ToolList,
-		Messages:    []llms.MessageContent{},
-		Temperature: 0.2,
-		MaxTokens:   128 << 10, // 128k
-	}
 	for _, gvEntry := range queue {
 		fp := filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, "spec#comp.txt")
 		if _, err := os.Stat(fp); err == nil && cfg.Resume {
 			log.Printf("Complete spec for global variable %s exists, reuse existing and skip generation.\n", gvEntry.Name)
 			continue
 		}
-		spec, valid := writeSpec(&kAgent, &sysPromptMap, &gvEntry, &sc, cfg)
+		spec, valid := writeSpec(kAgent, &sysPromptMap, &gvEntry, cfg)
 		compSpec := prefix + "\n\n" + spec
 		if !valid {
 			compSpec = fmt.Sprintf("# NOTE: failed to fix spec after %d attempts\n%s", cfg.MaxFix, compSpec)

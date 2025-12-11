@@ -8,7 +8,7 @@ import (
 )
 
 // ExecGetEnumCodeByEnumerator execute the get_enum_code_by_enumerator tool call
-func ExecGetEnumCodeByEnumerator(tc llms.ToolCall) (llms.MessageContent, error) {
+func ExecGetEnumCodeByEnumerator(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		Enumerator string `json:"enumerator"`
 		Rational   string `json:"rational"`
@@ -16,7 +16,7 @@ func ExecGetEnumCodeByEnumerator(tc llms.ToolCall) (llms.MessageContent, error) 
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := GetEnumEntryByEnumerator(args.Enumerator)
+	resp, err := GetEnumEntryByEnumerator(args.Enumerator, th.Db)
 	var respContent string = ""
 	if err != nil {
 		respContent = err.Error() // likely not found error
@@ -37,8 +37,8 @@ func ExecGetEnumCodeByEnumerator(tc llms.ToolCall) (llms.MessageContent, error) 
 }
 
 // GetEnumEntry get the enum entry by enumerator
-func GetEnumEntryByEnumerator(enumerator string) (database.Enum, error) {
-	entry, err := DB.GetEnumByEnumerator(enumerator)
+func GetEnumEntryByEnumerator(enumerator string, db *database.Database) (database.Enum, error) {
+	entry, err := db.GetEnumByEnumerator(enumerator)
 	if err != nil {
 		return database.Enum{}, err
 	}
@@ -68,7 +68,7 @@ var GetEnumCodeByEnumeratorTool = llms.Tool{
 }
 
 // ExecGetEnumCodeBySpecifier execute the get_enum_code_by_specifier tool call
-func ExecGetEnumCodeBySpecifier(tc llms.ToolCall) (llms.MessageContent, error) {
+func ExecGetEnumCodeBySpecifier(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		Specifier string `json:"specifier"`
 		Rational  string `json:"rational"`
@@ -76,7 +76,7 @@ func ExecGetEnumCodeBySpecifier(tc llms.ToolCall) (llms.MessageContent, error) {
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := DB.GetEnumBySpecifier(args.Specifier)
+	resp, err := GetEnumEntryBySpecifier(args.Specifier, th.Db)
 	var respContent string = ""
 	if err != nil {
 		respContent = err.Error() // likely not found error
@@ -97,8 +97,8 @@ func ExecGetEnumCodeBySpecifier(tc llms.ToolCall) (llms.MessageContent, error) {
 }
 
 // GetEnumEntryBySpecifier get the enum entry by specifier
-func GetEnumEntryBySpecifier(specifier string) (database.Enum, error) {
-	entry, err := DB.GetEnumBySpecifier(specifier)
+func GetEnumEntryBySpecifier(specifier string, db *database.Database) (database.Enum, error) {
+	entry, err := db.GetEnumBySpecifier(specifier)
 	if err != nil {
 		return database.Enum{}, err
 	}

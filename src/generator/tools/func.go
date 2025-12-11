@@ -8,8 +8,8 @@ import (
 )
 
 // GetFuncEntry get the function entry by function name
-func GetFuncEntryByName(name string) (database.Function, error) {
-	entry, err := DB.GetFunction(name)
+func GetFuncEntryByName(name string, db *database.Database) (database.Function, error) {
+	entry, err := db.GetFunction(name)
 	if err != nil {
 		return database.Function{}, err
 	}
@@ -17,7 +17,7 @@ func GetFuncEntryByName(name string) (database.Function, error) {
 }
 
 // ExecGetFuncCodeByName execute the get_func_code_by_name tool call
-func ExecGetFuncCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
+func ExecGetFuncCodeByName(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		FunctionName string `json:"function_name"`
 		Rational     string `json:"rational"`
@@ -25,7 +25,7 @@ func ExecGetFuncCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := GetFuncEntryByName(args.FunctionName)
+	resp, err := GetFuncEntryByName(args.FunctionName, th.Db)
 	var respContent string = ""
 	if err != nil {
 		respContent = err.Error() // likely not found error

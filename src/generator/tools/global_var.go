@@ -8,8 +8,8 @@ import (
 )
 
 // GetGlobalVarEntry get the global variable entry by variable name
-func GetGlobalVarEntryByName(name string) (database.GlobalVar, error) {
-	entry, err := DB.GetGlobalVar(name)
+func GetGlobalVarEntryByName(name string, db *database.Database) (database.GlobalVar, error) {
+	entry, err := db.GetGlobalVar(name)
 	if err != nil {
 		return database.GlobalVar{}, err
 	}
@@ -17,7 +17,7 @@ func GetGlobalVarEntryByName(name string) (database.GlobalVar, error) {
 }
 
 // ExecGetGlobalVarCodeByName execute the get_global_var_code_by_name tool call
-func ExecGetGlobalVarCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
+func ExecGetGlobalVarCodeByName(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		VarName  string `json:"var_name"`
 		Rational string `json:"rational"`
@@ -25,7 +25,7 @@ func ExecGetGlobalVarCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := GetGlobalVarEntryByName(args.VarName)
+	resp, err := GetGlobalVarEntryByName(args.VarName, th.Db)
 	var respContent string = ""
 	if err != nil {
 		respContent = err.Error() // likely not found error

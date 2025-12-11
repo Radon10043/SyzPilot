@@ -17,19 +17,24 @@ func TestGetGlobalVarCodeByName(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		_ = db.Close()
-	}()
-	myTools.DB = &db
-	globalVarTools := []llms.Tool{
-		myTools.GetGlobalVarCodeByNameTool,
+	defer db.Close()
+	toolMap := map[string]myTools.ToolExec{
+		myTools.GetGlobalVarCodeByNameTool.Function.Name: {
+			Tool: myTools.GetGlobalVarCodeByNameTool,
+			Exec: myTools.ExecGetGlobalVarCodeByName,
+		},
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: &db,
+		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
-		Ctx:      ctx,
-		Model:    llm,
-		Tools:    globalVarTools,
-		Messages: []llms.MessageContent{},
+		Ctx:        ctx,
+		Model:      llm,
+		Messages:   []llms.MessageContent{},
+		ToolMap:    toolMap,
+		ToolHelper: toolHelper,
 	}
 	myAgent.AddHumanMessage("What's the code of global variable dvb_frontend_fops?")
 	_, err = myAgent.Query()

@@ -17,19 +17,24 @@ func TestGetTypedefCodeByDefine(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		_ = db.Close()
-	}()
-	myTools.DB = &db
-	typedefTools := []llms.Tool{
-		myTools.GetTypedefCodeByDefineTool,
+	defer db.Close()
+	toolMap := map[string]myTools.ToolExec{
+		myTools.GetTypedefCodeByDefineTool.Function.Name: {
+			Tool: myTools.GetTypedefCodeByDefineTool,
+			Exec: myTools.ExecGetTypedefCodeByDefine,
+		},
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: &db,
+		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
-		Ctx:      ctx,
-		Model:    llm,
-		Tools:    typedefTools,
-		Messages: []llms.MessageContent{},
+		Ctx:        ctx,
+		Model:      llm,
+		Messages:   []llms.MessageContent{},
+		ToolHelper: toolHelper,
+		ToolMap:    toolMap,
 	}
 	myAgent.AddHumanMessage("What's the code of typedef unative_t?")
 	_, err = myAgent.Query()
@@ -53,19 +58,24 @@ func TestGetTypedefTypeByDefine(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		_ = db.Close()
-	}()
-	myTools.DB = &db
-	typedefTools := []llms.Tool{
-		myTools.GetTypedefTypeByDefineTool,
+	defer db.Close()
+	toolMap := map[string]myTools.ToolExec{
+		myTools.GetTypedefTypeByDefineTool.Function.Name: {
+			Tool: myTools.GetTypedefTypeByDefineTool,
+			Exec: myTools.ExecGetTypedefTypeByDefine,
+		},
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: &db,
+		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
-		Ctx:      ctx,
-		Model:    llm,
-		Tools:    typedefTools,
-		Messages: []llms.MessageContent{},
+		Ctx:        ctx,
+		Model:      llm,
+		Messages:   []llms.MessageContent{},
+		ToolHelper: toolHelper,
+		ToolMap:    toolMap,
 	}
 	myAgent.AddHumanMessage("What's the type of typedef unative_t?")
 	_, err = myAgent.Query()

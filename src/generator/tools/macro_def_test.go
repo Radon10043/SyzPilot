@@ -18,16 +18,23 @@ func TestGetMacroDefCodeByName(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	myTools.DB = &db
-	macroDefTools := []llms.Tool{
-		myTools.GetMacroDefCodeByNameTool,
+	toolMap := map[string]myTools.ToolExec{
+		myTools.GetMacroDefCodeByNameTool.Function.Name: {
+			Tool: myTools.GetMacroDefCodeByNameTool,
+			Exec: myTools.ExecGetMacroDefCodeByName,
+		},
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: &db,
+		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
-		Ctx:      ctx,
-		Model:    llm,
-		Tools:    macroDefTools,
-		Messages: []llms.MessageContent{},
+		Ctx:        ctx,
+		Model:      llm,
+		Messages:   []llms.MessageContent{},
+		ToolMap:    toolMap,
+		ToolHelper: toolHelper,
 	}
 	myAgent.AddHumanMessage("What's the code of macro definition EXT4_EPOCH_BITS?")
 	_, err = myAgent.Query()
@@ -52,16 +59,23 @@ func TestGetMacroDefCodesByPattern(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	myTools.DB = &db
-	macroDefTools := []llms.Tool{
-		myTools.GetMacroDefCodesByPatternTool,
+	toolMap := map[string]myTools.ToolExec{
+		myTools.GetMacroDefCodesByPatternTool.Function.Name: {
+			Tool: myTools.GetMacroDefCodesByPatternTool,
+			Exec: myTools.ExecGetMacroDefCodesByPattern,
+		},
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: &db,
+		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
-		Ctx:      ctx,
-		Model:    llm,
-		Tools:    macroDefTools,
-		Messages: []llms.MessageContent{},
+		Ctx:        ctx,
+		Model:      llm,
+		Messages:   []llms.MessageContent{},
+		ToolMap:    toolMap,
+		ToolHelper: toolHelper,
 	}
 	myAgent.AddHumanMessage("Output codes of all macro definitions whose have prefix `MEDIA_PAD_FL_`?")
 	_, err = myAgent.Query()
@@ -86,16 +100,23 @@ func TestGetMacroDefLocByName(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	myTools.DB = &db
-	macroDefTools := []llms.Tool{
-		myTools.GetMacroDefLocByNameTool,
+	toolMap := map[string]myTools.ToolExec{
+		myTools.GetMacroDefLocByNameTool.Function.Name: {
+			Tool: myTools.GetMacroDefLocByNameTool,
+			Exec: myTools.ExecGetMacroDefLocByName,
+		},
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: &db,
+		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
-		Ctx:      ctx,
-		Model:    llm,
-		Tools:    macroDefTools,
-		Messages: []llms.MessageContent{},
+		Ctx:        ctx,
+		Model:      llm,
+		Messages:   []llms.MessageContent{},
+		ToolMap:    toolMap,
+		ToolHelper: toolHelper,
 	}
 	myAgent.AddHumanMessage("Where is the location of macro definition EXT4_EPOCH_BITS?")
 	_, err = myAgent.Query()

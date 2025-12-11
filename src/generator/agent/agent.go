@@ -12,12 +12,13 @@ import (
 )
 
 type Agent struct {
-	Ctx         context.Context       // context for llm operations
-	Model       *openai.LLM           // model instance
-	Tools       []llms.Tool           // available tools
-	Messages    []llms.MessageContent // message history
-	Temperature float32               // temperature for llm
-	MaxTokens   int                   // max tokens for single response of llm
+	Ctx         context.Context             // context for llm operations
+	Model       *openai.LLM                 // model instance
+	Messages    []llms.MessageContent       // message history
+	Temperature float32                     // temperature for llm
+	MaxTokens   int                         // max tokens for single response of llm
+	ToolMap     map[string]myTools.ToolExec // available tools for the agent
+	ToolHelper  *myTools.ToolHelper         // helper for tool execution
 }
 
 // CleanMessages clear the message history of the agent
@@ -61,10 +62,14 @@ func (a *Agent) SaveMessages(path string) error {
 // Query query the llm with the current messages and update the history
 func (a *Agent) Query() (*llms.ContentResponse, error) {
 	// query the llm with existing messages
+	avaTools := []llms.Tool{}
+	for _, te := range a.ToolMap {
+		avaTools = append(avaTools, te.Tool)
+	}
 	response, err := a.Model.GenerateContent(
 		a.Ctx,
 		a.Messages,
-		llms.WithTools(a.Tools),
+		llms.WithTools(avaTools),
 		llms.WithTemperature(float64(a.Temperature)),
 		llms.WithMaxTokens(a.MaxTokens),
 	)
@@ -114,10 +119,11 @@ func (a *Agent) ExecTools() error {
 		// execute the tool based on its name
 		tcResp := llms.MessageContent{}
 		err := error(nil)
-		if myTools.ToolExecutor[tc.FunctionCall.Name] == nil {
+		toolExec, ok := a.ToolMap[tc.FunctionCall.Name]
+		if !ok {
 			err = fmt.Errorf("no executor found for tool: %s", tc.FunctionCall.Name)
 		} else {
-			tcResp, err = myTools.ToolExecutor[tc.FunctionCall.Name](tc)
+			tcResp, err = toolExec.Exec(&tc, a.ToolHelper)
 		}
 		if err != nil {
 			return err

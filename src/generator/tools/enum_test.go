@@ -17,19 +17,24 @@ func TestGetEnumCodeByEnumerator(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		_ = db.Close()
-	}()
-	myTools.DB = &db
-	enumTools := []llms.Tool{
-		myTools.GetEnumCodeByEnumeratorTool,
+	defer db.Close()
+	toolMap := map[string]myTools.ToolExec{
+		myTools.GetEnumCodeByEnumeratorTool.Function.Name: {
+			Tool: myTools.GetEnumCodeByEnumeratorTool,
+			Exec: myTools.ExecGetEnumCodeByEnumerator,
+		},
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: &db,
+		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
-		Ctx:      ctx,
-		Model:    llm,
-		Tools:    enumTools,
-		Messages: []llms.MessageContent{},
+		Ctx:        ctx,
+		Model:      llm,
+		Messages:   []llms.MessageContent{},
+		ToolMap:    toolMap,
+		ToolHelper: toolHelper,
 	}
 	myAgent.AddHumanMessage("What's the enum code of enumerator DM_VERSION_CMD?")
 	_, err = myAgent.Query()
@@ -53,19 +58,24 @@ func TestGetEnumCodeBySpecifier(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		_ = db.Close()
-	}()
-	myTools.DB = &db
-	enumTools := []llms.Tool{
-		myTools.GetEnumCodeBySpecifierTool,
+	defer db.Close()
+	toolMap := map[string]myTools.ToolExec{
+		myTools.GetEnumCodeBySpecifierTool.Function.Name: {
+			Tool: myTools.GetEnumCodeBySpecifierTool,
+			Exec: myTools.ExecGetEnumCodeBySpecifier,
+		},
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: &db,
+		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
-		Ctx:      ctx,
-		Model:    llm,
-		Tools:    enumTools,
-		Messages: []llms.MessageContent{},
+		Ctx:        ctx,
+		Model:      llm,
+		Messages:   []llms.MessageContent{},
+		ToolMap:    toolMap,
+		ToolHelper: toolHelper,
 	}
 	myAgent.AddHumanMessage("What's the enum code of specifier bbr_mode?")
 	_, err = myAgent.Query()

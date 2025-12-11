@@ -2,7 +2,6 @@ package agent_test
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -31,11 +30,17 @@ func init() {
 		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
 		openai.WithModel("gemini-3-pro-preview"),
 	)
+	toolMap := make(map[string]myTools.ToolExec)
+	toolMap[myTools.Toys[0].Function.Name] = myTools.ToolExec{
+		Tool: myTools.Toys[0],
+		Exec: myTools.ExecGetCurrentWeather,
+	}
 	testAgent = agent.Agent{
-		Ctx:      context.Background(),
-		Model:    llm,
-		Tools:    myTools.Toys,
-		Messages: []llms.MessageContent{},
+		Ctx:        context.Background(),
+		Model:      llm,
+		Messages:   []llms.MessageContent{},
+		ToolMap:    toolMap,
+		ToolHelper: nil,
 	}
 }
 
@@ -53,5 +58,5 @@ func TestExecWeatherTool(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to query agent after tool execution: %v", err)
 	}
-	fmt.Println(response.Choices[0].Content)
+	t.Logf("Response of AI: %s\n", response.Choices[0].Content)
 }

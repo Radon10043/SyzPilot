@@ -17,19 +17,24 @@ func TestGetFuncCodeByName(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer func() {
-		_ = db.Close()
-	}()
-	myTools.DB = &db
-	funcTools := []llms.Tool{
-		myTools.GetFuncCodeByNameTool,
+	defer db.Close()
+	toolMap := map[string]myTools.ToolExec{
+		myTools.GetFuncCodeByNameTool.Function.Name: {
+			Tool: myTools.GetFuncCodeByNameTool,
+			Exec: myTools.ExecGetFuncCodeByName,
+		},
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: &db,
+		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
-		Ctx:      ctx,
-		Model:    llm,
-		Tools:    funcTools,
-		Messages: []llms.MessageContent{},
+		Ctx:        ctx,
+		Model:      llm,
+		Messages:   []llms.MessageContent{},
+		ToolMap:    toolMap,
+		ToolHelper: toolHelper,
 	}
 	myAgent.AddHumanMessage("What's the code of pppox_ioctl function?")
 	_, err = myAgent.Query()

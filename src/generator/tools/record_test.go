@@ -14,19 +14,24 @@ import (
 func TestGetStructCodeByName(t *testing.T) {
 	db := database.Database{Path: filepath.Join(root, "data", "database", "linux.db")}
 	db.Connect()
-	defer func() {
-		_ = db.Close()
-	}()
-	myTools.DB = &db
-	structTools := []llms.Tool{
-		myTools.GetStructCodeByNameTool,
+	defer db.Close()
+	toolMap := map[string]myTools.ToolExec{
+		myTools.GetStructCodeByNameTool.Function.Name: {
+			Tool: myTools.GetStructCodeByNameTool,
+			Exec: myTools.ExecGetStructCodeByName,
+		},
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: &db,
+		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
-		Ctx:      ctx,
-		Model:    llm,
-		Tools:    structTools,
-		Messages: []llms.MessageContent{},
+		Ctx:        ctx,
+		Model:      llm,
+		Messages:   []llms.MessageContent{},
+		ToolMap:    toolMap,
+		ToolHelper: toolHelper,
 	}
 	myAgent.AddHumanMessage("What's the code of struct sound_unit?")
 	_, err := myAgent.Query()
@@ -46,23 +51,31 @@ func TestGetStructCodeByName(t *testing.T) {
 
 func TestGetUnionCodeByName(t *testing.T) {
 	db := database.Database{Path: filepath.Join(root, "data", "database", "linux.db")}
-	db.Connect()
-	defer func() {
-		_ = db.Close()
-	}()
-	myTools.DB = &db
-	unionTools := []llms.Tool{
-		myTools.GetUnionCodeByNameTool,
+	err := db.Connect()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	toolMap := map[string]myTools.ToolExec{
+		myTools.GetUnionCodeByNameTool.Function.Name: {
+			Tool: myTools.GetUnionCodeByNameTool,
+			Exec: myTools.ExecGetUnionCodeByName,
+		},
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: &db,
+		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
-		Ctx:      ctx,
-		Model:    llm,
-		Tools:    unionTools,
-		Messages: []llms.MessageContent{},
+		Ctx:        ctx,
+		Model:      llm,
+		Messages:   []llms.MessageContent{},
+		ToolMap:    toolMap,
+		ToolHelper: toolHelper,
 	}
 	myAgent.AddHumanMessage("What's the code of union ipvs_sockaddr?")
-	_, err := myAgent.Query()
+	_, err = myAgent.Query()
 	if err != nil {
 		t.Fatal(err)
 	}

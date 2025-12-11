@@ -9,8 +9,8 @@ import (
 )
 
 // GetMacroDefEntryByName get the macro definition entry by macro name
-func GetMacroDefEntryByName(name string) (database.MacroDef, error) {
-	entry, err := DB.GetMacroDefByName(name)
+func GetMacroDefEntryByName(name string, db *database.Database) (database.MacroDef, error) {
+	entry, err := db.GetMacroDefByName(name)
 	if err != nil {
 		return database.MacroDef{}, err
 	}
@@ -18,7 +18,7 @@ func GetMacroDefEntryByName(name string) (database.MacroDef, error) {
 }
 
 // ExecGetMacroDefCodeByName execute the get_macro_def_code_by_name tool call
-func ExecGetMacroDefCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
+func ExecGetMacroDefCodeByName(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		MacroName string `json:"macro_name"`
 		Rational  string `json:"rational"`
@@ -26,7 +26,7 @@ func ExecGetMacroDefCodeByName(tc llms.ToolCall) (llms.MessageContent, error) {
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := GetMacroDefEntryByName(args.MacroName)
+	resp, err := GetMacroDefEntryByName(args.MacroName, th.Db)
 	var respContent string = ""
 	if err != nil {
 		respContent = err.Error() // likely not found error
@@ -69,7 +69,7 @@ var GetMacroDefCodeByNameTool = llms.Tool{
 }
 
 // ExecGetMacroDefLocByName execute the get_macro_def_loc_by_name tool call
-func ExecGetMacroDefLocByName(tc llms.ToolCall) (llms.MessageContent, error) {
+func ExecGetMacroDefLocByName(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		MacroName string `json:"macro_name"`
 		Rational  string `json:"rational"`
@@ -77,7 +77,7 @@ func ExecGetMacroDefLocByName(tc llms.ToolCall) (llms.MessageContent, error) {
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := GetMacroDefEntryByName(args.MacroName)
+	resp, err := GetMacroDefEntryByName(args.MacroName, th.Db)
 	var respContent string = ""
 	if err != nil {
 		respContent = err.Error() // likely not found error
@@ -120,8 +120,8 @@ var GetMacroDefLocByNameTool = llms.Tool{
 }
 
 // GetMacroDefEntriesByPattern get macro definition entries by name pattern
-func GetMacroDefEntriesByPattern(pattern string) ([]database.MacroDef, error) {
-	entries, err := DB.GetMacroDefByPattern(pattern)
+func GetMacroDefEntriesByPattern(pattern string, db *database.Database) ([]database.MacroDef, error) {
+	entries, err := db.GetMacroDefByPattern(pattern)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func GetMacroDefEntriesByPattern(pattern string) ([]database.MacroDef, error) {
 }
 
 // ExecGetMacroDefCodesByPattern execute the get_macro_def_codes_by_pattern tool call
-func ExecGetMacroDefCodesByPattern(tc llms.ToolCall) (llms.MessageContent, error) {
+func ExecGetMacroDefCodesByPattern(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		MacroPattern string `json:"macro_pattern"`
 		Rational     string `json:"rational"`
@@ -137,7 +137,7 @@ func ExecGetMacroDefCodesByPattern(tc llms.ToolCall) (llms.MessageContent, error
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := GetMacroDefEntriesByPattern(args.MacroPattern)
+	resp, err := GetMacroDefEntriesByPattern(args.MacroPattern, th.Db)
 	var respContent string = ""
 	if err != nil {
 		respContent = err.Error() // likely not found error

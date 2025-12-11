@@ -5,19 +5,20 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/Radon10043/cloud/src/generator/check"
 	"github.com/tmc/langchaingo/llms"
 )
 
 // CheckSpecValidity check the validity of the given specification
-func CheckSpecValidity(spec string) (string, error) {
-	SC.CleanWorkdir()
-	path := filepath.Join(SC.Workdir, "sys", "linux", "spec.txt")
+func CheckSpecValidity(spec string, sc *check.SyzCheck) (string, error) {
+	sc.CleanWorkdir()
+	path := filepath.Join(sc.Workdir, "sys", "linux", "spec.txt")
 	os.WriteFile(path, []byte(spec), 0644)
-	_, stderr, err := SC.ExtractConst()
+	_, stderr, err := sc.ExtractConst()
 	if err != nil {
 		return stderr.String(), err
 	}
-	_, stderr, err = SC.CheckValidity()
+	_, stderr, err = sc.CheckValidity()
 	if err != nil {
 		return stderr.String(), err
 	}
@@ -25,7 +26,7 @@ func CheckSpecValidity(spec string) (string, error) {
 }
 
 // ExecCheckSpecValidity execute the check_spec_validity tool call
-func ExecCheckSpecValidity(tc llms.ToolCall) (llms.MessageContent, error) {
+func ExecCheckSpecValidity(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		Spec     string `json:"spec"`
 		Rational string `json:"rational"`
@@ -33,7 +34,7 @@ func ExecCheckSpecValidity(tc llms.ToolCall) (llms.MessageContent, error) {
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, _ := CheckSpecValidity(args.Spec)
+	resp, _ := CheckSpecValidity(args.Spec, th.Sc)
 	tcResp := llms.MessageContent{
 		Role: llms.ChatMessageTypeTool,
 		Parts: []llms.ContentPart{

@@ -8,7 +8,7 @@ import (
 
 // ExecGetCurrentWeather executes the get_current_weather tool call, i.e. call GetCurrentWeather function
 // and returns the tool response as llms.MessageContent
-func ExecGetCurrentWeather(tc llms.ToolCall) (llms.MessageContent, error) {
+func ExecGetCurrentWeather(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		Location string `json:"location"`
 	}
