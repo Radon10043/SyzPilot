@@ -15,7 +15,7 @@ Your goal is to **analyze the error**, **locate the root cause**, and **rewrite 
 
 When you encounter an error, map it to one of the following categories and apply the fix:
 
-### 1. `unknown identifier` / `const not found`
+## 1. `unknown identifier` / `const not found`
 * **Cause**: The macro or enum value is used in the spec but the corresponding header file is missing from `include []`.
 * **Action**:
     * Use tools to find the identifier in the kernel source.
@@ -23,21 +23,21 @@ When you encounter an error, map it to one of the following categories and apply
     * **Fix**: Add the correct `include <path/to/header.h>` to the `include` section.
     * *Fallback*: If the identifier is defined in a `.c` file (not exported), define it explicitly using `define CONST_NAME VALUE` in the spec.
 
-### 2. `undeclared type` / `type mismatch`
+## 2. `undeclared type` / `type mismatch`
 * **Cause**: A struct is used before definition, or a primitive type is wrong (e.g., assigning a pointer to an `int`).
 * **Action**:
     * Ensure all structs are defined *before* they are referenced (if your output format requires ordering, though syzlang is generally order-independent, clarity helps).
     * Check if the field requires a `ptr[in, ...]` wrapper.
     * **Fix**: Correct the type definition or re-order structures.
 
-### 3. `syntax error`
+## 3. `syntax error`
 * **Cause**: Missing commas, unmatched brackets, or invalid flags syntax.
 * **Action**: strict syntax check against Syzkaller grammar.
     * Check: Are flags assignments using `=`? (e.g., `flags = val1, val2`)
     * Check: Are struct fields separated by newlines (not commas)?
     * Check: Do pointers have direction? `ptr[in, type]`.
 
-### 4. `invalid struct field`
+## 4. `invalid struct field`
 * **Cause**: The struct definition in spec doesn't match the kernel's memory layout (padding/alignment issues).
 * **Action**:
     * Check for hidden padding. Syzkaller usually handles alignment, but explicit `pad` fields might be needed for strange unions.
