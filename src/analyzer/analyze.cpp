@@ -104,7 +104,7 @@ public:
         SourceManager &sm = astCtx->getSourceManager();
 
         /* only process functions with a body */
-        if (!fd->hasBody())
+        if (!fd->doesThisDeclarationHaveABody())
             return true;
 
         /* get info of the function */
