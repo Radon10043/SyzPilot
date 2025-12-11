@@ -225,7 +225,7 @@ func fixSpec(
 		errmsgBlock := fmt.Sprintf("```\n%s\n%s\n```\n", stdout.String(), stderr.String())
 		kAgent.AddHumanMessage(specBlock + "\n" + errmsgBlock)
 		response := fixSpecLoop(kAgent, logger)
-		spec, found = utils.ExtractFirstCodeFence(response.Choices[0].Content, "syzlang")
+		spec, found = utils.ExtractFirstCodeBlock(response.Choices[0].Content, "syzlang")
 		if !found {
 			logger.Fatalf("failed to extract syzlang code fence from fix response.\n")
 		}
@@ -296,11 +296,15 @@ func collectSpec(
 	for todoNum > 0 {
 		kAgent.CleanMessages()
 		response := genSpec(kAgent, sysPrompt, gvEntry, outline, logger)
-		outline, found = utils.ExtractFirstCodeFence(response.Choices[0].Content, "json")
+		outline, found = utils.ExtractFirstCodeBlock(response.Choices[0].Content, "json")
 		if !found {
 			logger.Fatalf("failed to extract json code fence from generate response.\n")
 		}
-		err := os.WriteFile(fp, []byte(outline), 0644)
+		_, err := utils.Json2syzlang(outline)
+		if err != nil {
+			logger.Fatalf("failed to generate valid json: %v\n", err)
+		}
+		err = os.WriteFile(fp, []byte(outline), 0644)
 		if err != nil {
 			logger.Fatalf("failed to write spec file: %v\n", err)
 		}
@@ -372,7 +376,7 @@ func collectOutline(
 	if _, err := os.Stat(fp); err != nil || !cfg.Resume {
 		kAgent.CleanMessages()
 		response := genOutline(kAgent, sysPrompt, gvEntry, logger)
-		outline, found = utils.ExtractFirstCodeFence(response.Choices[0].Content, "json")
+		outline, found = utils.ExtractFirstCodeBlock(response.Choices[0].Content, "json")
 		if !found {
 			logger.Fatalf("failed to extract json code fence from outline response.\n")
 		}

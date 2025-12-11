@@ -37,3 +37,17 @@ func TestJson2syzlang(t *testing.T) {
 	}
 	t.Logf("Syzlang Specification:\n%s", sspec)
 }
+
+func TestExtractFirstCodeBlock(t *testing.T) {
+	fp := filepath.Join(root, "data", "test", "dev_v4l2_gen.msg")
+	mdBytes, err := os.ReadFile(fp)
+	if err != nil {
+		t.Fatalf("Failed to read Markdown file: %v", err)
+	}
+	mdContent := string(mdBytes)
+	codeBlock, found := utils.ExtractFirstCodeBlock(mdContent, "json")
+	if !found {
+		t.Fatalf("No JSON code block found in the Markdown content")
+	}
+	t.Logf("Extracted JSON Code Block:\n%s", codeBlock)
+}

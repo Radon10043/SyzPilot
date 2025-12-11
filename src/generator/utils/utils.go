@@ -71,8 +71,8 @@ func Json2syzlang(jstr string) (string, error) {
 	return sb.String(), nil
 }
 
-// FindFirstCodeFence extracts the first fenced code block with the specified language from the given Markdown content.
-func ExtractFirstCodeFence(markdownContent string, targetLang string) (string, bool) {
+// ExtractFirstCodeBlock extracts the first fenced code block with the specified language from the given Markdown content.
+func ExtractFirstCodeBlock(markdownContent string, targetLang string) (string, bool) {
 	src := []byte(markdownContent)
 	md := goldmark.New()
 	reader := text.NewReader(src)
