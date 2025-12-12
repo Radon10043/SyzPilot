@@ -44,7 +44,7 @@ analyzer: prepare
 		$(SQLITE_LIBS)
 
 generator: prepare
-	GOOS=$(HOSTOS) GOARCH=$(HOSTARCH) $(GO) build $(GOFLAGS) -o bin/generator src/generator/main.go
+	GOOS=$(HOSTOS) GOARCH=$(HOSTARCH) $(GO) build $(GOFLAGS) -o bin/generator github.com/Radon10043/cloud/src/generator/
 
 syz-check: prepare
 	cd syzkaller/ && \
