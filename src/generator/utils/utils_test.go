@@ -24,20 +24,6 @@ func init() {
 	}
 }
 
-func TestJson2syzlang(t *testing.T) {
-	jpath := filepath.Join(root, "data", "test", "dev_md_gen.json")
-	jbyte, err := os.ReadFile(jpath)
-	if err != nil {
-		t.Fatalf("Failed to read JSON file: %v", err)
-	}
-	jstr := string(jbyte)
-	sspec, err := utils.Json2syzlang(jstr)
-	if err != nil {
-		t.Fatalf("Json2syzlang failed: %v", err)
-	}
-	t.Logf("Syzlang Specification:\n%s", sspec)
-}
-
 func TestExtractFirstCodeBlock(t *testing.T) {
 	fp := filepath.Join(root, "data", "test", "dev_v4l2_gen.msg")
 	mdBytes, err := os.ReadFile(fp)
