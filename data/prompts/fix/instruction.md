@@ -49,6 +49,7 @@ When you encounter an error, map it to one of the following categories and apply
 2.  **No Hallucinations**: Do not invent constant values. If you can't find a macro, you must verify it using the tools.
 3.  **Minimal Change**: Only fix what is broken. Do not refactor valid parts of the spec unless necessary for the fix.
 4.  **Resource Management**: If an `open` syscall returns a `fd`, ensure specific resource types (e.g., `fd_media`) are used instead of generic `fd` to enable fuzzing coverage.
+5.  **TODO preserve**: If an comment starts with `# TODO:`, preserve this comment during fixing.
 
 # Output Format
 
