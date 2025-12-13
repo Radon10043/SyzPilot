@@ -404,7 +404,7 @@ func fixSpecLoop(kAgent *agent.Agent, logger *log.Logger) (*llms.ContentResponse
 // execOutlineStep execute the outline step
 func execGenerateStep(kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, logger *log.Logger, wsh *writeSpecHelper) error {
 	var err error
-	if wsh.Jstr, err = collectSpec(kAgent, sysPrompt, gvEntry, wsh.Outline, logger); err != nil {
+	if wsh.Jstr, err = collectSpec(kAgent, sysPrompt, gvEntry, wsh.Jstr, logger); err != nil {
 		return err
 	}
 	if err = wsh.WriteJstr(); err != nil {
@@ -489,6 +489,10 @@ func execOutlineStep(kAgent *agent.Agent, sysPrompt string, gvEntry *database.Gl
 		return err
 	}
 	if err = wsh.WriteOutline(); err != nil {
+		return err
+	}
+	wsh.Jstr = wsh.Outline
+	if err = wsh.WriteJstr(); err != nil {
 		return err
 	}
 	return wsh.WriteNext("generate")
