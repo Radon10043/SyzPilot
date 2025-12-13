@@ -143,7 +143,7 @@ func setConfigs() *ProgConfig {
 	flag.StringVar(&cfg.BlackList, "blacklist", "data/blacklist.txt", "Path to the global variable blacklist file")
 	flag.BoolVar(&cfg.Resume, "resume", true, "Whether to resume from previous interrupted run")
 	flag.StringVar(&cfg.Prefix, "prefix", "data/prefix.txt", "Path to the prefix file for syscall syz spec")
-	flag.IntVar(&cfg.MaxFix, "max-fix", 10, "Maximum number of fix attempts for invalid specs")
+	flag.IntVar(&cfg.MaxFix, "max-fix", 5, "Maximum number of fix attempts for invalid specs")
 	// TODO: implement max-retry logic in spec writing
 	flag.IntVar(&cfg.MaxRetry, "max-retry", 5, "Maximum number of retry attempts for writing spec")
 	flag.StringVar(
