@@ -139,8 +139,8 @@ func writeSpec(
 		}
 	}
 
-	// start the write spec loop
-	for {
+	// start the write spec loop, limit the number of iterations to avoid infinite loop
+	for range 100 {
 		err := execWriteStep(kAgent, sysPromptMap, gvEntry, cfg, wsh)
 		if err != nil {
 			return "", false, err
@@ -178,9 +178,6 @@ func execFixStep(kAgent *agent.Agent, sysPrompt string, cfg *ProgConfig, logger 
 		jspec *ast.JsonSpec
 		err   error
 	)
-	if wsh.Spec, err = ast.Json2syzlang(wsh.Jstr); err != nil {
-		return fmt.Errorf("failed to convert spec json to syzlang: %v\n", err)
-	}
 	if wsh.Spec, wsh.Valid, err = fixSpec(kAgent, sysPrompt, cfg, wsh.Spec, logger); err != nil {
 		return err
 	}
@@ -201,8 +198,6 @@ func execFixStep(kAgent *agent.Agent, sysPrompt string, cfg *ProgConfig, logger 
 		}
 		if len(jspec.Todo) > 0 {
 			return wsh.WriteNext("generate")
-		} else {
-			return wsh.WriteNext("complete")
 		}
 	} else { // Invalid spec cannot be converted to json/JsonSpec, reuse latest json string
 		err = json.Unmarshal([]byte(wsh.Jstr), &jspec)
@@ -211,10 +206,10 @@ func execFixStep(kAgent *agent.Agent, sysPrompt string, cfg *ProgConfig, logger 
 		}
 		if len(jspec.Todo) > 0 {
 			return wsh.WriteNext("generate")
-		} else {
-			return wsh.WriteNext("complete")
 		}
 	}
+	return wsh.WriteNext("complete")
+
 }
 
 // fixSpec start a loop to fix invalid syscall spec, also with the help of agent, return the final syzlang spec
@@ -415,10 +410,13 @@ func execGenerateStep(kAgent *agent.Agent, sysPrompt string, gvEntry *database.G
 	if err = wsh.WriteJstr(); err != nil {
 		return err
 	}
-	if err = wsh.WriteNext("fix"); err != nil {
+	if wsh.Spec, err = ast.Json2syzlang(wsh.Jstr); err != nil {
+		return fmt.Errorf("failed to convert spec json to syzlang: %v\n", err)
+	}
+	if err = wsh.WriteSpec(); err != nil {
 		return err
 	}
-	return nil
+	return wsh.WriteNext("fix")
 }
 
 // collectSpec prompt agent to generate syscall spec or reuse existing spec for a global variable
@@ -493,10 +491,7 @@ func execOutlineStep(kAgent *agent.Agent, sysPrompt string, gvEntry *database.Gl
 	if err = wsh.WriteOutline(); err != nil {
 		return err
 	}
-	if err = wsh.WriteNext("generate"); err != nil {
-		return err
-	}
-	return nil
+	return wsh.WriteNext("generate")
 }
 
 // collectOutline prompt agent to outline todo tasks or reuse existing outline for a global variable

@@ -165,7 +165,7 @@ func (js *JsonSpec) addSyzNode(node ast.Node) error {
 			js.TypeAlias = append(js.TypeAlias, s)
 		}
 	case *ast.Comment:
-		if strings.HasPrefix(o.Text, "# TODO:") {
+		if strings.HasPrefix(o.Text, " TODO:") {
 			js.Todo = append(js.Todo, s)
 		}
 	case *ast.NewLine:
