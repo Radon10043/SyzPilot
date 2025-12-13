@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -48,6 +49,9 @@ type ProgConfig struct {
 	FixSysPrompt string
 	MaxFix       int
 	MaxRetry     int
+
+	// misc configs
+	Progress string
 }
 
 // safeToAbsPath is a helper struct to safely convert path to absolute path
@@ -144,8 +148,7 @@ func setConfigs() *ProgConfig {
 	flag.BoolVar(&cfg.Resume, "resume", true, "Whether to resume from previous interrupted run")
 	flag.StringVar(&cfg.Prefix, "prefix", "data/prefix.txt", "Path to the prefix file for syscall syz spec")
 	flag.IntVar(&cfg.MaxFix, "max-fix", 5, "Maximum number of fix attempts for invalid specs")
-	// TODO: implement max-retry logic in spec writing
-	flag.IntVar(&cfg.MaxRetry, "max-retry", 5, "Maximum number of retry attempts for writing spec")
+	flag.IntVar(&cfg.MaxRetry, "max-retry", 5, "Maximum number of retry attempts for writing spec (-1 means infinite retries)")
 	flag.StringVar(
 		&cfg.OtlSysPrompt,
 		"otl-system-prompt",
@@ -221,6 +224,11 @@ func checkConfig(cfg *ProgConfig) error {
 	}
 	if err := sc.CheckWorkdir(); err != nil {
 		return fmt.Errorf("-syzkaller: directory is invalid: %v\n", err)
+	}
+
+	// -max-retry
+	if cfg.MaxRetry < -1 {
+		return fmt.Errorf("-max-retry: must be -1 or greater.")
 	}
 
 	return nil
@@ -336,7 +344,6 @@ func main() {
 	}
 
 	// load environment variables from .env file
-
 	if err := godotenv.Load(cfg.Env); err != nil {
 		log.Fatal("Error loading .env file")
 	}
@@ -403,13 +410,21 @@ func main() {
 	}
 	buf, _ := os.ReadFile(cfg.Prefix)
 	prefix := string(buf) // prefix for syz spec
-	for _, gvEntry := range queue {
+	if cfg.MaxRetry == -1 {
+		cfg.MaxRetry = math.MaxInt
+	}
+	for i, gvEntry := range queue {
+		cfg.Progress = fmt.Sprintf("%d/%d", i+1, len(queue))
 		fp := filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, "spec#comp.txt")
 		if _, err := os.Stat(fp); err == nil && cfg.Resume {
 			log.Printf("Complete spec for global variable %s exists, reuse existing and skip generation.\n", gvEntry.Name)
 			continue
 		}
 		spec, valid, err := writeSpec(kAgent, &sysPromptMap, &gvEntry, cfg)
+		for j := 0; j < cfg.MaxRetry && err != nil; j++ {
+			log.Printf("Retrying to write spec for global variable %s (attempt %d/%d) ...\n", gvEntry.Name, j+1, cfg.MaxRetry)
+			spec, valid, err = writeSpec(kAgent, &sysPromptMap, &gvEntry, cfg)
+		}
 		if err != nil {
 			log.Fatalf("failed to write spec for global variable %s: %v\n", gvEntry.Name, err)
 		}

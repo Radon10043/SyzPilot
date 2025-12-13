@@ -157,7 +157,7 @@ func execWriteStep(
 	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *ProgConfig, wsh *writeSpecHelper,
 ) error {
 	var logger *log.Logger
-	logger = log.New(os.Stdout, "["+gvEntry.Name+"]["+wsh.Next+"] ", log.LstdFlags|log.Lmsgprefix)
+	logger = log.New(os.Stdout, "["+cfg.Progress+"]"+"["+gvEntry.Name+"]["+wsh.Next+"] ", log.LstdFlags|log.Lmsgprefix)
 	switch wsh.Next {
 	case "outline":
 		return execOutlineStep(kAgent, (*sysPromptMap)["outline"], gvEntry, logger, wsh)
