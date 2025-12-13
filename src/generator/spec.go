@@ -12,67 +12,216 @@ import (
 	"strings"
 
 	"github.com/Radon10043/cloud/src/generator/agent"
+	"github.com/Radon10043/cloud/src/generator/ast"
 	"github.com/Radon10043/cloud/src/generator/check"
 	"github.com/Radon10043/cloud/src/generator/database"
 	"github.com/Radon10043/cloud/src/generator/utils"
 	"github.com/tmc/langchaingo/llms"
 )
 
+// writeSpecHelper is a helper struct to hold intermediate results during spec writing
+type writeSpecHelper struct {
+	Outline     string // outline json string
+	OutlinePath string // path to outline json file
+	Jstr        string // spec json string
+	JstrPath    string // path to spec json file
+	Spec        string // syzlang spec string
+	SpecPath    string // path to syzlang spec file
+	Valid       bool   // whether the spec is valid
+	Workdir     string // path to work directory
+	Next        string // next step
+	DotNext     string // path to .next file, sync with Next field
+}
+
+// WriteOutline write the outline field to outline file
+func (wsh *writeSpecHelper) WriteOutline() error {
+	if err := os.WriteFile(wsh.OutlinePath, []byte(wsh.Outline), 0644); err != nil {
+		return fmt.Errorf("failed to write outline file: %v\n", err)
+	}
+	return nil
+}
+
+// WriteJstr write the jstr field to spec json file
+func (wsh *writeSpecHelper) WriteJstr() error {
+	if err := os.WriteFile(wsh.JstrPath, []byte(wsh.Jstr), 0644); err != nil {
+		return fmt.Errorf("failed to write spec json file: %v\n", err)
+	}
+	return nil
+}
+
+// WriteSpec write the spec field to syzlang spec file
+func (wsh *writeSpecHelper) WriteSpec() error {
+	if err := os.WriteFile(wsh.SpecPath, []byte(wsh.Spec), 0644); err != nil {
+		return fmt.Errorf("failed to write spec file: %v\n", err)
+	}
+	return nil
+}
+
+// WriteNext update the .next file and next field with the next step
+func (wsh *writeSpecHelper) WriteNext(next string) error {
+	if err := os.WriteFile(wsh.DotNext, []byte(next), 0644); err != nil {
+		return fmt.Errorf("failed to update .next file: %v\n", err)
+	}
+	wsh.Next = next
+	return nil
+}
+
+// RecoverProgress recover existing progress from workdir
+func (wsh *writeSpecHelper) RecoverProgress(cfg *ProgConfig) error {
+	// recover outline field
+	if _, err := os.Stat(wsh.OutlinePath); err == nil {
+		data, err := os.ReadFile(wsh.OutlinePath)
+		if err != nil {
+			return fmt.Errorf("failed to read outline file: %v\n", err)
+		}
+		wsh.Outline = string(data)
+	}
+
+	// recover jstr field
+	if _, err := os.Stat(wsh.JstrPath); err == nil {
+		data, err := os.ReadFile(wsh.JstrPath)
+		if err != nil {
+			return fmt.Errorf("failed to read spec json file: %v\n", err)
+		}
+		wsh.Jstr = string(data)
+	}
+
+	// recover spec field
+	if _, err := os.Stat(wsh.SpecPath); err == nil {
+		data, err := os.ReadFile(wsh.SpecPath)
+		if err != nil {
+			return fmt.Errorf("failed to read spec file: %v\n", err)
+		}
+		wsh.Spec = string(data)
+	}
+
+	// recover next field
+	if _, err := os.Stat(wsh.DotNext); err == nil {
+		data, err := os.ReadFile(wsh.DotNext)
+		if err != nil {
+			return fmt.Errorf("failed to read .next file: %v\n", err)
+		}
+		wsh.Next = strings.TrimSpace(string(data))
+	}
+
+	return nil
+}
+
 // writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a global variable,
 // return the final syzlang spec and whether it is valid
 func writeSpec(
-	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *progConfig,
+	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *ProgConfig,
 ) (string, bool, error) {
-	logger := log.New(os.Stdout, "["+gvEntry.Name+"][outline] ", log.LstdFlags|log.Lmsgprefix)
-	outline, err := collectOutline(kAgent, (*sysPromptMap)["outline"], gvEntry, cfg, logger)
-	if err != nil {
-		return "", false, err
+	// init and set default value for writeSpecHelper
+	var wsh *writeSpecHelper = &writeSpecHelper{
+		OutlinePath: filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, "outline.json"),
+		JstrPath:    filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, "spec.json"),
+		SpecPath:    filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, "spec.txt"),
+		Workdir:     filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model),
+		Next:        "outline",
+		DotNext:     filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, ".next"),
 	}
-	logger = log.New(os.Stdout, "["+gvEntry.Name+"][generate] ", log.LstdFlags|log.Lmsgprefix)
-	jsonSpec, err := collectSpec(kAgent, (*sysPromptMap)["generate"], gvEntry, cfg, outline, logger)
+	err := os.MkdirAll(wsh.Workdir, 0755)
 	if err != nil {
-		return "", false, err
+		return "", false, fmt.Errorf("failed to create workdir: %v\n", err)
 	}
-	logger = log.New(os.Stdout, "["+gvEntry.Name+"][fix] ", log.LstdFlags|log.Lmsgprefix)
-	syzSpec, valid, err := fixSpec(kAgent, (*sysPromptMap)["fix"], gvEntry, cfg, jsonSpec, logger)
-	if err != nil {
-		return "", false, err
+
+	// if resume is enabled, recover existing progress
+	if cfg.Resume {
+		err := wsh.RecoverProgress(cfg)
+		if err != nil {
+			return "", false, err
+		}
+	} else { // otherwise start from scratch
+		err := wsh.WriteNext("outline")
+		if err != nil {
+			return "", false, err
+		}
 	}
-	return syzSpec, valid, nil
+
+	// start the write spec loop
+	for {
+		err := execWriteStep(kAgent, sysPromptMap, gvEntry, cfg, wsh)
+		if err != nil {
+			return "", false, err
+		}
+		if wsh.Next == "complete" {
+			break
+		}
+	}
+	return wsh.Spec, wsh.Valid, nil
+}
+
+// execWriteStep execute one step of the write spec process according to wsh.Next
+func execWriteStep(
+	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *ProgConfig, wsh *writeSpecHelper,
+) error {
+	var logger *log.Logger
+	logger = log.New(os.Stdout, "["+gvEntry.Name+"]["+wsh.Next+"] ", log.LstdFlags|log.Lmsgprefix)
+	switch wsh.Next {
+	case "outline":
+		return execOutlineStep(kAgent, (*sysPromptMap)["outline"], gvEntry, logger, wsh)
+	case "generate":
+		return execGenerateStep(kAgent, (*sysPromptMap)["generate"], gvEntry, logger, wsh)
+	case "fix":
+		return execFixStep(kAgent, (*sysPromptMap)["fix"], cfg, logger, wsh)
+	case "complete":
+	default:
+		return fmt.Errorf("unknown next step: %s\n", wsh.Next)
+	}
+	return nil
+}
+
+// execFixStep execute the fix step
+func execFixStep(kAgent *agent.Agent, sysPrompt string, cfg *ProgConfig, logger *log.Logger, wsh *writeSpecHelper) error {
+	var (
+		jspec *ast.JsonSpec
+		err   error
+	)
+	if wsh.Spec, err = ast.Json2syzlang(wsh.Jstr); err != nil {
+		return fmt.Errorf("failed to convert spec json to syzlang: %v\n", err)
+	}
+	if wsh.Spec, wsh.Valid, err = fixSpec(kAgent, sysPrompt, cfg, wsh.Spec, logger); err != nil {
+		return err
+	}
+	if err = wsh.WriteSpec(); err != nil {
+		return err
+	}
+	// Update wsh.Jstr according to the validity of wsh.Spec
+	if wsh.Valid {
+		if wsh.Jstr, err = ast.Syzlang2json(wsh.Spec); err != nil {
+			return fmt.Errorf("failed to convert valid spec to json: %v\n", err)
+		}
+		if err = wsh.WriteJstr(); err != nil {
+			return err
+		}
+		jspec, err := ast.Syzlang2JsonSpec(wsh.Spec)
+		if err != nil {
+			return fmt.Errorf("failed to convert valid spec to json: %v\n", err)
+		}
+		if len(jspec.Todo) > 0 {
+			return wsh.WriteNext("generate")
+		} else {
+			return wsh.WriteNext("complete")
+		}
+	} else { // Invalid spec cannot be converted to json/JsonSpec, reuse latest json string
+		err = json.Unmarshal([]byte(wsh.Jstr), &jspec)
+		if err != nil {
+			return fmt.Errorf("failed to parse existing spec json: %v\n", err)
+		}
+		if len(jspec.Todo) > 0 {
+			return wsh.WriteNext("generate")
+		} else {
+			return wsh.WriteNext("complete")
+		}
+	}
 }
 
 // fixSpec start a loop to fix invalid syscall spec, also with the help of agent, return the final syzlang spec
 // and whether it is valid
 func fixSpec(
-	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, cfg *progConfig, jsonSpec string, logger *log.Logger,
+	kAgent *agent.Agent, sysPrompt string, cfg *ProgConfig, spec string, logger *log.Logger,
 ) (string, bool, error) {
-	fdir := filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model)
-	_ = os.MkdirAll(fdir, 0755)
-	fp := filepath.Join(fdir, "spec.txt")
-
-	// if spec.txt exists and resume is enabled, reuse existing spec
-	var (
-		spec  string
-		found bool
-	)
-	if _, err := os.Stat(fp); err == nil && cfg.Resume {
-		logger.Printf("Spec file exists, reuse existing.\n")
-		buf, err := os.ReadFile(fp)
-		if err != nil {
-			return "", false, fmt.Errorf("failed to read file: %v\n", err)
-		}
-		spec = string(buf)
-	} else { // otherwise, convert json spec to syzlang and write to spec.txt
-		spec, err = utils.Json2syzlang(jsonSpec)
-		if err != nil {
-			return "", false, fmt.Errorf("failed to convert json spec to syzlang: %v\n", err)
-		}
-		if err = os.WriteFile(fp, []byte(spec), 0644); err != nil {
-			return "", false, fmt.Errorf("failed to write spec file: %v\n", err)
-
-		}
-	}
-
 	// make agent ready for fix loop
 	kAgent.CleanMessages()
 	if err := kAgent.AddSystemMessage(sysPrompt); err != nil {
@@ -89,6 +238,7 @@ func fixSpec(
 		valid  bool   = false
 		stdout *bytes.Buffer
 		stderr *bytes.Buffer
+		found  bool
 	)
 	for i := 0; i < cfg.MaxFix; i++ { // limit the number of fix attempts
 		logger.Printf("Checking validity of spec ...\n")
@@ -121,10 +271,6 @@ func fixSpec(
 		if !found {
 			return "", false, fmt.Errorf("failed to extract syzlang code fence from fix response.\n")
 		}
-		err = os.WriteFile(fp, []byte(spec), 0644)
-		if err != nil {
-			return "", false, fmt.Errorf("failed to write spec file: %v\n", err)
-		}
 	}
 
 	return spec, valid, nil
@@ -152,7 +298,7 @@ func checkSpecValidity(sc *check.SyzCheck, spec string) (*bytes.Buffer, *bytes.B
 }
 
 // createErrBlock create an error block from stdout and stderr of `make extract` or `syz-check`
-func createErrBlock(stdout *bytes.Buffer, stderr *bytes.Buffer, cfg *progConfig) (string, error) {
+func createErrBlock(stdout *bytes.Buffer, stderr *bytes.Buffer, cfg *ProgConfig) (string, error) {
 	// format stdout and stderr messages
 	fmtStdout, err := formatMessages(stdout, cfg.Prefix)
 	if err != nil {
@@ -260,66 +406,50 @@ func fixSpecLoop(kAgent *agent.Agent, logger *log.Logger) (*llms.ContentResponse
 	return response, nil
 }
 
+// execOutlineStep execute the outline step
+func execGenerateStep(kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, logger *log.Logger, wsh *writeSpecHelper) error {
+	var err error
+	if wsh.Jstr, err = collectSpec(kAgent, sysPrompt, gvEntry, wsh.Outline, logger); err != nil {
+		return err
+	}
+	if err = wsh.WriteJstr(); err != nil {
+		return err
+	}
+	if err = wsh.WriteNext("fix"); err != nil {
+		return err
+	}
+	return nil
+}
+
 // collectSpec prompt agent to generate syscall spec or reuse existing spec for a global variable
 func collectSpec(
-	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, cfg *progConfig, outline string, logger *log.Logger,
+	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, outline string, logger *log.Logger,
 ) (string, error) {
-	fdir := filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model)
-	_ = os.MkdirAll(fdir, 0755)
-	fp := filepath.Join(fdir, "spec.json")
-
-	// if spec.json exist and resume is enabled, reuse existing spec
-	if _, err := os.Stat(fp); err == nil && cfg.Resume {
-		logger.Printf("Spec file exists, reuse existing.\n")
-		buf, err := os.ReadFile(fp)
-		if err != nil {
-			return "", fmt.Errorf("failed to read spec file: %v\n", err)
-		}
-		outline = string(buf)
-	}
-	outlineMap := make(map[string]any)
-	err := json.Unmarshal([]byte(outline), &outlineMap)
+	// prompt agent to generate spec to complete part of todo tasks
+	var (
+		found bool
+		jstr  string
+	)
+	kAgent.CleanMessages()
+	response, err := genSpec(kAgent, sysPrompt, gvEntry, outline, logger)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse outline json: %v\n", err)
+		return "", err
 	}
-
-	// prompt agent to generate spec iteratively until all todo tasks are done
-	var found bool
-	todoNum := len(outlineMap["todo"].([]any))
-	for todoNum > 0 {
-		kAgent.CleanMessages()
-		response, err := genSpec(kAgent, sysPrompt, gvEntry, outline, logger)
-		if err != nil {
-			return "", err
-		}
-		outline, found = utils.ExtractFirstCodeBlock(response.Choices[0].Content, "json")
-		if !found {
-			return "", fmt.Errorf("failed to extract json code fence from generate response.\n")
-		}
-		_, err = utils.Json2syzlang(outline)
-		if err != nil {
-			return "", fmt.Errorf("failed to generate valid json: %v\n", err)
-		}
-		err = os.WriteFile(fp, []byte(outline), 0644)
-		if err != nil {
-			return "", fmt.Errorf("failed to write spec file: %v\n", err)
-		}
-		err = json.Unmarshal([]byte(outline), &outlineMap)
-		if err != nil {
-			return "", fmt.Errorf("failed to parse outline json: %v\n", err)
-		}
-		todoNum = len(outlineMap["todo"].([]any))
+	jstr, found = utils.ExtractFirstCodeBlock(response.Choices[0].Content, "json")
+	if !found {
+		return "", fmt.Errorf("failed to extract json code fence from generate response.\n")
 	}
-	logger.Printf("All todo tasks are done.\n")
-
-	return outline, nil
+	_, err = ast.Json2syzlang(jstr)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate valid json: %v\n", err)
+	}
+	return jstr, nil
 }
 
 // genSpec prompt agent to generate syscall spec iteratively
 func genSpec(
 	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, outline string, logger *log.Logger,
 ) (*llms.ContentResponse, error) {
-
 	// make agent ready for spec generation stage
 	var err error
 	err = kAgent.AddSystemMessage(sysPrompt)
@@ -354,46 +484,42 @@ func genSpec(
 	return response, nil
 }
 
+// execOutlineStep execute the outline step of the write spec process
+func execOutlineStep(kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, logger *log.Logger, wsh *writeSpecHelper) error {
+	var err error
+	if wsh.Outline, err = collectOutline(kAgent, sysPrompt, gvEntry, logger); err != nil {
+		return err
+	}
+	if err = wsh.WriteOutline(); err != nil {
+		return err
+	}
+	if err = wsh.WriteNext("generate"); err != nil {
+		return err
+	}
+	return nil
+}
+
 // collectOutline prompt agent to outline todo tasks or reuse existing outline for a global variable
 func collectOutline(
-	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, cfg *progConfig, logger *log.Logger,
+	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, logger *log.Logger,
 ) (string, error) {
-	fdir := filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model)
-	_ = os.MkdirAll(fdir, 0755)
-	fp := filepath.Join(fdir, "outline.json")
-
-	// if outline.json doesn't exist or resume is disabled, prompt agent to outline todo tasks
 	var (
 		outline string
 		found   bool
 	)
-	if _, err := os.Stat(fp); err != nil || !cfg.Resume {
-		kAgent.CleanMessages()
-		response, err := genOutline(kAgent, sysPrompt, gvEntry, logger)
-		if err != nil {
-			return "", err
-		}
-		outline, found = utils.ExtractFirstCodeBlock(response.Choices[0].Content, "json")
-		if !found {
-			return "", fmt.Errorf("failed to extract json code fence from outline response.\n")
-		}
-		_, err = utils.Json2syzlang(outline)
-		if err != nil {
-			return "", fmt.Errorf("failed to generate valid json: %v\n", err)
-		}
-		err = os.WriteFile(fp, []byte(outline), 0644)
-		if err != nil {
-			return "", fmt.Errorf("failed to write outline file: %v\n", err)
-		}
-	} else {
-		logger.Printf("Outline file exists, reuse existing and skip outline stage.\n")
-		data, err := os.ReadFile(fp)
-		if err != nil {
-			return "", fmt.Errorf("failed to read outline file: %v\n", err)
-		}
-		outline = string(data)
+	kAgent.CleanMessages()
+	response, err := genOutline(kAgent, sysPrompt, gvEntry, logger)
+	if err != nil {
+		return "", err
 	}
-
+	outline, found = utils.ExtractFirstCodeBlock(response.Choices[0].Content, "json")
+	if !found {
+		return "", fmt.Errorf("failed to extract json code fence from outline response.\n")
+	}
+	_, err = ast.Json2syzlang(outline)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate valid json: %v\n", err)
+	}
 	return outline, nil
 }
 

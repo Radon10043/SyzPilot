@@ -18,7 +18,15 @@ import (
 	"github.com/tmc/langchaingo/llms/openai"
 )
 
-type progConfig struct {
+// global variables
+var (
+	keys = []string{
+		".ioctl", ".unlocked_ioctl", ".compat_ioctl", ".mmap", ".uring_cmd",
+		".setsockopt", ".getsockopt", ".recvmsg", ".sendmsg",
+	}
+)
+
+type ProgConfig struct {
 	// agent configs
 	Model string
 	Env   string
@@ -41,14 +49,6 @@ type progConfig struct {
 	MaxFix       int
 	MaxRetry     int
 }
-
-// global variables
-var (
-	keys = []string{
-		".ioctl", ".unlocked_ioctl", ".compat_ioctl", ".mmap", ".uring_cmd",
-		".setsockopt", ".getsockopt", ".recvmsg", ".sendmsg",
-	}
-)
 
 // safeToAbsPath is a helper struct to safely convert path to absolute path
 type safeToAbsPath struct {
@@ -98,7 +98,7 @@ func createQueue(db *database.Database) ([]database.GlobalVar, error) {
 // whose syscall spec have existed in syzkaller
 // TODO: currently we use a blacklist file to specify global variables whose spec have existed
 // in syzkaller, is there a more efficient way to do this, such as querying syzkaller's database?
-func createBlacklist(cfg *progConfig) (map[string]bool, error) {
+func createBlacklist(cfg *ProgConfig) (map[string]bool, error) {
 	// read blacklist file
 	blacklist := make(map[string]bool)
 	data, err := os.ReadFile(cfg.BlackList)
@@ -129,9 +129,9 @@ func minimizeQueue(queue *[]database.GlobalVar, blacklist map[string]bool) []dat
 }
 
 // setConfigs parse command-line flags and set program configurations
-func setConfigs() *progConfig {
+func setConfigs() *ProgConfig {
 	// command-line flags
-	var cfg progConfig
+	var cfg ProgConfig
 	flag.StringVar(&cfg.Model, "model", "gemini-2.5-pro", "The model to use")
 	flag.StringVar(&cfg.Env, "env", ".env", "Path to .env file")
 	flag.StringVar(&cfg.Db, "db", "", "Path to the database file")
@@ -174,7 +174,7 @@ func setConfigs() *progConfig {
 }
 
 // checkConfig check validity of flags
-func checkConfig(cfg *progConfig) error {
+func checkConfig(cfg *ProgConfig) error {
 	// a helper to check file existence
 	type safeCheckFileExist struct {
 		err error
@@ -227,7 +227,7 @@ func checkConfig(cfg *progConfig) error {
 }
 
 // createAgent creates an agent for kernel syscal spec generation, return the agent instance and error
-func createAgent(db *database.Database, sc *check.SyzCheck, cfg *progConfig) (*agent.Agent, error) {
+func createAgent(db *database.Database, sc *check.SyzCheck, cfg *ProgConfig) (*agent.Agent, error) {
 	llm, err := openai.New(
 		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
 		openai.WithToken(os.Getenv("OPENAI_API_KEY")),

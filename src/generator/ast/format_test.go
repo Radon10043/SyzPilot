@@ -39,7 +39,7 @@ func TestJson2syzlang(t *testing.T) {
 }
 
 func TestSyzlang2json(t *testing.T) {
-	fp := filepath.Join(root, "data", "test", "dev_video4linux.txt")
+	fp := filepath.Join(root, "data", "test", "all.txt")
 	b, err := os.ReadFile(fp)
 	if err != nil {
 		t.Fatalf("Failed to read syzlang spec file: %v", err)

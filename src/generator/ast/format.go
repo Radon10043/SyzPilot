@@ -165,7 +165,7 @@ func (js *JsonSpec) addSyzNode(node ast.Node) error {
 			js.TypeAlias = append(js.TypeAlias, s)
 		}
 	case *ast.Comment:
-		if strings.HasPrefix(o.Text, "# TODO") {
+		if strings.HasPrefix(o.Text, "# TODO:") {
 			js.Todo = append(js.Todo, s)
 		}
 	case *ast.NewLine:
@@ -206,15 +206,14 @@ func Json2syzlang(jstr string) (string, error) {
 	return sb.String(), nil
 }
 
-// Syzlang2json converts a syzlang specification to JSON format
-func Syzlang2json(spec string) (string, error) {
+func Syzlang2JsonSpec(spec string) (*JsonSpec, error) {
 	// parse syzlang spec as ast
 	var err error
 	desc := ast.Parse([]byte(spec), "spec.txt", func(pos ast.Pos, msg string) {
 		err = fmt.Errorf("syzlang syntax error at %v: %v", pos, msg)
 	})
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	// traverse ast
@@ -222,8 +221,15 @@ func Syzlang2json(spec string) (string, error) {
 	for _, node := range desc.Nodes {
 		jspec.addSyzNode(node)
 	}
+	return jspec, nil
+}
 
-	// convert to JSON string
+// Syzlang2json converts a syzlang specification to JSON format
+func Syzlang2json(spec string) (string, error) {
+	jspec, err := Syzlang2JsonSpec(spec)
+	if err != nil {
+		return "", err
+	}
 	var jbytes bytes.Buffer
 	encoder := json.NewEncoder(&jbytes)
 	encoder.SetEscapeHTML(false)
