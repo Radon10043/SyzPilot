@@ -13,5 +13,5 @@ type ToolExec struct {
 
 type ToolHelper struct {
 	Db *database.Database
-	Sc *check.SyzCheck
+	Sc *check.SpecCheck
 }

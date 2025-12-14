@@ -5,7 +5,9 @@ go 1.24.4
 toolchain go1.24.10
 
 require (
+	github.com/google/syzkaller v0.0.0-20241120173125-4b25d554e564
 	github.com/joho/godotenv v1.5.1
+	github.com/otiai10/copy v1.14.1
 	github.com/tmc/langchaingo v0.1.14
 	github.com/yuin/goldmark v1.7.13
 	gorm.io/driver/sqlite v1.6.0
@@ -20,9 +22,10 @@ require (
 	github.com/go-git/gcfg/v2 v2.0.2 // indirect
 	github.com/go-git/go-billy/v6 v6.0.0-20251120215217-80673c4ccbfb // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
-	github.com/google/syzkaller v0.0.0-20241120173125-4b25d554e564 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
+	github.com/otiai10/mint v1.6.3 // indirect
 	github.com/pjbgf/sha1cd v0.5.0 // indirect
+	golang.org/x/sync v0.18.0 // indirect
 )
 
 require (

@@ -37,6 +37,7 @@ type ProgConfig struct {
 
 	// kernel configs
 	Outdir        string
+	ExtractBin    string
 	CheckBin      string
 	ExtractKernel string
 	CheckKernel   string
@@ -142,36 +143,37 @@ func setConfigs() *ProgConfig {
 	flag.StringVar(&cfg.Env, "env", ".env", "Path to .env file")
 	flag.StringVar(&cfg.Db, "db", "", "Path to the database file")
 	flag.StringVar(&cfg.Outdir, "outdir", "", "Path to the output directory")
-	flag.StringVar(&cfg.CheckBin, "check-bin", "bin/syz-check", "Path to the syz-check binary")
+	flag.StringVar(&cfg.ExtractBin, "extract-bin", "./bin/syz-extract", "Path to the syz-extract binary")
+	flag.StringVar(&cfg.CheckBin, "check-bin", "./bin/syz-check", "Path to the syz-check binary")
 	flag.StringVar(&cfg.ExtractKernel, "extract-kernel", "", "Path to kernel used for spec extraction")
 	flag.StringVar(&cfg.CheckKernel, "check-kernel", "", "Path to kernel used for spec checking")
-	flag.StringVar(&cfg.Syzkaller, "syzkaller", "syzkaller/", "Path to the syzkaller directory")
-	flag.StringVar(&cfg.BlackList, "blacklist", "data/blacklist.txt", "Path to the global variable blacklist file")
+	flag.StringVar(&cfg.Syzkaller, "syzkaller", "./syzkaller/", "Path to the syzkaller directory")
+	flag.StringVar(&cfg.BlackList, "blacklist", "./data/blacklist.txt", "Path to the global variable blacklist file")
 	flag.BoolVar(&cfg.Resume, "resume", true, "Whether to resume from previous interrupted run")
-	flag.StringVar(&cfg.Prefix, "prefix", "data/prefix.txt", "Path to the prefix file for syscall syz spec")
+	flag.StringVar(&cfg.Prefix, "prefix", "./data/prefix.txt", "Path to the prefix file for syscall syz spec")
 	flag.IntVar(&cfg.MaxFix, "max-fix", 5, "Maximum number of fix attempts for invalid specs")
 	flag.IntVar(&cfg.MaxRetry, "max-retry", 5, "Maximum number of retry attempts for writing spec (-1 means infinite retries)")
 	flag.StringVar(
 		&cfg.OtlSysPrompt,
 		"otl-system-prompt",
-		"data/prompts/outline/instruction.md,"+
-			"data/prompts/outline/example_media.md,"+
-			"data/prompts/outline/example_ppp.md",
+		"./data/prompts/outline/instruction.md,"+
+			"./data/prompts/outline/example_media.md,"+
+			"./data/prompts/outline/example_ppp.md",
 		"Path to the outline system prompt file(s), use comma to separate multiple files",
 	)
 	flag.StringVar(
 		&cfg.GenSysPrompt,
 		"gen-system-prompt",
-		"data/prompts/generate/instruction.md,"+
-			"data/prompts/generate/example_media.md,"+
-			"data/prompts/generate/example_ppp.md",
+		"./data/prompts/generate/instruction.md,"+
+			"./data/prompts/generate/example_media.md,"+
+			"./data/prompts/generate/example_ppp.md",
 		"Path to the generate system prompt file(s), use comma to separate multiple files",
 	)
 	flag.StringVar(
 		&cfg.FixSysPrompt,
 		"fix-system-prompt",
-		"data/prompts/fix/instruction.md,"+
-			"data/prompts/fix/example_v4l2.md,",
+		"./data/prompts/fix/instruction.md,"+
+			"./data/prompts/fix/example_v4l2.md,",
 		"Path to the fix system prompt file(s), use comma to separate multiple files",
 	)
 	flag.Parse()
@@ -196,6 +198,7 @@ func checkConfig(cfg *ProgConfig) error {
 	}
 	fileExistHelperFunc(cfg.Env, "-env")
 	fileExistHelperFunc(cfg.Db, "-db")
+	fileExistHelperFunc(cfg.ExtractBin, "-extract-bin")
 	fileExistHelperFunc(cfg.CheckBin, "-check-bin")
 	fileExistHelperFunc(cfg.ExtractKernel, "-extract-kernel")
 	vmlinuxPath := filepath.Join(cfg.CheckKernel, "vmlinux")
@@ -221,10 +224,8 @@ func checkConfig(cfg *ProgConfig) error {
 	}
 
 	// -syzkaller
-	sc := check.SyzCheck{
-		Workdir: cfg.Syzkaller,
-	}
-	if err := sc.CheckWorkdir(); err != nil {
+	sc := check.NewSpecCheck(check.WithSyzkaller(cfg.Syzkaller))
+	if err := sc.CheckSyzkaller(); err != nil {
 		return fmt.Errorf("-syzkaller: directory is invalid: %v\n", err)
 	}
 
@@ -237,7 +238,7 @@ func checkConfig(cfg *ProgConfig) error {
 }
 
 // createAgent creates an agent for kernel syscal spec generation, return the agent instance and error
-func createAgent(db *database.Database, sc *check.SyzCheck, cfg *ProgConfig) (*agent.Agent, error) {
+func createAgent(db *database.Database, sc *check.SpecCheck, cfg *ProgConfig) (*agent.Agent, error) {
 	llm, err := openai.New(
 		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
 		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
@@ -315,6 +316,7 @@ func main() {
 	cfg.Env = stap.toAbsPath(cfg.Env)
 	cfg.Db = stap.toAbsPath(cfg.Db)
 	cfg.Outdir = stap.toAbsPath(cfg.Outdir)
+	cfg.ExtractBin = stap.toAbsPath(cfg.ExtractBin)
 	cfg.CheckBin = stap.toAbsPath(cfg.CheckBin)
 	cfg.ExtractKernel = stap.toAbsPath(cfg.ExtractKernel)
 	cfg.CheckKernel = stap.toAbsPath(cfg.CheckKernel)
@@ -362,16 +364,21 @@ func main() {
 	}
 	defer db.Close()
 
-	// create a SyzCheck instances
-	sc := check.SyzCheck{
-		Bin:              cfg.CheckBin,
-		KernelForExtract: cfg.ExtractKernel,
-		KernelForCheck:   cfg.CheckKernel,
-		Workdir:          cfg.Syzkaller,
+	// create a SpecCheck instances
+	wd, err := os.MkdirTemp(os.TempDir(), "cloud-*")
+	if err != nil {
+		log.Fatalf("failed to create temporary workdir: %v\n", err)
 	}
-	if err := sc.CheckWorkdir(); err != nil {
-		log.Fatalf("syzkaller workdir check failed: %v\n", err)
-	}
+	sc := check.NewSpecCheck(
+		check.WithSyzExtract(cfg.ExtractBin),
+		check.WithSyzCheck(cfg.CheckBin),
+		check.WithKernelForExtract(cfg.ExtractKernel),
+		check.WithKernelForCheck(cfg.CheckKernel),
+		check.WithWorkdir(wd),
+		check.WithSyzkaller(cfg.Syzkaller),
+	)
+	defer os.RemoveAll(wd)
+	sc.SetupWorkdir()
 
 	// create a queue that used to prompt llm for spec generation
 	log.Println("Generating material queue ...")
@@ -406,7 +413,7 @@ func main() {
 	spmWrtFunc(cfg.FixSysPrompt, "fix")
 
 	// init an agent and start writing syscall specs
-	kAgent, err := createAgent(&db, &sc, cfg)
+	kAgent, err := createAgent(&db, sc, cfg)
 	if err != nil {
 		log.Fatalf("failed to create agent: %v\n", err)
 	}
@@ -415,6 +422,7 @@ func main() {
 	if cfg.MaxRetry == -1 {
 		cfg.MaxRetry = math.MaxInt
 	}
+	// TODO: in parallel way ...
 	for i, gvEntry := range queue {
 		cfg.Progress = fmt.Sprintf("%d/%d", i+1, len(queue))
 		fp := filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, "spec#comp.txt")
@@ -426,12 +434,13 @@ func main() {
 		for j := 0; j < cfg.MaxRetry && err != nil; j++ {
 			log.Printf("Retrying to write spec for global variable %s (attempt %d/%d) ...\n", gvEntry.Name, j+1, cfg.MaxRetry)
 			// sleep for a while before write spec again to avoid frequent requests
-			slpTime := rand.Int31n(61) + 60
+			slpTime := rand.Int31n(61) + 10
 			time.Sleep(time.Duration(slpTime) * time.Second)
 			spec, valid, err = writeSpec(kAgent, &sysPromptMap, &gvEntry, cfg)
 		}
 		if err != nil {
-			log.Fatalf("failed to write spec for global variable %s: %v\n", gvEntry.Name, err)
+			log.Printf("failed to write spec for global variable %s: %v\n", gvEntry.Name, err)
+			log.Printf("Skip global variable %s and continue with next one.\n", gvEntry.Name)
 		}
 		compSpec := prefix + "\n\n" + spec
 		if !valid {

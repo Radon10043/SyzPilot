@@ -283,8 +283,8 @@ func fixSpec(
 }
 
 // checkSpecValidity check the validity of a syscall spec, return whether it is valid and error message if any
-func checkSpecValidity(sc *check.SyzCheck, spec string) (*bytes.Buffer, *bytes.Buffer, bool, error) {
-	err := sc.CleanWorkdir()
+func checkSpecValidity(sc *check.SpecCheck, spec string) (*bytes.Buffer, *bytes.Buffer, bool, error) {
+	err := sc.RestoreWorkdir()
 	if err != nil {
 		return nil, nil, false, fmt.Errorf("failed to clean syzkaller workdir: %v", err)
 	}

@@ -12,7 +12,7 @@ import (
 
 var (
 	root string
-	sc   check.SyzCheck
+	sc   *check.SpecCheck
 )
 
 func init() {
@@ -23,30 +23,33 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	sc = check.SyzCheck{
-		Bin:              filepath.Join(root, "bin", "syz-check"),
-		Workdir:          filepath.Join(root, "syzkaller"),
-		KernelForExtract: "/vol/linux/v6.12-extract",
-		KernelForCheck:   "/vol/linux/v6.12-check",
-	}
 }
 
 func TestCheckValid(t *testing.T) {
-	err := sc.CheckWorkdir()
+	// create an temp directory for workdir
+	wd, err := os.MkdirTemp(os.TempDir(), "cloud-*")
 	if err != nil {
-		t.Fatalf("check workdir failed: %v", err)
+		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	err = sc.CleanWorkdir()
-	if err != nil {
-		t.Fatalf("clean workdir failed: %v", err)
+	defer os.RemoveAll(wd)
+	sc = check.NewSpecCheck(
+		check.WithSyzExtract(filepath.Join(root, "bin", "syz-extract")),
+		check.WithSyzCheck(filepath.Join(root, "bin", "syz-check")),
+		check.WithKernelForExtract("/vol/linux/v6.12-extract"),
+		check.WithKernelForCheck("/vol/linux/v6.12-check"),
+		check.WithWorkdir(wd),
+		check.WithSyzkaller(filepath.Join(root, "syzkaller")),
+	)
+	if err = sc.SetupWorkdir(); err != nil {
+		t.Fatalf("failed to setup workdir: %v", err)
 	}
-	srcPath := filepath.Join(root, "data", "test", "dev_md.txt")
-	spec, err := os.ReadFile(srcPath)
+	src := filepath.Join(root, "data", "test", "dev_md.txt")
+	spec, err := os.ReadFile(src)
 	if err != nil {
 		t.Fatalf("failed to read spec file: %v", err)
 	}
-	dstPath := filepath.Join(sc.Workdir, "sys", "linux", "spec.txt")
-	err = os.WriteFile(dstPath, spec, 0644)
+	dst := filepath.Join(sc.Workdir, "sys", "linux", "spec.txt")
+	err = os.WriteFile(dst, spec, 0644)
 	if err != nil {
 		t.Fatalf("failed to write spec file: %v", err)
 	}
@@ -61,27 +64,36 @@ func TestCheckValid(t *testing.T) {
 }
 
 func TestCheckInvalid(t *testing.T) {
-	err := sc.CheckWorkdir()
+	// create an temp directory for workdir
+	wd, err := os.MkdirTemp(os.TempDir(), "cloud-*")
 	if err != nil {
-		t.Fatalf("check workdir failed: %v", err)
+		t.Fatalf("failed to create temp directory: %v", err)
 	}
-	err = sc.CleanWorkdir()
-	if err != nil {
-		t.Fatalf("clean workdir failed: %v", err)
+	defer os.RemoveAll(wd)
+	sc = check.NewSpecCheck(
+		check.WithSyzExtract(filepath.Join(root, "bin", "syz-extract")),
+		check.WithSyzCheck(filepath.Join(root, "bin", "syz-check")),
+		check.WithKernelForExtract("/vol/linux/v6.12-extract"),
+		check.WithKernelForCheck("/vol/linux/v6.12-check"),
+		check.WithWorkdir(wd),
+		check.WithSyzkaller(filepath.Join(root, "syzkaller")),
+	)
+	if err = sc.SetupWorkdir(); err != nil {
+		t.Fatalf("failed to setup workdir: %v", err)
 	}
-	srcPath := filepath.Join(root, "data", "test", "dev_md_bad.txt")
-	spec, err := os.ReadFile(srcPath)
+	src := filepath.Join(root, "data", "test", "dev_md_bad.txt")
+	spec, err := os.ReadFile(src)
 	if err != nil {
 		t.Fatalf("failed to read spec file: %v", err)
 	}
-	dstPath := filepath.Join(sc.Workdir, "sys", "linux", "spec.txt")
-	err = os.WriteFile(dstPath, spec, 0644)
+	dst := filepath.Join(sc.Workdir, "sys", "linux", "spec.txt")
+	err = os.WriteFile(dst, spec, 0644)
 	if err != nil {
 		t.Fatalf("failed to write spec file: %v", err)
 	}
 	_, stderr, err := sc.ExtractConst()
 	if err == nil {
-		t.Fatal("`make extract` should be failed, but success.")
+		t.Fatal("extract should be failed, but success.")
 	}
 	t.Logf("stderr: %v", stderr.String())
 }
