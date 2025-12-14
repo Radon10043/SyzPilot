@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/Radon10043/cloud/src/generator/agent"
 	"github.com/Radon10043/cloud/src/generator/check"
@@ -423,6 +425,9 @@ func main() {
 		spec, valid, err := writeSpec(kAgent, &sysPromptMap, &gvEntry, cfg)
 		for j := 0; j < cfg.MaxRetry && err != nil; j++ {
 			log.Printf("Retrying to write spec for global variable %s (attempt %d/%d) ...\n", gvEntry.Name, j+1, cfg.MaxRetry)
+			// sleep for a while before write spec again to avoid frequent requests
+			slpTime := rand.Int31n(61) + 60
+			time.Sleep(time.Duration(slpTime) * time.Second)
 			spec, valid, err = writeSpec(kAgent, &sysPromptMap, &gvEntry, cfg)
 		}
 		if err != nil {
