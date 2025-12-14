@@ -27,7 +27,7 @@ endif
 
 .PHONY: all clean
 
-all: analyzer generator syz-check
+all: analyzer generator syz-check syz-extract
 
 clean:
 	rm -rf bin/*
@@ -49,3 +49,8 @@ generator: prepare
 syz-check: prepare
 	cd syzkaller/ && \
 	GOOS=$(HOSTOS) GOARCH=$(HOSTARCH) $(GO) build $(GOFLAGS) -o $(PWD)/bin/syz-check $(PWD)/syzkaller/tools/syz-check/
+
+syz-extract: prepare
+	cd syzkaller/ && \
+	make bin/syz-extract && \
+	cp $(PWD)/syzkaller/bin/syz-extract $(PWD)/bin/syz-extract
