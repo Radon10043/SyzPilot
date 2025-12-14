@@ -393,6 +393,6 @@ recursive_struct3 {
 	f0	array[recursive_struct3]
 }
 
-struct sss {
-	a int32
-}
+# TODO: todo task 1 ...
+# TODO: todo task 2 ...
+# TODO: todo task 3 ...
