@@ -107,6 +107,10 @@ var GetTypedefTypeByDefineTool = llms.Tool{
 					"type":        "string",
 					"description": "The define of the typedef to retrieve the type for.",
 				},
+				"rational": map[string]any{
+					"type":        "string",
+					"description": "The rationale for choosing this function call with these parameters",
+				},
 			},
 			"required": []string{"typedef_define"},
 		},
