@@ -42,13 +42,19 @@ func (a *Agent) AddHumanMessage(input string) {
 	a.Messages = append(a.Messages, msg)
 }
 
-// SaveMessages saves the current message history to a file
-func (a *Agent) SaveMessages(path string) error {
+// SaveMessageFile saves the current message history to a file
+func (a *Agent) SaveMessageFile(path string) error {
 	f, err := os.Create(path)
 	if err != nil {
 		return err
 	}
 	defer f.Close()
+	a.SaveMessage(f)
+	return nil
+}
+
+// SaveMessage saves the current message history to a given file handle
+func (a *Agent) SaveMessage(f *os.File) {
 	for _, msg := range a.Messages {
 		fmt.Fprintf(f, "========== ROLE: %v ==========\n", msg.Role)
 		for _, part := range msg.Parts {
@@ -56,7 +62,6 @@ func (a *Agent) SaveMessages(path string) error {
 			fmt.Fprintf(f, "%v\n", str)
 		}
 	}
-	return nil
 }
 
 // Query query the llm with the current messages and update the history

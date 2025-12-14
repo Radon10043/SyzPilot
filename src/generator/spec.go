@@ -107,6 +107,17 @@ func (wsh *writeSpecHelper) RecoverProgress(cfg *ProgConfig) error {
 	return nil
 }
 
+// SaveQueryMessages save the current messages of kAgent to a temp file with given prefix
+func (wsh *writeSpecHelper) SaveQueryMessages(kAgent *agent.Agent, prefix string) error {
+	msgf, err := os.CreateTemp(wsh.Workdir, prefix+"*.msg")
+	if err != nil {
+		return fmt.Errorf("failed to create temp file for saving messages: %v\n", err)
+	}
+	defer msgf.Close()
+	kAgent.SaveMessage(msgf)
+	return nil
+}
+
 // writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a global variable,
 // return the final syzlang spec and whether it is valid
 func writeSpec(
@@ -128,22 +139,19 @@ func writeSpec(
 
 	// if resume is enabled, recover existing progress
 	if cfg.Resume {
-		err := wsh.RecoverProgress(cfg)
-		if err != nil {
-			return "", false, err
+		if err = wsh.RecoverProgress(cfg); err != nil {
+			return "", false, fmt.Errorf("failed to recover progress: %v", err)
 		}
 	} else { // otherwise start from scratch
-		err := wsh.WriteNext("outline")
-		if err != nil {
-			return "", false, err
+		if err = wsh.WriteNext("outline"); err != nil {
+			return "", false, fmt.Errorf("failed to write next step: %v", err)
 		}
 	}
 
 	// start the write spec loop, limit the number of iterations to avoid infinite loop
 	for range 100 {
-		err := execWriteStep(kAgent, sysPromptMap, gvEntry, cfg, wsh)
-		if err != nil {
-			return "", false, err
+		if err := execWriteStep(kAgent, sysPromptMap, gvEntry, cfg, wsh); err != nil {
+			return "", false, fmt.Errorf("failed to exec write step: %v", err)
 		}
 		if wsh.Next == "complete" {
 			break
@@ -179,6 +187,9 @@ func execFixStep(kAgent *agent.Agent, sysPrompt string, cfg *ProgConfig, logger 
 		err   error
 	)
 	if wsh.Spec, wsh.Valid, err = fixSpec(kAgent, sysPrompt, cfg, wsh.Spec, logger); err != nil {
+		return err
+	}
+	if err = wsh.SaveQueryMessages(kAgent, "fix-"); err != nil {
 		return err
 	}
 	if err = wsh.WriteSpec(); err != nil {
@@ -407,6 +418,9 @@ func execGenerateStep(kAgent *agent.Agent, sysPrompt string, gvEntry *database.G
 	if wsh.Jstr, err = collectSpec(kAgent, sysPrompt, gvEntry, wsh.Jstr, logger); err != nil {
 		return err
 	}
+	if err = wsh.SaveQueryMessages(kAgent, "generate-"); err != nil {
+		return err
+	}
 	if err = wsh.WriteJstr(); err != nil {
 		return err
 	}
@@ -486,6 +500,9 @@ func genSpec(
 func execOutlineStep(kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, logger *log.Logger, wsh *writeSpecHelper) error {
 	var err error
 	if wsh.Outline, err = collectOutline(kAgent, sysPrompt, gvEntry, logger); err != nil {
+		return err
+	}
+	if err = wsh.SaveQueryMessages(kAgent, "outline-"); err != nil {
 		return err
 	}
 	if err = wsh.WriteOutline(); err != nil {
