@@ -150,9 +150,9 @@ func setConfigs() *ProgConfig {
 	flag.StringVar(&cfg.ExtractKernel, "extract-kernel", "", "Path to kernel used for spec extraction")
 	flag.StringVar(&cfg.CheckKernel, "check-kernel", "", "Path to kernel used for spec checking")
 	flag.StringVar(&cfg.Syzkaller, "syzkaller", "./syzkaller/", "Path to the syzkaller directory")
-	flag.StringVar(&cfg.BlackList, "blacklist", "./data/blacklist.txt", "Path to the global variable blacklist file")
 	flag.BoolVar(&cfg.Resume, "resume", true, "Whether to resume from previous interrupted run")
-	flag.StringVar(&cfg.Prefix, "prefix", "./data/prefix.txt", "Path to the prefix file for syscall syz spec")
+	flag.StringVar(&cfg.BlackList, "blacklist", "", "Path to the global variable blacklist file")
+	flag.StringVar(&cfg.Prefix, "prefix", "", "Path to the prefix file for syscall syz spec")
 	flag.IntVar(&cfg.MaxFix, "max-fix", 5, "Maximum number of fix attempts for invalid specs")
 	flag.IntVar(&cfg.MaxRetry, "max-retry", 5, "Maximum number of retry attempts for writing spec (-1 means infinite retries)")
 	flag.IntVar(&cfg.Jobs, "jobs", 1, "Maxmum number of parallel jobs.")
@@ -438,28 +438,33 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 
 	for wj := range wjs {
 		var (
-			logPrefix = fmt.Sprintf("[T%d][%s]", tid, wj.Progress)
-			gv        = wj.Gv
-			spm       = wj.SysPromptMap
+			logPrefix  = fmt.Sprintf("[T%d][%s]", tid, wj.Progress)
+			specPrefix = ""
+			gv         = wj.Gv
+			spm        = wj.SysPromptMap
 		)
 		res.Gv = gv
 
+		// set prefix of spec
+		if cfg.Prefix != "" {
+			buf, _ := os.ReadFile(cfg.Prefix)
+			specPrefix = string(buf)
+		}
+
 		// start writing spec
-		buf, _ := os.ReadFile(cfg.Prefix)
-		prefix := string(buf)
 		fp := filepath.Join(cfg.Outdir, gv.Name+"#"+cfg.Model, "spec#comp.txt")
 		if _, err := os.Stat(fp); err == nil && cfg.Resume {
 			logger.Printf("Complete spec for global variable %s exists, reuse existing and skip generation.\n", gv.Name)
 			wjr <- res
 			continue
 		}
-		spec, valid, err := writeSpec(kAgent, spm, gv, cfg, logPrefix)
+		spec, valid, err := writeSpec(kAgent, spm, gv, cfg, specPrefix, logPrefix)
 		for j := 0; j < cfg.MaxRetry && err != nil; j++ {
 			logger.Printf("Retrying to write spec for global variable %s (attempt %d/%d) ...\n", gv.Name, j+1, cfg.MaxRetry)
 			// sleep for a while before write spec again to avoid frequent requests
 			slpTime := rand.Int31n(11) + 10
 			time.Sleep(time.Duration(slpTime) * time.Second)
-			spec, valid, err = writeSpec(kAgent, spm, gv, cfg, logPrefix)
+			spec, valid, err = writeSpec(kAgent, spm, gv, cfg, specPrefix, logPrefix)
 		}
 		if err != nil {
 			logger.Printf("failed to write spec for global variable %s: %v\n", gv.Name, err)
@@ -470,7 +475,7 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 		}
 
 		// write the final spec to file
-		compSpec := prefix + "\n\n" + spec
+		compSpec := specPrefix + "\n\n" + spec
 		if !valid {
 			compSpec = fmt.Sprintf("# NOTE: failed to fix spec after %d attempts\n%s", cfg.MaxFix, compSpec)
 		}
@@ -505,8 +510,12 @@ func main() {
 	cfg.ExtractKernel = stap.toAbsPath(cfg.ExtractKernel)
 	cfg.CheckKernel = stap.toAbsPath(cfg.CheckKernel)
 	cfg.Syzkaller = stap.toAbsPath(cfg.Syzkaller)
-	cfg.BlackList = stap.toAbsPath(cfg.BlackList)
-	cfg.Prefix = stap.toAbsPath(cfg.Prefix)
+	if cfg.BlackList != "" {
+		cfg.BlackList = stap.toAbsPath(cfg.BlackList)
+	}
+	if cfg.Prefix != "" {
+		cfg.Prefix = stap.toAbsPath(cfg.Prefix)
+	}
 	fabs := ""
 	for f := range strings.SplitSeq(cfg.OtlSysPrompt, ",") {
 		fabs += stap.toAbsPath(f) + ","
@@ -557,12 +566,14 @@ func main() {
 	log.Printf("Original queue length: %d\n", len(queue))
 
 	// construct blacklist and minimize the queue via blacklist to avoid redundant specification
-	blacklist, err := createBlacklist(cfg)
-	if err != nil {
-		log.Fatalf("failed to create blacklist: %v\n", err)
+	if cfg.BlackList != "" {
+		blacklist, err := createBlacklist(cfg)
+		if err != nil {
+			log.Fatalf("failed to create blacklist: %v\n", err)
+		}
+		queue = minimizeQueue(&queue, blacklist)
+		log.Printf("Minimized queue length: %d\n", len(queue))
 	}
-	queue = minimizeQueue(&queue, blacklist)
-	log.Printf("Minimized queue length: %d\n", len(queue))
 
 	// construct system prompt map, we have checked the validity of system prompt file(s) in
 	// checkConfig function, so it is okay to ignore error here

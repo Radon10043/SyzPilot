@@ -31,6 +31,7 @@ type writeSpecHelper struct {
 	Workdir     string // path to work directory
 	Next        string // next step
 	DotNext     string // path to .next file, sync with Next field
+	SpecPrefix  string // spec prefix
 	LogPrefix   string // log prefix for logging
 }
 
@@ -122,7 +123,7 @@ func (wsh *writeSpecHelper) SaveQueryMessages(kAgent *agent.Agent, prefix string
 // writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a global variable,
 // return the final syzlang spec and whether it is valid
 func writeSpec(
-	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *ProgConfig, logPrefix string,
+	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *ProgConfig, specPrefix string, logPrefix string,
 ) (string, bool, error) {
 	// init and set default value for writeSpecHelper
 	var wsh *writeSpecHelper = &writeSpecHelper{
@@ -132,6 +133,7 @@ func writeSpec(
 		Workdir:     filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model),
 		Next:        "outline",
 		DotNext:     filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, ".next"),
+		SpecPrefix:  specPrefix,
 		LogPrefix:   logPrefix,
 	}
 	err := os.MkdirAll(wsh.Workdir, 0755)
@@ -187,7 +189,7 @@ func execFixStep(kAgent *agent.Agent, sysPrompt string, cfg *ProgConfig, logger 
 		jspec *ast.JsonSpec
 		err   error
 	)
-	if wsh.Spec, wsh.Valid, err = fixSpec(kAgent, sysPrompt, cfg, wsh.Spec, logger); err != nil {
+	if wsh.Spec, wsh.Valid, err = fixSpec(kAgent, sysPrompt, cfg, wsh.Spec, logger, wsh); err != nil {
 		return err
 	}
 	if err = wsh.SaveQueryMessages(kAgent, "fix-"); err != nil {
@@ -227,7 +229,7 @@ func execFixStep(kAgent *agent.Agent, sysPrompt string, cfg *ProgConfig, logger 
 // fixSpec start a loop to fix invalid syscall spec, also with the help of agent, return the final syzlang spec
 // and whether it is valid
 func fixSpec(
-	kAgent *agent.Agent, sysPrompt string, cfg *ProgConfig, spec string, logger *log.Logger,
+	kAgent *agent.Agent, sysPrompt string, cfg *ProgConfig, spec string, logger *log.Logger, wsh *writeSpecHelper,
 ) (string, bool, error) {
 	// make agent ready for fix loop
 	kAgent.CleanMessages()
@@ -236,13 +238,8 @@ func fixSpec(
 	}
 
 	// check validity of spec and prompt agent to fix it if invalid
-	buf, err := os.ReadFile(cfg.Prefix)
-	if err != nil {
-		return "", false, fmt.Errorf("failed to read prefix file: %v", err)
-	}
 	var (
-		prefix string = string(buf)
-		valid  bool   = false
+		valid  bool = false
 		stdout *bytes.Buffer
 		stderr *bytes.Buffer
 		found  bool
@@ -253,14 +250,14 @@ func fixSpec(
 			return "", false, fmt.Errorf("empty spec, stop")
 		}
 		// it's okay to ignore command error (last return value) here since it is not fatal
-		stdout, stderr, valid, _ = checkSpecValidity(kAgent.ToolHelper.Sc, prefix+"\n\n"+spec)
+		stdout, stderr, valid, _ = checkSpecValidity(kAgent.ToolHelper.Sc, wsh.SpecPrefix+"\n\n"+spec)
 		if valid {
 			logger.Printf("Spec is valid!\n")
 			break
 		}
 		logger.Printf("Spec is invalid, trying to fix. stdout=%q stderr=%q\n", stdout.String(), stderr.String())
 		specBlock := fmt.Sprintf("```syzlang\n%s\n```\n", spec)
-		errBlock, err := createErrBlock(stdout, stderr, cfg)
+		errBlock, err := createErrBlock(stdout, stderr, wsh)
 		if err != nil {
 			return "", false, err
 		}
@@ -300,13 +297,13 @@ func checkSpecValidity(sc *check.SpecCheck, spec string) (*bytes.Buffer, *bytes.
 }
 
 // createErrBlock create an error block from stdout and stderr of `make extract` or `syz-check`
-func createErrBlock(stdout *bytes.Buffer, stderr *bytes.Buffer, cfg *ProgConfig) (string, error) {
+func createErrBlock(stdout *bytes.Buffer, stderr *bytes.Buffer, wsh *writeSpecHelper) (string, error) {
 	// format stdout and stderr messages
-	fmtStdout, err := formatMessages(stdout, cfg.Prefix)
+	fmtStdout, err := formatMessages(stdout, wsh.SpecPrefix)
 	if err != nil {
 		return "", fmt.Errorf("failed to extract error messages: %v", err)
 	}
-	fmtStderr, err := formatMessages(stderr, cfg.Prefix)
+	fmtStderr, err := formatMessages(stderr, wsh.SpecPrefix)
 	if err != nil {
 		return "", fmt.Errorf("failed to extract error messages: %v", err)
 	}
