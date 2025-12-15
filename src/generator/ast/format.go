@@ -11,7 +11,7 @@ import (
 
 type JsonSpec struct {
 	Include      []string `json:"include"`
-	Resources    []string `json:"resource"`
+	Resource     []string `json:"resource"`
 	Define       []string `json:"define"`
 	Syscall      []string `json:"syscall"`
 	Flags        []string `json:"flags"`
@@ -30,7 +30,7 @@ func (js *JsonSpec) Clone() *JsonSpec {
 	}
 	njs := &JsonSpec{}
 	njs.Include = copySlice(js.Include)
-	njs.Resources = copySlice(js.Resources)
+	njs.Resource = copySlice(js.Resource)
 	njs.Define = copySlice(js.Define)
 	njs.Syscall = copySlice(js.Syscall)
 	njs.Flags = copySlice(js.Flags)
@@ -52,9 +52,9 @@ func WithInclude(lines []string) Option {
 }
 
 // WithDefine sets the Define field of JsonSpec
-func WithResources(lines []string) Option {
+func WithResource(lines []string) Option {
 	return func(js *JsonSpec) {
-		js.Resources = lines
+		js.Resource = lines
 	}
 }
 
@@ -118,7 +118,7 @@ func WithTodo(lines []string) Option {
 func NewJsonSpec(opts ...Option) *JsonSpec {
 	js := &JsonSpec{
 		Include:      []string{},
-		Resources:    []string{},
+		Resource:     []string{},
 		Define:       []string{},
 		Syscall:      []string{},
 		Flags:        []string{},
@@ -145,7 +145,7 @@ func (js *JsonSpec) addSyzNode(node ast.Node) error {
 	case *ast.Include:
 		js.Include = append(js.Include, s)
 	case *ast.Resource:
-		js.Resources = append(js.Resources, s)
+		js.Resource = append(js.Resource, s)
 	case *ast.Define:
 		js.Define = append(js.Define, s)
 	case *ast.Call:
@@ -194,7 +194,7 @@ func Json2syzlang(jstr string) (string, error) {
 		sb.WriteByte('\n')
 	}
 	wrtFunc(jspec.Include, "")
-	wrtFunc(jspec.Resources, "")
+	wrtFunc(jspec.Resource, "")
 	wrtFunc(jspec.Define, "")
 	wrtFunc(jspec.Syscall, "")
 	wrtFunc(jspec.Flags, "")
