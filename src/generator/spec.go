@@ -31,6 +31,7 @@ type writeSpecHelper struct {
 	Workdir     string // path to work directory
 	Next        string // next step
 	DotNext     string // path to .next file, sync with Next field
+	LogPrefix   string // log prefix for logging
 }
 
 // WriteOutline write the outline field to outline file
@@ -121,7 +122,7 @@ func (wsh *writeSpecHelper) SaveQueryMessages(kAgent *agent.Agent, prefix string
 // writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a global variable,
 // return the final syzlang spec and whether it is valid
 func writeSpec(
-	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *ProgConfig,
+	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *ProgConfig, logPrefix string,
 ) (string, bool, error) {
 	// init and set default value for writeSpecHelper
 	var wsh *writeSpecHelper = &writeSpecHelper{
@@ -131,6 +132,7 @@ func writeSpec(
 		Workdir:     filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model),
 		Next:        "outline",
 		DotNext:     filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, ".next"),
+		LogPrefix:   logPrefix,
 	}
 	err := os.MkdirAll(wsh.Workdir, 0755)
 	if err != nil {
@@ -165,7 +167,7 @@ func execWriteStep(
 	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *ProgConfig, wsh *writeSpecHelper,
 ) error {
 	var logger *log.Logger
-	logger = log.New(os.Stdout, "["+cfg.Progress+"]"+"["+gvEntry.Name+"]["+wsh.Next+"] ", log.LstdFlags|log.Lmsgprefix)
+	logger = log.New(os.Stdout, wsh.LogPrefix+gvEntry.Name+"]["+wsh.Next+"] ", log.LstdFlags|log.Lmsgprefix)
 	switch wsh.Next {
 	case "outline":
 		return execOutlineStep(kAgent, (*sysPromptMap)["outline"], gvEntry, logger, wsh)
@@ -257,12 +259,7 @@ func fixSpec(
 			logger.Printf("Spec is valid!\n")
 			break
 		}
-		logger.Printf(
-			"Spec is invalid, trying to fix.\n"+
-				"========== stdout ==========\n%s\n"+
-				"========== stderr ==========\n%s\n",
-			stdout.String(), stderr.String(),
-		)
+		logger.Printf("Spec is invalid, trying to fix. stdout=%q stderr=%q\n", stdout.String(), stderr.String())
 		specBlock := fmt.Sprintf("```syzlang\n%s\n```\n", spec)
 		errBlock, err := createErrBlock(stdout, stderr, cfg)
 		if err != nil {
@@ -396,7 +393,7 @@ func fixSpecLoop(kAgent *agent.Agent, logger *log.Logger) (*llms.ContentResponse
 		if err != nil {
 			return nil, fmt.Errorf("failed to run agent in fix loop: %v\n", err)
 		}
-		logger.Printf("AI Response: %s\n", response.Choices[0].Content)
+		logger.Printf("AI Response: %q\n", response.Choices[0].Content)
 		if len(response.Choices[0].ToolCalls) == 0 {
 			break
 		}
@@ -479,7 +476,7 @@ func genSpec(
 		if err != nil {
 			return nil, fmt.Errorf("failed to run agent: %v\n", err)
 		}
-		logger.Printf("AI Response: %s\n", response.Choices[0].Content)
+		logger.Printf("AI Response: %q\n", response.Choices[0].Content)
 		if len(response.Choices[0].ToolCalls) == 0 {
 			break
 		}
@@ -558,7 +555,7 @@ func genOutline(
 		if err != nil {
 			return nil, fmt.Errorf("failed to run agent in outline stage: %v\n", err)
 		}
-		logger.Printf("AI Response: %s\n", response.Choices[0].Content)
+		logger.Printf("AI Response: %q\n", response.Choices[0].Content)
 		if len(response.Choices[0].ToolCalls) == 0 {
 			break
 		}

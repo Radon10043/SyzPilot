@@ -9,14 +9,18 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Radon10043/cloud/src/generator/agent"
 	"github.com/Radon10043/cloud/src/generator/check"
 	"github.com/Radon10043/cloud/src/generator/database"
 	myTools "github.com/Radon10043/cloud/src/generator/tools"
+	"github.com/go-git/go-git/v6"
 	"github.com/joho/godotenv"
+	"github.com/otiai10/copy"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"
 )
@@ -54,7 +58,7 @@ type ProgConfig struct {
 	MaxRetry     int
 
 	// misc configs
-	Progress string
+	Jobs int
 }
 
 // safeToAbsPath is a helper struct to safely convert path to absolute path
@@ -105,6 +109,10 @@ func createQueue(db *database.Database) ([]database.GlobalVar, error) {
 // whose syscall spec have existed in syzkaller
 // TODO: currently we use a blacklist file to specify global variables whose spec have existed
 // in syzkaller, is there a more efficient way to do this, such as querying syzkaller's database?
+// How about parsing existed specs (under $SYZKALLER/sys/linux/*.txt) to AST, then record syscall
+// names, flags, structs, unions, resources, type-alias, type-template, etc., and finally check
+// whether such elements outlined by agent is existed? In such way, we can remove -blacklist but
+// we need prompt agent to generate outline for all interested global variables, which need more $$.
 func createBlacklist(cfg *ProgConfig) (map[string]bool, error) {
 	// read blacklist file
 	blacklist := make(map[string]bool)
@@ -153,6 +161,7 @@ func setConfigs() *ProgConfig {
 	flag.StringVar(&cfg.Prefix, "prefix", "./data/prefix.txt", "Path to the prefix file for syscall syz spec")
 	flag.IntVar(&cfg.MaxFix, "max-fix", 5, "Maximum number of fix attempts for invalid specs")
 	flag.IntVar(&cfg.MaxRetry, "max-retry", 5, "Maximum number of retry attempts for writing spec (-1 means infinite retries)")
+	flag.IntVar(&cfg.Jobs, "jobs", 1, "Maxmum number of parallel jobs.")
 	flag.StringVar(
 		&cfg.OtlSysPrompt,
 		"otl-system-prompt",
@@ -224,8 +233,7 @@ func checkConfig(cfg *ProgConfig) error {
 	}
 
 	// -syzkaller
-	sc := check.NewSpecCheck(check.WithSyzkaller(cfg.Syzkaller))
-	if err := sc.CheckSyzkaller(); err != nil {
+	if err := checkSyzkaller(cfg.Syzkaller); err != nil {
 		return fmt.Errorf("-syzkaller: directory is invalid: %v\n", err)
 	}
 
@@ -234,6 +242,66 @@ func checkConfig(cfg *ProgConfig) error {
 		return fmt.Errorf("-max-retry: must be -1 or greater.")
 	}
 
+	// -jobs
+	if cfg.Jobs < 1 {
+		return fmt.Errorf("-jobs: must be positive.")
+	}
+
+	return nil
+}
+
+// checkSyzkaller check whether path to syzkaller repository is valid
+func checkSyzkaller(path string) error {
+	repo, err := git.PlainOpen(path)
+	if err != nil {
+		return err
+	}
+	remotes, err := repo.Remotes()
+	if err != nil {
+		return err
+	}
+	isSyzkaller := false
+	for _, remote := range remotes {
+		urls := remote.Config().URLs
+		if urls[0] == "https://github.com/google/syzkaller" {
+			isSyzkaller = true
+			break
+		}
+	}
+	if !isSyzkaller {
+		return fmt.Errorf("not syzkaller repository: %s", path)
+	}
+	head, err := repo.Head()
+	if err != nil {
+		return err
+	}
+	if head.Hash().String()[:8] != "4b25d554" {
+		log.Println("I use syzkaller 4b25d554 btw :)")
+	}
+	return nil
+}
+
+// cleanSyzkaller clean sc.Syzkaller repository to its original state
+func cleanSyzkaller(path string) error {
+	if err := checkSyzkaller(path); err != nil {
+		return err
+	}
+	repo, err := git.PlainOpen(path)
+	if err != nil {
+		return err
+	}
+	w, err := repo.Worktree()
+	if err != nil {
+		return err
+	}
+	err = w.Clean(&git.CleanOptions{Dir: true})
+	if err != nil {
+		return err
+	}
+	err = w.Reset(&git.ResetOptions{Mode: git.HardReset})
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -309,6 +377,127 @@ func createAgent(db *database.Database, sc *check.SpecCheck, cfg *ProgConfig) (*
 	return &kAgent, nil
 }
 
+type WriteJob struct {
+	Progress     string              // a prefix to indicate progress, e.g., "1/100"
+	Gv           *database.GlobalVar // the global variable entry to write spec for
+	SysPromptMap *map[string]string  // system prompt map
+	Db           *database.Database  // database instance
+}
+
+type WriteJobRes struct {
+	Tid int
+	Gv  *database.GlobalVar
+	Err error
+}
+
+// writeJob start a job to write syscall spec for a global variable
+func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJob, wjr chan<- WriteJobRes) {
+	logger := log.New(os.Stdout, "[T"+strconv.Itoa(tid)+"] ", log.LstdFlags|log.Lmsgprefix)
+	res := WriteJobRes{
+		Tid: tid,
+		Gv:  nil,
+		Err: nil,
+	}
+
+	// create a SpecCheck instances
+	wd, err := os.MkdirTemp(os.TempDir(), "cloud-*")
+	if err != nil {
+		logger.Printf("failed to create temporary workdir: %v\n", err)
+		res.Err = err
+		wjr <- res
+		return
+	}
+	logger.Printf("copying extract kernel to workdir (%s) ...\n", wd)
+	if err := copy.Copy(cfg.ExtractKernel, filepath.Join(wd, "extract-kernel")); err != nil {
+		logger.Printf("failed to copy extract kernel: %v\n", err)
+		res.Err = err
+		wjr <- res
+		return
+	}
+	logger.Printf("copying check kernel to workdir (%s) ...\n", wd)
+	if err := copy.Copy(cfg.CheckKernel, filepath.Join(wd, "check-kernel")); err != nil {
+		logger.Printf("failed to copy check kernel: %v\n", err)
+		res.Err = err
+		wjr <- res
+		return
+	}
+	sc := check.NewSpecCheck(
+		check.WithSyzExtract(cfg.ExtractBin),
+		check.WithSyzCheck(cfg.CheckBin),
+		check.WithKernelForExtract(filepath.Join(wd, "extract-kernel")),
+		check.WithKernelForCheck(filepath.Join(wd, "check-kernel")),
+		check.WithWorkdir(wd),
+		check.WithSyzkaller(cfg.Syzkaller),
+	)
+	sc.SetupWorkdir()
+	defer os.RemoveAll(wd)
+
+	// create an agent
+	kAgent, err := createAgent(db, sc, cfg)
+	if err != nil {
+		logger.Printf("failed to create agent: %v\n", err)
+		res.Err = err
+		wjr <- res
+		return
+	}
+
+	for wj := range wjs {
+		var (
+			logPrefix = fmt.Sprintf("[%d][%s]", tid, wj.Progress)
+			gv        = wj.Gv
+			spm       = wj.SysPromptMap
+		)
+		res.Gv = gv
+
+		// start writing spec
+		buf, _ := os.ReadFile(cfg.Prefix)
+		prefix := string(buf)
+		fp := filepath.Join(cfg.Outdir, gv.Name+"#"+cfg.Model, "spec#comp.txt")
+		if _, err := os.Stat(fp); err == nil && cfg.Resume {
+			logger.Printf("Complete spec for global variable %s exists, reuse existing and skip generation.\n", gv.Name)
+			wjr <- res
+			continue
+		}
+		spec, valid, err := writeSpec(kAgent, spm, gv, cfg, logPrefix)
+		for j := 0; j < cfg.MaxRetry && err != nil; j++ {
+			logger.Printf("Retrying to write spec for global variable %s (attempt %d/%d) ...\n", gv.Name, j+1, cfg.MaxRetry)
+			// sleep for a while before write spec again to avoid frequent requests
+			slpTime := rand.Int31n(11) + 10
+			time.Sleep(time.Duration(slpTime) * time.Second)
+			spec, valid, err = writeSpec(kAgent, spm, gv, cfg, logPrefix)
+		}
+		if err != nil {
+			logger.Printf("failed to write spec for global variable %s: %v\n", gv.Name, err)
+			logger.Printf("Skip global variable %s and continue with next one.\n", gv.Name)
+			res.Err = err
+			wjr <- res
+			continue
+		}
+
+		// write the final spec to file
+		compSpec := prefix + "\n\n" + spec
+		if !valid {
+			compSpec = fmt.Sprintf("# NOTE: failed to fix spec after %d attempts\n%s", cfg.MaxFix, compSpec)
+		}
+		if err = os.WriteFile(fp, []byte(compSpec), 0644); err != nil {
+			logger.Printf("failed to write final spec file: %v\n", err)
+			res.Err = err
+			wjr <- res
+			continue
+		}
+		logger.Printf("Spec for global variable %s has been generated successfully.\n", gv.Name)
+
+		// restore workdir for next write job, if we cannot restore workdir, subsequent jobs cannot be executed correctly,
+		// so we set res.Err and return directly
+		if err = sc.RestoreWorkdir(); err != nil {
+			logger.Printf("failed to restore spec check workdir: %v\n", err)
+			wjr <- res
+			return
+		}
+		wjr <- res
+	}
+}
+
 func main() {
 	// parse flags
 	cfg := setConfigs()
@@ -364,24 +553,8 @@ func main() {
 	}
 	defer db.Close()
 
-	// create a SpecCheck instances
-	wd, err := os.MkdirTemp(os.TempDir(), "cloud-*")
-	if err != nil {
-		log.Fatalf("failed to create temporary workdir: %v\n", err)
-	}
-	sc := check.NewSpecCheck(
-		check.WithSyzExtract(cfg.ExtractBin),
-		check.WithSyzCheck(cfg.CheckBin),
-		check.WithKernelForExtract(cfg.ExtractKernel),
-		check.WithKernelForCheck(cfg.CheckKernel),
-		check.WithWorkdir(wd),
-		check.WithSyzkaller(cfg.Syzkaller),
-	)
-	defer os.RemoveAll(wd)
-	sc.SetupWorkdir()
-
 	// create a queue that used to prompt llm for spec generation
-	log.Println("Generating material queue ...")
+	log.Println("Generating queue ...")
 	queue, err := createQueue(&db)
 	if err != nil {
 		log.Fatalf("failed to create queue: %v\n", err)
@@ -411,45 +584,48 @@ func main() {
 	spmWrtFunc(cfg.OtlSysPrompt, "outline")
 	spmWrtFunc(cfg.GenSysPrompt, "generate")
 	spmWrtFunc(cfg.FixSysPrompt, "fix")
-
-	// init an agent and start writing syscall specs
-	kAgent, err := createAgent(&db, sc, cfg)
-	if err != nil {
-		log.Fatalf("failed to create agent: %v\n", err)
-	}
-	buf, _ := os.ReadFile(cfg.Prefix)
-	prefix := string(buf) // prefix for syz spec
 	if cfg.MaxRetry == -1 {
 		cfg.MaxRetry = math.MaxInt
 	}
-	// TODO: in parallel way ...
-	for i, gvEntry := range queue {
-		cfg.Progress = fmt.Sprintf("%d/%d", i+1, len(queue))
-		fp := filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, "spec#comp.txt")
-		if _, err := os.Stat(fp); err == nil && cfg.Resume {
-			log.Printf("Complete spec for global variable %s exists, reuse existing and skip generation.\n", gvEntry.Name)
-			continue
-		}
-		spec, valid, err := writeSpec(kAgent, &sysPromptMap, &gvEntry, cfg)
-		for j := 0; j < cfg.MaxRetry && err != nil; j++ {
-			log.Printf("Retrying to write spec for global variable %s (attempt %d/%d) ...\n", gvEntry.Name, j+1, cfg.MaxRetry)
-			// sleep for a while before write spec again to avoid frequent requests
-			slpTime := rand.Int31n(61) + 10
-			time.Sleep(time.Duration(slpTime) * time.Second)
-			spec, valid, err = writeSpec(kAgent, &sysPromptMap, &gvEntry, cfg)
-		}
-		if err != nil {
-			log.Printf("failed to write spec for global variable %s: %v\n", gvEntry.Name, err)
-			log.Printf("Skip global variable %s and continue with next one.\n", gvEntry.Name)
-		}
-		compSpec := prefix + "\n\n" + spec
-		if !valid {
-			compSpec = fmt.Sprintf("# NOTE: failed to fix spec after %d attempts\n%s", cfg.MaxFix, compSpec)
-		}
-		err = os.WriteFile(fp, []byte(compSpec), 0644)
-		if err != nil {
-			log.Fatalf("failed to write final spec file: %v\n", err)
-		}
-		log.Printf("Spec for global variable %s has been generated successfully.\n", gvEntry.Name)
+
+	// clean syzkaller directory to ensure its state is fresh
+	if err := cleanSyzkaller(cfg.Syzkaller); err != nil {
+		log.Fatalf("failed to clean syzkaller directory: %v\n", err)
 	}
+
+	// create jobs and ress for job dispatch and result collection
+	var (
+		jobs  = make(chan WriteJob, len(queue))
+		ress  = make(chan WriteJobRes, len(queue))
+		jobWg sync.WaitGroup
+		resWg sync.WaitGroup
+	)
+	for w := 0; w < cfg.Jobs; w++ {
+		jobWg.Add(1)
+		go func(tid int) {
+			defer jobWg.Done()
+			writeJob(tid, &db, cfg, jobs, ress)
+		}(w)
+	}
+	resWg.Add(1)
+	go func() {
+		defer resWg.Done()
+		for res := range ress {
+			log.Printf("[T%d][%s] write job result: err=%v", res.Tid, res.Gv.Name, res.Err)
+		}
+	}()
+
+	// start to dispatch write jobs
+	for i, gv := range queue {
+		jobs <- WriteJob{
+			Progress:     fmt.Sprintf("%d/%d", i+1, len(queue)),
+			Gv:           &gv,
+			SysPromptMap: &sysPromptMap,
+		}
+	}
+	close(jobs)
+	jobWg.Wait()
+	close(ress)
+	resWg.Wait()
+	log.Printf("all write jobs have been completed.\n")
 }

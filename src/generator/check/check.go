@@ -3,13 +3,11 @@ package check
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 
-	"github.com/go-git/go-git/v6"
 	"github.com/otiai10/copy"
 )
 
@@ -77,58 +75,6 @@ func WithSyzkaller(path string) Option {
 	return func(sc *SpecCheck) {
 		sc.Syzkaller = path
 	}
-}
-
-// CheckSyzkaller check whether path to syzkaller repository is valid
-func (sc *SpecCheck) CheckSyzkaller() error {
-	repo, err := git.PlainOpen(sc.Syzkaller)
-	if err != nil {
-		return err
-	}
-	remotes, err := repo.Remotes()
-	if err != nil {
-		return err
-	}
-	isSyzkaller := false
-	for _, remote := range remotes {
-		urls := remote.Config().URLs
-		if urls[0] == "https://github.com/google/syzkaller" {
-			isSyzkaller = true
-			break
-		}
-	}
-	if !isSyzkaller {
-		return fmt.Errorf("not syzkaller repository: %s", sc.Syzkaller)
-	}
-	head, err := repo.Head()
-	if err != nil {
-		return err
-	}
-	if head.Hash().String()[:8] != "4b25d554" {
-		log.Println("I use syzkaller 4b25d554 btw :)")
-	}
-	return nil
-}
-
-// CleanSyzkaller clean sc.Syzkaller repository to its original state
-func (sc *SpecCheck) CleanSyzkaller() error {
-	repo, err := git.PlainOpen(sc.Syzkaller)
-	if err != nil {
-		return err
-	}
-	w, err := repo.Worktree()
-	if err != nil {
-		return err
-	}
-	err = w.Clean(&git.CleanOptions{Dir: true})
-	if err != nil {
-		return err
-	}
-	err = w.Reset(&git.ResetOptions{Mode: git.HardReset})
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 // SetupWorkdir setup sc.Workdir by copy sc.Syzkaller/sys/linux/* to sc.Workdir/sys/linux/
