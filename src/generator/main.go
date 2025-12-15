@@ -112,7 +112,7 @@ func createBlacklist(cfg *ProgConfig) (map[string]bool, error) {
 	blacklist := make(map[string]bool)
 	data, err := os.ReadFile(cfg.BlackList)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read blacklist file: %v\n", err)
+		return nil, fmt.Errorf("failed to read blacklist file: %v", err)
 	}
 	lines := strings.SplitSeq(string(data), "\n")
 	for line := range lines {
@@ -196,7 +196,7 @@ func checkConfig(cfg *ProgConfig) error {
 		}
 		_, err := os.Stat(path)
 		if err != nil {
-			scfe.err = fmt.Errorf("%s: %s: %v\n", title, path, err)
+			scfe.err = fmt.Errorf("%s: %s: %v", title, path, err)
 		}
 	}
 	fileExistHelperFunc(cfg.Env, "-env")
@@ -223,22 +223,22 @@ func checkConfig(cfg *ProgConfig) error {
 
 	// -outdir
 	if cfg.Outdir == "" {
-		return fmt.Errorf("-outdir: cannot be empty.")
+		return fmt.Errorf("-outdir: cannot be empty")
 	}
 
 	// -syzkaller
 	if err := checkSyzkaller(cfg.Syzkaller); err != nil {
-		return fmt.Errorf("-syzkaller: directory is invalid: %v\n", err)
+		return fmt.Errorf("-syzkaller: directory is invalid: %v", err)
 	}
 
 	// -max-retry
 	if cfg.MaxRetry < -1 {
-		return fmt.Errorf("-max-retry: must be -1 or greater.")
+		return fmt.Errorf("-max-retry: must be -1 or greater")
 	}
 
 	// -jobs
 	if cfg.Jobs < 1 {
-		return fmt.Errorf("-jobs: must be positive.")
+		return fmt.Errorf("-jobs: must be positive")
 	}
 
 	return nil

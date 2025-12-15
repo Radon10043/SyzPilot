@@ -37,7 +37,7 @@ type writeSpecHelper struct {
 // WriteOutline write the outline field to outline file
 func (wsh *writeSpecHelper) WriteOutline() error {
 	if err := os.WriteFile(wsh.OutlinePath, []byte(wsh.Outline), 0644); err != nil {
-		return fmt.Errorf("failed to write outline file: %v\n", err)
+		return fmt.Errorf("failed to write outline file: %v", err)
 	}
 	return nil
 }
@@ -45,7 +45,7 @@ func (wsh *writeSpecHelper) WriteOutline() error {
 // WriteJstr write the jstr field to spec json file
 func (wsh *writeSpecHelper) WriteJstr() error {
 	if err := os.WriteFile(wsh.JstrPath, []byte(wsh.Jstr), 0644); err != nil {
-		return fmt.Errorf("failed to write spec json file: %v\n", err)
+		return fmt.Errorf("failed to write spec json file: %v", err)
 	}
 	return nil
 }
@@ -53,7 +53,7 @@ func (wsh *writeSpecHelper) WriteJstr() error {
 // WriteSpec write the spec field to syzlang spec file
 func (wsh *writeSpecHelper) WriteSpec() error {
 	if err := os.WriteFile(wsh.SpecPath, []byte(wsh.Spec), 0644); err != nil {
-		return fmt.Errorf("failed to write spec file: %v\n", err)
+		return fmt.Errorf("failed to write spec file: %v", err)
 	}
 	return nil
 }
@@ -61,7 +61,7 @@ func (wsh *writeSpecHelper) WriteSpec() error {
 // WriteNext update the .next file and next field with the next step
 func (wsh *writeSpecHelper) WriteNext(next string) error {
 	if err := os.WriteFile(wsh.DotNext, []byte(next), 0644); err != nil {
-		return fmt.Errorf("failed to update .next file: %v\n", err)
+		return fmt.Errorf("failed to update .next file: %v", err)
 	}
 	wsh.Next = next
 	return nil
@@ -73,7 +73,7 @@ func (wsh *writeSpecHelper) RecoverProgress(cfg *ProgConfig) error {
 	if _, err := os.Stat(wsh.OutlinePath); err == nil {
 		data, err := os.ReadFile(wsh.OutlinePath)
 		if err != nil {
-			return fmt.Errorf("failed to read outline file: %v\n", err)
+			return fmt.Errorf("failed to read outline file: %v", err)
 		}
 		wsh.Outline = string(data)
 	}
@@ -82,7 +82,7 @@ func (wsh *writeSpecHelper) RecoverProgress(cfg *ProgConfig) error {
 	if _, err := os.Stat(wsh.JstrPath); err == nil {
 		data, err := os.ReadFile(wsh.JstrPath)
 		if err != nil {
-			return fmt.Errorf("failed to read spec json file: %v\n", err)
+			return fmt.Errorf("failed to read spec json file: %v", err)
 		}
 		wsh.Jstr = string(data)
 	}
@@ -91,7 +91,7 @@ func (wsh *writeSpecHelper) RecoverProgress(cfg *ProgConfig) error {
 	if _, err := os.Stat(wsh.SpecPath); err == nil {
 		data, err := os.ReadFile(wsh.SpecPath)
 		if err != nil {
-			return fmt.Errorf("failed to read spec file: %v\n", err)
+			return fmt.Errorf("failed to read spec file: %v", err)
 		}
 		wsh.Spec = string(data)
 	}
@@ -100,7 +100,7 @@ func (wsh *writeSpecHelper) RecoverProgress(cfg *ProgConfig) error {
 	if _, err := os.Stat(wsh.DotNext); err == nil {
 		data, err := os.ReadFile(wsh.DotNext)
 		if err != nil {
-			return fmt.Errorf("failed to read .next file: %v\n", err)
+			return fmt.Errorf("failed to read .next file: %v", err)
 		}
 		wsh.Next = strings.TrimSpace(string(data))
 	}
@@ -112,7 +112,7 @@ func (wsh *writeSpecHelper) RecoverProgress(cfg *ProgConfig) error {
 func (wsh *writeSpecHelper) SaveQueryMessages(kAgent *agent.Agent, prefix string) error {
 	msgf, err := os.CreateTemp(wsh.Workdir, prefix+"*.msg")
 	if err != nil {
-		return fmt.Errorf("failed to create temp file for saving messages: %v\n", err)
+		return fmt.Errorf("failed to create temp file for saving messages: %v", err)
 	}
 	defer msgf.Close()
 	kAgent.SaveMessage(msgf)
@@ -136,7 +136,7 @@ func writeSpec(
 	}
 	err := os.MkdirAll(wsh.Workdir, 0755)
 	if err != nil {
-		return "", false, fmt.Errorf("failed to create workdir: %v\n", err)
+		return "", false, fmt.Errorf("failed to create workdir: %v", err)
 	}
 
 	// if resume is enabled, recover existing progress
@@ -166,8 +166,7 @@ func writeSpec(
 func execWriteStep(
 	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *ProgConfig, wsh *writeSpecHelper,
 ) error {
-	var logger *log.Logger
-	logger = log.New(os.Stdout, wsh.LogPrefix+"["+gvEntry.Name+"]["+wsh.Next+"] ", log.LstdFlags|log.Lmsgprefix)
+	logger := log.New(os.Stdout, wsh.LogPrefix+"["+gvEntry.Name+"]["+wsh.Next+"] ", log.LstdFlags|log.Lmsgprefix)
 	switch wsh.Next {
 	case "outline":
 		return execOutlineStep(kAgent, (*sysPromptMap)["outline"], gvEntry, logger, wsh)
@@ -177,7 +176,7 @@ func execWriteStep(
 		return execFixStep(kAgent, (*sysPromptMap)["fix"], cfg, logger, wsh)
 	case "complete":
 	default:
-		return fmt.Errorf("unknown next step: %s\n", wsh.Next)
+		return fmt.Errorf("unknown next step: %s", wsh.Next)
 	}
 	return nil
 }
@@ -200,14 +199,14 @@ func execFixStep(kAgent *agent.Agent, sysPrompt string, cfg *ProgConfig, logger 
 	// Update wsh.Jstr according to the validity of wsh.Spec
 	if wsh.Valid {
 		if wsh.Jstr, err = ast.Syzlang2json(wsh.Spec); err != nil {
-			return fmt.Errorf("failed to convert valid spec to json: %v\n", err)
+			return fmt.Errorf("failed to convert valid spec to json: %v", err)
 		}
 		if err = wsh.WriteJstr(); err != nil {
 			return err
 		}
 		jspec, err := ast.Syzlang2JsonSpec(wsh.Spec)
 		if err != nil {
-			return fmt.Errorf("failed to convert valid spec to json: %v\n", err)
+			return fmt.Errorf("failed to convert valid spec to json: %v", err)
 		}
 		if len(jspec.Todo) > 0 {
 			return wsh.WriteNext("generate")
@@ -215,7 +214,7 @@ func execFixStep(kAgent *agent.Agent, sysPrompt string, cfg *ProgConfig, logger 
 	} else { // Invalid spec cannot be converted to json/JsonSpec, reuse latest json string
 		err = json.Unmarshal([]byte(wsh.Jstr), &jspec)
 		if err != nil {
-			return fmt.Errorf("failed to parse existing spec json: %v\n", err)
+			return fmt.Errorf("failed to parse existing spec json: %v", err)
 		}
 		if len(jspec.Todo) > 0 {
 			return wsh.WriteNext("generate")
@@ -233,13 +232,13 @@ func fixSpec(
 	// make agent ready for fix loop
 	kAgent.CleanMessages()
 	if err := kAgent.AddSystemMessage(sysPrompt); err != nil {
-		return "", false, fmt.Errorf("failed to add system prompt to agent: %v\n", err)
+		return "", false, fmt.Errorf("failed to add system prompt to agent: %v", err)
 	}
 
 	// check validity of spec and prompt agent to fix it if invalid
 	buf, err := os.ReadFile(cfg.Prefix)
 	if err != nil {
-		return "", false, fmt.Errorf("failed to read prefix file: %v\n", err)
+		return "", false, fmt.Errorf("failed to read prefix file: %v", err)
 	}
 	var (
 		prefix string = string(buf)
@@ -251,7 +250,7 @@ func fixSpec(
 	for i := 0; i < cfg.MaxFix; i++ { // limit the number of fix attempts
 		logger.Printf("Checking validity of spec ...\n")
 		if spec == "" {
-			return "", false, fmt.Errorf("empty spec, stop.\n")
+			return "", false, fmt.Errorf("empty spec, stop")
 		}
 		// it's okay to ignore command error (last return value) here since it is not fatal
 		stdout, stderr, valid, _ = checkSpecValidity(kAgent.ToolHelper.Sc, prefix+"\n\n"+spec)
@@ -272,7 +271,7 @@ func fixSpec(
 		}
 		spec, found = utils.ExtractFirstCodeBlock(response.Choices[0].Content, "syzlang")
 		if !found {
-			return "", false, fmt.Errorf("failed to extract syzlang code fence from fix response.\n")
+			return "", false, fmt.Errorf("failed to extract syzlang code fence from fix response")
 		}
 	}
 
@@ -305,11 +304,11 @@ func createErrBlock(stdout *bytes.Buffer, stderr *bytes.Buffer, cfg *ProgConfig)
 	// format stdout and stderr messages
 	fmtStdout, err := formatMessages(stdout, cfg.Prefix)
 	if err != nil {
-		return "", fmt.Errorf("failed to extract error messages: %v\n", err)
+		return "", fmt.Errorf("failed to extract error messages: %v", err)
 	}
 	fmtStderr, err := formatMessages(stderr, cfg.Prefix)
 	if err != nil {
-		return "", fmt.Errorf("failed to extract error messages: %v\n", err)
+		return "", fmt.Errorf("failed to extract error messages: %v", err)
 	}
 
 	// format error message block, mainly adjust line numbers according to prefix length
@@ -391,7 +390,7 @@ func fixSpecLoop(kAgent *agent.Agent, logger *log.Logger) (*llms.ContentResponse
 	for {
 		response, err = kAgent.Query()
 		if err != nil {
-			return nil, fmt.Errorf("failed to run agent in fix loop: %v\n", err)
+			return nil, fmt.Errorf("failed to run agent in fix loop: %v", err)
 		}
 		logger.Printf("AI Response: %q\n", response.Choices[0].Content)
 		if len(response.Choices[0].ToolCalls) == 0 {
@@ -402,7 +401,7 @@ func fixSpecLoop(kAgent *agent.Agent, logger *log.Logger) (*llms.ContentResponse
 		}
 		err = kAgent.ExecTools()
 		if err != nil {
-			return nil, fmt.Errorf("failed to execute tools in fix loop: %v\n", err)
+			return nil, fmt.Errorf("failed to execute tools in fix loop: %v", err)
 		}
 	}
 
@@ -422,7 +421,7 @@ func execGenerateStep(kAgent *agent.Agent, sysPrompt string, gvEntry *database.G
 		return err
 	}
 	if wsh.Spec, err = ast.Json2syzlang(wsh.Jstr); err != nil {
-		return fmt.Errorf("failed to convert spec json to syzlang: %v\n", err)
+		return fmt.Errorf("failed to convert spec json to syzlang: %v", err)
 	}
 	if err = wsh.WriteSpec(); err != nil {
 		return err
@@ -446,11 +445,11 @@ func collectSpec(
 	}
 	jstr, found = utils.ExtractFirstCodeBlock(response.Choices[0].Content, "json")
 	if !found {
-		return "", fmt.Errorf("failed to extract json code fence from generate response.\n")
+		return "", fmt.Errorf("failed to extract json code fence from generate response")
 	}
 	_, err = ast.Json2syzlang(jstr)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate valid json: %v\n", err)
+		return "", fmt.Errorf("failed to generate valid json: %v", err)
 	}
 	return jstr, nil
 }
@@ -463,7 +462,7 @@ func genSpec(
 	var err error
 	err = kAgent.AddSystemMessage(sysPrompt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to add system prompt to agent: %v\n", err)
+		return nil, fmt.Errorf("failed to add system prompt to agent: %v", err)
 	}
 
 	// prompt agent to generate syscall spec
@@ -474,7 +473,7 @@ func genSpec(
 		logger.Printf("Query agent ...\n")
 		response, err = kAgent.Query()
 		if err != nil {
-			return nil, fmt.Errorf("failed to run agent: %v\n", err)
+			return nil, fmt.Errorf("failed to run agent: %v", err)
 		}
 		logger.Printf("AI Response: %q\n", response.Choices[0].Content)
 		if len(response.Choices[0].ToolCalls) == 0 {
@@ -485,7 +484,7 @@ func genSpec(
 		}
 		err = kAgent.ExecTools()
 		if err != nil {
-			return nil, fmt.Errorf("failed to execute tools: %v\n", err)
+			return nil, fmt.Errorf("failed to execute tools: %v", err)
 		}
 	}
 	logger.Printf("Generation loop stop reason: %v", response.Choices[0].StopReason)
@@ -527,11 +526,11 @@ func collectOutline(
 	}
 	outline, found = utils.ExtractFirstCodeBlock(response.Choices[0].Content, "json")
 	if !found {
-		return "", fmt.Errorf("failed to extract json code fence from outline response.\n")
+		return "", fmt.Errorf("failed to extract json code fence from outline response")
 	}
 	_, err = ast.Json2syzlang(outline)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate valid json: %v\n", err)
+		return "", fmt.Errorf("failed to generate valid json: %v", err)
 	}
 	return outline, nil
 }
@@ -544,7 +543,7 @@ func genOutline(
 	var err error
 	err = kAgent.AddSystemMessage(sysPrompt)
 	if err != nil {
-		return nil, fmt.Errorf("failed to add system prompt to agent: %v\n", err)
+		return nil, fmt.Errorf("failed to add system prompt to agent: %v", err)
 	}
 
 	// prompt agent to outline todo tasks
@@ -553,7 +552,7 @@ func genOutline(
 	for {
 		response, err = kAgent.Query()
 		if err != nil {
-			return nil, fmt.Errorf("failed to run agent in outline stage: %v\n", err)
+			return nil, fmt.Errorf("failed to run agent in outline stage: %v", err)
 		}
 		logger.Printf("AI Response: %q\n", response.Choices[0].Content)
 		if len(response.Choices[0].ToolCalls) == 0 {
@@ -564,7 +563,7 @@ func genOutline(
 		}
 		err = kAgent.ExecTools()
 		if err != nil {
-			return nil, fmt.Errorf("failed to execute tools in outline stage: %v\n", err)
+			return nil, fmt.Errorf("failed to execute tools in outline stage: %v", err)
 		}
 	}
 
