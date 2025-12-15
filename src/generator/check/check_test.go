@@ -23,77 +23,93 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	wd, err := os.MkdirTemp(os.TempDir(), "cloud-*")
+	if err != nil {
+		panic(err)
+	}
+	sc = check.NewSpecCheck(
+		check.WithSyzExtract(filepath.Join(root, "bin", "syz-extract")),
+		check.WithSyzCheck(filepath.Join(root, "bin", "syz-check")),
+		check.WithKernelForExtract("/vol/linux/v6.12-extract"),
+		check.WithKernelForCheck("/vol/linux/v6.12-check"),
+		check.WithWorkdir(wd),
+		check.WithSyzkaller(filepath.Join(root, "syzkaller")),
+	)
+	if err = sc.SetupWorkdir(); err != nil {
+		panic(err)
+	}
 }
 
 func TestCheckValid(t *testing.T) {
-	// create an temp directory for workdir
-	wd, err := os.MkdirTemp(os.TempDir(), "cloud-*")
-	if err != nil {
-		t.Fatalf("failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(wd)
-	sc = check.NewSpecCheck(
-		check.WithSyzExtract(filepath.Join(root, "bin", "syz-extract")),
-		check.WithSyzCheck(filepath.Join(root, "bin", "syz-check")),
-		check.WithKernelForExtract("/vol/linux/v6.12-extract"),
-		check.WithKernelForCheck("/vol/linux/v6.12-check"),
-		check.WithWorkdir(wd),
-		check.WithSyzkaller(filepath.Join(root, "syzkaller")),
-	)
-	if err = sc.SetupWorkdir(); err != nil {
-		t.Fatalf("failed to setup workdir: %v", err)
-	}
-	src := filepath.Join(root, "data", "test", "dev_md.txt")
-	spec, err := os.ReadFile(src)
+	b, err := os.ReadFile(filepath.Join(root, "data", "test", "dev_md.txt"))
 	if err != nil {
 		t.Fatalf("failed to read spec file: %v", err)
 	}
-	dst := filepath.Join(sc.Workdir, "sys", "linux", "spec.txt")
-	err = os.WriteFile(dst, spec, 0644)
-	if err != nil {
-		t.Fatalf("failed to write spec file: %v", err)
+	if err = sc.AddSpec(string(b)); err != nil {
+		t.Fatalf("failed to add spec: %v", err)
 	}
-	_, stderr, err := sc.ExtractConst()
-	if err != nil {
-		t.Fatalf("extract const failed: %v\nstderr: %v", err, stderr.String())
+	_, _, valid := sc.ExtractConst()
+	if !valid {
+		t.Fatalf("syz-extract report spec is invalid, exptected valid.")
 	}
-	_, stderr, err = sc.CheckValidity()
+	_, _, valid = sc.CheckValidity()
 	if err != nil {
-		t.Fatalf("syz-check failed: %v\nstderr: %v", err, stderr.String())
+		t.Fatalf("syz-check report spec is invalid, expected valid. ")
 	}
+	os.RemoveAll(sc.Workdir)
 }
 
 func TestCheckInvalid(t *testing.T) {
-	// create an temp directory for workdir
-	wd, err := os.MkdirTemp(os.TempDir(), "cloud-*")
-	if err != nil {
-		t.Fatalf("failed to create temp directory: %v", err)
-	}
-	defer os.RemoveAll(wd)
-	sc = check.NewSpecCheck(
-		check.WithSyzExtract(filepath.Join(root, "bin", "syz-extract")),
-		check.WithSyzCheck(filepath.Join(root, "bin", "syz-check")),
-		check.WithKernelForExtract("/vol/linux/v6.12-extract"),
-		check.WithKernelForCheck("/vol/linux/v6.12-check"),
-		check.WithWorkdir(wd),
-		check.WithSyzkaller(filepath.Join(root, "syzkaller")),
-	)
-	if err = sc.SetupWorkdir(); err != nil {
-		t.Fatalf("failed to setup workdir: %v", err)
-	}
-	src := filepath.Join(root, "data", "test", "dev_md_bad.txt")
-	spec, err := os.ReadFile(src)
+	b, err := os.ReadFile(filepath.Join(root, "data", "test", "dev_md_bad.txt"))
 	if err != nil {
 		t.Fatalf("failed to read spec file: %v", err)
 	}
-	dst := filepath.Join(sc.Workdir, "sys", "linux", "spec.txt")
-	err = os.WriteFile(dst, spec, 0644)
+	if err = sc.AddSpec(string(b)); err != nil {
+		t.Fatalf("failed to add spec: %v", err)
+	}
+	_, _, valid := sc.ExtractConst()
+	if valid {
+		t.Fatal("syz-extract report spec is valid, expected invalid.")
+	}
+	os.RemoveAll(sc.Workdir)
+}
+
+func TestEnableIgnRedeclErr(t *testing.T) {
+	sc.IgnRedeclErr = true
+	b, err := os.ReadFile(filepath.Join(root, "data", "test", "dev_snd_hw_redecl.txt"))
 	if err != nil {
-		t.Fatalf("failed to write spec file: %v", err)
+		t.Fatalf("failed to read spec file: %v", err)
 	}
-	_, stderr, err := sc.ExtractConst()
-	if err == nil {
-		t.Fatal("extract should be failed, but success.")
+	if err = sc.AddSpec(string(b)); err != nil {
+		t.Fatalf("failed to add spec: %v", err)
 	}
-	t.Logf("stderr: %v", stderr.String())
+	_, _, valid := sc.ExtractConst()
+	if !valid { // spec should be valid since ignore redeclare error is enabled
+		t.Fatal("syz-extract report spec is invalid, expected valid.")
+	}
+	_, _, valid = sc.CheckValidity()
+	if !valid {
+		t.Fatal("syz-extract report spec is invalid, expected valid.")
+	}
+	os.RemoveAll(sc.Workdir)
+}
+
+func TestDisableIgnRedeclErr(t *testing.T) {
+	// default is false
+	b, err := os.ReadFile(filepath.Join(root, "data", "test", "dev_snd_hw_redecl.txt"))
+	if err != nil {
+		t.Fatalf("failed to read spec file: %v", err)
+	}
+	if err = sc.AddSpec(string(b)); err != nil {
+		t.Fatalf("failed to add spec: %v", err)
+	}
+	_, _, valid := sc.ExtractConst()
+	if valid { // spec should be valid since ignore redeclare error is enabled
+		t.Fatal("syz-extract report spec is valid, expected invalid.")
+	}
+	_, _, valid = sc.CheckValidity()
+	if valid {
+		t.Fatal("syz-extract report spec is valid, expected invalid.")
+	}
+	os.RemoveAll(sc.Workdir)
 }

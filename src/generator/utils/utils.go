@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bufio"
 	"bytes"
 	"fmt"
 	"strings"
@@ -57,4 +58,41 @@ func ExtractFirstCodeBlock(markdownContent string, targetLang string) (string, b
 	}
 	ast.Walk(doc, walkFunc)
 	return code, found
+}
+
+// FoundKeywords check if any keyword is found in the string
+func FoundKeywords(s string, keywords []string) bool {
+	for _, kw := range keywords {
+		if strings.Contains(s, kw) {
+			return true
+		}
+	}
+	return false
+}
+
+// RemoveLines removes lines containing keywords from the given buffer
+func RemoveLines(buf *bytes.Buffer, keywords []string) bytes.Buffer {
+	var fbuf bytes.Buffer
+	scanner := bufio.NewScanner(buf)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if FoundKeywords(line, keywords) {
+			continue
+		}
+		fbuf.WriteString(line + "\n")
+	}
+	return fbuf
+}
+
+// PreserveLines preserves lines containing keywords from the given buffer
+func PreserveLines(buf *bytes.Buffer, keywords []string) bytes.Buffer {
+	var fbuf bytes.Buffer
+	scanner := bufio.NewScanner(buf)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if FoundKeywords(line, keywords) {
+			fbuf.WriteString(line + "\n")
+		}
+	}
+	return fbuf
 }

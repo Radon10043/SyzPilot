@@ -8,16 +8,19 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/Radon10043/cloud/src/generator/utils"
 	"github.com/otiai10/copy"
 )
 
 type SpecCheck struct {
-	SyzExtract       string // path to syz-extract binary
-	SyzCheck         string // path to syz-check binary
-	KernelForExtract string // path to kernel source for `make extract`
-	KernelForCheck   string // path to kernel source for syz-check
-	Workdir          string // working directory for syz-check, generally syzkaller's directory
-	Syzkaller        string // path to syzkaller repository
+	SyzExtract       string   // path to syz-extract binary
+	SyzCheck         string   // path to syz-check binary
+	KernelForExtract string   // path to kernel source for `make extract`
+	KernelForCheck   string   // path to kernel source for syz-check
+	Workdir          string   // working directory for syz-check, generally syzkaller's directory
+	Syzkaller        string   // path to syzkaller repository
+	IgnRedeclErr     bool     // ignore redeclare errors reported by syz-extract
+	InterestKeywords []string // only focus on lines of syz-extract/syz-check output containing these keywords
 }
 
 type Option func(*SpecCheck)
@@ -25,9 +28,10 @@ type Option func(*SpecCheck)
 // NewSpecCheck creates a new SpecCheck instance with given options
 func NewSpecCheck(opts ...Option) *SpecCheck {
 	sc := &SpecCheck{
-		SyzExtract: "./bin/syz-extract",
-		SyzCheck:   "./bin/syz-check",
-		Syzkaller:  "./syzkaller",
+		SyzExtract:       "./bin/syz-extract",
+		SyzCheck:         "./bin/syz-check",
+		Syzkaller:        "./syzkaller",
+		InterestKeywords: []string{"failed to run compiler:", "<stdin>:", "sys/"},
 	}
 	for _, opt := range opts {
 		opt(sc)
@@ -77,6 +81,19 @@ func WithSyzkaller(path string) Option {
 	}
 }
 
+// WithIgnRedeclErr sets the IgnRedeclErr field of SpecCheck
+func WithIgnRedeclErr(ign bool) Option {
+	return func(sc *SpecCheck) {
+		sc.IgnRedeclErr = ign
+	}
+}
+
+func WithInterestKeywords(keywords []string) Option {
+	return func(sc *SpecCheck) {
+		sc.InterestKeywords = keywords
+	}
+}
+
 // SetupWorkdir setup sc.Workdir by copy sc.Syzkaller/sys/linux/* to sc.Workdir/sys/linux/
 func (sc *SpecCheck) SetupWorkdir() error {
 	src := filepath.Join(sc.Syzkaller, "sys")
@@ -119,8 +136,9 @@ func (sc *SpecCheck) AddSpec(spec string) error {
 	return nil
 }
 
-// ExtractConst run `make extract` to extract constants from kernel source, return stdout, stderr, and error of the command
-func (sc *SpecCheck) ExtractConst() (*bytes.Buffer, *bytes.Buffer, error) {
+// ExtractConst run syz-extract to extract constants from kernel source,
+// return stdout and stderr of the command, also validity of the spec
+func (sc *SpecCheck) ExtractConst() (*bytes.Buffer, *bytes.Buffer, bool) {
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(
 		sc.SyzExtract,
@@ -132,24 +150,33 @@ func (sc *SpecCheck) ExtractConst() (*bytes.Buffer, *bytes.Buffer, error) {
 	cmd.Dir = sc.Workdir
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
-	err := cmd.Run()
-	if err != nil {
-		return &stdout, &stderr, err
-	}
-	return &stdout, &stderr, nil
+	cmd.Run() // it's okay to ignore error here since it is not fatal
+	return sc.formatOutput(&stdout, &stderr)
 }
 
 // CheckValidity run syz-check to check validity of existing specs under sc.Workdir/sys/$OS/*.txt,
-// return stdout, stderr, and error of the command
-func (sc *SpecCheck) CheckValidity() (*bytes.Buffer, *bytes.Buffer, error) {
+// return stdout and stderr of the command, also validity of the spec
+func (sc *SpecCheck) CheckValidity() (*bytes.Buffer, *bytes.Buffer, bool) {
 	var stdout, stderr bytes.Buffer
 	cmd := exec.Command(sc.SyzCheck, "-obj-amd64="+filepath.Join(sc.KernelForCheck, "vmlinux"))
 	cmd.Dir = sc.Workdir
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
-	err := cmd.Run()
-	if err != nil {
-		return &stdout, &stderr, err
+	cmd.Run() // it's okay to ignore error here since it is not fatal
+	return sc.formatOutput(&stdout, &stderr)
+}
+
+// formatOutput process the output of syz-extract or syz-check according to SpecCheck settings
+func (sc *SpecCheck) formatOutput(stdout *bytes.Buffer, stderr *bytes.Buffer) (*bytes.Buffer, *bytes.Buffer, bool) {
+	var (
+		fStdout bytes.Buffer = *stdout
+		fStderr bytes.Buffer = *stderr
+	)
+	fStdout = utils.PreserveLines(&fStdout, sc.InterestKeywords)
+	fStderr = utils.PreserveLines(&fStderr, sc.InterestKeywords)
+	if sc.IgnRedeclErr {
+		fStdout = utils.RemoveLines(&fStdout, []string{"redeclared,"})
+		fStderr = utils.RemoveLines(&fStderr, []string{"redeclared,"})
 	}
-	return &stdout, &stderr, nil
+	return &fStdout, &fStderr, len(fStdout.Bytes()) == 0 && len(fStderr.Bytes()) == 0
 }

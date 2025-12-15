@@ -422,6 +422,7 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 		check.WithKernelForCheck(filepath.Join(wd, "check-kernel")),
 		check.WithWorkdir(wd),
 		check.WithSyzkaller(cfg.Syzkaller),
+		check.WithIgnRedeclErr(true),
 	)
 	sc.SetupWorkdir()
 	defer os.RemoveAll(wd)
@@ -437,7 +438,7 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 
 	for wj := range wjs {
 		var (
-			logPrefix = fmt.Sprintf("[%d][%s]", tid, wj.Progress)
+			logPrefix = fmt.Sprintf("[T%d][%s]", tid, wj.Progress)
 			gv        = wj.Gv
 			spm       = wj.SysPromptMap
 		)

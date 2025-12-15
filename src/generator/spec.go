@@ -289,15 +289,15 @@ func checkSpecValidity(sc *check.SpecCheck, spec string) (*bytes.Buffer, *bytes.
 	if err != nil {
 		return nil, nil, false, fmt.Errorf("failed to add spec to syzkaller workdir: %v", err)
 	}
-	stdout, stderr, cmdErr := sc.ExtractConst()
-	if cmdErr != nil {
-		return stdout, stderr, false, nil
+	stdout, stderr, valid := sc.ExtractConst()
+	if !valid {
+		return stdout, stderr, valid, nil
 	}
-	stdout, stderr, cmdErr = sc.CheckValidity()
-	if cmdErr != nil {
-		return stdout, stderr, false, nil
+	stdout, stderr, valid = sc.CheckValidity()
+	if !valid {
+		return stdout, stderr, valid, nil
 	}
-	return stdout, stderr, true, nil
+	return stdout, stderr, valid, nil
 }
 
 // createErrBlock create an error block from stdout and stderr of `make extract` or `syz-check`
