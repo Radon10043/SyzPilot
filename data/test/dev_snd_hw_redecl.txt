@@ -1,0 +1,7 @@
+include <uapi/asm/ioctl.h>
+include <uapi/linux/fcntl.h>
+include <uapi/linux/time.h>
+include <uapi/sound/asound.h>
+include <uapi/sound/firewire.h>
+
+ioctl$SNDRV_HWDEP_IOCTL_PVERSION(fd fd_snd_hw, cmd const[SNDRV_HWDEP_IOCTL_PVERSION], arg ptr[out, int32])
