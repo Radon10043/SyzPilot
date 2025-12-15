@@ -18,6 +18,22 @@
                 "-check-kernel=/vol/linux/v6.12-check",
                 "-model=gemini-2.5-flash",
             ]
+        },
+        {
+            "name": "go: launch generator (2 jobs)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "github.com/Radon10043/cloud/src/generator",
+            "args": [
+                "-env=${workspaceFolder}/.env",
+                "-db=${workspaceFolder}/data/database/linux.db",
+                "-outdir=${workspaceFolder}/workdir/out",
+                "-extract-kernel=/vol/linux/v6.12-extract",
+                "-check-kernel=/vol/linux/v6.12-check",
+                "-model=gemini-2.5-flash",
+                "-jobs=2"
+            ]
         }
     ]
 }
