@@ -107,12 +107,6 @@ func createQueue(db *database.Database) ([]database.GlobalVar, error) {
 
 // createBlacklist create a blacklist which includes redundant global variables, i.e. those
 // whose syscall spec have existed in syzkaller
-// TODO: currently we use a blacklist file to specify global variables whose spec have existed
-// in syzkaller, is there a more efficient way to do this, such as querying syzkaller's database?
-// How about parsing existed specs (under $SYZKALLER/sys/linux/*.txt) to AST, then record syscall
-// names, flags, structs, unions, resources, type-alias, type-template, etc., and finally check
-// whether such elements outlined by agent is existed? In such way, we can remove -blacklist but
-// we need prompt agent to generate outline for all interested global variables, which need more $$.
 func createBlacklist(cfg *ProgConfig) (map[string]bool, error) {
 	// read blacklist file
 	blacklist := make(map[string]bool)
