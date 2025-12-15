@@ -30,7 +30,7 @@ endif
 all: analyzer generator syz-check syz-extract
 
 clean:
-	rm -rf bin/*
+	rm -rf bin
 
 prepare:
 	@mkdir -p bin
@@ -52,5 +52,4 @@ syz-check: prepare
 
 syz-extract: prepare
 	cd syzkaller/ && \
-	make bin/syz-extract && \
-	cp $(PWD)/syzkaller/bin/syz-extract $(PWD)/bin/syz-extract
+	GOOS=$(HOSTOS) GOARCH=$(HOSTARCH) $(GO) build $(GOFLAGS) -o $(PWD)/bin/syz-extract $(PWD)/syzkaller/sys/syz-extract/
