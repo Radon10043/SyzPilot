@@ -88,7 +88,10 @@ func keyFound(code string) bool {
 
 // createQueue creates a queue includes global variables that includes interested keys
 func createQueue(db *database.Database) ([]database.GlobalVar, error) {
-	var queue []database.GlobalVar
+	var (
+		queue []database.GlobalVar
+		visit map[string]bool = make(map[string]bool)
+	)
 	gvs, err := db.GetAllGlobalVar()
 	if err != nil {
 		return nil, fmt.Errorf("failed to create queue: %v", err)
@@ -97,10 +100,14 @@ func createQueue(db *database.Database) ([]database.GlobalVar, error) {
 		if gv.Code == "" {
 			continue
 		}
+		if visit[gv.Name] {
+			continue
+		}
 		if !keyFound(gv.Code) {
 			continue
 		}
 		queue = append(queue, gv)
+		visit[gv.Name] = true
 	}
 	return queue, nil
 }
