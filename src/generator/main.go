@@ -207,7 +207,12 @@ func checkConfig(cfg *ProgConfig) error {
 	vmlinuxPath := filepath.Join(cfg.CheckKernel, "vmlinux")
 	fileExistHelperFunc(vmlinuxPath, "-check-kernel")
 	fileExistHelperFunc(cfg.Syzkaller, "-syzkaller")
-	fileExistHelperFunc(cfg.Prefix, "-prefix")
+	if cfg.Prefix != "" {
+		fileExistHelperFunc(cfg.Prefix, "-prefix")
+	}
+	if cfg.BlackList != "" {
+		fileExistHelperFunc(cfg.BlackList, "-blacklist")
+	}
 	for f := range strings.SplitSeq(cfg.OtlSysPrompt, ",") {
 		fileExistHelperFunc(f, "-otl-system-prompt")
 	}
