@@ -141,7 +141,7 @@ func minimizeQueue(queue *[]database.GlobalVar, blacklist map[string]bool) []dat
 func setConfigs() *ProgConfig {
 	// command-line flags
 	var cfg ProgConfig
-	flag.StringVar(&cfg.Model, "model", "gemini-2.5-pro", "The model to use")
+	flag.StringVar(&cfg.Model, "model", "gemini-2.5-flash", "The model to use")
 	flag.StringVar(&cfg.Env, "env", ".env", "Path to .env file")
 	flag.StringVar(&cfg.Db, "db", "", "Path to the database file")
 	flag.StringVar(&cfg.Outdir, "outdir", "", "Path to the output directory")
