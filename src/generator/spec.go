@@ -69,7 +69,7 @@ func (wsh *writeSpecHelper) WriteNext(next string) error {
 }
 
 // RecoverProgress recover existing progress from workdir
-func (wsh *writeSpecHelper) RecoverProgress(cfg *ProgConfig) error {
+func (wsh *writeSpecHelper) RecoverProgress() error {
 	// recover outline field
 	if _, err := os.Stat(wsh.OutlinePath); err == nil {
 		data, err := os.ReadFile(wsh.OutlinePath)
@@ -126,13 +126,14 @@ func writeSpec(
 	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *ProgConfig, specPrefix string, logPrefix string,
 ) (string, bool, error) {
 	// init and set default value for writeSpecHelper
+	specdir := filepath.Join(cfg.Outdir, "specs", gvEntry.Name+"#"+cfg.Model)
 	var wsh *writeSpecHelper = &writeSpecHelper{
-		OutlinePath: filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, "outline.json"),
-		JstrPath:    filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, "spec.json"),
-		SpecPath:    filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, "spec.txt"),
-		Workdir:     filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model),
+		OutlinePath: filepath.Join(specdir, "outline.json"),
+		JstrPath:    filepath.Join(specdir, "spec.json"),
+		SpecPath:    filepath.Join(specdir, "spec.txt"),
+		Workdir:     filepath.Join(specdir),
 		Next:        "outline",
-		DotNext:     filepath.Join(cfg.Outdir, gvEntry.Name+"#"+cfg.Model, ".next"),
+		DotNext:     filepath.Join(specdir, ".next"),
 		SpecPrefix:  specPrefix,
 		LogPrefix:   logPrefix,
 	}
@@ -143,7 +144,7 @@ func writeSpec(
 
 	// if resume is enabled, recover existing progress
 	if cfg.Resume {
-		if err = wsh.RecoverProgress(cfg); err != nil {
+		if err = wsh.RecoverProgress(); err != nil {
 			return "", false, fmt.Errorf("failed to recover progress: %v", err)
 		}
 	} else { // otherwise start from scratch

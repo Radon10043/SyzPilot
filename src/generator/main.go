@@ -406,22 +406,30 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 	}
 
 	// create a SpecCheck instances
-	wd, err := os.MkdirTemp(os.TempDir(), "cloud-*")
-	if err != nil {
-		logger.Printf("failed to create temporary workdir: %v\n", err)
+	wd := filepath.Join(cfg.Outdir, "instance-"+strconv.Itoa(tid))
+	if _, err := os.Stat(wd); err == nil { // remove existing workdir and create a fresh one
+		if err = os.RemoveAll(wd); err != nil {
+			logger.Printf("failed to remove existing workdir: %v\n", err)
+			res.Err = err
+			wjr <- res
+			return
+		}
+	}
+	if err := os.MkdirAll(wd, 0755); err != nil {
+		logger.Printf("failed to create workdir: %v\n", err)
 		res.Err = err
 		wjr <- res
 		return
 	}
 	logger.Printf("copying extract kernel to workdir (%s) ...\n", wd)
-	if err := copy.Copy(cfg.ExtractKernel, filepath.Join(wd, "extract-kernel")); err != nil {
+	if err := copy.Copy(cfg.ExtractKernel, filepath.Join(wd, "kernel-extract")); err != nil {
 		logger.Printf("failed to copy extract kernel: %v\n", err)
 		res.Err = err
 		wjr <- res
 		return
 	}
 	logger.Printf("copying check kernel to workdir (%s) ...\n", wd)
-	if err := copy.Copy(cfg.CheckKernel, filepath.Join(wd, "check-kernel")); err != nil {
+	if err := copy.Copy(cfg.CheckKernel, filepath.Join(wd, "kernel-check")); err != nil {
 		logger.Printf("failed to copy check kernel: %v\n", err)
 		res.Err = err
 		wjr <- res
@@ -430,8 +438,8 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 	sc := check.NewSpecCheck(
 		check.WithSyzExtract(cfg.ExtractBin),
 		check.WithSyzCheck(cfg.CheckBin),
-		check.WithKernelForExtract(filepath.Join(wd, "extract-kernel")),
-		check.WithKernelForCheck(filepath.Join(wd, "check-kernel")),
+		check.WithKernelForExtract(filepath.Join(wd, "kernel-extract")),
+		check.WithKernelForCheck(filepath.Join(wd, "kernel-check")),
 		check.WithWorkdir(wd),
 		check.WithSyzkaller(cfg.Syzkaller),
 		check.WithIgnRedeclErr(true),
@@ -464,7 +472,8 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 		}
 
 		// start writing spec
-		fp := filepath.Join(cfg.Outdir, gv.Name+"#"+cfg.Model, "spec#comp.txt")
+		specdir := filepath.Join(cfg.Outdir, "specs", gv.Name+"#"+cfg.Model)
+		fp := filepath.Join(specdir, "spec#comp.txt")
 		if _, err := os.Stat(fp); err == nil && cfg.Resume {
 			logger.Printf("Complete spec for global variable %s exists, reuse existing and skip generation.\n", gv.Name)
 			wjr <- res
