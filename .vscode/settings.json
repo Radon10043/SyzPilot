@@ -77,5 +77,6 @@
         "-v"
     ],
     "go.testTimeout": "5m",
-    "sqliteViewer.maxFileSize": 600
+    "sqliteViewer.maxFileSize": 600,
+    "workbench.editorLargeFileConfirmation": 50
 }
