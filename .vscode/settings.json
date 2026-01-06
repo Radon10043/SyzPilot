@@ -67,7 +67,8 @@
         "execution": "cpp",
         "ios": "cpp",
         "locale": "cpp",
-        "print": "cpp"
+        "print": "cpp",
+        "**/workdir/**/*.txt": "syzlang"
     },
     // "workbench.colorTheme": "Catppuccin Latte",
     // "workbench.iconTheme": "catppuccin-latte"
