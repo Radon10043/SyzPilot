@@ -6,8 +6,8 @@
 #   Make sure variables are correctly set in the script, then run:
 #       bash scripts/repro.sh
 #
-# command to stop all repro-related containers:
-#   docker ps -a --filter "name=repro-*" -q | xargs -r docker stop
+# command to stop all repro jobs:
+#   pkill repro.sh && docker ps -a --filter "name=repro-*" -q | xargs -r docker stop
 
 set -euo pipefail
 
