@@ -22,7 +22,7 @@ print_help() {
     echo "  args (required):"
     echo "    -c, --config <CONFIG> path to the config file for repro.sh, see configs/repro/reprosh.cfg for reference"
     echo "  args (optional):"
-    echo "    -j, --jobs            number of parallel reproduce jobs"
+    echo "    -j, --jobs            number of parallel reproduce jobs (default: 8)"
     echo "    -h, --help            print help message"
 }
 
@@ -62,6 +62,7 @@ for LOG in "${LOGS[@]}"; do
     LOG_NAME=$(basename $LOG)
     LOG_DIR=$(dirname $LOG)
 
+    echo "reproducing $LOG ..."
     WORKDIR=$(dirname $(dirname $LOG_DIR))/repro/$LOG_DIR/$LOG_NAME
     SYZKALLER_CONFIG_PATH=$(jq -r .config $REPRO_SH_CONFIG_PATH)
     SYZKALLER=$(jq -r .syzkaller $SYZKALLER_CONFIG_PATH)
