@@ -69,8 +69,9 @@ for LOG in "${LOGS[@]}"; do
     mkdir -p $WORKDIR
     cp $SYZKALLER_CONFIG_PATH $WORKDIR/repro.cfg
     nohup $SYZKALLER/bin/syz-repro \
-        --config=$WORKDIR/repro.cfg \
-        --output=$WORKDIR/repro.syz \
-        --crepro=$WORKDIR/repro.c $LOG > $WORKDIR/repro.log 2>&1 &
+        -count=1 \
+        -config=$WORKDIR/repro.cfg \
+        -output=$WORKDIR/repro.syz \
+        -crepro=$WORKDIR/repro.c $LOG > $WORKDIR/repro.log 2>&1 &
 
 done
