@@ -28,29 +28,29 @@ print_help() {
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        -c|--config)
-            REPRO_SH_CONFIG_PATH=$2
-            shift
-            shift
-            ;;
-        -j|--jobs)
-            JOBS=$2
-            shift
-            shift
-            ;;
-        -h|--help)
-            print_help
-            exit 0
-            ;;
-        *)
-            echo "unknown arg: $1"
-            exit 1
-            ;;
+    -c | --config)
+        REPRO_SH_CONFIG_PATH=$2
+        shift
+        shift
+        ;;
+    -j | --jobs)
+        JOBS=$2
+        shift
+        shift
+        ;;
+    -h | --help)
+        print_help
+        exit 0
+        ;;
+    *)
+        echo "unknown arg: $1"
+        exit 1
+        ;;
     esac
 done
 
 # Reproduce bugs in parallel
-mapfile -t LOGS< <(jq -r .logs[] $REPRO_SH_CONFIG_PATH)
+mapfile -t LOGS < <(jq -r .logs[] $REPRO_SH_CONFIG_PATH)
 for LOG in "${LOGS[@]}"; do
 
     REPRO_JOBS=$(pgrep -c syz-repro || true)
@@ -61,17 +61,17 @@ for LOG in "${LOGS[@]}"; do
 
     LOG_NAME=$(basename $LOG)
     LOG_DIR=$(dirname $LOG)
+    LOG_HASH=$(basename $LOG_DIR)
 
     echo "reproducing $LOG ..."
-    WORKDIR=$(dirname $(dirname $LOG_DIR))/repro/$LOG_DIR/$LOG_NAME
+    WORKDIR=$(dirname $(dirname $LOG_DIR))/repro/$LOG_HASH/$LOG_NAME
     SYZKALLER_CONFIG_PATH=$(jq -r .config $REPRO_SH_CONFIG_PATH)
     SYZKALLER=$(jq -r .syzkaller $SYZKALLER_CONFIG_PATH)
     mkdir -p $WORKDIR
-    cp $SYZKALLER_CONFIG_PATH $WORKDIR/repro.cfg
+    jq ".vm.count = 1" $SYZKALLER_CONFIG_PATH >$WORKDIR/repro.cfg
     nohup $SYZKALLER/bin/syz-repro \
-        -count=1 \
         -config=$WORKDIR/repro.cfg \
         -output=$WORKDIR/repro.syz \
-        -crepro=$WORKDIR/repro.c $LOG > $WORKDIR/repro.log 2>&1 &
+        -crepro=$WORKDIR/repro.c $LOG >$WORKDIR/repro.log 2>&1 &
 
 done
