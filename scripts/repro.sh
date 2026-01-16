@@ -49,7 +49,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Reproduce bugs in parallel
+# reproduce bugs in parallel
 mapfile -t LOGS < <(jq -r .logs[] $REPRO_SH_CONFIG_PATH)
 for LOG in "${LOGS[@]}"; do
 
@@ -75,3 +75,10 @@ for LOG in "${LOGS[@]}"; do
         -crepro=$WORKDIR/repro.c $LOG >$WORKDIR/repro.log 2>&1 &
 
 done
+
+# waiting for the remaining repro tasks to finish
+while [ $REPRO_JOBS -gt 0 ]; do
+    sleep 30s
+    REPRO_JOBS=$(pgrep -c syz-repro || true)
+done
+echo "all repro tasks done!"
