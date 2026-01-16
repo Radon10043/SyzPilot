@@ -77,6 +77,7 @@ for LOG in "${LOGS[@]}"; do
 done
 
 # waiting for the remaining repro tasks to finish
+REPRO_JOBS=$(pgrep -c syz-repro || true)
 while [ $REPRO_JOBS -gt 0 ]; do
     sleep 30s
     REPRO_JOBS=$(pgrep -c syz-repro || true)
