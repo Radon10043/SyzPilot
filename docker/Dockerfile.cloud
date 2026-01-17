@@ -1,10 +1,10 @@
 FROM ubuntu:22.04
 
-WORKDIR /home
 SHELL [ "/bin/bash", "-c" ]
 
 ENV GOPATH=/usr/local/go/bin
-ENV PATH=$GOPATH:$PATH
+ENV LLVM_HOME=/llvm-19
+ENV PATH=$GOPATH:$LLVM_HOME/bin:$PATH
 ENV TZ=Asia/Shanghai
 
 # Install basic packages
@@ -16,14 +16,15 @@ RUN apt-get install -y rsync file devscripts equivs gnupg config-package-dev deb
 RUN apt-get install -y unzip gettext ccache git-email cpio gawk lsb-release software-properties-common
 RUN apt-get install -y cloc openssh-server python3 python3-pip python3-dev language-pack-en-base jq
 
+RUN apt-get install -y bmake libarchive-tools libbsd-dev time libarchive-dev libarchive-tools
+
 RUN apt-get install -y gcc-arm-linux-gnueabi gcc-aarch64-linux-gnu gcc-mips64el-linux-gnuabi64
 RUN apt-get install -y gcc-powerpc64le-linux-gnu gcc-riscv64-linux-gnu gcc-s390x-linux-gnu
 
 # Install LLVM-19
-RUN wget https://apt.llvm.org/llvm.sh
-RUN chmod +x llvm.sh
-RUN ./llvm.sh 19 all
-RUN rm llvm.sh
+RUN wget https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/LLVM-19.1.7-Linux-X64.tar.xz
+RUN mkdir /llvm-19 && tar -C /llvm-19 -xvf LLVM-19.1.7-Linux-X64.tar.xz --strip-components=1
+RUN rm LLVM-19.1.7-Linux-X64.tar.xz
 
 # Install golang-1.23.6
 RUN wget https://go.dev/dl/go1.23.6.linux-amd64.tar.gz
@@ -39,6 +40,3 @@ RUN tar -xzvf v2.0.8.tar.gz && \
     make install && \
     popd && \
     rm -rf v2.0.8.tar.gz flatbuffers-2.0.8
-
-# misc
-RUN update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-19 100
