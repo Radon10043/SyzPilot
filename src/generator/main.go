@@ -47,6 +47,7 @@ type ProgConfig struct {
 	CheckKernel   string
 	Syzkaller     string
 	BlackList     string
+	WhiteList     string
 	Resume        bool
 	Prefix        string
 
@@ -112,14 +113,12 @@ func createQueue(db *database.Database) ([]database.GlobalVar, error) {
 	return queue, nil
 }
 
-// createBlacklist create a blacklist which includes redundant global variables, i.e. those
-// whose syscall spec have existed in syzkaller
-func createBlacklist(cfg *ProgConfig) (map[string]bool, error) {
-	// read blacklist file
-	blacklist := make(map[string]bool)
-	data, err := os.ReadFile(cfg.BlackList)
+// createVarSet create a variable set from user-specified file
+func createVarSet(fp string) (map[string]bool, error) {
+	varSet := make(map[string]bool)
+	data, err := os.ReadFile(fp)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read blacklist file: %v", err)
+		return nil, fmt.Errorf("failed to read file: %v", err)
 	}
 	lines := strings.SplitSeq(string(data), "\n")
 	for line := range lines {
@@ -127,21 +126,33 @@ func createBlacklist(cfg *ProgConfig) (map[string]bool, error) {
 		if line == "" {
 			continue
 		}
-		blacklist[line] = true
+		varSet[line] = true
 	}
-	return blacklist, nil
+	return varSet, nil
 }
 
-// minimizeQueue minimize the queue by removing global variables in blacklist
-func minimizeQueue(queue *[]database.GlobalVar, blacklist map[string]bool) []database.GlobalVar {
-	var minimizedQueue []database.GlobalVar
+// miniQueueWithBlacklist minimize the queue by removing global variables in blacklist
+func miniQueueWithBlacklist(queue *[]database.GlobalVar, blacklist map[string]bool) []database.GlobalVar {
+	var miniq []database.GlobalVar
 	for _, gv := range *queue {
 		if _, found := blacklist[gv.Name]; found {
 			continue
 		}
-		minimizedQueue = append(minimizedQueue, gv)
+		miniq = append(miniq, gv)
 	}
-	return minimizedQueue
+	return miniq
+}
+
+// miniQueueWithWhitelist minimize the queue by keeping only global variables in whitelist
+func miniQueueWithWhitelist(queue *[]database.GlobalVar, whitelist map[string]bool) []database.GlobalVar {
+	var miniq []database.GlobalVar
+	for _, gv := range *queue {
+		if _, found := whitelist[gv.Name]; !found {
+			continue
+		}
+		miniq = append(miniq, gv)
+	}
+	return miniq
 }
 
 // setConfigs parse command-line flags and set program configurations
@@ -159,7 +170,7 @@ func setConfigs() *ProgConfig {
 	flag.StringVar(&cfg.Syzkaller, "syzkaller", "./syzkaller/", "Path to the syzkaller directory")
 	flag.BoolVar(&cfg.Resume, "resume", true, "Whether to resume from previous interrupted run")
 	flag.StringVar(&cfg.BlackList, "blacklist", "", "Path to the global variable blacklist file")
-	flag.StringVar(&cfg.Prefix, "prefix", "", "Path to the prefix file for syscall syz spec")
+	flag.StringVar(&cfg.WhiteList, "whitelist", "", "Path to the global variable whitelist file (conflicts with -blacklist)")
 	flag.IntVar(&cfg.MaxFix, "max-fix", 5, "Maximum number of fix attempts for invalid specs")
 	flag.IntVar(&cfg.MaxRetry, "max-retry", 5, "Maximum number of retry attempts for writing spec (-1 means infinite retries)")
 	flag.IntVar(&cfg.Jobs, "jobs", 1, "Maxmum number of parallel jobs.")
@@ -220,6 +231,9 @@ func checkConfig(cfg *ProgConfig) error {
 	if cfg.BlackList != "" {
 		fileExistHelperFunc(cfg.BlackList, "-blacklist")
 	}
+	if cfg.WhiteList != "" {
+		fileExistHelperFunc(cfg.WhiteList, "-whitelist")
+	}
 	for f := range strings.SplitSeq(cfg.OtlSysPrompt, ",") {
 		fileExistHelperFunc(f, "-otl-system-prompt")
 	}
@@ -231,6 +245,11 @@ func checkConfig(cfg *ProgConfig) error {
 	}
 	if scfe.err != nil {
 		return scfe.err
+	}
+
+	// -blacklist and -whitelist cannot be set simultaneously
+	if cfg.BlackList != "" && cfg.WhiteList != "" {
+		return fmt.Errorf("-blacklist and -whitelist are mutually exclusive")
 	}
 
 	// -outdir
@@ -586,15 +605,21 @@ func main() {
 	}
 	log.Printf("Original queue length: %d\n", len(queue))
 
-	// construct blacklist and minimize the queue via blacklist to avoid redundant specification
+	// construct blacklist or whitelist and minimize the queue
 	if cfg.BlackList != "" {
-		blacklist, err := createBlacklist(cfg)
+		blacklist, err := createVarSet(cfg.BlackList)
 		if err != nil {
 			log.Fatalf("failed to create blacklist: %v\n", err)
 		}
-		queue = minimizeQueue(&queue, blacklist)
-		log.Printf("Minimized queue length: %d\n", len(queue))
+		queue = miniQueueWithBlacklist(&queue, blacklist)
+	} else if cfg.WhiteList != "" {
+		whitelist, err := createVarSet(cfg.WhiteList)
+		if err != nil {
+			log.Fatalf("failed to create whitelist: %v\n", err)
+		}
+		queue = miniQueueWithWhitelist(&queue, whitelist)
 	}
+	log.Printf("Minimized queue length: %d\n", len(queue))
 
 	// construct system prompt map, we have checked the validity of system prompt file(s) in
 	// checkConfig function, so it is okay to ignore error here
