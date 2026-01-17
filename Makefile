@@ -1,6 +1,6 @@
 CXX := ccache g++
 
-LLVM_CONFIG := llvm-config-19
+LLVM_CONFIG := llvm-config
 CXX_FLAGS :=
 LD_FLAGS := $(shell $(LLVM_CONFIG) --ldflags)
 LLVM_LIBS := $(shell $(LLVM_CONFIG) --libs)
