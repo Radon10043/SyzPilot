@@ -5,7 +5,7 @@ CLANG_LIBS := -lclangTooling -lclangFrontend -lclangSerialization \
 			-lclangEdit -lclangAST -lclangLex -lclangBasic -lclangASTMatchers \
 			-lclangAPINotes -lclangSupport
 
-LLVM_CONFIG := llvm-config
+LLVM_CONFIG ?= llvm-config
 LLVM_COMPONENTS := core support option demangle analysis bitreader profiledata target native
 LLVM_COMPONENTS += frontendopenmp transformutils windowsdriver
 LLVM_LIBS := $(shell $(LLVM_CONFIG) --libs $(LLVM_COMPONENTS) --system-libs)
