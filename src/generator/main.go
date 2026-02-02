@@ -40,16 +40,15 @@ type ProgConfig struct {
 	Db    string
 
 	// kernel configs
-	Outdir        string
-	ExtractBin    string
-	CheckBin      string
-	ExtractKernel string
-	CheckKernel   string
-	Syzkaller     string
-	BlackList     string
-	WhiteList     string
-	Resume        bool
-	Prefix        string
+	Outdir     string
+	ExtractBin string
+	CheckBin   string
+	Kernel     string
+	Syzkaller  string
+	BlackList  string
+	WhiteList  string
+	Resume     bool
+	Prefix     string
 
 	// prompt configs
 	OtlSysPrompt string
@@ -165,8 +164,7 @@ func setConfigs() *ProgConfig {
 	flag.StringVar(&cfg.Outdir, "outdir", "", "Path to the output directory")
 	flag.StringVar(&cfg.ExtractBin, "extract-bin", "./bin/syz-extract", "Path to the syz-extract binary")
 	flag.StringVar(&cfg.CheckBin, "check-bin", "./bin/syz-check", "Path to the syz-check binary")
-	flag.StringVar(&cfg.ExtractKernel, "extract-kernel", "", "Path to kernel used for spec extraction")
-	flag.StringVar(&cfg.CheckKernel, "check-kernel", "", "Path to kernel used for spec checking")
+	flag.StringVar(&cfg.Kernel, "kernel", "", "Path to kernel used for spec extraction")
 	flag.StringVar(&cfg.Syzkaller, "syzkaller", "./syzkaller/", "Path to the syzkaller directory")
 	flag.BoolVar(&cfg.Resume, "resume", true, "Whether to resume from previous interrupted run")
 	flag.StringVar(&cfg.BlackList, "blacklist", "", "Path to the global variable blacklist file")
@@ -221,9 +219,9 @@ func checkConfig(cfg *ProgConfig) error {
 	fileExistHelperFunc(cfg.Db, "-db")
 	fileExistHelperFunc(cfg.ExtractBin, "-extract-bin")
 	fileExistHelperFunc(cfg.CheckBin, "-check-bin")
-	fileExistHelperFunc(cfg.ExtractKernel, "-extract-kernel")
-	vmlinuxPath := filepath.Join(cfg.CheckKernel, "vmlinux")
-	fileExistHelperFunc(vmlinuxPath, "-check-kernel")
+	fileExistHelperFunc(cfg.Kernel, "-kernel")
+	vmlinuxPath := filepath.Join(cfg.Kernel, "vmlinux")
+	fileExistHelperFunc(vmlinuxPath, "-kernel")
 	fileExistHelperFunc(cfg.Syzkaller, "-syzkaller")
 	if cfg.Prefix != "" {
 		fileExistHelperFunc(cfg.Prefix, "-prefix")
@@ -410,9 +408,9 @@ type WriteJob struct {
 }
 
 type WriteJobRes struct {
-	Tid int
-	Gv  *database.GlobalVar
-	Err error
+	Tid int                 // task id
+	Gv  *database.GlobalVar // global variable entry
+	Err error               // error during writing spec
 }
 
 // writeJob start a job to write syscall spec for a global variable
@@ -441,14 +439,14 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 		return
 	}
 	logger.Printf("copying extract kernel to workdir (%s) ...\n", wd)
-	if err := copy.Copy(cfg.ExtractKernel, filepath.Join(wd, "kernel-extract")); err != nil {
+	if err := copy.Copy(cfg.Kernel, filepath.Join(wd, "kernel-extract")); err != nil {
 		logger.Printf("failed to copy extract kernel: %v\n", err)
 		res.Err = err
 		wjr <- res
 		return
 	}
 	logger.Printf("copying check kernel to workdir (%s) ...\n", wd)
-	if err := copy.Copy(cfg.CheckKernel, filepath.Join(wd, "kernel-check")); err != nil {
+	if err := copy.Copy(cfg.Kernel, filepath.Join(wd, "kernel-check")); err != nil {
 		logger.Printf("failed to copy check kernel: %v\n", err)
 		res.Err = err
 		wjr <- res
@@ -547,8 +545,7 @@ func main() {
 	cfg.Outdir = stap.toAbsPath(cfg.Outdir)
 	cfg.ExtractBin = stap.toAbsPath(cfg.ExtractBin)
 	cfg.CheckBin = stap.toAbsPath(cfg.CheckBin)
-	cfg.ExtractKernel = stap.toAbsPath(cfg.ExtractKernel)
-	cfg.CheckKernel = stap.toAbsPath(cfg.CheckKernel)
+	cfg.Kernel = stap.toAbsPath(cfg.Kernel)
 	cfg.Syzkaller = stap.toAbsPath(cfg.Syzkaller)
 	if cfg.BlackList != "" {
 		cfg.BlackList = stap.toAbsPath(cfg.BlackList)
