@@ -14,8 +14,7 @@
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/linux.db",
                 "-outdir=${workspaceFolder}/workdir/out",
-                "-extract-kernel=/vol/linux/v6.12-extract",
-                "-check-kernel=/vol/linux/v6.12-check",
+                "-kernel=/vol/linux/v6.12",
                 "-model=gemini-2.5-flash",
             ]
         },
@@ -29,8 +28,7 @@
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/linux.db",
                 "-outdir=${workspaceFolder}/workdir/out",
-                "-extract-kernel=/vol/linux/v6.12-extract",
-                "-check-kernel=/vol/linux/v6.12-check",
+                "-kernel=/vol/linux/v6.12",
                 "-model=gemini-2.5-flash",
                 "-jobs=2"
             ]
