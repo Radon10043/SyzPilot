@@ -327,6 +327,10 @@ private:
  */
 void workThread(const CompilationDatabase &compilations, std::vector<std::string> files) {
     ClangTool tool(compilations, files);
+#ifdef CLANG_RESOURCE_DIR
+    tool.appendArgumentsAdjuster(
+        getInsertArgumentAdjuster("-isystem" CLANG_RESOURCE_DIR "/include", ArgumentInsertPosition::BEGIN));
+#endif
     tool.run(newFrontendActionFactory<MyFrontendAction>().get());
 }
 
