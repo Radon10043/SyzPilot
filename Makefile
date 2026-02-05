@@ -1,5 +1,6 @@
 CXX := ccache clang++
-CXX_FLAGS := $(shell pkg-config --cflags sqlite3) -pthread
+CXX_FLAGS := $(shell pkg-config --cflags sqlite3) -pthread \
+			-DCLANG_RESOURCE_DIR=\"$(shell clang -print-resource-dir)\"
 CLANG_LIBS := -lclangTooling -lclangFrontend -lclangSerialization \
 			-lclangDriver 	-lclangParse -lclangSema -lclangAnalysis \
 			-lclangEdit -lclangAST -lclangLex -lclangBasic -lclangASTMatchers \
