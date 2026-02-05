@@ -180,20 +180,21 @@ func (wsh *writeSpecHelper) ShouldComplete() bool {
 	return allInPool
 }
 
-// ShouldFix return whether the fix step should be executed, which is true when
-// (init_syscall and syscall elements are in Spool) ^ (Tqueue is empty || Tqueue's top is syscall)
+// ShouldFix return whether the fix step should be executed, which is true when:
+//   - Tqueue is empty and Spool is not empty; or
+//   - syscall in Spool and top element in Tqueue is syscall
 func (wsh *writeSpecHelper) ShouldFix() bool {
-	hasInitSyscall := false
+	if wsh.Tqueue.Empty() && !wsh.Spool.Empty() {
+		return true
+	}
 	hasSyscall := false
 	for _, se := range *wsh.Spool {
-		if se.Type == queue.TaskHeapElemTypeInitSyscall.String() {
-			hasInitSyscall = true
-		}
 		if se.Type == queue.TaskHeapElemTypeSyscall.String() {
 			hasSyscall = true
 		}
 	}
-	return hasInitSyscall && hasSyscall && (wsh.Tqueue.Empty() || wsh.Tqueue.Peek().Type == queue.TaskHeapElemTypeSyscall.String())
+	topElem, err := wsh.Tqueue.Peek()
+	return hasSyscall && (wsh.Tqueue.Empty() || (err == nil && topElem.Type == queue.TaskHeapElemTypeSyscall.String()))
 }
 
 // UpdatePool update the Pool field with elements from given SpecPool
@@ -513,14 +514,18 @@ func execGenerateStep(
 		jstr  string
 		err   error
 		gc    genContent
-		telem *queue.TaskQueueElem = wsh.Tqueue.Pop()
+		telem *queue.TaskQueueElem
 	)
+	telem, err = wsh.Tqueue.Pop()
+	if err != nil {
+		return fmt.Errorf("failed to pop from Tqueue: %v", err)
+	}
 	// if the element is already in pool, skip generate and reuse it
 	if wsh.Pool.Exists(telem.Name) {
 		logger.Printf("Element %v already in pool, skip generate and reuse pool's element\n", telem.Name)
 		se, err := wsh.Pool.Get(telem.Name)
 		if err != nil {
-			return err
+			return fmt.Errorf("failed to get element from Pool: %v", err)
 		}
 		wsh.Spool.Insert(se)
 		return nil

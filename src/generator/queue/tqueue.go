@@ -3,6 +3,7 @@ package queue
 import (
 	"container/heap"
 	"encoding/json"
+	"fmt"
 	"sync"
 )
 
@@ -136,31 +137,31 @@ func (q *TaskQueue) Push(elem *TaskQueueElem) {
 }
 
 // Pop removes and returns the highest priority element from the TaskQueue
-func (q *TaskQueue) Pop() *TaskQueueElem {
+func (q *TaskQueue) Pop() (*TaskQueueElem, error) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	if q.impl.Empty() {
-		return nil
+		return nil, fmt.Errorf("TaskQueue is empty!")
 	}
 	elem := heap.Pop(q.impl).(*TaskHeapElem)
 	return &TaskQueueElem{
 		Name: elem.Name,
 		Type: elem.Type.String(),
-	}
+	}, nil
 }
 
 // Peek returns the highest priority element from the TaskQueue without removing it
-func (q *TaskQueue) Peek() *TaskQueueElem {
+func (q *TaskQueue) Peek() (*TaskQueueElem, error) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	if q.impl.Empty() {
-		return nil
+		return nil, fmt.Errorf("TaskQueue is empty!")
 	}
 	tmp := q.impl.Peek()
 	return &TaskQueueElem{
 		Name: tmp.Name,
 		Type: tmp.Type.String(),
-	}
+	}, nil
 }
 
 // Empty checks if the TaskQueue is empty

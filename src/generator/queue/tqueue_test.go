@@ -18,11 +18,17 @@ func TestPop(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create TaskQueue: %v", err)
 	}
-	elem := pq.Pop()
+	elem, err := pq.Pop()
+	if err != nil {
+		t.Fatalf("Failed to pop from TaskQueue: %v", err)
+	}
 	if elem.Name != "openat" {
 		t.Errorf("Expected init_syscall 'openat', got '%s'", elem.Name)
 	}
-	elem = pq.Pop()
+	elem, err = pq.Pop()
+	if err != nil {
+		t.Fatalf("Failed to pop from TaskQueue: %v", err)
+	}
 	if elem.Name != "test" {
 		t.Errorf("Expected struct 'test', got '%s'", elem.Name)
 	}
