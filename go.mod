@@ -5,7 +5,7 @@ go 1.24.4
 toolchain go1.24.10
 
 require (
-	github.com/google/syzkaller v0.0.0-20241120173125-4b25d554e564
+	github.com/google/syzkaller v0.0.0-20251229144340-ac3c71e7063b
 	github.com/joho/godotenv v1.5.1
 	github.com/otiai10/copy v1.14.1
 	github.com/tmc/langchaingo v0.1.14
@@ -29,7 +29,7 @@ require (
 )
 
 require (
-	github.com/dlclark/regexp2 v1.10.0 // indirect
+	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/go-git/go-git/v6 v6.0.0-20251128074608-48f817f57805
 	github.com/google/uuid v1.6.0 // indirect

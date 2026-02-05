@@ -30,8 +30,8 @@ func init() {
 	sc = check.NewSpecCheck(
 		check.WithSyzExtract(filepath.Join(root, "bin", "syz-extract")),
 		check.WithSyzCheck(filepath.Join(root, "bin", "syz-check")),
-		check.WithKernelForExtract("/vol/linux/v6.12-extract"),
-		check.WithKernelForCheck("/vol/linux/v6.12-check"),
+		check.WithKernelForExtract("/vol/linux/v6.18-extract"),
+		check.WithKernelForCheck("/vol/linux/v6.18-check"),
 		check.WithWorkdir(wd),
 		check.WithSyzkaller(filepath.Join(root, "syzkaller")),
 	)
@@ -45,15 +45,16 @@ func TestCheckValid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read spec file: %v", err)
 	}
-	if err = sc.AddSpec(string(b)); err != nil {
+	fpath, err := sc.AddSpec(string(b))
+	if err != nil {
 		t.Fatalf("failed to add spec: %v", err)
 	}
-	_, _, valid := sc.ExtractConst()
+	_, _, valid := sc.ExtractConst(filepath.Base(fpath))
 	if !valid {
 		t.Fatalf("syz-extract report spec is invalid, exptected valid.")
 	}
 	_, _, valid = sc.CheckValidity()
-	if err != nil {
+	if !valid {
 		t.Fatalf("syz-check report spec is invalid, expected valid. ")
 	}
 	os.RemoveAll(sc.Workdir)
@@ -64,10 +65,11 @@ func TestCheckInvalid(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read spec file: %v", err)
 	}
-	if err = sc.AddSpec(string(b)); err != nil {
+	fpath, err := sc.AddSpec(string(b))
+	if err != nil {
 		t.Fatalf("failed to add spec: %v", err)
 	}
-	_, _, valid := sc.ExtractConst()
+	_, _, valid := sc.ExtractConst(filepath.Base(fpath))
 	if valid {
 		t.Fatal("syz-extract report spec is valid, expected invalid.")
 	}
@@ -80,10 +82,11 @@ func TestEnableIgnRedeclErr(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read spec file: %v", err)
 	}
-	if err = sc.AddSpec(string(b)); err != nil {
+	fpath, err := sc.AddSpec(string(b))
+	if err != nil {
 		t.Fatalf("failed to add spec: %v", err)
 	}
-	_, _, valid := sc.ExtractConst()
+	_, _, valid := sc.ExtractConst(filepath.Base(fpath))
 	if !valid { // spec should be valid since ignore redeclare error is enabled
 		t.Fatal("syz-extract report spec is invalid, expected valid.")
 	}
@@ -100,10 +103,11 @@ func TestDisableIgnRedeclErr(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read spec file: %v", err)
 	}
-	if err = sc.AddSpec(string(b)); err != nil {
+	fpath, err := sc.AddSpec(string(b))
+	if err != nil {
 		t.Fatalf("failed to add spec: %v", err)
 	}
-	_, _, valid := sc.ExtractConst()
+	_, _, valid := sc.ExtractConst(filepath.Base(fpath))
 	if valid { // spec should be valid since ignore redeclare error is enabled
 		t.Fatal("syz-extract report spec is valid, expected invalid.")
 	}

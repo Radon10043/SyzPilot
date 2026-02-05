@@ -121,31 +121,34 @@ func (sc *SpecCheck) RestoreWorkdir() error {
 	return sc.SetupWorkdir()
 }
 
-// AddSpec add a syscall spec to sc.Workdir/sys/linux/
-func (sc *SpecCheck) AddSpec(spec string) error {
+// AddSpec add a syscall spec to sc.Workdir/sys/linux/ as a temporary file.
+// Return the path to spec file and error info.
+func (sc *SpecCheck) AddSpec(spec string) (string, error) {
 	sysDir := filepath.Join(sc.Workdir, "sys", "linux")
 	file, err := os.CreateTemp(sysDir, "spec-*.txt")
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer file.Close()
 	_, err = file.WriteString(spec)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return file.Name(), nil
 }
 
-// ExtractConst run syz-extract to extract constants from kernel source,
-// return stdout and stderr of the command, also validity of the spec
-func (sc *SpecCheck) ExtractConst() (*bytes.Buffer, *bytes.Buffer, bool) {
+// ExtractConst run syz-extract to extract constants for a specific file (under sc.Workdir/sys/$OS/)
+// from kernel source, return stdout and stderr of the command, also validity of the spec.
+// If fname is empty, extract constants for all specs under sc.Workdir/sys/$OS/*.txt
+func (sc *SpecCheck) ExtractConst(fname string) (*bytes.Buffer, *bytes.Buffer, bool) {
 	var stdout, stderr bytes.Buffer
-	cmd := exec.Command(
+	cmd := exec.Command( // update command, only extract constants for one file
 		sc.SyzExtract,
 		"-build",
 		"-arch="+runtime.GOARCH,
 		"-sourcedir="+sc.KernelForExtract,
 		"-os=linux",
+		fname,
 	)
 	cmd.Dir = sc.Workdir
 	cmd.Stderr = &stderr

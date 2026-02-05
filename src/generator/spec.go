@@ -10,100 +10,105 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Radon10043/cloud/src/generator/agent"
 	"github.com/Radon10043/cloud/src/generator/ast"
 	"github.com/Radon10043/cloud/src/generator/check"
 	"github.com/Radon10043/cloud/src/generator/database"
+	"github.com/Radon10043/cloud/src/generator/pool"
+	"github.com/Radon10043/cloud/src/generator/queue"
 	"github.com/Radon10043/cloud/src/generator/utils"
 	"github.com/tmc/langchaingo/llms"
 )
 
 // writeSpecHelper is a helper struct to hold intermediate results during spec writing
 type writeSpecHelper struct {
-	Outline     string // outline json string
-	OutlinePath string // path to outline json file
-	Jstr        string // spec json string
-	JstrPath    string // path to spec json file
-	Spec        string // syzlang spec string
-	SpecPath    string // path to syzlang spec file
-	Valid       bool   // whether the spec is valid
-	Workdir     string // path to work directory
-	Next        string // next step
-	DotNext     string // path to .next file, sync with Next field
-	SpecPrefix  string // spec prefix
-	LogPrefix   string // log prefix for logging
+	Workdir    string // path to work directory
+	Next       string // next step
+	SpecPrefix string // spec prefix
+	LogPrefix  string // log prefix for logging
+
+	Tqueue     *queue.TaskQueue // priority queue for tracking elements to generate
+	TqueuePath string           // path to Tqueue json file
+
+	Spool     *pool.SpecPool // pool for tracking elements to be fixed
+	SpoolPath string         // path to Spool json file
+
+	Pool     *pool.SpecPool // pool for tracking already completed (maybe unfixed) elements
+	PoolPath string         // path to pool json file
 }
 
-// WriteOutline write the outline field to outline file
-func (wsh *writeSpecHelper) WriteOutline() error {
-	if err := os.WriteFile(wsh.OutlinePath, []byte(wsh.Outline), 0644); err != nil {
-		return fmt.Errorf("failed to write outline file: %v", err)
+// WriteTqueue write the Tqueue field to Tqueue file
+func (wsh *writeSpecHelper) WriteTqueue() error {
+	data, err := wsh.Tqueue.Json()
+	if err != nil {
+		return fmt.Errorf("failed to convert Tqueue to json: %v", err)
+	}
+	if err = os.WriteFile(wsh.TqueuePath, []byte(data), 0644); err != nil {
+		return fmt.Errorf("failed to write Tqueue file: %v", err)
 	}
 	return nil
 }
 
-// WriteJstr write the jstr field to spec json file
-func (wsh *writeSpecHelper) WriteJstr() error {
-	if err := os.WriteFile(wsh.JstrPath, []byte(wsh.Jstr), 0644); err != nil {
-		return fmt.Errorf("failed to write spec json file: %v", err)
+// WriteSpool write the Spool field to Spool file
+func (wsh *writeSpecHelper) WriteSpool() error {
+	data, err := wsh.Spool.Json()
+	if err != nil {
+		return fmt.Errorf("failed to convert Spool to json: %v", err)
+	}
+	if err = os.WriteFile(wsh.SpoolPath, []byte(data), 0644); err != nil {
+		return fmt.Errorf("failed to write Spool file: %v", err)
 	}
 	return nil
 }
 
-// WriteSpec write the spec field to syzlang spec file
-func (wsh *writeSpecHelper) WriteSpec() error {
-	if err := os.WriteFile(wsh.SpecPath, []byte(wsh.Spec), 0644); err != nil {
-		return fmt.Errorf("failed to write spec file: %v", err)
+// WritePool write the Pool field to Pool file
+func (wsh *writeSpecHelper) WritePool() error {
+	data, err := wsh.Pool.Json()
+	if err != nil {
+		return fmt.Errorf("failed to convert Pool to json: %v", err)
 	}
-	return nil
-}
-
-// WriteNext update the .next file and next field with the next step
-func (wsh *writeSpecHelper) WriteNext(next string) error {
-	if err := os.WriteFile(wsh.DotNext, []byte(next), 0644); err != nil {
-		return fmt.Errorf("failed to update .next file: %v", err)
+	if err = os.WriteFile(wsh.PoolPath, []byte(data), 0644); err != nil {
+		return fmt.Errorf("failed to write Pool file: %v", err)
 	}
-	wsh.Next = next
 	return nil
 }
 
 // RecoverProgress recover existing progress from workdir
 func (wsh *writeSpecHelper) RecoverProgress() error {
-	// recover outline field
-	if _, err := os.Stat(wsh.OutlinePath); err == nil {
-		data, err := os.ReadFile(wsh.OutlinePath)
+	// recover Tqueue field
+	if _, err := os.Stat(wsh.TqueuePath); err == nil {
+		data, err := os.ReadFile(wsh.TqueuePath)
 		if err != nil {
-			return fmt.Errorf("failed to read outline file: %v", err)
+			return fmt.Errorf("failed to read Tqueue file: %v", err)
 		}
-		wsh.Outline = string(data)
+		wsh.Tqueue, err = queue.NewTaskQueueFromJson(string(data))
+		if err != nil {
+			return fmt.Errorf("failed to recover Tqueue from json: %v", err)
+		}
 	}
 
-	// recover jstr field
-	if _, err := os.Stat(wsh.JstrPath); err == nil {
-		data, err := os.ReadFile(wsh.JstrPath)
+	// recover Spool field
+	if _, err := os.Stat(wsh.SpoolPath); err == nil {
+		data, err := os.ReadFile(wsh.SpoolPath)
 		if err != nil {
-			return fmt.Errorf("failed to read spec json file: %v", err)
+			return fmt.Errorf("failed to read Spool file: %v", err)
 		}
-		wsh.Jstr = string(data)
+		if err = json.Unmarshal(data, &wsh.Spool); err != nil {
+			return fmt.Errorf("failed to unmarshal Spool json: %v", err)
+		}
 	}
 
-	// recover spec field
-	if _, err := os.Stat(wsh.SpecPath); err == nil {
-		data, err := os.ReadFile(wsh.SpecPath)
+	// recover Pool field
+	if _, err := os.Stat(wsh.PoolPath); err == nil {
+		data, err := os.ReadFile(wsh.PoolPath)
 		if err != nil {
-			return fmt.Errorf("failed to read spec file: %v", err)
+			return fmt.Errorf("failed to read Pool file: %v", err)
 		}
-		wsh.Spec = string(data)
-	}
-
-	// recover next field
-	if _, err := os.Stat(wsh.DotNext); err == nil {
-		data, err := os.ReadFile(wsh.DotNext)
-		if err != nil {
-			return fmt.Errorf("failed to read .next file: %v", err)
+		if err = json.Unmarshal(data, &wsh.Pool); err != nil {
+			return fmt.Errorf("failed to unmarshal Pool json: %v", err)
 		}
-		wsh.Next = strings.TrimSpace(string(data))
 	}
 
 	return nil
@@ -111,58 +116,149 @@ func (wsh *writeSpecHelper) RecoverProgress() error {
 
 // SaveQueryMessages save the current messages of kAgent to a temp file with given prefix
 func (wsh *writeSpecHelper) SaveQueryMessages(kAgent *agent.Agent, prefix string) error {
-	msgf, err := os.CreateTemp(wsh.Workdir, prefix+"*.msg")
+	timestamp := time.Now().UnixMilli()
+	fn := fmt.Sprintf("%s%d.msg", prefix, timestamp)
+	fp := filepath.Join(wsh.Workdir, fn)
+	f, err := os.Create(fp)
 	if err != nil {
-		return fmt.Errorf("failed to create temp file for saving messages: %v", err)
+		return fmt.Errorf("failed to create file for saving messages: %v", err)
 	}
-	defer msgf.Close()
-	kAgent.SaveMessage(msgf)
+	defer f.Close()
+	kAgent.SaveMessage(f)
 	return nil
+}
+
+// UpdateNextStep update the Next field according to the current state of writeSpecHelper
+func (wsh *writeSpecHelper) UpdateNextStep() {
+	wsh.Next = wsh.NextStep()
+}
+
+// NextStep return the next step to execute according to the current state of writeSpecHelper.
+func (wsh *writeSpecHelper) NextStep() string {
+	if wsh.ShouldOutline() {
+		return "outline"
+	}
+	if wsh.ShouldComplete() {
+		return "complete"
+	}
+	if wsh.ShouldFix() {
+		return "fix"
+	}
+	// TODO: not sure if there are any omissions
+	return "generate"
+}
+
+// ShouldOutline return whether the outline step should be executed, which is true
+// only when Tqueue is nil, i.e. no progress has been made
+func (wsh *writeSpecHelper) ShouldOutline() bool {
+	return wsh.Tqueue == nil
+}
+
+// ShouldComplete return whether the complete step should be executed, which is true
+// when:
+//   - both Tqueue and Spool are empty; or
+//   - all elements in Tqueue and Spool are already in Pool
+func (wsh *writeSpecHelper) ShouldComplete() bool {
+	if wsh.Tqueue.Empty() && wsh.Spool.Empty() {
+		return true
+	}
+	allInPool := true
+	for _, te := range wsh.Tqueue.Slice() {
+		if !wsh.Pool.Exists(te.Name) {
+			allInPool = false
+			break
+		}
+	}
+	if allInPool {
+		for _, se := range *wsh.Spool {
+			if !wsh.Pool.Exists(se.Name) {
+				allInPool = false
+				break
+			}
+		}
+	}
+	return allInPool
+}
+
+// ShouldFix return whether the fix step should be executed, which is true when
+// (init_syscall and syscall elements are in Spool) ^ (Tqueue is empty || Tqueue's top is syscall)
+func (wsh *writeSpecHelper) ShouldFix() bool {
+	hasInitSyscall := false
+	hasSyscall := false
+	for _, se := range *wsh.Spool {
+		if se.Type == queue.TaskHeapElemTypeInitSyscall.String() {
+			hasInitSyscall = true
+		}
+		if se.Type == queue.TaskHeapElemTypeSyscall.String() {
+			hasSyscall = true
+		}
+	}
+	return hasInitSyscall && hasSyscall && (wsh.Tqueue.Empty() || wsh.Tqueue.Peek().Type == queue.TaskHeapElemTypeSyscall.String())
+}
+
+// UpdatePool update the Pool field with elements from given SpecPool
+func (wsh *writeSpecHelper) UpdatePool(sq *pool.SpecPool) {
+	for _, se := range *sq {
+		// if se.Name not in wsh.Pool, add it to the pool directly
+		if !wsh.Pool.Exists(se.Name) {
+			wsh.Pool.Insert(*se)
+			continue
+		}
+		// if se.Name already in wsh.Pool, update it only if se is valid and wsh.Pool[se.Name] is invalid
+		pse, err := wsh.Pool.Get(se.Name)
+		if err != nil {
+			return
+		}
+		if !pse.Valid && se.Valid {
+			wsh.Pool.Insert(*se)
+		}
+	}
 }
 
 // writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a global variable,
 // return the final syzlang spec and whether it is valid
 func writeSpec(
 	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *ProgConfig, specPrefix string, logPrefix string,
-) (string, bool, error) {
-	// init and set default value for writeSpecHelper
+) (string, error) {
+	// init and pool default value for writeSpecHelper
 	specdir := filepath.Join(cfg.Outdir, "specs", gvEntry.Name+"#"+cfg.Model)
 	var wsh *writeSpecHelper = &writeSpecHelper{
-		OutlinePath: filepath.Join(specdir, "outline.json"),
-		JstrPath:    filepath.Join(specdir, "spec.json"),
-		SpecPath:    filepath.Join(specdir, "spec.txt"),
-		Workdir:     filepath.Join(specdir),
-		Next:        "outline",
-		DotNext:     filepath.Join(specdir, ".next"),
-		SpecPrefix:  specPrefix,
-		LogPrefix:   logPrefix,
+		Workdir:    filepath.Join(specdir),
+		Next:       "outline",
+		SpecPrefix: specPrefix,
+		LogPrefix:  logPrefix,
+		Tqueue:     nil,
+		TqueuePath: filepath.Join(specdir, ".tqueue"),
+		Spool:      &pool.SpecPool{},
+		SpoolPath:  filepath.Join(specdir, ".spool"),
+		Pool:       &pool.SpecPool{},
+		PoolPath:   filepath.Join(specdir, ".pool"),
 	}
 	err := os.MkdirAll(wsh.Workdir, 0755)
 	if err != nil {
-		return "", false, fmt.Errorf("failed to create workdir: %v", err)
+		return "", fmt.Errorf("failed to create workdir: %v", err)
 	}
 
 	// if resume is enabled, recover existing progress
 	if cfg.Resume {
 		if err = wsh.RecoverProgress(); err != nil {
-			return "", false, fmt.Errorf("failed to recover progress: %v", err)
+			return "", fmt.Errorf("failed to recover progress: %v", err)
 		}
-	} else { // otherwise start from scratch
-		if err = wsh.WriteNext("outline"); err != nil {
-			return "", false, fmt.Errorf("failed to write next step: %v", err)
-		}
-	}
+	} // otherwise start from scratch
 
 	// start the write spec loop, limit the number of iterations to avoid infinite loop
 	for range 100 {
-		if err := execWriteStep(kAgent, sysPromptMap, gvEntry, cfg, wsh); err != nil {
-			return "", false, fmt.Errorf("failed to exec write step: %v", err)
-		}
+		wsh.UpdateNextStep()
 		if wsh.Next == "complete" {
+			wsh.Tqueue.Clear()
+			wsh.Spool.Clear()
 			break
 		}
+		if err := execWriteStep(kAgent, sysPromptMap, gvEntry, cfg, wsh); err != nil {
+			return "", fmt.Errorf("failed to exec write step: %v", err)
+		}
 	}
-	return wsh.Spec, wsh.Valid, nil
+	return wsh.Pool.Syzlang(), nil
 }
 
 // execWriteStep execute one step of the write spec process according to wsh.Next
@@ -187,43 +283,42 @@ func execWriteStep(
 // execFixStep execute the fix step
 func execFixStep(kAgent *agent.Agent, sysPrompt string, cfg *ProgConfig, logger *log.Logger, wsh *writeSpecHelper) error {
 	var (
-		jspec *ast.JsonSpec
-		err   error
+		ospec  string         // original syzlang spec before fixing
+		nspec  string         // new syzlang spec after fixing
+		nspool *pool.SpecPool // new SpecPool after fixing
+		valid  bool           // whether the final full spec is valid
+		err    error
 	)
-	if wsh.Spec, wsh.Valid, err = fixSpec(kAgent, sysPrompt, cfg, wsh.Spec, logger, wsh); err != nil {
+	ospec = wsh.Spool.Syzlang()
+	if nspec, valid, err = fixSpec(kAgent, sysPrompt, cfg, ospec, logger, wsh); err != nil {
 		return err
 	}
 	if err = wsh.SaveQueryMessages(kAgent, "fix-"); err != nil {
 		return err
 	}
-	if err = wsh.WriteSpec(); err != nil {
-		return err
-	}
-	// Update wsh.Jstr according to the validity of wsh.Spec
-	if wsh.Valid {
-		if wsh.Jstr, err = ast.Syzlang2json(wsh.Spec); err != nil {
-			return fmt.Errorf("failed to convert valid spec to json: %v", err)
-		}
-		if err = wsh.WriteJstr(); err != nil {
+
+	// if new spec is valid, assigned it to wsh.Spool
+	if valid {
+		nspool, err = ast.Syzlang2SpecPool(nspec)
+		if err != nil {
 			return err
 		}
-		jspec, err := ast.Syzlang2JsonSpec(wsh.Spec)
-		if err != nil {
-			return fmt.Errorf("failed to convert valid spec to json: %v", err)
+		nspool.SyncType(wsh.Spool)
+		for _, v := range *nspool {
+			v.Valid = true
 		}
-		if len(jspec.Todo) > 0 {
-			return wsh.WriteNext("generate")
-		}
-	} else { // Invalid spec cannot be converted to json/JsonSpec, reuse latest json string
-		err = json.Unmarshal([]byte(wsh.Jstr), &jspec)
-		if err != nil {
-			return fmt.Errorf("failed to parse existing spec json: %v", err)
-		}
-		if len(jspec.Todo) > 0 {
-			return wsh.WriteNext("generate")
-		}
+		wsh.Spool = nspool
+	} // otherwise new spec is invalid, reuse old Spool
+
+	wsh.UpdatePool(wsh.Spool)
+	if err = wsh.WritePool(); err != nil {
+		return err
 	}
-	return wsh.WriteNext("complete")
+	wsh.Spool.Clear()
+	if err = wsh.WriteSpool(); err != nil {
+		return err
+	}
+	return nil
 
 }
 
@@ -282,11 +377,11 @@ func checkSpecValidity(sc *check.SpecCheck, spec string) (*bytes.Buffer, *bytes.
 	if err != nil {
 		return nil, nil, false, fmt.Errorf("failed to clean syzkaller workdir: %v", err)
 	}
-	err = sc.AddSpec(spec)
+	fpath, err := sc.AddSpec(spec)
 	if err != nil {
 		return nil, nil, false, fmt.Errorf("failed to add spec to syzkaller workdir: %v", err)
 	}
-	stdout, stderr, valid := sc.ExtractConst()
+	stdout, stderr, valid := sc.ExtractConst(filepath.Base(fpath))
 	if !valid {
 		return stdout, stderr, valid, nil
 	}
@@ -406,30 +501,60 @@ func fixSpecLoop(kAgent *agent.Agent, logger *log.Logger) (*llms.ContentResponse
 	return response, nil
 }
 
-// execOutlineStep execute the outline step
-func execGenerateStep(kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, logger *log.Logger, wsh *writeSpecHelper) error {
-	var err error
-	if wsh.Jstr, err = collectSpec(kAgent, sysPrompt, gvEntry, wsh.Jstr, logger); err != nil {
+// execGenerateStep execute the generate step of the write spec process
+func execGenerateStep(
+	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, logger *log.Logger, wsh *writeSpecHelper,
+) error {
+	type genContent struct {
+		Spec     []pool.SpecElement    `json:"spec"`
+		Required []queue.TaskQueueElem `json:"required"`
+	}
+	var (
+		jstr  string
+		err   error
+		gc    genContent
+		telem *queue.TaskQueueElem = wsh.Tqueue.Pop()
+	)
+	// if the element is already in pool, skip generate and reuse it
+	if wsh.Pool.Exists(telem.Name) {
+		logger.Printf("Element %v already in pool, skip generate and reuse pool's element\n", telem.Name)
+		se, err := wsh.Pool.Get(telem.Name)
+		if err != nil {
+			return err
+		}
+		wsh.Spool.Insert(se)
+		return nil
+	}
+	// prompt agent to generate spec for the element
+	if jstr, err = collectSpec(kAgent, sysPrompt, gvEntry, telem, logger); err != nil {
 		return err
 	}
 	if err = wsh.SaveQueryMessages(kAgent, "generate-"); err != nil {
 		return err
 	}
-	if err = wsh.WriteJstr(); err != nil {
+	if err = json.Unmarshal([]byte(jstr), &gc); err != nil {
 		return err
 	}
-	if wsh.Spec, err = ast.Json2syzlang(wsh.Jstr); err != nil {
-		return fmt.Errorf("failed to convert spec json to syzlang: %v", err)
+	// process generated spec and required tasks
+	for _, se := range gc.Spec {
+		wsh.Spool.Insert(se)
 	}
-	if err = wsh.WriteSpec(); err != nil {
+	for _, te := range gc.Required {
+		wsh.Tqueue.Push(&te)
+	}
+	// update file content of Tqueue and Spool
+	if err = wsh.WriteTqueue(); err != nil {
 		return err
 	}
-	return wsh.WriteNext("fix")
+	if err = wsh.WriteSpool(); err != nil {
+		return err
+	}
+	return nil
 }
 
-// collectSpec prompt agent to generate syscall spec or reuse existing spec for a global variable
+// collectSpec prompt agent to generate syscall spec for a given task element
 func collectSpec(
-	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, outline string, logger *log.Logger,
+	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, telem *queue.TaskQueueElem, logger *log.Logger,
 ) (string, error) {
 	// prompt agent to generate spec to complete part of todo tasks
 	var (
@@ -437,7 +562,7 @@ func collectSpec(
 		jstr  string
 	)
 	kAgent.CleanMessages()
-	response, err := genSpec(kAgent, sysPrompt, gvEntry, outline, logger)
+	response, err := genSpec(kAgent, sysPrompt, gvEntry, telem, logger)
 	if err != nil {
 		return "", err
 	}
@@ -445,16 +570,12 @@ func collectSpec(
 	if !found {
 		return "", fmt.Errorf("failed to extract json code fence from generate response")
 	}
-	_, err = ast.Json2syzlang(jstr)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate valid json: %v", err)
-	}
 	return jstr, nil
 }
 
 // genSpec prompt agent to generate syscall spec iteratively
 func genSpec(
-	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, outline string, logger *log.Logger,
+	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, telem *queue.TaskQueueElem, logger *log.Logger,
 ) (*llms.ContentResponse, error) {
 	// make agent ready for spec generation stage
 	var err error
@@ -465,7 +586,10 @@ func genSpec(
 
 	// prompt agent to generate syscall spec
 	var response *llms.ContentResponse
-	humanMsg := fmt.Sprintf("```c\n%s\n```\n\n```json\n%s```\n", gvEntry.Code, outline)
+	humanMsg := fmt.Sprintf(
+		"```c\n%s\n```\n\nPlease write specification for %s `%s`\n",
+		gvEntry.Code, telem.Type, telem.Name,
+	)
 	kAgent.AddHumanMessage(humanMsg)
 	for {
 		logger.Printf("Query agent ...\n")
@@ -491,22 +615,26 @@ func genSpec(
 }
 
 // execOutlineStep execute the outline step of the write spec process
-func execOutlineStep(kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, logger *log.Logger, wsh *writeSpecHelper) error {
-	var err error
-	if wsh.Outline, err = collectOutline(kAgent, sysPrompt, gvEntry, logger); err != nil {
+func execOutlineStep(
+	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, logger *log.Logger, wsh *writeSpecHelper,
+) error {
+	var (
+		err  error
+		jstr string
+	)
+	if jstr, err = collectOutline(kAgent, sysPrompt, gvEntry, logger); err != nil {
 		return err
+	}
+	if wsh.Tqueue, err = queue.NewTaskQueueFromJson(jstr); err != nil {
+		return fmt.Errorf("failed to create spec task queue from outline: %v", err)
 	}
 	if err = wsh.SaveQueryMessages(kAgent, "outline-"); err != nil {
 		return err
 	}
-	if err = wsh.WriteOutline(); err != nil {
+	if err = wsh.WriteTqueue(); err != nil {
 		return err
 	}
-	wsh.Jstr = wsh.Outline
-	if err = wsh.WriteJstr(); err != nil {
-		return err
-	}
-	return wsh.WriteNext("generate")
+	return nil
 }
 
 // collectOutline prompt agent to outline todo tasks or reuse existing outline for a global variable
@@ -525,10 +653,6 @@ func collectOutline(
 	outline, found = utils.ExtractFirstCodeBlock(response.Choices[0].Content, "json")
 	if !found {
 		return "", fmt.Errorf("failed to extract json code fence from outline response")
-	}
-	_, err = ast.Json2syzlang(outline)
-	if err != nil {
-		return "", fmt.Errorf("failed to generate valid json: %v", err)
 	}
 	return outline, nil
 }

@@ -294,13 +294,6 @@ func checkSyzkaller(path string) error {
 	if !isSyzkaller {
 		return fmt.Errorf("not syzkaller repository: %s", path)
 	}
-	head, err := repo.Head()
-	if err != nil {
-		return err
-	}
-	if head.Hash().String()[:8] != "4b25d554" {
-		log.Println("I use syzkaller 4b25d554 btw :)")
-	}
 	return nil
 }
 
@@ -439,6 +432,7 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 		return
 	}
 	logger.Printf("copying extract kernel to workdir (%s) ...\n", wd)
+	// TODO: run make distclean under kernel-extract first?
 	if err := copy.Copy(cfg.Kernel, filepath.Join(wd, "kernel-extract")); err != nil {
 		logger.Printf("failed to copy extract kernel: %v\n", err)
 		res.Err = err
@@ -496,13 +490,13 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 			wjr <- res
 			continue
 		}
-		spec, valid, err := writeSpec(kAgent, spm, gv, cfg, specPrefix, logPrefix)
+		spec, err := writeSpec(kAgent, spm, gv, cfg, specPrefix, logPrefix)
 		for j := 0; j < cfg.MaxRetry && err != nil; j++ {
 			logger.Printf("Retrying to write spec for global variable %s (attempt %d/%d) ...\n", gv.Name, j+1, cfg.MaxRetry)
 			// sleep for a while before write spec again to avoid frequent requests
 			slpTime := rand.Int31n(11) + 10
 			time.Sleep(time.Duration(slpTime) * time.Second)
-			spec, valid, err = writeSpec(kAgent, spm, gv, cfg, specPrefix, logPrefix)
+			spec, err = writeSpec(kAgent, spm, gv, cfg, specPrefix, logPrefix)
 		}
 		if err != nil {
 			logger.Printf("failed to write spec for global variable %s: %v\n", gv.Name, err)
@@ -514,9 +508,6 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 
 		// write the final spec to file
 		compSpec := specPrefix + "\n\n" + spec
-		if !valid {
-			compSpec = fmt.Sprintf("# NOTE: failed to fix spec after %d attempts\n%s", cfg.MaxFix, compSpec)
-		}
 		if err = os.WriteFile(fp, []byte(compSpec), 0644); err != nil {
 			logger.Printf("failed to write final spec file: %v\n", err)
 			res.Err = err

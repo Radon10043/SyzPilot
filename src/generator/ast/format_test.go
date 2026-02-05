@@ -24,32 +24,20 @@ func init() {
 	}
 }
 
-func TestJson2syzlang(t *testing.T) {
-	jpath := filepath.Join(root, "data", "test", "dev_md_gen.json")
-	jbyte, err := os.ReadFile(jpath)
-	if err != nil {
-		t.Fatalf("Failed to read JSON file: %v", err)
-	}
-	jstr := string(jbyte)
-	sspec, err := ast.Json2syzlang(jstr)
-	if err != nil {
-		t.Fatalf("Json2syzlang failed: %v", err)
-	}
-	t.Logf("Syzlang Specification:\n%s", sspec)
-}
-
-func TestSyzlang2json(t *testing.T) {
+func TestSyzlang2SpecPool(t *testing.T) {
 	fp := filepath.Join(root, "data", "test", "all.txt")
 	b, err := os.ReadFile(fp)
 	if err != nil {
 		t.Fatalf("Failed to read syzlang spec file: %v", err)
 	}
 	spec := string(b)
-	jstr, err := ast.Syzlang2json(spec)
+	spool, err := ast.Syzlang2SpecPool(spec)
 	if err != nil {
-		t.Fatalf("Syzlang2json failed: %v", err)
+		t.Fatalf("Syzlang2SpecPool failed: %v", err)
 	}
-	t.Logf("Converted JSON Specification:\n%s", jstr)
+	if spool.Len() != 131 {
+		t.Fatalf("Expected 131 spec elements, got %d", spool.Len())
+	}
 }
 
 func TestSyzlang2SyzSpecRecord(t *testing.T) {
