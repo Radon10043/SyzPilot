@@ -32,12 +32,12 @@ RUN wget https://go.dev/dl/go1.23.6.linux-amd64.tar.gz
 RUN tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz && \
     rm go1.23.6.linux-amd64.tar.gz
 
-# Install flatbuffers-2.0.8
-RUN wget https://github.com/google/flatbuffers/archive/refs/tags/v2.0.8.tar.gz
-RUN tar -xzvf v2.0.8.tar.gz && \
-    pushd flatbuffers-2.0.8 && \
+# Install flatbuffers-23.5.26
+RUN wget https://github.com/google/flatbuffers/archive/refs/tags/v23.5.26.tar.gz
+RUN tar -xzvf v23.5.26.tar.gz && \
+    pushd flatbuffers-23.5.26 && \
     cmake -G "Unix Makefiles" && \
     make -j && \
     make install && \
     popd && \
-    rm -rf v2.0.8.tar.gz flatbuffers-2.0.8
+    rm -rf v23.5.26.tar.gz flatbuffers-23.5.26
