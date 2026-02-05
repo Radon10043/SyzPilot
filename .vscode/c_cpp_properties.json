@@ -6,7 +6,9 @@
                 "${workspaceFolder}/**",
                 "/llvm-19/include"
             ],
-            "defines": [],
+            "defines": [
+                "CLANG_RESOURCE_DIR=\"/llvm-19/lib/clang/19\""
+            ],
             "compilerPath": "/llvm-19/bin/clang",
             "cStandard": "c17",
             "cppStandard": "c++17",
