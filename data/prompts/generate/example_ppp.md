@@ -1,4 +1,4 @@
-# Example of writing spec for ppp driver
+# Example of writing spec for ppp driver (1)
 
 ## Input
 
@@ -18,50 +18,68 @@ static const struct file_operations ppp_device_fops = {
 };
 ```
 
+Please write specification for initialization syscall `openat$ppp`.
+
+### Thought
+
+**Task**: Define openat$ppp for the ppp driver.
+
+**Identify Device Path**: I need to determine the file path associated with this driver. Based on the name `ppp`, it is likely a char device located at `/dev/ppp`. I will verify this by checking the `ppp_class` definition.
+
+(Calling tool to get source code of variable `ppp_class`).
+
+```c
+static const struct class ppp_class = {
+	.name = "ppp",
+};
+```
+
+**Observation**: The class name is "ppp", confirming the device path is `/dev/ppp`.
+**Dependencies**: To use `AT_FDCWD`, I need to include `linux/fcntl.h`.
+**Resource Definition**: Since this opens a specific device, I should define a resource `fd_ppp` that depends on `fd`.
+
+### Final output
+
 ```json
 {
-    "include": [],
-    "resource": [],
-	"define": [],
-    "syscall": [],
-    "flags": [],
-    "struct": [],
-	"union": [],
-	"type-alias": [],
-	"type-template": [],
-    "todo": [
-		"openat$ppp",
-		"ioctl$PPPIOCNEWUNIT",
-		"ioctl$PPPIOCATTACH",
-		"ioctl$PPPIOCATTCHAN",
-		"ioctl$PPPIOCCONNECT",
-		"ioctl$PPPIOCDISCONN",
-		"ioctl$PPPIOCBRIDGECHAN",
-		"ioctl$PPPIOCUNBRIDGECHAN",
-		"ioctl$PPPIOCSMRU",
-		"ioctl$PPPIOCSFLAGS",
-		"ioctl$PPPIOCGFLAGS",
-		"ioctl$PPPIOCSCOMPRESS",
-		"ioctl$PPPIOCGUNIT",
-		"ioctl$PPPIOCSDEBUG",
-		"ioctl$PPPIOCGDEBUG",
-		"ioctl$PPPIOCGIDLE32",
-		"ioctl$PPPIOCGIDLE64",
-		"ioctl$PPPIOCSMAXCID",
-		"ioctl$PPPIOCGNPMODE",
-		"ioctl$PPPIOCSNPMODE",
-		"ioctl$PPPIOCSPASS",
-		"ioctl$PPPIOCSACTIVE",
-		"ioctl$PPPIOCSMRRU"
-    ]
+	"spec": [
+		{"type": "include", "name": "linux/fcntl.h", "code": "include <linux/fcntl.h>"},
+		{"type": "resource", "name": "fd_ppp", "code": "resource fd_ppp[fd]"},
+		{"type": "init_syscall", "name": "openat$ppp", "code": "openat$ppp(fd const[AT_FDCWD], file ptr[in, string[\"/dev/ppp\"]], flags flags[open_flags], mode const[0]) fd_ppp"}
+	],
+	"required": []
 }
 ```
+
+# Example of writing spec for ppp driver (2)
+
+## Input
+
+```c
+static const struct file_operations ppp_device_fops = {
+	.owner		= THIS_MODULE,
+	.read		= ppp_read,
+	.write		= ppp_write,
+	.poll		= ppp_poll,
+	.unlocked_ioctl	= ppp_ioctl,
+#ifdef CONFIG_COMPAT
+	.compat_ioctl	= ppp_compat_ioctl,
+#endif
+	.open		= ppp_open,
+	.release	= ppp_release,
+	.llseek		= noop_llseek,
+};
+```
+
+Please write specification for syscall `ioctl$PPPIOCSNPMODE`.
 
 ## Output
 
 ### Thought
 
-**Task**: Processing `ioctl$PPPIOCSNPMODE`.
+**Task**: Create a specification for `ioctl$PPPIOCSNPMODE`.
+
+**Analyze Handler**: I need to examine `ppp_ioctl` to understand how `PPPIOCSNPMODE` is handled and what arguments it expects.
 
 (Calling tool to get source code of function `ppp_ioctl`).
 
@@ -326,7 +344,61 @@ out:
 }
 ```
 
-Handler `ppp_ioctl` calls `copy_from_user`, direction is `in`. The type of`npi` is `struct npioctl`, check it source.
+**Analysis**:
+- The handler uses `copy_from_user` for `PPPIOCSNPMODE`, indicating the argument direction is `in`.
+- The data structure used is `npi`, which is of type `struct npioctl`.
+- The fd argument requires the `fd_ppp` resource defined in the initialization step.
+
+**Scope**:
+- The definition of `struct npioctl` is required but not yet defined. I will add it to the `required` list.
+- The initialization syscall `openat$ppp` is also a dependency.
+- Headers `uapi/linux/ppp-ioctl.h` and `linux/ioctl.h` are needed for constants.
+
+### Final output
+
+```json
+{
+	"spec": [
+		{"type": "include", "name": "uapi/linux/ppp-ioctl.h", "code": "include <uapi/linux/ppp-ioctl.h>"},
+		{"type": "include", "name": "linux/ioctl.h", "code": "include <linux/ioctl.h>"},
+		{"type": "syscall", "name": "ioctl$PPPIOCSNPMODE", "code": "ioctl$PPPIOCSNPMODE(fd fd_ppp, cmd const[PPPIOCSNPMODE], arg ptr[in, npioctl])"}
+	],
+	"required": [
+		{"type": "struct", "name": "npioctl"},
+		{"type": "init_syscall", "name": "openat$ppp"},
+	]
+}
+```
+
+# Example of writing spec for pp driver (3)
+
+## Input
+
+```c
+static const struct file_operations ppp_device_fops = {
+	.owner		= THIS_MODULE,
+	.read		= ppp_read,
+	.write		= ppp_write,
+	.poll		= ppp_poll,
+	.unlocked_ioctl	= ppp_ioctl,
+#ifdef CONFIG_COMPAT
+	.compat_ioctl	= ppp_compat_ioctl,
+#endif
+	.open		= ppp_open,
+	.release	= ppp_release,
+	.llseek		= noop_llseek,
+};
+```
+
+Please write specification for struct `npioctl`.
+
+## Output
+
+### Thought
+
+**Task**: Define `struct npioctl` and its field types.
+
+**Inspect Struct**: I need to see the definition of `struct npioctl`.
 
 (Calling tool to get code of `struct npioctl`)
 
@@ -337,7 +409,7 @@ struct npioctl {
 };
 ```
 
-Check source of `enum NPMode`.
+**Inspect Enum**: I need to see the definition of `enum NPmode`.
 
 (Calling tool to get code of `enum NPmode`)
 
@@ -350,7 +422,7 @@ enum NPmode {
 };
 ```
 
-I should check macro definitions whose pattern is `PPP_*`, they might be possible values of `protocol` in `struct npioctl`.
+**Identify Protocol Values**: The `protocol` field is an `int`. Based on the comment "e.g. PPP_IP", I should search for macros matching the pattern `PPP_*` to define a flag set.
 
 (Calling tool to get macro definitions whose pattern is `PPP_*`)
 
@@ -406,61 +478,23 @@ I should check macro definitions whose pattern is `PPP_*`, they might be possibl
 #define PPP_VJC_UNCOMP  0x2f
 ```
 
-According to my experience, possible values should be:
+**Selection Strategy**: I will filter for macros that represent protocols (usually hex values) and exclude helper macros (like `PPP_ADDRESS`, `PPP_VERSION`).
 
-```c
-PPP_IP, PPP_AT, PPP_IPX, PPP_VJC_COMP, PPP_VJC_UNCOMP, PPP_MP, PPP_IPV6, PPP_COMPFRAG, PPP_COMP, PPP_MPLS_UC, PPP_MPLS_MC, PPP_IPCP, PPP_ATCP, PPP_IPXCP, PPP_IPV6CP, PPP_CCPFRAG, PPP_CCP, PPP_MPLSCP, PPP_LCP, PPP_PAP, PPP_LQR, PPP_CHAP, PPP_CBCP
-```
+**Conclusion**:
+- `protocol` should use a flag set `ppp_proto`.
+- `mode` should use a flag set `NPmode`.
+- Header `uapi/linux/ppp_defs.h` is likely required for these definitions.
 
 ### Final output
 
 ```json
 {
-    "include": [
-        "include <linux/ioctl.h>",
-        "include <uapi/linux/filter.h>",
-        "include <uapi/linux/ppp-ioctl.h>",
-        "include <uapi/linux/ppp_defs.h>",
-    ],
-    "resource": ["resource fd_ppp[fd]"],
-	"define": [],
-    "syscall": [
-        "openat$ppp(fd const[AT_FDCWD], file ptr[in, string[\"/dev/ppp\"]], flags flags[open_flags], mode const[0]) fd_ppp",
-        "ioctl$PPPIOCSNPMODE(fd fd_ppp, cmd const[PPPIOCSNPMODE], arg ptr[in, npioctl])"
-    ],
-    "flags": [
-        "ppp_proto = PPP_IP, PPP_AT, PPP_IPX, PPP_VJC_COMP, PPP_VJC_UNCOMP, PPP_MP, PPP_IPV6, PPP_COMPFRAG, PPP_COMP, PPP_MPLS_UC, PPP_MPLS_MC, PPP_IPCP, PPP_ATCP, PPP_IPXCP, PPP_IPV6CP, PPP_CCPFRAG, PPP_CCP, PPP_MPLSCP, PPP_LCP, PPP_PAP, PPP_LQR, PPP_CHAP, PPP_CBCP",
-        "NPmode = NPMODE_PASS, NPMODE_DROP, NPMODE_ERROR, NPMODE_QUEUE"
-    ],
-    "struct": [
-        "npioctl {\n\tprotocol\tflags[ppp_proto, int32]\n\tmode\t\tflags[NPmode, int32]\n}"
-    ],
-	"union": [],
-	"type-alias": [],
-	"type-template": [],
-    "todo": [
-		"openat$ppp",
-		"ioctl$PPPIOCNEWUNIT",
-		"ioctl$PPPIOCATTACH",
-		"ioctl$PPPIOCATTCHAN",
-		"ioctl$PPPIOCCONNECT",
-		"ioctl$PPPIOCDISCONN",
-		"ioctl$PPPIOCBRIDGECHAN",
-		"ioctl$PPPIOCUNBRIDGECHAN",
-		"ioctl$PPPIOCSMRU",
-		"ioctl$PPPIOCSFLAGS",
-		"ioctl$PPPIOCGFLAGS",
-		"ioctl$PPPIOCSCOMPRESS",
-		"ioctl$PPPIOCGUNIT",
-		"ioctl$PPPIOCSDEBUG",
-		"ioctl$PPPIOCGDEBUG",
-		"ioctl$PPPIOCGIDLE32",
-		"ioctl$PPPIOCGIDLE64",
-		"ioctl$PPPIOCSMAXCID",
-		"ioctl$PPPIOCGNPMODE",
-		"ioctl$PPPIOCSPASS",
-		"ioctl$PPPIOCSACTIVE",
-		"ioctl$PPPIOCSMRRU"
-    ]
+	"spec": [
+		{"type": "include", "name": "uapi/linux/ppp_defs.h", "code": "include <uapi/linux/ppp_defs.h>"},
+		{"type": "struct", "name": "npioctl", "code": "npioctl {\n\tprotocol\tflags[ppp_proto, int32]\n\tmode\t\tflags[NPmode, int32]\n}"},
+		{"type": "flag", "name": "ppp_proto", "code": "ppp_proto = PPP_IP, PPP_AT, PPP_IPX, PPP_VJC_COMP, PPP_VJC_UNCOMP, PPP_MP, PPP_IPV6, PPP_COMPFRAG, PPP_COMP, PPP_MPLS_UC, PPP_MPLS_MC, PPP_IPCP, PPP_ATCP, PPP_IPXCP, PPP_IPV6CP, PPP_CCPFRAG, PPP_CCP, PPP_MPLSCP, PPP_LCP, PPP_PAP, PPP_LQR, PPP_CHAP, PPP_CBCP"},
+		{"type": "flag", "name": "NPmode", "code": "NPmode = NPMODE_PASS, NPMODE_DROP, NPMODE_ERROR, NPMODE_QUEUE"}
+	],
+	"required": []
 }
 ```

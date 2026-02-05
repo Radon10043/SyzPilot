@@ -53,7 +53,7 @@ When you encounter an error, map it to one of the following categories and apply
 
 # Output Format
 
-You must output a syzlang block containing the Corrected Spec.
+You must output a syzlang block containing the Corrected Spec with code fences.
 
 # Syzlang Syntax Reference
 

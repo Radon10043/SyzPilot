@@ -22,7 +22,7 @@ static const struct file_operations ppp_device_fops = {
 
 ### Thought
 
-Focus on `ppp_ioctl`.
+**Analyze `file_operations`**: The entry point for ioctls is `.unlocked_ioctl = ppp_ioctl`. I need to examine this function to find supported commands.
 
 (Calling tool to get source code of function `ppp_ioctl`)
 
@@ -287,9 +287,10 @@ out:
 }
 ```
 
-Found switch cases for `PPPIOCCONNECT`, `PPPIOCDISCONN`, etc.
-
-**Critical**: It calls `ppp_unattached_ioctl` if `file->private_data` is NULL.
+**Analyze `ppp_ioctl`**:
+- Found a switch case for channel commands: `PPPIOCCONNECT`, `PPPIOCDISCONN`, `PPPIOCBRIDGECHAN`, `PPPIOCUNBRIDGECHAN`, etc.
+- Found a switch case for interface commands: `PPPIOCSMRU`, `PPPIOCSFLAGS`, `PPPIOCGFLAGS`, etc.
+- **Crucial Discovery**: If `file->private_data` is NULL, it calls `ppp_unattached_ioctl`. This usually handles the creation or attachment of units. I must analyze this function to capture all entry points.
 
 (Calling tool to get source of function `ppp_unattached_ioctl` for recursive analysis)
 
@@ -357,47 +358,36 @@ static int ppp_unattached_ioctl(struct net *net, struct ppp_file *pf,
 }
 ```
 
-Found additional commands: `PPPIOCNEWUNIT`, `PPPIOCATTACH`, `PPPIOCATTCHAN`.
+**Analyze `ppp_unattached_ioctl`**: Found additional setup commands: `PPPIOCNEWUNIT`, `PPPIOCATTACH`, `PPPIOCATTCHAN`.
 
-PPP is generally treated as a single char device `/dev/ppp`, so `openat` is sufficient.
+**Determine `init_syscall`**: Since PPP is a char device usually accessed via `/dev/ppp`, standard `openat` is sufficient for initialization.
 
 ### Final output
 
 ```json
-{
-    "include": [],
-    "resource": [],
-	"define": [],
-    "syscall": [],
-    "flags": [],
-    "struct": [],
-	"union": [],
-	"type-alias": [],
-	"type-template": [],
-    "todo": [
-		"openat$ppp",
-		"ioctl$PPPIOCNEWUNIT",
-		"ioctl$PPPIOCATTACH",
-		"ioctl$PPPIOCATTCHAN",
-		"ioctl$PPPIOCCONNECT",
-		"ioctl$PPPIOCDISCONN",
-		"ioctl$PPPIOCBRIDGECHAN",
-		"ioctl$PPPIOCUNBRIDGECHAN",
-		"ioctl$PPPIOCSMRU",
-		"ioctl$PPPIOCSFLAGS",
-		"ioctl$PPPIOCGFLAGS",
-		"ioctl$PPPIOCSCOMPRESS",
-		"ioctl$PPPIOCGUNIT",
-		"ioctl$PPPIOCSDEBUG",
-		"ioctl$PPPIOCGDEBUG",
-		"ioctl$PPPIOCGIDLE32",
-		"ioctl$PPPIOCGIDLE64",
-		"ioctl$PPPIOCSMAXCID",
-		"ioctl$PPPIOCGNPMODE",
-		"ioctl$PPPIOCSNPMODE",
-		"ioctl$PPPIOCSPASS",
-		"ioctl$PPPIOCSACTIVE",
-		"ioctl$PPPIOCSMRRU"
-    ]
-}
+[
+	{"type": "init_syscall", "name": "openat$ppp"},
+	{"type": "syscall", "name": "ioctl$PPPIOCNEWUNIT"},
+	{"type": "syscall", "name": "ioctl$PPPIOCATTACH"},
+	{"type": "syscall", "name": "ioctl$PPPIOCATTCHAN"},
+	{"type": "syscall", "name": "ioctl$PPPIOCCONNECT"},
+	{"type": "syscall", "name": "ioctl$PPPIOCDISCONN"},
+	{"type": "syscall", "name": "ioctl$PPPIOCBRIDGECHAN"},
+	{"type": "syscall", "name": "ioctl$PPPIOCUNBRIDGECHAN"},
+	{"type": "syscall", "name": "ioctl$PPPIOCSMRU"},
+	{"type": "syscall", "name": "ioctl$PPPIOCSFLAGS"},
+	{"type": "syscall", "name": "ioctl$PPPIOCGFLAGS"},
+	{"type": "syscall", "name": "ioctl$PPPIOCSCOMPRESS"},
+	{"type": "syscall", "name": "ioctl$PPPIOCGUNIT"},
+	{"type": "syscall", "name": "ioctl$PPPIOCSDEBUG"},
+	{"type": "syscall", "name": "ioctl$PPPIOCGDEBUG"},
+	{"type": "syscall", "name": "ioctl$PPPIOCGIDLE32"},
+	{"type": "syscall", "name": "ioctl$PPPIOCGIDLE64"},
+	{"type": "syscall", "name": "ioctl$PPPIOCSMAXCID"},
+	{"type": "syscall", "name": "ioctl$PPPIOCGNPMODE"},
+	{"type": "syscall", "name": "ioctl$PPPIOCSNPMODE"},
+	{"type": "syscall", "name": "ioctl$PPPIOCSPASS"},
+	{"type": "syscall", "name": "ioctl$PPPIOCSACTIVE"},
+	{"type": "syscall", "name": "ioctl$PPPIOCSMRRU"}
+]
 ```
