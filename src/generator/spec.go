@@ -542,10 +542,11 @@ func execGenerateStep(
 		Required []queue.TaskQueueElem `json:"required"`
 	}
 	var (
-		jstr  string
-		err   error
-		gc    genContent
-		telem *queue.TaskQueueElem
+		jstr      string
+		err       error
+		gc        genContent
+		telem     *queue.TaskQueueElem
+		spoolSpec strings.Builder
 	)
 
 	// get the top element from Tqueue
@@ -579,15 +580,11 @@ func execGenerateStep(
 		}
 	}
 	if !wsh.Spool.Empty() {
-		var spoolSpec strings.Builder
-		spoolSpec.WriteString("The following specifications have been generated so far:\n```syzlang\n")
 		spoolSpec.WriteString(wsh.Spool.Syzlang())
-		spoolSpec.WriteString("\n```\n")
-		sysPrompt += "\n\n" + spoolSpec.String()
 	}
 
 	// prompt agent to generate spec for the element
-	if jstr, err = collectSpec(kAgent, sysPrompt, gvEntry, telem, logger); err != nil {
+	if jstr, err = collectSpec(kAgent, sysPrompt, spoolSpec, gvEntry, telem, logger); err != nil {
 		return err
 	}
 	if err = wsh.SaveQueryMessages(kAgent, "generate-"); err != nil {
@@ -609,7 +606,7 @@ func execGenerateStep(
 
 // collectSpec prompt agent to generate syscall spec for a given task element
 func collectSpec(
-	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, telem *queue.TaskQueueElem, logger *log.Logger,
+	kAgent *agent.Agent, sysPrompt string, spoolSpec strings.Builder, gvEntry *database.GlobalVar, telem *queue.TaskQueueElem, logger *log.Logger,
 ) (string, error) {
 	// prompt agent to generate spec to complete part of todo tasks
 	var (
@@ -617,7 +614,7 @@ func collectSpec(
 		jstr  string
 	)
 	kAgent.CleanMessages()
-	response, err := genSpec(kAgent, sysPrompt, gvEntry, telem, logger)
+	response, err := genSpec(kAgent, sysPrompt, spoolSpec, gvEntry, telem, logger)
 	if err != nil {
 		return "", err
 	}
@@ -630,7 +627,7 @@ func collectSpec(
 
 // genSpec prompt agent to generate syscall spec iteratively
 func genSpec(
-	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, telem *queue.TaskQueueElem, logger *log.Logger,
+	kAgent *agent.Agent, sysPrompt string, spoolSpec strings.Builder, gvEntry *database.GlobalVar, telem *queue.TaskQueueElem, logger *log.Logger,
 ) (*llms.ContentResponse, error) {
 	// make agent ready for spec generation stage
 	var err error
@@ -645,6 +642,12 @@ func genSpec(
 		"```c\n%s\n```\n\nPlease write specification for %s `%s`\n",
 		gvEntry.Code, telem.Type, telem.Name,
 	)
+	if spoolSpec.Len() > 0 {
+		humanMsg += fmt.Sprintf(
+			"The following specifications have been generated so far:\n```syzlang\n%s\n```\n",
+			spoolSpec.String(),
+		)
+	}
 	kAgent.AddHumanMessage(humanMsg)
 	for {
 		logger.Printf("Query agent ...\n")
