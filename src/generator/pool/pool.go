@@ -110,21 +110,40 @@ func (s SpecPool) sort() []SpecElement {
 	return sorted
 }
 
+type syzlangConfig struct {
+	showValidComment bool
+}
+
+type SyzlangOption func(*syzlangConfig)
+
+// WithValidComment configures whether to show valid comments in the syzlang output
+func WithValidComment(show bool) SyzlangOption {
+	return func(cfg *syzlangConfig) {
+		cfg.showValidComment = show
+	}
+}
+
 // Syzlang returns the syzlang representation of the SpecPool
-func (s *SpecPool) Syzlang() string {
+func (s *SpecPool) Syzlang(opts ...SyzlangOption) string {
 	if s.Empty() {
 		return ""
 	}
 	var (
 		syzl strings.Builder
+		cfg  syzlangConfig = syzlangConfig{
+			showValidComment: false,
+		}
 	)
+	for _, opt := range opts {
+		opt(&cfg)
+	}
 	sorted := s.sort()
 	prevType := sorted[0].Type
 	for _, elem := range sorted {
 		if elem.Type != prevType {
 			syzl.WriteString("\n")
 		}
-		if elem.Type != "include" && elem.Type != "resource" {
+		if elem.Type != "include" && elem.Type != "resource" && cfg.showValidComment {
 			comment := fmt.Sprintf("# valid: %t\n", elem.Valid)
 			syzl.WriteString(comment)
 		}

@@ -18,7 +18,7 @@ type SpecCheck struct {
 	KernelForExtract string   // path to kernel source for `make extract`
 	KernelForCheck   string   // path to kernel source for syz-check
 	Workdir          string   // working directory for syz-check, generally syzkaller's directory
-	Syzkaller        string   // path to syzkaller repository
+	Sysdir           string   // path to sys directory (syzkaller/sys like structure)
 	IgnRedeclErr     bool     // ignore redeclare errors reported by syz-extract
 	InterestKeywords []string // only focus on lines of syz-extract/syz-check output containing these keywords
 }
@@ -30,7 +30,7 @@ func NewSpecCheck(opts ...Option) *SpecCheck {
 	sc := &SpecCheck{
 		SyzExtract:       "./bin/syz-extract",
 		SyzCheck:         "./bin/syz-check",
-		Syzkaller:        "./syzkaller",
+		Sysdir:           "./syzkaller/sys",
 		InterestKeywords: []string{"failed to run compiler:", "<stdin>:", "sys/"},
 	}
 	for _, opt := range opts {
@@ -74,10 +74,10 @@ func WithWorkdir(path string) Option {
 	}
 }
 
-// WithSyzkaller sets the Syzkaller field of SpecCheck
-func WithSyzkaller(path string) Option {
+// WithSysdir sets the Sysdir field of SpecCheck
+func WithSysdir(path string) Option {
 	return func(sc *SpecCheck) {
-		sc.Syzkaller = path
+		sc.Sysdir = path
 	}
 }
 
@@ -94,9 +94,14 @@ func WithInterestKeywords(keywords []string) Option {
 	}
 }
 
-// SetupWorkdir setup sc.Workdir by copy sc.Syzkaller/sys/linux/* to sc.Workdir/sys/linux/
+// SetupWorkdir setup sc.Workdir by copy sc.Sysdir to sc.Workdir/
+// TODO: It is very possible that new generated specs will conflict to existing specs.
+// To solve such conflicts, there are two ways:
+//  1. if current element existed in syzkaller, dont re-generate it.
+//  2. create a minimal set of specs which will not impact spec generation. We can caluclate
+//     dependency from sys/linux/sys.txt, and only copy the necessary specs to workdir.
 func (sc *SpecCheck) SetupWorkdir() error {
-	src := filepath.Join(sc.Syzkaller, "sys")
+	src := sc.Sysdir
 	dst := filepath.Join(sc.Workdir, "sys")
 	err := os.MkdirAll(dst, 0755)
 	if err != nil {

@@ -75,6 +75,21 @@ func (wsh *writeSpecHelper) WritePool() error {
 	return nil
 }
 
+// WriteCurrStat write the current state of Tqueue, Spool, and Pool to files
+func (wsh *writeSpecHelper) WriteCurrStat() error {
+	// write current state of Tqueue, Spool, and Pool to files after each step
+	if err := wsh.WriteTqueue(); err != nil {
+		return fmt.Errorf("failed to write Tqueue: %v", err)
+	}
+	if err := wsh.WriteSpool(); err != nil {
+		return fmt.Errorf("failed to write Spool: %v", err)
+	}
+	if err := wsh.WritePool(); err != nil {
+		return fmt.Errorf("failed to write Pool: %v", err)
+	}
+	return nil
+}
+
 // RecoverProgress recover existing progress from workdir
 func (wsh *writeSpecHelper) RecoverProgress() error {
 	// recover Tqueue field
@@ -258,8 +273,15 @@ func writeSpec(
 		if err := execWriteStep(kAgent, sysPromptMap, gvEntry, cfg, wsh); err != nil {
 			return "", fmt.Errorf("failed to exec write step: %v", err)
 		}
+		if err := wsh.WriteCurrStat(); err != nil {
+			return "", fmt.Errorf("failed to write current state: %v", err)
+		}
 	}
-	return wsh.Pool.Syzlang(), nil
+	if err = wsh.WriteCurrStat(); err != nil {
+		return "", fmt.Errorf("failed to write current state: %v", err)
+	}
+
+	return wsh.Pool.Syzlang(pool.WithValidComment(true)), nil
 }
 
 // execWriteStep execute one step of the write spec process according to wsh.Next
@@ -290,6 +312,21 @@ func execFixStep(kAgent *agent.Agent, sysPrompt string, cfg *ProgConfig, logger 
 		valid  bool           // whether the final full spec is valid
 		err    error
 	)
+
+	// if all elements is valid, skip fixing
+	allValid := true
+	for _, se := range *wsh.Spool {
+		if !se.Valid {
+			allValid = false
+			break
+		}
+	}
+	if allValid {
+		logger.Printf("All elements in Spool are valid, skip fixing\n")
+		wsh.Spool.Clear()
+		return nil
+	}
+
 	ospec = wsh.Spool.Syzlang()
 	if nspec, valid, err = fixSpec(kAgent, sysPrompt, cfg, ospec, logger, wsh); err != nil {
 		return err
@@ -312,13 +349,7 @@ func execFixStep(kAgent *agent.Agent, sysPrompt string, cfg *ProgConfig, logger 
 	} // otherwise new spec is invalid, reuse old Spool
 
 	wsh.UpdatePool(wsh.Spool)
-	if err = wsh.WritePool(); err != nil {
-		return err
-	}
 	wsh.Spool.Clear()
-	if err = wsh.WriteSpool(); err != nil {
-		return err
-	}
 	return nil
 
 }
@@ -516,11 +547,14 @@ func execGenerateStep(
 		gc    genContent
 		telem *queue.TaskQueueElem
 	)
+
+	// get the top element from Tqueue
 	telem, err = wsh.Tqueue.Pop()
 	if err != nil {
 		return fmt.Errorf("failed to pop from Tqueue: %v", err)
 	}
-	// if the element is already in pool, skip generate and reuse it
+
+	// if the element is already in Pool, skip generate and reuse it
 	if wsh.Pool.Exists(telem.Name) {
 		logger.Printf("Element %v already in pool, skip generate and reuse pool's element\n", telem.Name)
 		se, err := wsh.Pool.Get(telem.Name)
@@ -530,6 +564,28 @@ func execGenerateStep(
 		wsh.Spool.Insert(se)
 		return nil
 	}
+
+	// if the element is already in Spool, dont generate again
+	if wsh.Spool.Exists(telem.Name) {
+		logger.Printf("Element %v already in spool, skip generate\n", telem.Name)
+		return nil
+	}
+
+	// put all resource and init_syscall elements from Pool, and present all Spool's elements in
+	// prompts so that we can ensure spec as consistent as possible
+	for _, se := range *wsh.Pool {
+		if se.Type == "resource" || se.Type == "init_syscall" {
+			wsh.Spool.Insert(*se)
+		}
+	}
+	if !wsh.Spool.Empty() {
+		var spoolSpec strings.Builder
+		spoolSpec.WriteString("The following specifications have been generated so far:\n```syzlang\n")
+		spoolSpec.WriteString(wsh.Spool.Syzlang())
+		spoolSpec.WriteString("\n```\n")
+		sysPrompt += "\n\n" + spoolSpec.String()
+	}
+
 	// prompt agent to generate spec for the element
 	if jstr, err = collectSpec(kAgent, sysPrompt, gvEntry, telem, logger); err != nil {
 		return err
@@ -540,19 +596,13 @@ func execGenerateStep(
 	if err = json.Unmarshal([]byte(jstr), &gc); err != nil {
 		return err
 	}
+
 	// process generated spec and required tasks
 	for _, se := range gc.Spec {
 		wsh.Spool.Insert(se)
 	}
 	for _, te := range gc.Required {
 		wsh.Tqueue.Push(&te)
-	}
-	// update file content of Tqueue and Spool
-	if err = wsh.WriteTqueue(); err != nil {
-		return err
-	}
-	if err = wsh.WriteSpool(); err != nil {
-		return err
 	}
 	return nil
 }
@@ -634,9 +684,6 @@ func execOutlineStep(
 		return fmt.Errorf("failed to create spec task queue from outline: %v", err)
 	}
 	if err = wsh.SaveQueryMessages(kAgent, "outline-"); err != nil {
-		return err
-	}
-	if err = wsh.WriteTqueue(); err != nil {
 		return err
 	}
 	return nil

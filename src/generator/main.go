@@ -18,7 +18,6 @@ import (
 	"github.com/Radon10043/cloud/src/generator/check"
 	"github.com/Radon10043/cloud/src/generator/database"
 	myTools "github.com/Radon10043/cloud/src/generator/tools"
-	"github.com/go-git/go-git/v6"
 	"github.com/joho/godotenv"
 	"github.com/otiai10/copy"
 	"github.com/tmc/langchaingo/llms"
@@ -44,11 +43,13 @@ type ProgConfig struct {
 	ExtractBin string
 	CheckBin   string
 	Kernel     string
-	Syzkaller  string
 	BlackList  string
 	WhiteList  string
 	Resume     bool
 	Prefix     string
+
+	// spec generation configs
+	Sysdir string
 
 	// prompt configs
 	OtlSysPrompt string
@@ -165,7 +166,7 @@ func setConfigs() *ProgConfig {
 	flag.StringVar(&cfg.ExtractBin, "extract-bin", "./bin/syz-extract", "Path to the syz-extract binary")
 	flag.StringVar(&cfg.CheckBin, "check-bin", "./bin/syz-check", "Path to the syz-check binary")
 	flag.StringVar(&cfg.Kernel, "kernel", "", "Path to kernel used for spec extraction")
-	flag.StringVar(&cfg.Syzkaller, "syzkaller", "./syzkaller/", "Path to the syzkaller directory")
+	flag.StringVar(&cfg.Sysdir, "sysdir", "./syzkaller/sys/", "Path to the sys directory (syzkaller/sys like structure)")
 	flag.BoolVar(&cfg.Resume, "resume", true, "Whether to resume from previous interrupted run")
 	flag.StringVar(&cfg.BlackList, "blacklist", "", "Path to the global variable blacklist file")
 	flag.StringVar(&cfg.WhiteList, "whitelist", "", "Path to the global variable whitelist file (conflicts with -blacklist)")
@@ -222,7 +223,7 @@ func checkConfig(cfg *ProgConfig) error {
 	fileExistHelperFunc(cfg.Kernel, "-kernel")
 	vmlinuxPath := filepath.Join(cfg.Kernel, "vmlinux")
 	fileExistHelperFunc(vmlinuxPath, "-kernel")
-	fileExistHelperFunc(cfg.Syzkaller, "-syzkaller")
+	fileExistHelperFunc(cfg.Sysdir, "-sysdir")
 	if cfg.Prefix != "" {
 		fileExistHelperFunc(cfg.Prefix, "-prefix")
 	}
@@ -255,11 +256,6 @@ func checkConfig(cfg *ProgConfig) error {
 		return fmt.Errorf("-outdir: cannot be empty")
 	}
 
-	// -syzkaller
-	if err := checkSyzkaller(cfg.Syzkaller); err != nil {
-		return fmt.Errorf("-syzkaller: directory is invalid: %v", err)
-	}
-
 	// -max-retry
 	if cfg.MaxRetry < -1 {
 		return fmt.Errorf("-max-retry: must be -1 or greater")
@@ -270,54 +266,6 @@ func checkConfig(cfg *ProgConfig) error {
 		return fmt.Errorf("-jobs: must be positive")
 	}
 
-	return nil
-}
-
-// checkSyzkaller check whether path to syzkaller repository is valid
-func checkSyzkaller(path string) error {
-	repo, err := git.PlainOpen(path)
-	if err != nil {
-		return err
-	}
-	remotes, err := repo.Remotes()
-	if err != nil {
-		return err
-	}
-	isSyzkaller := false
-	for _, remote := range remotes {
-		urls := remote.Config().URLs
-		if urls[0] == "https://github.com/google/syzkaller" {
-			isSyzkaller = true
-			break
-		}
-	}
-	if !isSyzkaller {
-		return fmt.Errorf("not syzkaller repository: %s", path)
-	}
-	return nil
-}
-
-// cleanSyzkaller clean sc.Syzkaller repository to its original state
-func cleanSyzkaller(path string) error {
-	if err := checkSyzkaller(path); err != nil {
-		return err
-	}
-	repo, err := git.PlainOpen(path)
-	if err != nil {
-		return err
-	}
-	w, err := repo.Worktree()
-	if err != nil {
-		return err
-	}
-	err = w.Clean(&git.CleanOptions{Dir: true})
-	if err != nil {
-		return err
-	}
-	err = w.Reset(&git.ResetOptions{Mode: git.HardReset})
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
@@ -452,7 +400,7 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 		check.WithKernelForExtract(filepath.Join(wd, "kernel-extract")),
 		check.WithKernelForCheck(filepath.Join(wd, "kernel-check")),
 		check.WithWorkdir(wd),
-		check.WithSyzkaller(cfg.Syzkaller),
+		check.WithSysdir(cfg.Sysdir),
 		check.WithIgnRedeclErr(true),
 	)
 	sc.SetupWorkdir()
@@ -537,7 +485,7 @@ func main() {
 	cfg.ExtractBin = stap.toAbsPath(cfg.ExtractBin)
 	cfg.CheckBin = stap.toAbsPath(cfg.CheckBin)
 	cfg.Kernel = stap.toAbsPath(cfg.Kernel)
-	cfg.Syzkaller = stap.toAbsPath(cfg.Syzkaller)
+	cfg.Sysdir = stap.toAbsPath(cfg.Sysdir)
 	if cfg.BlackList != "" {
 		cfg.BlackList = stap.toAbsPath(cfg.BlackList)
 	}
@@ -626,11 +574,6 @@ func main() {
 	spmWrtFunc(cfg.FixSysPrompt, "fix")
 	if cfg.MaxRetry == -1 {
 		cfg.MaxRetry = math.MaxInt
-	}
-
-	// clean syzkaller directory to ensure its state is fresh
-	if err := cleanSyzkaller(cfg.Syzkaller); err != nil {
-		log.Fatalf("failed to clean syzkaller directory: %v\n", err)
 	}
 
 	// create jobs and ress for job dispatch and result collection

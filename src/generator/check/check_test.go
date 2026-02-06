@@ -33,7 +33,6 @@ func init() {
 		check.WithKernelForExtract("/vol/linux/v6.18-extract"),
 		check.WithKernelForCheck("/vol/linux/v6.18-check"),
 		check.WithWorkdir(wd),
-		check.WithSyzkaller(filepath.Join(root, "syzkaller")),
 	)
 	if err = sc.SetupWorkdir(); err != nil {
 		panic(err)
