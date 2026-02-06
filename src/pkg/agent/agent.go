@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
-	myTools "github.com/Radon10043/cloud/src/generator/tools"
-	"github.com/Radon10043/cloud/src/generator/utils"
+	myTools "github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/utils"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"
 )

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Radon10043/cloud/src/generator/pool"
+	"github.com/Radon10043/cloud/src/pkg/pool"
 	"github.com/google/syzkaller/pkg/ast"
 )
 

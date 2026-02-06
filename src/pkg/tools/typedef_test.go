@@ -5,13 +5,13 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Radon10043/cloud/src/generator/agent"
-	"github.com/Radon10043/cloud/src/generator/database"
-	myTools "github.com/Radon10043/cloud/src/generator/tools"
+	"github.com/Radon10043/cloud/src/pkg/agent"
+	"github.com/Radon10043/cloud/src/pkg/database"
+	myTools "github.com/Radon10043/cloud/src/pkg/tools"
 	"github.com/tmc/langchaingo/llms"
 )
 
-func TestGetEnumCodeByEnumerator(t *testing.T) {
+func TestGetTypedefCodeByDefine(t *testing.T) {
 	db := database.Database{Path: filepath.Join(root, "data", "database", "linux.db")}
 	err := db.Connect()
 	if err != nil {
@@ -19,9 +19,9 @@ func TestGetEnumCodeByEnumerator(t *testing.T) {
 	}
 	defer db.Close()
 	toolMap := map[string]myTools.ToolExec{
-		myTools.GetEnumCodeByEnumeratorTool.Function.Name: {
-			Tool: myTools.GetEnumCodeByEnumeratorTool,
-			Exec: myTools.ExecGetEnumCodeByEnumerator,
+		myTools.GetTypedefCodeByDefineTool.Function.Name: {
+			Tool: myTools.GetTypedefCodeByDefineTool,
+			Exec: myTools.ExecGetTypedefCodeByDefine,
 		},
 	}
 	toolHelper := &myTools.ToolHelper{
@@ -33,10 +33,10 @@ func TestGetEnumCodeByEnumerator(t *testing.T) {
 		Ctx:        ctx,
 		Model:      llm,
 		Messages:   []llms.MessageContent{},
-		ToolMap:    toolMap,
 		ToolHelper: toolHelper,
+		ToolMap:    toolMap,
 	}
-	myAgent.AddHumanMessage("What's the enum code of enumerator DM_VERSION_CMD?")
+	myAgent.AddHumanMessage("What's the code of typedef unative_t?")
 	_, err = myAgent.Query()
 	if err != nil {
 		t.Fatal(err)
@@ -52,7 +52,7 @@ func TestGetEnumCodeByEnumerator(t *testing.T) {
 	t.Logf("Response of agent: %v\n", response.Choices[0].Content)
 }
 
-func TestGetEnumCodeBySpecifier(t *testing.T) {
+func TestGetTypedefTypeByDefine(t *testing.T) {
 	db := database.Database{Path: filepath.Join(root, "data", "database", "linux.db")}
 	err := db.Connect()
 	if err != nil {
@@ -60,9 +60,9 @@ func TestGetEnumCodeBySpecifier(t *testing.T) {
 	}
 	defer db.Close()
 	toolMap := map[string]myTools.ToolExec{
-		myTools.GetEnumCodeBySpecifierTool.Function.Name: {
-			Tool: myTools.GetEnumCodeBySpecifierTool,
-			Exec: myTools.ExecGetEnumCodeBySpecifier,
+		myTools.GetTypedefTypeByDefineTool.Function.Name: {
+			Tool: myTools.GetTypedefTypeByDefineTool,
+			Exec: myTools.ExecGetTypedefTypeByDefine,
 		},
 	}
 	toolHelper := &myTools.ToolHelper{
@@ -74,10 +74,10 @@ func TestGetEnumCodeBySpecifier(t *testing.T) {
 		Ctx:        ctx,
 		Model:      llm,
 		Messages:   []llms.MessageContent{},
-		ToolMap:    toolMap,
 		ToolHelper: toolHelper,
+		ToolMap:    toolMap,
 	}
-	myAgent.AddHumanMessage("What's the enum code of specifier bbr_mode?")
+	myAgent.AddHumanMessage("What's the type of typedef unative_t?")
 	_, err = myAgent.Query()
 	if err != nil {
 		t.Fatal(err)

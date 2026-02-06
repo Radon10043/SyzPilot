@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/Radon10043/cloud/src/generator/utils"
+	"github.com/Radon10043/cloud/src/pkg/utils"
 	"github.com/otiai10/copy"
 )
 

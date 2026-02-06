@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/Radon10043/cloud/src/generator/agent"
-	myTools "github.com/Radon10043/cloud/src/generator/tools"
+	"github.com/Radon10043/cloud/src/pkg/agent"
+	myTools "github.com/Radon10043/cloud/src/pkg/tools"
 	"github.com/joho/godotenv"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"

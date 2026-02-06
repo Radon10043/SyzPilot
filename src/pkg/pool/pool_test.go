@@ -3,7 +3,7 @@ package pool_test
 import (
 	"testing"
 
-	"github.com/Radon10043/cloud/src/generator/pool"
+	"github.com/Radon10043/cloud/src/pkg/pool"
 )
 
 var SPOOL = &pool.SpecPool{}

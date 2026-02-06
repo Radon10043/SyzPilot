@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/Radon10043/cloud/src/generator/ast"
+	"github.com/Radon10043/cloud/src/pkg/ast"
 	"github.com/joho/godotenv"
 )
 

@@ -12,13 +12,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Radon10043/cloud/src/generator/agent"
-	"github.com/Radon10043/cloud/src/generator/ast"
-	"github.com/Radon10043/cloud/src/generator/check"
-	"github.com/Radon10043/cloud/src/generator/database"
-	"github.com/Radon10043/cloud/src/generator/pool"
-	"github.com/Radon10043/cloud/src/generator/queue"
-	"github.com/Radon10043/cloud/src/generator/utils"
+	"github.com/Radon10043/cloud/src/pkg/agent"
+	"github.com/Radon10043/cloud/src/pkg/ast"
+	"github.com/Radon10043/cloud/src/pkg/check"
+	"github.com/Radon10043/cloud/src/pkg/database"
+	"github.com/Radon10043/cloud/src/pkg/pool"
+	"github.com/Radon10043/cloud/src/pkg/queue"
+	"github.com/Radon10043/cloud/src/pkg/utils"
 	"github.com/tmc/langchaingo/llms"
 )
 

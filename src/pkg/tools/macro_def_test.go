@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/Radon10043/cloud/src/generator/agent"
-	"github.com/Radon10043/cloud/src/generator/database"
-	myTools "github.com/Radon10043/cloud/src/generator/tools"
+	"github.com/Radon10043/cloud/src/pkg/agent"
+	"github.com/Radon10043/cloud/src/pkg/database"
+	myTools "github.com/Radon10043/cloud/src/pkg/tools"
 	"github.com/tmc/langchaingo/llms"
 )
 

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/Radon10043/cloud/src/generator/database"
+	"github.com/Radon10043/cloud/src/pkg/database"
 	"github.com/tmc/langchaingo/llms"
 )
 
