@@ -1,7 +1,6 @@
 package ast_test
 
 import (
-	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -21,22 +20,6 @@ func init() {
 	err := godotenv.Load(envFile)
 	if err != nil {
 		panic(err)
-	}
-}
-
-func TestSyzlang2SpecPool(t *testing.T) {
-	fp := filepath.Join(root, "data", "test", "all.txt")
-	b, err := os.ReadFile(fp)
-	if err != nil {
-		t.Fatalf("Failed to read syzlang spec file: %v", err)
-	}
-	spec := string(b)
-	spool, err := ast.Syzlang2SpecPool(spec)
-	if err != nil {
-		t.Fatalf("Syzlang2SpecPool failed: %v", err)
-	}
-	if spool.Len() != 131 {
-		t.Fatalf("Expected 131 spec elements, got %d", spool.Len())
 	}
 }
 

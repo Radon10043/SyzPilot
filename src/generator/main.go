@@ -440,7 +440,10 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 		}
 		spec, err := writeSpec(kAgent, spm, gv, cfg, specPrefix, logPrefix)
 		for j := 0; j < cfg.MaxRetry && err != nil; j++ {
-			logger.Printf("Retrying to write spec for global variable %s (attempt %d/%d) ...\n", gv.Name, j+1, cfg.MaxRetry)
+			logger.Printf(
+				"Retrying to write spec for global variable %s, err=%s (attempt %d/%d) ...\n",
+				gv.Name, err, j+1, cfg.MaxRetry,
+			)
 			// sleep for a while before write spec again to avoid frequent requests
 			slpTime := rand.Int31n(11) + 10
 			time.Sleep(time.Duration(slpTime) * time.Second)
