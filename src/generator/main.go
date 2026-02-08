@@ -17,19 +17,13 @@ import (
 	"github.com/Radon10043/cloud/src/pkg/agent"
 	"github.com/Radon10043/cloud/src/pkg/check"
 	"github.com/Radon10043/cloud/src/pkg/database"
+	"github.com/Radon10043/cloud/src/pkg/pool"
+	"github.com/Radon10043/cloud/src/pkg/stage"
 	myTools "github.com/Radon10043/cloud/src/pkg/tools"
 	"github.com/joho/godotenv"
 	"github.com/otiai10/copy"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"
-)
-
-// global variables
-var (
-	keys = []string{
-		".ioctl", ".unlocked_ioctl", ".compat_ioctl", ".mmap", ".uring_cmd",
-		".setsockopt", ".getsockopt", ".recvmsg", ".sendmsg",
-	}
 )
 
 type ProgConfig struct {
@@ -43,8 +37,7 @@ type ProgConfig struct {
 	ExtractBin string
 	CheckBin   string
 	Kernel     string
-	BlackList  string
-	WhiteList  string
+	Varlist    string
 	Resume     bool
 	Prefix     string
 
@@ -77,48 +70,135 @@ func (s *safeToAbsPath) toAbsPath(path string) string {
 	return absPath
 }
 
-// keyFound check if any key is found in the code
-func keyFound(code string) bool {
-	for _, key := range keys {
-		if strings.Contains(code, key) {
-			return true
-		}
+func main() {
+	// parse flags
+	cfg := setConfigs()
+	stap := safeToAbsPath{err: nil}
+	cfg.Env = stap.toAbsPath(cfg.Env)
+	cfg.Db = stap.toAbsPath(cfg.Db)
+	cfg.Outdir = stap.toAbsPath(cfg.Outdir)
+	cfg.ExtractBin = stap.toAbsPath(cfg.ExtractBin)
+	cfg.CheckBin = stap.toAbsPath(cfg.CheckBin)
+	cfg.Kernel = stap.toAbsPath(cfg.Kernel)
+	cfg.Sysdir = stap.toAbsPath(cfg.Sysdir)
+	if cfg.Varlist != "" {
+		cfg.Varlist = stap.toAbsPath(cfg.Varlist)
 	}
-	return false
-}
+	if cfg.Prefix != "" {
+		cfg.Prefix = stap.toAbsPath(cfg.Prefix)
+	}
+	fabs := ""
+	for f := range strings.SplitSeq(cfg.OtlSysPrompt, ",") {
+		fabs += stap.toAbsPath(f) + ","
+	}
+	cfg.OtlSysPrompt = strings.TrimRight(fabs, ",")
+	fabs = ""
+	for f := range strings.SplitSeq(cfg.GenSysPrompt, ",") {
+		fabs += stap.toAbsPath(f) + ","
+	}
+	cfg.GenSysPrompt = strings.TrimRight(fabs, ",")
+	fabs = ""
+	for f := range strings.SplitSeq(cfg.FixSysPrompt, ",") {
+		fabs += stap.toAbsPath(f) + ","
+	}
+	cfg.FixSysPrompt = strings.TrimRight(fabs, ",")
+	if stap.err != nil {
+		log.Fatalf("path conversion failed: %v\n", stap.err)
+	}
 
-// createQueue creates a queue includes global variables that includes interested keys
-func createQueue(db *database.Database) ([]database.GlobalVar, error) {
+	// check validity of flags
+	if err := checkConfig(cfg); err != nil {
+		log.Fatalf("invalid configuration: %v\n", err)
+	}
+
+	// load environment variables from .env file
+	if err := godotenv.Load(cfg.Env); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	// create output directory
+	if err := os.MkdirAll(cfg.Outdir, 0755); err != nil {
+		log.Fatalf("failed to create output directory: %v\n", err)
+	}
+
+	// connect to the database
+	db := database.Database{Path: cfg.Db}
+	if err := db.Connect(); err != nil {
+		log.Fatalf("failed to connect to database: %v\n", err)
+	}
+	defer db.Close()
+
+	// create a queue that used to prompt llm for spec generation
+	log.Println("Generating queue ...")
+	varlist := readVarlist(cfg.Varlist)
+	queue, err := createQueue(&db, varlist)
+	if err != nil {
+		log.Fatalf("failed to create queue: %v\n", err)
+	}
+	log.Printf("Queue length: %d\n", len(queue))
+
+	// construct system prompt map, we have checked the validity of system prompt file(s) in
+	// checkConfig function, so it is okay to ignore error here
+	sysPromptMap := make(map[string]string)
+	spmWrtFunc := func(filesWithComma string, key string) {
+		files := strings.SplitSeq(filesWithComma, ",")
+		var sb strings.Builder
+		for file := range files {
+			data, _ := os.ReadFile(file)
+			sb.WriteString(string(data) + "\n")
+		}
+		sysPromptMap[key] = sb.String()
+	}
+	spmWrtFunc(cfg.OtlSysPrompt, "outline")
+	spmWrtFunc(cfg.GenSysPrompt, "generate")
+	spmWrtFunc(cfg.FixSysPrompt, "fix")
+	if cfg.MaxRetry == -1 {
+		cfg.MaxRetry = math.MaxInt
+	}
+
+	// create jobs and ress for job dispatch and result collection
 	var (
-		queue []database.GlobalVar
-		visit map[string]bool = make(map[string]bool)
+		jobs  = make(chan WriteJob, len(queue))
+		ress  = make(chan WriteJobRes, len(queue))
+		jobWg sync.WaitGroup
+		resWg sync.WaitGroup
 	)
-	gvs, err := db.GetAllGlobalVar()
-	if err != nil {
-		return nil, fmt.Errorf("failed to create queue: %v", err)
+	for w := 0; w < cfg.Jobs; w++ {
+		jobWg.Add(1)
+		go func(tid int) {
+			defer jobWg.Done()
+			writeJob(tid, &db, cfg, jobs, ress)
+		}(w)
 	}
-	for _, gv := range gvs {
-		if gv.Code == "" {
-			continue
+	resWg.Add(1)
+	go func() {
+		defer resWg.Done()
+		for res := range ress {
+			log.Printf("[T%d][%s] write job result: err=%v", res.Tid, res.Gv.Name, res.Err)
 		}
-		if visit[gv.Name] {
-			continue
+	}()
+
+	// start to dispatch write jobs
+	for i, gv := range queue {
+		jobs <- WriteJob{
+			Progress:     fmt.Sprintf("%d/%d", i+1, len(queue)),
+			Gv:           &gv,
+			SysPromptMap: &sysPromptMap,
 		}
-		if !keyFound(gv.Code) {
-			continue
-		}
-		queue = append(queue, gv)
-		visit[gv.Name] = true
 	}
-	return queue, nil
+	close(jobs)
+	jobWg.Wait()
+	close(ress)
+	resWg.Wait()
+	log.Printf("all write jobs have been completed.\n")
 }
 
-// createVarSet create a variable set from user-specified file
-func createVarSet(fp string) (map[string]bool, error) {
-	varSet := make(map[string]bool)
-	data, err := os.ReadFile(fp)
+// readVarlist read global variable list from user-specified file, return a slice of global variable names
+func readVarlist(path string) []string {
+	var vlist []string
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read file: %v", err)
+		log.Fatalf("failed to read varlist file: %v\n", err)
 	}
 	lines := strings.SplitSeq(string(data), "\n")
 	for line := range lines {
@@ -126,33 +206,24 @@ func createVarSet(fp string) (map[string]bool, error) {
 		if line == "" {
 			continue
 		}
-		varSet[line] = true
+		vlist = append(vlist, line)
 	}
-	return varSet, nil
+	return vlist
 }
 
-// miniQueueWithBlacklist minimize the queue by removing global variables in blacklist
-func miniQueueWithBlacklist(queue *[]database.GlobalVar, blacklist map[string]bool) []database.GlobalVar {
-	var miniq []database.GlobalVar
-	for _, gv := range *queue {
-		if _, found := blacklist[gv.Name]; found {
-			continue
+// createQueue creates a queue includes global variables that includes interested keys
+func createQueue(db *database.Database, varlist []string) ([]database.GlobalVar, error) {
+	var (
+		queue []database.GlobalVar
+	)
+	for _, v := range varlist {
+		gv, err := db.GetGlobalVar(v)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get global variable from database: %v", err)
 		}
-		miniq = append(miniq, gv)
+		queue = append(queue, gv)
 	}
-	return miniq
-}
-
-// miniQueueWithWhitelist minimize the queue by keeping only global variables in whitelist
-func miniQueueWithWhitelist(queue *[]database.GlobalVar, whitelist map[string]bool) []database.GlobalVar {
-	var miniq []database.GlobalVar
-	for _, gv := range *queue {
-		if _, found := whitelist[gv.Name]; !found {
-			continue
-		}
-		miniq = append(miniq, gv)
-	}
-	return miniq
+	return queue, nil
 }
 
 // setConfigs parse command-line flags and set program configurations
@@ -168,11 +239,10 @@ func setConfigs() *ProgConfig {
 	flag.StringVar(&cfg.Kernel, "kernel", "", "Path to kernel used for spec extraction")
 	flag.StringVar(&cfg.Sysdir, "sysdir", "./syzkaller/sys/", "Path to the sys directory (syzkaller/sys like structure)")
 	flag.BoolVar(&cfg.Resume, "resume", true, "Whether to resume from previous interrupted run")
-	flag.StringVar(&cfg.BlackList, "blacklist", "", "Path to the global variable blacklist file")
-	flag.StringVar(&cfg.WhiteList, "whitelist", "", "Path to the global variable whitelist file (conflicts with -blacklist)")
+	flag.StringVar(&cfg.Varlist, "varlist", "", "Path to the global variable list file")
 	flag.IntVar(&cfg.MaxFix, "max-fix", 5, "Maximum number of fix attempts for invalid specs")
 	flag.IntVar(&cfg.MaxRetry, "max-retry", 5, "Maximum number of retry attempts for writing spec (-1 means infinite retries)")
-	flag.IntVar(&cfg.Jobs, "jobs", 1, "Maxmum number of parallel jobs.")
+	flag.IntVar(&cfg.Jobs, "jobs", 1, "Maximum number of parallel jobs.")
 	flag.StringVar(
 		&cfg.OtlSysPrompt,
 		"otl-system-prompt",
@@ -227,11 +297,8 @@ func checkConfig(cfg *ProgConfig) error {
 	if cfg.Prefix != "" {
 		fileExistHelperFunc(cfg.Prefix, "-prefix")
 	}
-	if cfg.BlackList != "" {
-		fileExistHelperFunc(cfg.BlackList, "-blacklist")
-	}
-	if cfg.WhiteList != "" {
-		fileExistHelperFunc(cfg.WhiteList, "-whitelist")
+	if cfg.Varlist != "" {
+		fileExistHelperFunc(cfg.Varlist, "-varlist")
 	}
 	for f := range strings.SplitSeq(cfg.OtlSysPrompt, ",") {
 		fileExistHelperFunc(f, "-otl-system-prompt")
@@ -244,11 +311,6 @@ func checkConfig(cfg *ProgConfig) error {
 	}
 	if scfe.err != nil {
 		return scfe.err
-	}
-
-	// -blacklist and -whitelist cannot be set simultaneously
-	if cfg.BlackList != "" && cfg.WhiteList != "" {
-		return fmt.Errorf("-blacklist and -whitelist are mutually exclusive")
 	}
 
 	// -outdir
@@ -478,140 +540,105 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 	}
 }
 
-func main() {
-	// parse flags
-	cfg := setConfigs()
-	stap := safeToAbsPath{err: nil}
-	cfg.Env = stap.toAbsPath(cfg.Env)
-	cfg.Db = stap.toAbsPath(cfg.Db)
-	cfg.Outdir = stap.toAbsPath(cfg.Outdir)
-	cfg.ExtractBin = stap.toAbsPath(cfg.ExtractBin)
-	cfg.CheckBin = stap.toAbsPath(cfg.CheckBin)
-	cfg.Kernel = stap.toAbsPath(cfg.Kernel)
-	cfg.Sysdir = stap.toAbsPath(cfg.Sysdir)
-	if cfg.BlackList != "" {
-		cfg.BlackList = stap.toAbsPath(cfg.BlackList)
+// writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a global variable,
+// return the final syzlang spec and whether it is valid
+func writeSpec(
+	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *ProgConfig, specPrefix string, logPrefix string,
+) (string, error) {
+	// init and pool default value for stage.StageHelper
+	specdir := filepath.Join(cfg.Outdir, "specs", gvEntry.Name+"#"+cfg.Model)
+	var sh *stage.StageHelper = &stage.StageHelper{
+		Workdir:    filepath.Join(specdir),
+		Next:       "outline",
+		SpecPrefix: specPrefix,
+		LogPrefix:  logPrefix,
+		MaxFix:     cfg.MaxFix,
+		Tqueue:     nil,
+		TqueuePath: filepath.Join(specdir, ".tqueue"),
+		Spool:      &pool.SpecPool{},
+		SpoolPath:  filepath.Join(specdir, ".spool"),
+		Pool:       &pool.SpecPool{},
+		PoolPath:   filepath.Join(specdir, ".pool"),
+		SyzPool:    &pool.SpecPool{},
 	}
-	if cfg.Prefix != "" {
-		cfg.Prefix = stap.toAbsPath(cfg.Prefix)
-	}
-	fabs := ""
-	for f := range strings.SplitSeq(cfg.OtlSysPrompt, ",") {
-		fabs += stap.toAbsPath(f) + ","
-	}
-	cfg.OtlSysPrompt = strings.TrimRight(fabs, ",")
-	fabs = ""
-	for f := range strings.SplitSeq(cfg.GenSysPrompt, ",") {
-		fabs += stap.toAbsPath(f) + ","
-	}
-	cfg.GenSysPrompt = strings.TrimRight(fabs, ",")
-	fabs = ""
-	for f := range strings.SplitSeq(cfg.FixSysPrompt, ",") {
-		fabs += stap.toAbsPath(f) + ","
-	}
-	cfg.FixSysPrompt = strings.TrimRight(fabs, ",")
-	if stap.err != nil {
-		log.Fatalf("path conversion failed: %v\n", stap.err)
-	}
-
-	// check validity of flags
-	if err := checkConfig(cfg); err != nil {
-		log.Fatalf("invalid configuration: %v\n", err)
-	}
-
-	// load environment variables from .env file
-	if err := godotenv.Load(cfg.Env); err != nil {
-		log.Fatal("Error loading .env file")
-	}
-
-	// create output directory
-	if err := os.MkdirAll(cfg.Outdir, 0755); err != nil {
-		log.Fatalf("failed to create output directory: %v\n", err)
-	}
-
-	// connect to the database
-	db := database.Database{Path: cfg.Db}
-	if err := db.Connect(); err != nil {
-		log.Fatalf("failed to connect to database: %v\n", err)
-	}
-	defer db.Close()
-
-	// create a queue that used to prompt llm for spec generation
-	log.Println("Generating queue ...")
-	queue, err := createQueue(&db)
+	err := os.MkdirAll(sh.Workdir, 0755)
 	if err != nil {
-		log.Fatalf("failed to create queue: %v\n", err)
+		return "", fmt.Errorf("failed to create workdir: %v", err)
 	}
-	log.Printf("Original queue length: %d\n", len(queue))
 
-	// construct blacklist or whitelist and minimize the queue
-	if cfg.BlackList != "" {
-		blacklist, err := createVarSet(cfg.BlackList)
+	// init SyzPool with existing specs in sysdir
+	specfs, err := filepath.Glob(filepath.Join(cfg.Sysdir, "linux", "*.txt"))
+	if err != nil {
+		return "", fmt.Errorf("failed to glob spec files in sysdir: %v", err)
+	}
+	for _, specf := range specfs {
+		specb, err := os.ReadFile(specf)
 		if err != nil {
-			log.Fatalf("failed to create blacklist: %v\n", err)
+			return "", fmt.Errorf("failed to read spec file %s: %v", specf, err)
 		}
-		queue = miniQueueWithBlacklist(&queue, blacklist)
-	} else if cfg.WhiteList != "" {
-		whitelist, err := createVarSet(cfg.WhiteList)
+		tmpPool, err := pool.NewSpecPoolFromSyzlang(string(specb))
 		if err != nil {
-			log.Fatalf("failed to create whitelist: %v\n", err)
+			return "", fmt.Errorf("failed to convert syzlang to SpecPool for file %s: %v", specf, err)
 		}
-		queue = miniQueueWithWhitelist(&queue, whitelist)
-	}
-	log.Printf("Minimized queue length: %d\n", len(queue))
-
-	// construct system prompt map, we have checked the validity of system prompt file(s) in
-	// checkConfig function, so it is okay to ignore error here
-	sysPromptMap := make(map[string]string)
-	spmWrtFunc := func(filesWithComma string, key string) {
-		files := strings.SplitSeq(filesWithComma, ",")
-		var sb strings.Builder
-		for file := range files {
-			data, _ := os.ReadFile(file)
-			sb.WriteString(string(data) + "\n")
-		}
-		sysPromptMap[key] = sb.String()
-	}
-	spmWrtFunc(cfg.OtlSysPrompt, "outline")
-	spmWrtFunc(cfg.GenSysPrompt, "generate")
-	spmWrtFunc(cfg.FixSysPrompt, "fix")
-	if cfg.MaxRetry == -1 {
-		cfg.MaxRetry = math.MaxInt
+		sh.SyzPool.Merge(tmpPool)
 	}
 
-	// create jobs and ress for job dispatch and result collection
-	var (
-		jobs  = make(chan WriteJob, len(queue))
-		ress  = make(chan WriteJobRes, len(queue))
-		jobWg sync.WaitGroup
-		resWg sync.WaitGroup
-	)
-	for w := 0; w < cfg.Jobs; w++ {
-		jobWg.Add(1)
-		go func(tid int) {
-			defer jobWg.Done()
-			writeJob(tid, &db, cfg, jobs, ress)
-		}(w)
-	}
-	resWg.Add(1)
-	go func() {
-		defer resWg.Done()
-		for res := range ress {
-			log.Printf("[T%d][%s] write job result: err=%v", res.Tid, res.Gv.Name, res.Err)
+	// if resume is enabled, recover existing progress
+	if cfg.Resume {
+		if err = sh.RecoverProgress(); err != nil {
+			return "", fmt.Errorf("failed to recover progress: %v", err)
 		}
-	}()
+	} // otherwise start from scratch
 
-	// start to dispatch write jobs
-	for i, gv := range queue {
-		jobs <- WriteJob{
-			Progress:     fmt.Sprintf("%d/%d", i+1, len(queue)),
-			Gv:           &gv,
-			SysPromptMap: &sysPromptMap,
+	// start the write spec loop, limit the number of iterations to avoid infinite loop
+	// TODO: for some long tasks, 100 iterations may not be enough, consider a more flexible
+	// strategy to determine whether to stop the loop
+	for range 100 {
+		sh.UpdateNextStep()
+		if sh.Next == "complete" {
+			sh.Tqueue.Clear()
+			sh.Spool.Clear()
+			break
+		}
+		if err := execWriteStep(kAgent, sysPromptMap, gvEntry, cfg, sh); err != nil {
+			return "", fmt.Errorf("failed to exec write step: %v", err)
+		}
+		if err := sh.WriteCurrStat(); err != nil {
+			return "", fmt.Errorf("failed to write current state: %v", err)
 		}
 	}
-	close(jobs)
-	jobWg.Wait()
-	close(ress)
-	resWg.Wait()
-	log.Printf("all write jobs have been completed.\n")
+	if err = sh.WriteCurrStat(); err != nil {
+		return "", fmt.Errorf("failed to write current state: %v", err)
+	}
+
+	if sh.Next != "complete" {
+		return "", fmt.Errorf("failed to complete spec writing after max iterations")
+	}
+
+	// Only return specs generated by agent
+	diffPool := sh.Pool.Difference(sh.SyzPool)
+	return diffPool.Syzlang(pool.WithValidComment(true)), nil
+}
+
+// execWriteStep execute one step of the write spec process according to sh.Next
+func execWriteStep(
+	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *ProgConfig, sh *stage.StageHelper,
+) error {
+	// TODO: looks messy, refactor is needed:
+	//	- some elements from SyzPool will be labeled as false, which step cause it?
+	//	- Many elements in the Pool (agent generated and sysdir exists), we need to make Pool more targeted
+	//  - Pool processing is messy, tidy them later
+	logger := log.New(os.Stdout, sh.LogPrefix+"["+gvEntry.Name+"]["+sh.Next+"] ", log.LstdFlags|log.Lmsgprefix)
+	switch sh.Next {
+	case "outline":
+		return stage.ExecOutlineStep(kAgent, (*sysPromptMap)["outline"], gvEntry, logger, sh)
+	case "generate":
+		return stage.ExecGenerateStep(kAgent, (*sysPromptMap)["generate"], gvEntry, logger, sh)
+	case "fix":
+		return stage.ExecFixStep(kAgent, (*sysPromptMap)["fix"], logger, sh)
+	case "complete":
+	default:
+		return fmt.Errorf("unknown next step: %s", sh.Next)
+	}
+	return nil
 }
