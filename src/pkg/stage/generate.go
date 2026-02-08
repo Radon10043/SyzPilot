@@ -23,11 +23,12 @@ func ExecGenerateStep(
 		Required []queue.TaskQueueElem `json:"required"`
 	}
 	var (
-		jstr      string
-		err       error
-		gc        genContent
-		telem     *queue.TaskQueueElem
-		spoolSpec strings.Builder
+		jstr    string
+		err     error
+		gc      genContent
+		telem   *queue.TaskQueueElem
+		ctxPool *pool.SpecPool
+		ctxSpec strings.Builder
 	)
 
 	// get the top element from Tqueue
@@ -46,10 +47,10 @@ func ExecGenerateStep(
 			return fmt.Errorf("failed to get element from SyzPool: %v", err)
 		}
 		if telem.Type == queue.TaskHeapElemTypeSyscall.String() {
-			logger.Printf("Element %v (%s) already in SyzPool, skip generate and do not reuse\n", telem.Name, telem.Type)
+			logger.Printf("Element %v (%v) already in SyzPool, skip generate and do not reuse\n", telem.Name, telem.Type)
 			return nil
 		}
-		logger.Printf("Element %v (%s) already in SyzPool, skip generate and reuse it\n", telem.Name, telem.Type)
+		logger.Printf("Element %v (%v) already in SyzPool, skip generate and reuse it\n", telem.Name, telem.Type)
 		if se.Type == queue.TaskHeapElemTypeSyscall.String() && telem.Type == queue.TaskHeapElemTypeInitSyscall.String() {
 			se.Type = queue.TaskHeapElemTypeInitSyscall.String()
 		}
@@ -59,7 +60,7 @@ func ExecGenerateStep(
 
 	// if the element is already in Pool, skip generate and reuse it
 	if sh.Pool.Exists(telem.Name) {
-		logger.Printf("Element %v already in Pool, skip generate and reuse Pool's element\n", telem.Name)
+		logger.Printf("Element %v (%v) already in Pool, skip generate and reuse Pool's element\n", telem.Name, telem.Type)
 		se, err := sh.Pool.Get(telem.Name)
 		if err != nil {
 			return fmt.Errorf("failed to get element from Pool: %v", err)
@@ -70,28 +71,18 @@ func ExecGenerateStep(
 
 	// if the element is already in Spool, dont generate again
 	if sh.Spool.Exists(telem.Name) {
-		logger.Printf("Element %v already in Spool, skip generate\n", telem.Name)
+		logger.Printf("Element %v (%v) already in Spool, skip generate\n", telem.Name, telem.Type)
 		return nil
 	}
 
-	// put resource and init_syscall from Pool and Rpool into Spool, then present all Spool's elements
-	// in prompts so that we can ensure spec as consistent as possible
-	for _, se := range *sh.Pool {
-		if se.Type == "resource" || se.Type == "init_syscall" {
-			sh.Spool.Insert(*se)
-		}
-	}
-	for _, se := range *sh.Rpool {
-		if se.Type == "resource" || se.Type == "init_syscall" {
-			sh.Spool.Insert(*se)
-		}
-	}
-	if !sh.Spool.Empty() {
-		spoolSpec.WriteString(sh.Spool.Syzlang())
-	}
+	// extract consistency reference element from sh.Pool and sh.Rpool, merge them with Spool,
+	// so that agent is likely to generate consistent specifications
+	ctxPool = getConsPool(sh.Pool)
+	ctxPool.Merge(getConsPool(sh.Rpool))
+	ctxSpec.WriteString(ctxPool.Syzlang())
 
 	// prompt agent to generate spec for the element
-	if jstr, err = collectSpec(kAgent, sysPrompt, spoolSpec, gvEntry, telem, logger); err != nil {
+	if jstr, err = collectSpec(kAgent, sysPrompt, ctxSpec, gvEntry, telem, logger); err != nil {
 		return err
 	}
 	if err = sh.SaveQueryMessages(kAgent, "generate-"); err != nil {
@@ -113,7 +104,7 @@ func ExecGenerateStep(
 
 // collectSpec prompt agent to generate syscall spec for a given task element
 func collectSpec(
-	kAgent *agent.Agent, sysPrompt string, spoolSpec strings.Builder, gvEntry *database.GlobalVar, telem *queue.TaskQueueElem, logger *log.Logger,
+	kAgent *agent.Agent, sysPrompt string, ctxSpec strings.Builder, gvEntry *database.GlobalVar, telem *queue.TaskQueueElem, logger *log.Logger,
 ) (string, error) {
 	// prompt agent to generate spec to complete part of todo tasks
 	var (
@@ -121,7 +112,7 @@ func collectSpec(
 		jstr  string
 	)
 	kAgent.CleanMessages()
-	response, err := genSpec(kAgent, sysPrompt, spoolSpec, gvEntry, telem, logger)
+	response, err := genSpec(kAgent, sysPrompt, ctxSpec, gvEntry, telem, logger)
 	if err != nil {
 		return "", err
 	}
@@ -134,7 +125,7 @@ func collectSpec(
 
 // genSpec prompt agent to generate syscall spec iteratively
 func genSpec(
-	kAgent *agent.Agent, sysPrompt string, spoolSpec strings.Builder, gvEntry *database.GlobalVar, telem *queue.TaskQueueElem, logger *log.Logger,
+	kAgent *agent.Agent, sysPrompt string, ctxSpec strings.Builder, gvEntry *database.GlobalVar, telem *queue.TaskQueueElem, logger *log.Logger,
 ) (*llms.ContentResponse, error) {
 	// make agent ready for spec generation stage
 	var err error
@@ -149,10 +140,10 @@ func genSpec(
 		"```c\n%s\n```\n\nPlease write specification for %s `%s`\n\n",
 		gvEntry.Code, telem.Type, telem.Name,
 	)
-	if spoolSpec.Len() > 0 {
+	if ctxSpec.Len() > 0 {
 		humanMsg += fmt.Sprintf(
 			"The following specifications have been generated so far:\n```syzlang\n%s\n```\n\n",
-			spoolSpec.String(),
+			ctxSpec.String(),
 		)
 	}
 	kAgent.AddHumanMessage(humanMsg)

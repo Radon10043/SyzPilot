@@ -232,3 +232,14 @@ func (sh *StageHelper) UpdatePool(sq *pool.SpecPool) {
 		}
 	}
 }
+
+// getConsPool return a SpecPool for the consistency referencing
+func getConsPool(sp *pool.SpecPool) *pool.SpecPool {
+	cp := pool.NewSpecPool()
+	for _, se := range *sp {
+		if se.Type == "include" || se.Type == "resource" || se.Type == "init_syscall" {
+			cp.Insert(*se)
+		}
+	}
+	return cp
+}

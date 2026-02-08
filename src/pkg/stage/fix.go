@@ -20,10 +20,10 @@ import (
 // ExecFixStep execute the fix step
 func ExecFixStep(kAgent *agent.Agent, sysPrompt string, logger *log.Logger, sh *StageHelper) error {
 	var (
-		ospec  string         // original syzlang spec before fixing
-		nspec  string         // new syzlang spec after fixing
-		nspool *pool.SpecPool // new SpecPool after fixing
-		ssPool *pool.SpecPool // a SpecPool contains elements that exist in both sysdir and Spool
+		bfPool *pool.SpecPool // pool for elements before fixing
+		bfSpec string         // syzlang spec for elements before fixing
+		afPool *pool.SpecPool // new SpecPool after fixing
+		afSpec string         // new syzlang spec after fixing
 		valid  bool           // whether the final full spec is valid
 		err    error
 	)
@@ -57,15 +57,16 @@ func ExecFixStep(kAgent *agent.Agent, sysPrompt string, logger *log.Logger, sh *
 	}
 	if hasInitSyscall && !hasSyscall {
 		logger.Printf("Spool has init_syscall but do not have syscall, skip fixing\n")
-		sh.Spool = sh.Spool.Difference(sh.SyzPool)
 		sh.UpdatePool(sh.Spool)
 		sh.Spool.Clear()
 		return nil
 	}
 
-	ospec = sh.Spool.Syzlang()
-	ssPool = sh.Spool.Intersect(sh.SyzPool)
-	if nspec, valid, err = fixSpec(kAgent, sysPrompt, ospec, logger, sh); err != nil {
+	bfPool = getConsPool(sh.Pool)
+	bfPool.Merge(getConsPool(sh.Rpool))
+	bfPool.Merge(sh.Spool)
+	bfSpec = bfPool.Syzlang()
+	if afSpec, valid, err = fixSpec(kAgent, sysPrompt, bfSpec, logger, sh); err != nil {
 		return err
 	}
 	if err = sh.SaveQueryMessages(kAgent, "fix-"); err != nil {
@@ -74,35 +75,18 @@ func ExecFixStep(kAgent *agent.Agent, sysPrompt string, logger *log.Logger, sh *
 
 	// if new spec is valid, assigned it to sh.Spool
 	if valid {
-		nspool, err = pool.NewSpecPoolFromSyzlang(nspec)
+		afPool, err = pool.NewSpecPoolFromSyzlang(afSpec)
 		if err != nil {
 			return err
 		}
-		nspool.SyncType(sh.Spool)
-		for _, v := range *nspool {
+		afPool.SyncType(sh.Spool)
+		for _, v := range *afPool {
 			v.Valid = true
 		}
-		nspool.Merge(ssPool)
-		sh.Spool = nspool
+		sh.Spool = afPool
 	} // otherwise new spec is invalid, reuse old Spool
-
-	// difference with SyzPool and update sh.Pool
-	sh.Spool = sh.Spool.Difference(sh.SyzPool)
 	sh.UpdatePool(sh.Spool)
-
-	// for sh.Spool, only keep include, resource, and init_syscall elements, so that consistence
-	// can be ensured
 	sh.Spool.Clear()
-	for _, se := range *sh.Pool {
-		if se.Type == "include" || se.Type == "resource" || se.Type == "init_syscall" {
-			sh.Spool.Insert(*se)
-		}
-	}
-	for _, se := range *sh.Rpool {
-		if se.Type == "include" || se.Type == "resource" || se.Type == "init_syscall" {
-			sh.Spool.Insert(*se)
-		}
-	}
 
 	return nil
 
