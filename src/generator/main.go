@@ -559,6 +559,8 @@ func writeSpec(
 		SpoolPath:  filepath.Join(specdir, ".spool"),
 		Pool:       &pool.SpecPool{},
 		PoolPath:   filepath.Join(specdir, ".pool"),
+		Rpool:      &pool.SpecPool{},
+		RpoolPath:  filepath.Join(specdir, ".rpool"),
 		SyzPool:    &pool.SpecPool{},
 	}
 	err := os.MkdirAll(sh.Workdir, 0755)
@@ -600,7 +602,7 @@ func writeSpec(
 			sh.Spool.Clear()
 			break
 		}
-		if err := execWriteStep(kAgent, sysPromptMap, gvEntry, cfg, sh); err != nil {
+		if err := execWriteStep(kAgent, sysPromptMap, gvEntry, sh); err != nil {
 			return "", fmt.Errorf("failed to exec write step: %v", err)
 		}
 		if err := sh.WriteCurrStat(); err != nil {
@@ -622,7 +624,7 @@ func writeSpec(
 
 // execWriteStep execute one step of the write spec process according to sh.Next
 func execWriteStep(
-	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *ProgConfig, sh *stage.StageHelper,
+	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, sh *stage.StageHelper,
 ) error {
 	// TODO: looks messy, refactor is needed:
 	//	- some elements from SyzPool will be labeled as false, which step cause it?

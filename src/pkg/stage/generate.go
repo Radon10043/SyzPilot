@@ -53,7 +53,7 @@ func ExecGenerateStep(
 		if se.Type == queue.TaskHeapElemTypeSyscall.String() && telem.Type == queue.TaskHeapElemTypeInitSyscall.String() {
 			se.Type = queue.TaskHeapElemTypeInitSyscall.String()
 		}
-		sh.Spool.Insert(se)
+		sh.Rpool.Insert(se)
 		return nil
 	}
 
@@ -74,9 +74,14 @@ func ExecGenerateStep(
 		return nil
 	}
 
-	// put all resource and init_syscall elements from Pool, and present all Spool's elements in
-	// prompts so that we can ensure spec as consistent as possible
+	// put resource and init_syscall from Pool and Rpool into Spool, then present all Spool's elements
+	// in prompts so that we can ensure spec as consistent as possible
 	for _, se := range *sh.Pool {
+		if se.Type == "resource" || se.Type == "init_syscall" {
+			sh.Spool.Insert(*se)
+		}
+	}
+	for _, se := range *sh.Rpool {
 		if se.Type == "resource" || se.Type == "init_syscall" {
 			sh.Spool.Insert(*se)
 		}

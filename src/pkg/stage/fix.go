@@ -12,6 +12,7 @@ import (
 	"github.com/Radon10043/cloud/src/pkg/agent"
 	"github.com/Radon10043/cloud/src/pkg/check"
 	"github.com/Radon10043/cloud/src/pkg/pool"
+	"github.com/Radon10043/cloud/src/pkg/queue"
 	"github.com/Radon10043/cloud/src/pkg/utils"
 	"github.com/tmc/langchaingo/llms"
 )
@@ -41,6 +42,27 @@ func ExecFixStep(kAgent *agent.Agent, sysPrompt string, logger *log.Logger, sh *
 		return nil
 	}
 
+	// sh.Spool may not have init_syscall and syscall at the same time. The cause should be agent
+	// generate false init_syscall and syscalls is right but they are already in SyzPool. For such
+	// have init_syscall but do not have syscall case, we directly return.
+	hasInitSyscall := false
+	hasSyscall := false
+	for _, se := range *sh.Spool {
+		if se.Type == queue.TaskHeapElemTypeInitSyscall.String() {
+			hasInitSyscall = true
+		}
+		if se.Type == queue.TaskHeapElemTypeSyscall.String() {
+			hasSyscall = true
+		}
+	}
+	if hasInitSyscall && !hasSyscall {
+		logger.Printf("Spool has init_syscall but do not have syscall, skip fixing\n")
+		sh.Spool = sh.Spool.Difference(sh.SyzPool)
+		sh.UpdatePool(sh.Spool)
+		sh.Spool.Clear()
+		return nil
+	}
+
 	ospec = sh.Spool.Syzlang()
 	ssPool = sh.Spool.Intersect(sh.SyzPool)
 	if nspec, valid, err = fixSpec(kAgent, sysPrompt, ospec, logger, sh); err != nil {
@@ -64,13 +86,19 @@ func ExecFixStep(kAgent *agent.Agent, sysPrompt string, logger *log.Logger, sh *
 		sh.Spool = nspool
 	} // otherwise new spec is invalid, reuse old Spool
 
-	// update sh.Pool according sh.Spool
+	// difference with SyzPool and update sh.Pool
+	sh.Spool = sh.Spool.Difference(sh.SyzPool)
 	sh.UpdatePool(sh.Spool)
 
 	// for sh.Spool, only keep include, resource, and init_syscall elements, so that consistence
 	// can be ensured
 	sh.Spool.Clear()
 	for _, se := range *sh.Pool {
+		if se.Type == "include" || se.Type == "resource" || se.Type == "init_syscall" {
+			sh.Spool.Insert(*se)
+		}
+	}
+	for _, se := range *sh.Rpool {
 		if se.Type == "include" || se.Type == "resource" || se.Type == "init_syscall" {
 			sh.Spool.Insert(*se)
 		}

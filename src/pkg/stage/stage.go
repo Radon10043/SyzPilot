@@ -26,7 +26,10 @@ type StageHelper struct {
 	Spool     *pool.SpecPool // pool for tracking elements to be fixed
 	SpoolPath string         // path to Spool json file
 
-	Pool     *pool.SpecPool // pool for tracking already completed (maybe unfixed) elements
+	Rpool     *pool.SpecPool // pool for tracking reusable specifications in sysdir
+	RpoolPath string         // path to Rpool json file
+
+	Pool     *pool.SpecPool // pool for tracking already completed (maybe unfixed) new elements
 	PoolPath string         // path to pool json file
 
 	SyzPool *pool.SpecPool // pool for tracking existing specifications in sysdir
@@ -56,6 +59,18 @@ func (sh *StageHelper) WriteSpool() error {
 	return nil
 }
 
+// WriteRpool write the Rpool field to Rpool file
+func (sh *StageHelper) WriteRpool() error {
+	data, err := sh.Rpool.Json()
+	if err != nil {
+		return fmt.Errorf("failed to convert Rpool to json: %v", err)
+	}
+	if err = os.WriteFile(sh.RpoolPath, []byte(data), 0644); err != nil {
+		return fmt.Errorf("failed to write Rpool file: %v", err)
+	}
+	return nil
+}
+
 // WritePool write the Pool field to Pool file
 func (sh *StageHelper) WritePool() error {
 	data, err := sh.Pool.Json()
@@ -68,7 +83,7 @@ func (sh *StageHelper) WritePool() error {
 	return nil
 }
 
-// WriteCurrStat write the current state of Tqueue, Spool, and Pool to files
+// WriteCurrStat write the current state of Tqueue, Spool, Rpool, and Pool to files
 func (sh *StageHelper) WriteCurrStat() error {
 	// write current state of Tqueue, Spool, and Pool to files after each step
 	if err := sh.WriteTqueue(); err != nil {
@@ -76,6 +91,9 @@ func (sh *StageHelper) WriteCurrStat() error {
 	}
 	if err := sh.WriteSpool(); err != nil {
 		return fmt.Errorf("failed to write Spool: %v", err)
+	}
+	if err := sh.WriteRpool(); err != nil {
+		return fmt.Errorf("failed to write Rpool: %v", err)
 	}
 	if err := sh.WritePool(); err != nil {
 		return fmt.Errorf("failed to write Pool: %v", err)
@@ -105,6 +123,17 @@ func (sh *StageHelper) RecoverProgress() error {
 		}
 		if err = json.Unmarshal(data, &sh.Spool); err != nil {
 			return fmt.Errorf("failed to unmarshal Spool json: %v", err)
+		}
+	}
+
+	// recover Rpool field
+	if _, err := os.Stat(sh.RpoolPath); err == nil {
+		data, err := os.ReadFile(sh.RpoolPath)
+		if err != nil {
+			return fmt.Errorf("failed to read Rpool file: %v", err)
+		}
+		if err = json.Unmarshal(data, &sh.Rpool); err != nil {
+			return fmt.Errorf("failed to unmarshal Rpool json: %v", err)
 		}
 	}
 
@@ -163,29 +192,9 @@ func (sh *StageHelper) ShouldOutline() bool {
 }
 
 // ShouldComplete return whether the complete step should be executed, which is true
-// when:
-//   - both Tqueue and Spool are empty; or
-//   - all elements in Tqueue and Spool are already in Pool
+// when both Tqueue and Spool are empty
 func (sh *StageHelper) ShouldComplete() bool {
-	if sh.Tqueue.Empty() && sh.Spool.Empty() {
-		return true
-	}
-	allInPool := true
-	for _, te := range sh.Tqueue.Slice() {
-		if !sh.Pool.Exists(te.Name) {
-			allInPool = false
-			break
-		}
-	}
-	if allInPool {
-		for _, se := range *sh.Spool {
-			if !sh.Pool.Exists(se.Name) {
-				allInPool = false
-				break
-			}
-		}
-	}
-	return allInPool
+	return sh.Tqueue.Empty() && sh.Spool.Empty()
 }
 
 // ShouldFix return whether the fix step should be executed, which is true when:
