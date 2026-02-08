@@ -50,6 +50,7 @@ Generate syscall specs:
     -outdir=./workdir/out \
     -kernel=/vol/linux/build/v6.18 \
     -model=gemini-2.5-flash \
+    -varlist=./data/varlist.txt \
     -jobs=4 > logs/generate.log 2>&1
 ```
 
