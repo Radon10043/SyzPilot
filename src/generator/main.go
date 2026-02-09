@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -19,10 +18,8 @@ import (
 	"github.com/Radon10043/cloud/src/pkg/database"
 	"github.com/Radon10043/cloud/src/pkg/pool"
 	"github.com/Radon10043/cloud/src/pkg/stage"
-	myTools "github.com/Radon10043/cloud/src/pkg/tools"
 	"github.com/joho/godotenv"
 	"github.com/otiai10/copy"
-	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"
 )
 
@@ -331,77 +328,6 @@ func checkConfig(cfg *ProgConfig) error {
 	return nil
 }
 
-// createAgent creates an agent for kernel syscal spec generation, return the agent instance and error
-func createAgent(db *database.Database, cfg *ProgConfig) (*agent.Agent, error) {
-	llm, err := openai.New(
-		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
-		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
-		openai.WithModel(cfg.Model),
-	)
-	if err != nil {
-		return nil, err
-	}
-	toolMap := map[string]myTools.ToolExec{
-		myTools.GetFuncCodeByNameTool.Function.Name: {
-			Tool: myTools.GetFuncCodeByNameTool,
-			Exec: myTools.ExecGetFuncCodeByName,
-		},
-		myTools.GetEnumCodeByEnumeratorTool.Function.Name: {
-			Tool: myTools.GetEnumCodeByEnumeratorTool,
-			Exec: myTools.ExecGetEnumCodeByEnumerator,
-		},
-		myTools.GetEnumCodeBySpecifierTool.Function.Name: {
-			Tool: myTools.GetEnumCodeBySpecifierTool,
-			Exec: myTools.ExecGetEnumCodeBySpecifier,
-		},
-		myTools.GetStructCodeByNameTool.Function.Name: {
-			Tool: myTools.GetStructCodeByNameTool,
-			Exec: myTools.ExecGetStructCodeByName,
-		},
-		myTools.GetUnionCodeByNameTool.Function.Name: {
-			Tool: myTools.GetUnionCodeByNameTool,
-			Exec: myTools.ExecGetUnionCodeByName,
-		},
-		myTools.GetGlobalVarCodeByNameTool.Function.Name: {
-			Tool: myTools.GetGlobalVarCodeByNameTool,
-			Exec: myTools.ExecGetGlobalVarCodeByName,
-		},
-		myTools.GetTypedefCodeByDefineTool.Function.Name: {
-			Tool: myTools.GetTypedefCodeByDefineTool,
-			Exec: myTools.ExecGetTypedefCodeByDefine,
-		},
-		myTools.GetTypedefTypeByDefineTool.Function.Name: {
-			Tool: myTools.GetTypedefTypeByDefineTool,
-			Exec: myTools.ExecGetTypedefTypeByDefine,
-		},
-		myTools.GetMacroDefCodeByNameTool.Function.Name: {
-			Tool: myTools.GetMacroDefCodeByNameTool,
-			Exec: myTools.ExecGetMacroDefCodeByName,
-		},
-		myTools.GetMacroDefCodesByPatternTool.Function.Name: {
-			Tool: myTools.GetMacroDefCodesByPatternTool,
-			Exec: myTools.ExecGetMacroDefCodesByPattern,
-		},
-		myTools.GetMacroDefLocByNameTool.Function.Name: {
-			Tool: myTools.GetMacroDefLocByNameTool,
-			Exec: myTools.ExecGetMacroDefLocByName,
-		},
-	}
-	toolHelper := &myTools.ToolHelper{
-		Db: db,
-	}
-	kAgent := agent.Agent{
-		Ctx:         context.Background(),
-		Model:       llm,
-		Messages:    []llms.MessageContent{},
-		Temperature: 0.2,
-		MaxTokens:   128 << 10, // 128k
-		ToolMap:     toolMap,
-		ToolHelper:  toolHelper,
-	}
-	return &kAgent, nil
-}
-
 type WriteJob struct {
 	Progress     string              // a prefix to indicate progress, e.g., "1/100"
 	Gv           *database.GlobalVar // the global variable entry to write spec for
@@ -468,13 +394,18 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 	defer os.RemoveAll(wd)
 
 	// create an agent
-	kAgent, err := createAgent(db, cfg)
+	llm, err := openai.New(
+		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
+		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
+		openai.WithModel(cfg.Model),
+	)
 	if err != nil {
-		logger.Printf("failed to create agent: %v\n", err)
+		logger.Printf("failed to create llm instance: %v\n", err)
 		res.Err = err
 		wjr <- res
 		return
 	}
+	kAgent := agent.NewAgent(db, llm)
 
 	for wj := range wjs {
 		var (

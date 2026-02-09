@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/Radon10043/cloud/src/pkg/database"
 	myTools "github.com/Radon10043/cloud/src/pkg/tools"
 	"github.com/Radon10043/cloud/src/pkg/utils"
 	"github.com/tmc/langchaingo/llms"
@@ -136,4 +137,67 @@ func (a *Agent) ExecTools() error {
 		a.Messages = append(a.Messages, tcResp)
 	}
 	return nil
+}
+
+// NewAgent creates a new agent with the given database and initializes the tool map
+func NewAgent(db *database.Database, llm *openai.LLM) *Agent {
+	// use all tools
+	toolMap := map[string]myTools.ToolExec{
+		myTools.GetFuncCodeByNameTool.Function.Name: {
+			Tool: myTools.GetFuncCodeByNameTool,
+			Exec: myTools.ExecGetFuncCodeByName,
+		},
+		myTools.GetEnumCodeByEnumeratorTool.Function.Name: {
+			Tool: myTools.GetEnumCodeByEnumeratorTool,
+			Exec: myTools.ExecGetEnumCodeByEnumerator,
+		},
+		myTools.GetEnumCodeBySpecifierTool.Function.Name: {
+			Tool: myTools.GetEnumCodeBySpecifierTool,
+			Exec: myTools.ExecGetEnumCodeBySpecifier,
+		},
+		myTools.GetStructCodeByNameTool.Function.Name: {
+			Tool: myTools.GetStructCodeByNameTool,
+			Exec: myTools.ExecGetStructCodeByName,
+		},
+		myTools.GetUnionCodeByNameTool.Function.Name: {
+			Tool: myTools.GetUnionCodeByNameTool,
+			Exec: myTools.ExecGetUnionCodeByName,
+		},
+		myTools.GetGlobalVarCodeByNameTool.Function.Name: {
+			Tool: myTools.GetGlobalVarCodeByNameTool,
+			Exec: myTools.ExecGetGlobalVarCodeByName,
+		},
+		myTools.GetTypedefCodeByDefineTool.Function.Name: {
+			Tool: myTools.GetTypedefCodeByDefineTool,
+			Exec: myTools.ExecGetTypedefCodeByDefine,
+		},
+		myTools.GetTypedefTypeByDefineTool.Function.Name: {
+			Tool: myTools.GetTypedefTypeByDefineTool,
+			Exec: myTools.ExecGetTypedefTypeByDefine,
+		},
+		myTools.GetMacroDefCodeByNameTool.Function.Name: {
+			Tool: myTools.GetMacroDefCodeByNameTool,
+			Exec: myTools.ExecGetMacroDefCodeByName,
+		},
+		myTools.GetMacroDefCodesByPatternTool.Function.Name: {
+			Tool: myTools.GetMacroDefCodesByPatternTool,
+			Exec: myTools.ExecGetMacroDefCodesByPattern,
+		},
+		myTools.GetMacroDefLocByNameTool.Function.Name: {
+			Tool: myTools.GetMacroDefLocByNameTool,
+			Exec: myTools.ExecGetMacroDefLocByName,
+		},
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: db,
+	}
+	return &Agent{
+		Ctx:         context.Background(),
+		Model:       llm,
+		Messages:    []llms.MessageContent{},
+		Temperature: 0.2,
+		MaxTokens:   128 << 10, // 128k
+		ToolMap:     toolMap,
+		ToolHelper:  toolHelper,
+	}
 }
