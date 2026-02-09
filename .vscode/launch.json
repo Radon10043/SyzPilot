@@ -13,9 +13,9 @@
             "args": [
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/linux.db",
-                "-outdir=${workspaceFolder}/workdir/out",
-                "-kernel=/vol/linux/v6.18",
-                "-model=gemini-2.5-flash"
+                "-model=gemini-2.5-flash",
+                "-outdir=${workspaceFolder}/workdir/debug",
+                "-varlist=${workspaceFolder}/data/varlist.txt",
             ],
             "preLaunchTask": "make generator"
         },
@@ -28,10 +28,10 @@
             "args": [
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/linux.db",
-                "-outdir=${workspaceFolder}/workdir/out",
+                "-outdir=${workspaceFolder}/workdir/debug",
                 "-kernel=/vol/linux/v6.18",
                 "-model=gemini-2.5-flash",
-                "-jobs=2"
+                "-jobs=2",
             ],
             "preLaunchTask": "make generator"
         }
