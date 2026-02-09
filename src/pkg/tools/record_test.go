@@ -23,7 +23,6 @@ func TestGetStructCodeByName(t *testing.T) {
 	}
 	toolHelper := &myTools.ToolHelper{
 		Db: &db,
-		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
@@ -64,7 +63,6 @@ func TestGetUnionCodeByName(t *testing.T) {
 	}
 	toolHelper := &myTools.ToolHelper{
 		Db: &db,
-		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{

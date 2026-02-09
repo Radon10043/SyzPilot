@@ -116,7 +116,7 @@ func fixSpec(
 			return "", false, fmt.Errorf("empty spec, stop")
 		}
 		// it's okay to ignore command error (last return value) here since it is not fatal
-		stdout, stderr, valid, _ = checkSpecValidity(kAgent.ToolHelper.Sc, sh.SpecPrefix+"\n\n"+spec)
+		stdout, stderr, valid, _ = checkSpecValidity(sh.Scheck, sh.SpecPrefix+"\n\n"+spec)
 		if valid {
 			logger.Printf("Spec is valid!\n")
 			return spec, valid, nil
@@ -138,7 +138,7 @@ func fixSpec(
 		}
 	}
 	// final check of spec validity
-	stdout, stderr, valid, _ = checkSpecValidity(kAgent.ToolHelper.Sc, sh.SpecPrefix+"\n\n"+spec)
+	stdout, stderr, valid, _ = checkSpecValidity(sh.Scheck, sh.SpecPrefix+"\n\n"+spec)
 	if valid {
 		logger.Printf("Spec is valid!\n")
 	} else {

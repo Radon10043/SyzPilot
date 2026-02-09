@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Radon10043/cloud/src/pkg/agent"
+	"github.com/Radon10043/cloud/src/pkg/check"
 	"github.com/Radon10043/cloud/src/pkg/pool"
 	"github.com/Radon10043/cloud/src/pkg/queue"
 )
@@ -19,6 +20,8 @@ type StageHelper struct {
 	SpecPrefix string // spec prefix
 	LogPrefix  string // log prefix for logging
 	MaxFix     int    // max number of fix attempts in fix step
+
+	Scheck *check.SpecCheck // spec check for validating generated specifications
 
 	Tqueue     *queue.TaskQueue // priority queue for tracking elements to generate
 	TqueuePath string           // path to Tqueue json file

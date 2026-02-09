@@ -1,7 +1,6 @@
 package tools
 
 import (
-	"github.com/Radon10043/cloud/src/pkg/check"
 	"github.com/Radon10043/cloud/src/pkg/database"
 	"github.com/tmc/langchaingo/llms"
 )
@@ -13,5 +12,4 @@ type ToolExec struct {
 
 type ToolHelper struct {
 	Db *database.Database
-	Sc *check.SpecCheck
 }

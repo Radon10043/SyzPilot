@@ -332,7 +332,7 @@ func checkConfig(cfg *ProgConfig) error {
 }
 
 // createAgent creates an agent for kernel syscal spec generation, return the agent instance and error
-func createAgent(db *database.Database, sc *check.SpecCheck, cfg *ProgConfig) (*agent.Agent, error) {
+func createAgent(db *database.Database, cfg *ProgConfig) (*agent.Agent, error) {
 	llm, err := openai.New(
 		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
 		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
@@ -389,7 +389,6 @@ func createAgent(db *database.Database, sc *check.SpecCheck, cfg *ProgConfig) (*
 	}
 	toolHelper := &myTools.ToolHelper{
 		Db: db,
-		Sc: sc,
 	}
 	kAgent := agent.Agent{
 		Ctx:         context.Background(),
@@ -469,7 +468,7 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 	defer os.RemoveAll(wd)
 
 	// create an agent
-	kAgent, err := createAgent(db, sc, cfg)
+	kAgent, err := createAgent(db, cfg)
 	if err != nil {
 		logger.Printf("failed to create agent: %v\n", err)
 		res.Err = err
@@ -500,7 +499,7 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 			wjr <- res
 			continue
 		}
-		spec, err := writeSpec(kAgent, spm, gv, cfg, specPrefix, logPrefix)
+		spec, err := writeSpec(kAgent, sc, spm, gv, cfg, specPrefix, logPrefix)
 		for j := 0; j < cfg.MaxRetry && err != nil; j++ {
 			logger.Printf(
 				"Retrying to write spec for global variable %s, err=%s (attempt %d/%d) ...\n",
@@ -509,7 +508,7 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 			// sleep for a while before write spec again to avoid frequent requests
 			slpTime := rand.Int31n(11) + 10
 			time.Sleep(time.Duration(slpTime) * time.Second)
-			spec, err = writeSpec(kAgent, spm, gv, cfg, specPrefix, logPrefix)
+			spec, err = writeSpec(kAgent, sc, spm, gv, cfg, specPrefix, logPrefix)
 		}
 		if err != nil {
 			logger.Printf("failed to write spec for global variable %s: %v\n", gv.Name, err)
@@ -543,16 +542,23 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 // writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a global variable,
 // return the final syzlang spec and whether it is valid
 func writeSpec(
-	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, cfg *ProgConfig, specPrefix string, logPrefix string,
+	kAgent *agent.Agent,
+	sc *check.SpecCheck,
+	sysPromptMap *map[string]string,
+	gvEntry *database.GlobalVar,
+	cfg *ProgConfig,
+	specPrefix string,
+	logPrefix string,
 ) (string, error) {
 	// init and pool default value for stage.StageHelper
 	specdir := filepath.Join(cfg.Outdir, "specs", gvEntry.Name+"#"+cfg.Model)
 	var sh *stage.StageHelper = &stage.StageHelper{
-		Workdir:    filepath.Join(specdir),
+		Workdir:    specdir,
 		Next:       "outline",
 		SpecPrefix: specPrefix,
 		LogPrefix:  logPrefix,
 		MaxFix:     cfg.MaxFix,
+		Scheck:     sc,
 		Tqueue:     nil,
 		TqueuePath: filepath.Join(specdir, ".tqueue"),
 		Spool:      &pool.SpecPool{},

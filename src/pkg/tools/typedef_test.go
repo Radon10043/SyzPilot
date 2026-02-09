@@ -26,7 +26,6 @@ func TestGetTypedefCodeByDefine(t *testing.T) {
 	}
 	toolHelper := &myTools.ToolHelper{
 		Db: &db,
-		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
@@ -67,7 +66,6 @@ func TestGetTypedefTypeByDefine(t *testing.T) {
 	}
 	toolHelper := &myTools.ToolHelper{
 		Db: &db,
-		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{

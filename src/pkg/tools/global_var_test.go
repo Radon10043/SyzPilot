@@ -26,7 +26,6 @@ func TestGetGlobalVarCodeByName(t *testing.T) {
 	}
 	toolHelper := &myTools.ToolHelper{
 		Db: &db,
-		Sc: nil,
 	}
 	ctx := context.Background()
 	myAgent := agent.Agent{
