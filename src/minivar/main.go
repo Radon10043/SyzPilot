@@ -4,10 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/Radon10043/cloud/src/pkg/agent"
 	"github.com/Radon10043/cloud/src/pkg/database"
@@ -127,9 +129,13 @@ func main() {
 
 	// generate outlines for each key global variable, the artifacts under
 	// outdir can also be used for spec generation
-	for _, gv := range keyGvs {
+	for i, gv := range keyGvs {
 		specdir := filepath.Join(flagOutdir, "specs", gv.Name+"#"+flagModel)
-		logger := log.New(os.Stdout, "[minivar]["+gv.Name+"] ", log.LstdFlags|log.Lmsgprefix)
+		logger := log.New(
+			os.Stdout,
+			fmt.Sprintf("[%d/%d][%s] ", i+1, len(keyGvs), gv.Name),
+			log.LstdFlags|log.Lmsgprefix,
+		)
 
 		err := os.MkdirAll(specdir, 0755)
 		if err != nil {
@@ -148,7 +154,16 @@ func main() {
 			continue
 		}
 
-		stage.ExecOutlineStep(kAgent, prompt, &gv, logger, sh)
+		// sleep for a while to avoid frequent requests
+		slpTime := rand.Int31n(11) + 10
+		logger.Printf("sleep for %d seconds to avoid frequent requests ...\n", slpTime)
+		time.Sleep(time.Duration(slpTime) * time.Second)
+
+		err = stage.ExecOutlineStep(kAgent, prompt, &gv, logger, sh)
+		if err != nil {
+			fmt.Printf("failed to generate outline for %s, skip it: %v\n", gv.Name, err)
+			continue
+		}
 		ntq := dedupTaskQueue(sh.Tqueue, syscallSet, syzPool)
 
 		for _, elem := range ntq.Slice() {
@@ -198,8 +213,8 @@ func dedupTaskQueue(tq *queue.TaskQueue, syscallSet map[string]bool, syzPool *po
 // and the existing syscallSet and syzPool
 func needDedup(elem *queue.TaskQueueElem, syscallSet map[string]bool, syzPool *pool.SpecPool) bool {
 	if elem.Type == queue.TaskHeapElemTypeInitSyscall.String() {
-		// for init syscall, it need dedup when it is already in syzPool
-		return syzPool.Exists(elem.Name)
+		// for init syscall, it needn't dedup since we need it for ensuring consistency
+		return false
 	}
 
 	// for other elements (should be syscall), it need dedup when it is already in syscallSet or syzPool
