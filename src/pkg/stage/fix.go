@@ -98,7 +98,7 @@ func fixSpec(
 	kAgent *agent.Agent, sysPrompt string, spec string, logger *log.Logger, sh *StageHelper,
 ) (string, bool, error) {
 	// make agent ready for fix loop
-	kAgent.CleanMessages()
+	kAgent.Purge()
 	if err := kAgent.AddSystemMessage(sysPrompt); err != nil {
 		return "", false, fmt.Errorf("failed to add system prompt to agent: %v", err)
 	}

@@ -2,8 +2,10 @@ package agent
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"reflect"
 
 	"github.com/Radon10043/cloud/src/pkg/database"
 	myTools "github.com/Radon10043/cloud/src/pkg/tools"
@@ -13,18 +15,20 @@ import (
 )
 
 type Agent struct {
-	Ctx         context.Context             // context for llm operations
-	Model       *openai.LLM                 // model instance
-	Messages    []llms.MessageContent       // message history
-	Temperature float32                     // temperature for llm
-	MaxTokens   int                         // max tokens for single response of llm
-	ToolMap     map[string]myTools.ToolExec // available tools for the agent
-	ToolHelper  *myTools.ToolHelper         // helper for tool execution
+	Ctx          context.Context             // context for llm operations
+	Model        *openai.LLM                 // model instance
+	Messages     []llms.MessageContent       // message history
+	Temperature  float32                     // temperature for llm
+	MaxTokens    int                         // max tokens for single response of llm
+	ToolMap      map[string]myTools.ToolExec // available tools for the agent
+	ToolHelper   *myTools.ToolHelper         // helper for tool execution
+	ToolCallHist []llms.ToolCall             // history of tool calls, used for checking repetition
 }
 
-// CleanMessages clear the message history of the agent
-func (a *Agent) CleanMessages() {
+// Purge purges the message history and tool call history of the agent
+func (a *Agent) Purge() {
 	a.Messages = []llms.MessageContent{}
+	a.ToolCallHist = []llms.ToolCall{}
 }
 
 // AddSystemMessage appends a system message to the agent's message history
@@ -122,6 +126,11 @@ func (a *Agent) ExecTools() error {
 		if !ok {
 			continue
 		}
+		// check if the agent is repeating same tool calling, if so, we consider it is stucked, we need
+		// to stop it to avoid token wasting
+		if a.repeatSameTool() {
+			return fmt.Errorf("agent is repeating same tool calling, stop execution to avoid infinite loop")
+		}
 		// execute the tool based on its name
 		tcResp := llms.MessageContent{}
 		err := error(nil)
@@ -135,8 +144,39 @@ func (a *Agent) ExecTools() error {
 			return err
 		}
 		a.Messages = append(a.Messages, tcResp)
+		a.ToolCallHist = append(a.ToolCallHist, tc)
 	}
 	return nil
+}
+
+func (a *Agent) repeatSameTool() bool {
+	n := len(a.ToolCallHist)
+	if n < 1 {
+		return false
+	}
+
+	// if the last five tool call have same arguments, we consider agent is repeating
+	// same tool calling
+	var (
+		obj1      map[string]any
+		repCnt    int = 1
+		maxTolRep int = 5 // maximum tolerance for repetition
+	)
+	json.Unmarshal([]byte(a.ToolCallHist[n-1].FunctionCall.Arguments), &obj1)
+	for i := n - 2; i >= max(n-maxTolRep, 0); i-- {
+		if a.ToolCallHist[i].FunctionCall.Name != a.ToolCallHist[n-1].FunctionCall.Name {
+			return false
+		}
+		var obj2 map[string]any
+		json.Unmarshal([]byte(a.ToolCallHist[i].FunctionCall.Arguments), &obj2)
+		if reflect.DeepEqual(obj1, obj2) {
+			repCnt++
+		}
+		if repCnt >= maxTolRep {
+			break
+		}
+	}
+	return repCnt >= maxTolRep
 }
 
 // NewAgent creates a new agent with the given database and initializes the tool map

@@ -39,7 +39,7 @@ func collectOutline(
 		outline string
 		found   bool
 	)
-	kAgent.CleanMessages()
+	kAgent.Purge()
 	response, err := genOutline(kAgent, sysPrompt, gvEntry, logger)
 	if err != nil {
 		return "", err

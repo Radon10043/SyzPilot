@@ -111,7 +111,7 @@ func collectSpec(
 		found bool
 		jstr  string
 	)
-	kAgent.CleanMessages()
+	kAgent.Purge()
 	response, err := genSpec(kAgent, sysPrompt, ctxSpec, gvEntry, telem, logger)
 	if err != nil {
 		return "", err
