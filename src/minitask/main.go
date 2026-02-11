@@ -172,7 +172,7 @@ func main() {
 		sh.Tqueue = ntq
 		sh.WriteTqueue()
 	}
-	log.Println("minivar generated successfully.")
+	log.Println("minitask generated successfully.")
 }
 
 // recoverSyscallSet recovers the syscall set from the existing .tqueue files under the output directory,

@@ -25,7 +25,7 @@ endif
 
 .PHONY: all clean
 
-all: analyzer generator minivar syz-check syz-extract
+all: analyzer generator minitask syz-check syz-extract
 
 clean:
 	rm -rf bin
@@ -43,8 +43,8 @@ analyzer: prepare
 generator: prepare
 	$(GO) build $(GOFLAGS) -o bin/generator github.com/Radon10043/cloud/src/generator/
 
-minivar: prepare
-	$(GO) build $(GOFLAGS) -o bin/minivar github.com/Radon10043/cloud/src/minivar/
+minitask: prepare
+	$(GO) build $(GOFLAGS) -o bin/minitask github.com/Radon10043/cloud/src/minitask/
 
 syz-check: prepare
 	cd syzkaller/ && \
