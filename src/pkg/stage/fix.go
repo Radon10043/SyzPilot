@@ -57,7 +57,8 @@ func ExecFixStep(kAgent *agent.Agent, sysPrompt string, logger *log.Logger, sh *
 	}
 	if hasInitSyscall && !hasSyscall {
 		logger.Printf("Spool has init_syscall but do not have syscall, skip fixing\n")
-		sh.UpdatePool(sh.Spool)
+		materialPool := sh.Spool.Difference(sh.Rpool)
+		sh.UpdatePool(materialPool)
 		sh.Spool.Clear()
 		return nil
 	}
@@ -85,7 +86,8 @@ func ExecFixStep(kAgent *agent.Agent, sysPrompt string, logger *log.Logger, sh *
 		}
 		sh.Spool = afPool
 	} // otherwise new spec is invalid, reuse old Spool
-	sh.UpdatePool(sh.Spool)
+	materialPool := sh.Spool.Difference(sh.Rpool)
+	sh.UpdatePool(materialPool)
 	sh.Spool.Clear()
 
 	return nil
