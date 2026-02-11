@@ -9,9 +9,9 @@
             "command": "make generator"
         },
         {
-            "label": "make minivar",
+            "label": "make minitask",
             "type": "shell",
-            "command": "make minivar"
+            "command": "make minitask"
         }
     ]
 }

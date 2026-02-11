@@ -33,7 +33,7 @@ flags for analyzer:
 - `-o`: path to the output database (default: ./data/kernel.db)
 - `-j`: number of parallel jobs (default: 1)
 
-## generate minivar
+## generate minitask
 
 setup .env file:
 ```bash
@@ -43,11 +43,11 @@ echo "OPENAI_API_KEY=[GEMINI_API_KEY]" >> .env
 
 minimize var for spec generation:
 ```bash
-./bin/minivar \
+./bin/minitask \
     -db=./data/database/linux.db \
     -os=linux \
-    -outdir=./workdir/minivar \
-    -model=gemini-2.5-flash > logs/minivar.log 2>&1
+    -outdir=./workdir/minitask \
+    -model=gemini-2.5-flash > logs/minitask.log 2>&1
 ```
 
 ## generate
