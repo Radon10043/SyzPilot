@@ -22,7 +22,7 @@ type Agent struct {
 	MaxTokens    int                         // max tokens for single response of llm
 	ToolMap      map[string]myTools.ToolExec // available tools for the agent
 	ToolHelper   *myTools.ToolHelper         // helper for tool execution
-	ToolCallHist []llms.ToolCall             // history of tool calls, used for checking repetition
+	ToolCallHist []llms.ToolCall             // history of tool calls, used for checking repetition and whether agent is stucked
 }
 
 // Purge purges the message history and tool call history of the agent
@@ -130,6 +130,11 @@ func (a *Agent) ExecTools() error {
 		// to stop it to avoid token wasting
 		if a.repeatSameTool() {
 			return fmt.Errorf("agent is repeating same tool calling, stop execution to avoid infinite loop")
+		}
+		// check if the agent has called tools more than a certain number of times. If it has, the agent may be stucked,
+		// we also need to stop it to avoid token wasting
+		if len(a.ToolCallHist) >= 25 {
+			return fmt.Errorf("agent has called tools for %d times, stop execution to avoid infinite loop", len(a.ToolCallHist))
 		}
 		// execute the tool based on its name
 		tcResp := llms.MessageContent{}
