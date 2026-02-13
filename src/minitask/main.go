@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strings"
 	"time"
@@ -35,12 +36,15 @@ type osType int
 const (
 	unknown osType = iota
 	linux
+	freebsd
 )
 
 func (o osType) String() string {
 	switch o {
 	case linux:
 		return "linux"
+	case freebsd:
+		return "freebsd"
 	default:
 		return "unknown"
 	}
@@ -51,6 +55,12 @@ var (
 		linux: {
 			".ioctl", ".unlocked_ioctl", ".compat_ioctl", ".mmap", ".uring_cmd",
 			".setsockopt", ".getsockopt", ".recvmsg", ".sendmsg",
+		},
+		freebsd: {
+			".d_ioctl", ".d_open", ".d_read", ".d_write", ".d_mmap", ".d_poll",
+			".vop_ioctl", ".vop_lookup", ".vop_create", ".vop_mkdir", ".vop_setattr",
+			".vop_getextattr", ".vop_setextattr", ".pru_control", ".pru_attach",
+			".pru_bind", ".pru_connect", ".pru_send", ".pru_rcvd", ".ph_type",
 		},
 	}
 )
@@ -69,7 +79,7 @@ func main() {
 	flag.StringVar(&flagEnv, "env", ".env", "Path to the .env file")
 	flag.StringVar(&flagSysdir, "sysdir", "./syzkaller/sys", "Path to the syzkaller like sys directory")
 	flag.StringVar(&flagOutdir, "outdir", "", "Path to the output directory")
-	flag.StringVar(&flagOs, "os", "", "os type (e.g., linux)")
+	flag.StringVar(&flagOs, "os", runtime.GOOS, "os type")
 	flag.Parse()
 
 	// load environment variables
@@ -289,6 +299,8 @@ func parseOsType(s string) osType {
 	switch strings.ToLower(s) {
 	case "linux":
 		return linux
+	case "freebsd":
+		return freebsd
 	default:
 		return unknown
 	}
