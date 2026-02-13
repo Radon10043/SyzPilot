@@ -1,0 +1,20 @@
+include <sys/types.h>
+include <sys/ioccom.h>
+include <dev/aacraid/aacraid_reg.h>
+include <sys/aac_ioctl.h>
+
+resource fd_aac[fd]
+
+syz_open_dev$aac(dev ptr[in, string["/dev/aac#"]], id intptr, flags flags[open_flags]) fd_aac
+
+ioctl$AACIO_STATS(fd fd_aac, cmd const[AACIO_STATS], arg ptr[inout, aac_statrequest])
+
+aac_qstat {
+	q_length	int32
+	q_max		int32
+}
+
+aac_statrequest {
+	as_item		int32	(in)
+	as_qstat	aac_qstat	(out)
+}
