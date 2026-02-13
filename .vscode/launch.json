@@ -5,6 +5,21 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "go: launch minitask (freebsd)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "github.com/Radon10043/cloud/src/minitask",
+            "args": [
+                "-env=${workspaceFolder}/.env",
+                "-db=${workspaceFolder}/data/database/freebsd.db",
+                "-os=freebsd",
+                "-outdir=${workspaceFolder}/workdir/minitask",
+                "-model=gemini-2.5-flash",
+            ],
+            "preLaunchTask": "make minitask",
+        },
+        {
             "name": "go: launch minitask",
             "type": "go",
             "request": "launch",
