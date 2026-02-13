@@ -14,6 +14,7 @@ import (
 
 	"github.com/Radon10043/cloud/src/pkg/agent"
 	"github.com/Radon10043/cloud/src/pkg/database"
+	osu "github.com/Radon10043/cloud/src/pkg/osutil"
 	"github.com/Radon10043/cloud/src/pkg/pool"
 	"github.com/Radon10043/cloud/src/pkg/queue"
 	"github.com/Radon10043/cloud/src/pkg/stage"
@@ -31,32 +32,13 @@ var (
 	flagOs     string
 )
 
-type osType int
-
-const (
-	unknown osType = iota
-	linux
-	freebsd
-)
-
-func (o osType) String() string {
-	switch o {
-	case linux:
-		return "linux"
-	case freebsd:
-		return "freebsd"
-	default:
-		return "unknown"
-	}
-}
-
 var (
-	keyMap = map[osType][]string{
-		linux: {
+	keyMap = map[osu.OsType][]string{
+		osu.Linux: {
 			".ioctl", ".unlocked_ioctl", ".compat_ioctl", ".mmap", ".uring_cmd",
 			".setsockopt", ".getsockopt", ".recvmsg", ".sendmsg",
 		},
-		freebsd: {
+		osu.FreeBSD: {
 			".d_ioctl", ".d_open", ".d_read", ".d_write", ".d_mmap", ".d_poll",
 			".vop_ioctl", ".vop_lookup", ".vop_create", ".vop_mkdir", ".vop_setattr",
 			".vop_getextattr", ".vop_setextattr", ".pru_control", ".pru_attach",
@@ -101,7 +83,11 @@ func main() {
 		panic(err)
 	}
 	log.Printf("Total global variables: %d\n", len(gvs))
-	keyGvs := extract(gvs, parseOsType(flagOs))
+	osType, err := osu.ParseOsType(flagOs)
+	if err != nil {
+		log.Fatalf("Failed to parse OS type: %v", err)
+	}
+	keyGvs := extract(gvs, osType)
 	keyGvs = deduplicate(keyGvs)
 	slices.SortFunc(keyGvs, func(a, b database.GlobalVar) int {
 		return strings.Compare(a.Name, b.Name)
@@ -239,10 +225,14 @@ func needDedup(elem *queue.TaskQueueElem, syscallSet map[string]bool, syzPool *p
 // and error if any
 func createPoolFromSysdir(sysdir string) (*pool.SpecPool, error) {
 	p := &pool.SpecPool{}
+	osType, err := osu.ParseOsType(flagOs)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse OS type: %v", err)
+	}
 	fs, err := filepath.Glob(
 		filepath.Join(
 			sysdir,
-			parseOsType(flagOs).String(),
+			osType.String(),
 			"*.txt",
 		),
 	)
@@ -294,20 +284,8 @@ func deduplicate(gvs []database.GlobalVar) []database.GlobalVar {
 	return res
 }
 
-// parseOsType parses a string to osType, default to unknown if not matched
-func parseOsType(s string) osType {
-	switch strings.ToLower(s) {
-	case "linux":
-		return linux
-	case "freebsd":
-		return freebsd
-	default:
-		return unknown
-	}
-}
-
 // extract extracts global variables that contain specific keys related to the os type, and returns them as a slice
-func extract(gvs []database.GlobalVar, os osType) []database.GlobalVar {
+func extract(gvs []database.GlobalVar, os osu.OsType) []database.GlobalVar {
 	var res []database.GlobalVar
 	for _, gv := range gvs {
 		if keyFound(os, gv.Code) {
@@ -318,7 +296,7 @@ func extract(gvs []database.GlobalVar, os osType) []database.GlobalVar {
 }
 
 // keyFound check if any key is found in the code
-func keyFound(os osType, code string) bool {
+func keyFound(os osu.OsType, code string) bool {
 	for _, key := range keyMap[os] {
 		if strings.Contains(code, key) {
 			return true
