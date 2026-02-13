@@ -16,6 +16,7 @@ import (
 	"github.com/Radon10043/cloud/src/pkg/agent"
 	"github.com/Radon10043/cloud/src/pkg/check"
 	"github.com/Radon10043/cloud/src/pkg/database"
+	osu "github.com/Radon10043/cloud/src/pkg/osutil"
 	"github.com/Radon10043/cloud/src/pkg/pool"
 	"github.com/Radon10043/cloud/src/pkg/stage"
 	"github.com/joho/godotenv"
@@ -30,6 +31,7 @@ type ProgConfig struct {
 	Db    string
 
 	// kernel configs
+	Os         string
 	Outdir     string
 	ExtractBin string
 	CheckBin   string
@@ -230,6 +232,7 @@ func setConfigs() *ProgConfig {
 	flag.StringVar(&cfg.Model, "model", "gemini-2.5-flash", "The model to use")
 	flag.StringVar(&cfg.Env, "env", ".env", "Path to .env file")
 	flag.StringVar(&cfg.Db, "db", "", "Path to the database file")
+	flag.StringVar(&cfg.Os, "os", "", "Target OS type")
 	flag.StringVar(&cfg.Outdir, "outdir", "", "Path to the output directory")
 	flag.StringVar(&cfg.ExtractBin, "extract-bin", "./bin/syz-extract", "Path to the syz-extract binary")
 	flag.StringVar(&cfg.CheckBin, "check-bin", "./bin/syz-check", "Path to the syz-check binary")
@@ -287,9 +290,6 @@ func checkConfig(cfg *ProgConfig) error {
 	fileExistHelperFunc(cfg.Db, "-db")
 	fileExistHelperFunc(cfg.ExtractBin, "-extract-bin")
 	fileExistHelperFunc(cfg.CheckBin, "-check-bin")
-	fileExistHelperFunc(cfg.Kernel, "-kernel")
-	vmlinuxPath := filepath.Join(cfg.Kernel, "vmlinux")
-	fileExistHelperFunc(vmlinuxPath, "-kernel")
 	fileExistHelperFunc(cfg.Sysdir, "-sysdir")
 	if cfg.Prefix != "" {
 		fileExistHelperFunc(cfg.Prefix, "-prefix")
@@ -309,6 +309,17 @@ func checkConfig(cfg *ProgConfig) error {
 	if scfe.err != nil {
 		return scfe.err
 	}
+
+	// -os
+	osType, err := osu.ParseOsType(cfg.Os)
+	if err != nil {
+		return fmt.Errorf("-os: %v", err)
+	}
+
+	// -kernel
+	fileExistHelperFunc(cfg.Kernel, "-kernel")
+	kernelObjPath := osType.KernFilePath(cfg.Kernel)
+	fileExistHelperFunc(kernelObjPath, "-kernel")
 
 	// -outdir
 	if cfg.Outdir == "" {
@@ -381,7 +392,15 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 		wjr <- res
 		return
 	}
+	osType, err := osu.ParseOsType(cfg.Os)
+	if err != nil {
+		logger.Printf("failed to parse OS type: %v\n", err)
+		res.Err = err
+		wjr <- res
+		return
+	}
 	sc := check.NewSpecCheck(
+		check.WithOs(osType),
 		check.WithSyzExtract(cfg.ExtractBin),
 		check.WithSyzCheck(cfg.CheckBin),
 		check.WithKernelForExtract(filepath.Join(wd, "kernel-extract")),
@@ -506,7 +525,7 @@ func writeSpec(
 	}
 
 	// init SyzPool with existing specs in sysdir
-	specfs, err := filepath.Glob(filepath.Join(cfg.Sysdir, "linux", "*.txt"))
+	specfs, err := filepath.Glob(filepath.Join(cfg.Sysdir, sc.Os.String(), "*.txt"))
 	if err != nil {
 		return "", fmt.Errorf("failed to glob spec files in sysdir: %v", err)
 	}

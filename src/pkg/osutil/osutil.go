@@ -2,6 +2,8 @@ package osutil
 
 import (
 	"fmt"
+	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -13,6 +15,7 @@ const (
 	FreeBSD
 )
 
+// String returns the string representation of OsType
 func (o OsType) String() string {
 	switch o {
 	case Linux:
@@ -21,6 +24,18 @@ func (o OsType) String() string {
 		return "freebsd"
 	default:
 		return "unknown"
+	}
+}
+
+// KernFilePath returns the expected path of kernel object file based on the OS type and given prefix
+func (o OsType) KernFilePath(prefix string) string {
+	switch o {
+	case Linux:
+		return filepath.Join(prefix, "vmlinux")
+	case FreeBSD:
+		return filepath.Join(prefix, "sys", runtime.GOARCH, "compile", "CLOUD", "kernel.full")
+	default:
+		return ""
 	}
 }
 

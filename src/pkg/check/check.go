@@ -8,26 +8,30 @@ import (
 	"path/filepath"
 	"runtime"
 
+	osu "github.com/Radon10043/cloud/src/pkg/osutil"
 	"github.com/Radon10043/cloud/src/pkg/utils"
 	"github.com/otiai10/copy"
 )
 
 type SpecCheck struct {
-	SyzExtract       string   // path to syz-extract binary
-	SyzCheck         string   // path to syz-check binary
-	KernelForExtract string   // path to kernel source for `make extract`
-	KernelForCheck   string   // path to kernel source for syz-check
-	Workdir          string   // working directory for syz-check, generally syzkaller's directory
-	Sysdir           string   // path to sys directory (syzkaller/sys like structure)
-	IgnRedeclErr     bool     // ignore redeclare errors reported by syz-extract
-	InterestKeywords []string // only focus on lines of syz-extract/syz-check output containing these keywords
+	Os               osu.OsType // target os type
+	SyzExtract       string     // path to syz-extract binary
+	SyzCheck         string     // path to syz-check binary
+	KernelForExtract string     // path to kernel source for `make extract`
+	KernelForCheck   string     // path to kernel source for syz-check
+	Workdir          string     // working directory for syz-check, generally syzkaller's directory
+	Sysdir           string     // path to sys directory (syzkaller/sys like structure)
+	IgnRedeclErr     bool       // ignore redeclare errors reported by syz-extract
+	InterestKeywords []string   // only focus on lines of syz-extract/syz-check output containing these keywords
 }
 
 type Option func(*SpecCheck)
 
 // NewSpecCheck creates a new SpecCheck instance with given options
 func NewSpecCheck(opts ...Option) *SpecCheck {
+	osType, _ := osu.ParseOsType(runtime.GOOS)
 	sc := &SpecCheck{
+		Os:               osType,
 		SyzExtract:       "./bin/syz-extract",
 		SyzCheck:         "./bin/syz-check",
 		Sysdir:           "./syzkaller/sys",
@@ -37,6 +41,13 @@ func NewSpecCheck(opts ...Option) *SpecCheck {
 		opt(sc)
 	}
 	return sc
+}
+
+// WithOs sets the Os field of SpecCheck
+func WithOs(osType osu.OsType) Option {
+	return func(sc *SpecCheck) {
+		sc.Os = osType
+	}
 }
 
 // WithSyzExtract sets the SyzExtract field of SpecCheck
@@ -126,10 +137,10 @@ func (sc *SpecCheck) RestoreWorkdir() error {
 	return sc.SetupWorkdir()
 }
 
-// AddSpec add a syscall spec to sc.Workdir/sys/linux/ as a temporary file.
+// AddSpec add a syscall spec to sc.Workdir/sys/$TARGETOS/ as a temporary file.
 // Return the path to spec file and error info.
 func (sc *SpecCheck) AddSpec(spec string) (string, error) {
-	sysDir := filepath.Join(sc.Workdir, "sys", "linux")
+	sysDir := filepath.Join(sc.Workdir, "sys", sc.Os.String())
 	file, err := os.CreateTemp(sysDir, "spec-*.txt")
 	if err != nil {
 		return "", err
@@ -152,7 +163,7 @@ func (sc *SpecCheck) ExtractConst(fname string) (*bytes.Buffer, *bytes.Buffer, b
 		"-build",
 		"-arch="+runtime.GOARCH,
 		"-sourcedir="+sc.KernelForExtract,
-		"-os=linux",
+		"-os="+sc.Os.String(),
 		fname,
 	)
 	cmd.Dir = sc.Workdir
@@ -166,7 +177,7 @@ func (sc *SpecCheck) ExtractConst(fname string) (*bytes.Buffer, *bytes.Buffer, b
 // return stdout and stderr of the command, also validity of the spec
 func (sc *SpecCheck) CheckValidity() (*bytes.Buffer, *bytes.Buffer, bool) {
 	var stdout, stderr bytes.Buffer
-	cmd := exec.Command(sc.SyzCheck, "-obj-amd64="+filepath.Join(sc.KernelForCheck, "vmlinux"))
+	cmd := exec.Command(sc.SyzCheck, "-obj-amd64="+sc.Os.KernFilePath(sc.KernelForCheck))
 	cmd.Dir = sc.Workdir
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
