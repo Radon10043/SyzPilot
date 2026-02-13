@@ -53,3 +53,6 @@ syz-check: prepare
 syz-extract: prepare
 	cd syzkaller/ && \
 	$(GO) build $(GOFLAGS) -o $(PWD)/bin/syz-extract $(PWD)/syzkaller/sys/syz-extract/
+
+pool2syz: prepare
+	$(GO) build $(GOFLAGS) -o bin/pool2syz github.com/Radon10043/cloud/src/pool2syz/
