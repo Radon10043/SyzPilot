@@ -57,6 +57,8 @@ func TestCheckValidFreebsd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to add spec: %v", err)
 	}
+	sc.KernelForExtract = "/root/freebsd/extract/15.0.0"
+	sc.KernelForCheck = "/root/freebsd/build/15.0.0"
 	_, _, valid := sc.ExtractConst(filepath.Base(fpath))
 	if !valid {
 		t.Fatalf("syz-extract report spec is invalid, exptected valid.")
