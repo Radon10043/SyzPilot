@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -144,7 +145,8 @@ func main() {
 		var sb strings.Builder
 		for file := range files {
 			data, _ := os.ReadFile(file)
-			sb.WriteString(string(data) + "\n")
+			repdata := bytes.ReplaceAll(data, []byte("{OS}"), []byte(cfg.Os))
+			sb.WriteString(string(repdata) + "\n")
 		}
 		sysPromptMap[key] = sb.String()
 	}
