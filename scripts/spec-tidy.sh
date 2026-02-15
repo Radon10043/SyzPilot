@@ -54,7 +54,7 @@ mkdir -p $OUT_DIR
 for f in $(find $SPEC_DIR -type f -name "spec#comp.txt"); do
     var=$(basename $(dirname $f) | cut -d# -f1)
     llm=$(basename $(dirname $f) | cut -d# -f2)
-    outf=$OUT_DIR/$var\#$llm.txt
+    outf=$OUT_DIR/cloud\#$var\#$llm.txt
     echo "$f -> $outf"
     cp $f $outf
 done
