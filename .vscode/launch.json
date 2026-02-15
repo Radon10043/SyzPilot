@@ -43,6 +43,7 @@
             "args": [
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/linux.db",
+                "-os=linux",
                 "-model=gemini-2.5-flash",
                 "-outdir=${workspaceFolder}/workdir/debug",
                 "-varlist=${workspaceFolder}/data/varlist.txt",
@@ -58,6 +59,7 @@
             "args": [
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/linux.db",
+                "-os=linux",
                 "-outdir=${workspaceFolder}/workdir/debug",
                 "-kernel=/vol/linux/v6.18",
                 "-model=gemini-2.5-flash",
