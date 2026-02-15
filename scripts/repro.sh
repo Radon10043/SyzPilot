@@ -51,7 +51,14 @@ done
 
 # reproduce bugs in parallel
 mapfile -t LOGS < <(jq -r .logs[] $REPRO_SH_CONFIG_PATH)
+mapfile -t DONE < <(jq -r .done[] $REPRO_SH_CONFIG_PATH)
 for LOG in "${LOGS[@]}"; do
+
+    # skip repro done logs
+    if [[ " ${DONE[*]} " == *" $LOG "* ]]; then
+        echo "skip repro for $LOG since it's already done"
+        continue
+    fi
 
     REPRO_JOBS=$(pgrep -c syz-repro || true)
     while [ $REPRO_JOBS -ge $JOBS ]; do
