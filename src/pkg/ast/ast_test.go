@@ -1,6 +1,7 @@
 package ast_test
 
 import (
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -21,6 +22,22 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func TestAddSuffix(t *testing.T) {
+	b, err := os.ReadFile(
+		filepath.Join(root, "data", "test", "dev_md.txt"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to read syzlang spec file: %v", err)
+	}
+	syzl := string(b)
+	suffix := "_ctl_fops"
+	nsyzl, err := ast.AddSuffix(syzl, suffix)
+	if err != nil {
+		t.Fatalf("Failed to add suffix to syzlang spec: %v", err)
+	}
+	t.Logf("New syzlang spec: %v", nsyzl)
 }
 
 func TestSyzlang2SyzSpecRecord(t *testing.T) {
