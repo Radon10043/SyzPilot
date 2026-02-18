@@ -1,8 +1,8 @@
 diff --git a/prog/size.go b/prog/size.go
-index d354aadbea..320eb20d41 100644
+index c8f6dfd2e8..0ef1b36d5d 100644
 --- a/prog/size.go
 +++ b/prog/size.go
-@@ -205,7 +205,7 @@ func (r *randGen) mutateSize(arg *ConstArg, parent []Arg, fields []Field) bool {
+@@ -206,7 +206,7 @@ func (r *randGen) mutateSize(arg *ConstArg, parent []Arg, fields []Field) bool {
  						if targetType.Elem.Varlen() {
  							return false
  						}
@@ -12,14 +12,23 @@ index d354aadbea..320eb20d41 100644
  				}
  				break
 diff --git a/sys/syz-extract/linux.go b/sys/syz-extract/linux.go
-index 8b365a2068..dca6cf00b6 100644
+index d4de1874a6..3fe15b4dc5 100644
 --- a/sys/syz-extract/linux.go
 +++ b/sys/syz-extract/linux.go
-@@ -133,6 +133,7 @@ func (*linux) processFile(arch *Arch, info *compiler.ConstInfo) (map[string]uint
+@@ -142,6 +142,7 @@ func (*linux) processFile(arch *Arch, info *compiler.ConstInfo) (map[string]uint
  		"-O3", // required to get expected values for some __builtin_constant_p
  		"-I.",
  		"-D__KERNEL__",
 +		"-D__DVB_CORE__",
  		"-DKBUILD_MODNAME=\"-\"",
- 		"-I" + sourceDir + "/arch/" + headerArch + "/include",
- 		"-I" + buildDir + "/arch/" + headerArch + "/include/generated/uapi",
+ 		"-DKBUILD_MODFILE=\"-\"",
+ 		"-D__LINUX_ARM_ARCH__=7", // arm does not build w/o this
+@@ -157,6 +158,8 @@ func (*linux) processFile(arch *Arch, info *compiler.ConstInfo) (map[string]uint
+ 		"-I" + buildDir + "/include/generated/uapi",
+ 		"-I" + sourceDir,
+ 		"-I" + sourceDir + "/include/linux",
++		"-I" + sourceDir + "/fs/xfs/libxfs",
++		"-I" + sourceDir + "/drivers/gpu/drm/i915",
+ 		"-I" + buildDir + "/syzkaller",
+ 		"-include", sourceDir + "/include/linux/kconfig.h",
+ 	}
