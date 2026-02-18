@@ -56,3 +56,6 @@ syz-extract: prepare
 
 pool2syz: prepare
 	$(GO) build $(GOFLAGS) -o bin/pool2syz github.com/Radon10043/cloud/src/pool2syz/
+
+refactor: prepare
+	$(GO) build $(GOFLAGS) -o bin/refactor github.com/Radon10043/cloud/src/refactor/
