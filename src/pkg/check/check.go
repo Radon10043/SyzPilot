@@ -21,8 +21,6 @@ type SpecCheck struct {
 	KernelForCheck   string     // path to kernel source for syz-check
 	Workdir          string     // working directory for syz-check, generally syzkaller's directory
 	Sysdir           string     // path to sys directory (syzkaller/sys like structure)
-	IgnRedeclErr     bool       // ignore redeclare errors reported by syz-extract
-	InterestKeywords []string   // only focus on lines of syz-extract/syz-check output containing these keywords
 }
 
 type Option func(*SpecCheck)
@@ -31,11 +29,10 @@ type Option func(*SpecCheck)
 func NewSpecCheck(opts ...Option) *SpecCheck {
 	osType, _ := osu.ParseOsType(runtime.GOOS)
 	sc := &SpecCheck{
-		Os:               osType,
-		SyzExtract:       "./bin/syz-extract",
-		SyzCheck:         "./bin/syz-check",
-		Sysdir:           "./syzkaller/sys",
-		InterestKeywords: []string{"failed to run compiler:", "<stdin>:", "sys/"},
+		Os:         osType,
+		SyzExtract: "./bin/syz-extract",
+		SyzCheck:   "./bin/syz-check",
+		Sysdir:     "./syzkaller/sys",
 	}
 	for _, opt := range opts {
 		opt(sc)
@@ -89,19 +86,6 @@ func WithWorkdir(path string) Option {
 func WithSysdir(path string) Option {
 	return func(sc *SpecCheck) {
 		sc.Sysdir = path
-	}
-}
-
-// WithIgnRedeclErr sets the IgnRedeclErr field of SpecCheck
-func WithIgnRedeclErr(ign bool) Option {
-	return func(sc *SpecCheck) {
-		sc.IgnRedeclErr = ign
-	}
-}
-
-func WithInterestKeywords(keywords []string) Option {
-	return func(sc *SpecCheck) {
-		sc.InterestKeywords = keywords
 	}
 }
 
@@ -191,11 +175,7 @@ func (sc *SpecCheck) formatOutput(stdout *bytes.Buffer, stderr *bytes.Buffer) (*
 		fStdout bytes.Buffer = *stdout
 		fStderr bytes.Buffer = *stderr
 	)
-	fStdout = utils.PreserveLines(&fStdout, sc.InterestKeywords)
-	fStderr = utils.PreserveLines(&fStderr, sc.InterestKeywords)
-	if sc.IgnRedeclErr {
-		fStdout = utils.RemoveLines(&fStdout, []string{"redeclared,"})
-		fStderr = utils.RemoveLines(&fStderr, []string{"redeclared,"})
-	}
+	fStdout = utils.RemoveLines(&fStdout, []string{"generating"}) // looks fishy
+	fStderr = utils.RemoveLines(&fStderr, []string{"generating"})
 	return &fStdout, &fStderr, len(fStdout.Bytes()) == 0 && len(fStderr.Bytes()) == 0
 }

@@ -409,7 +409,6 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 		check.WithKernelForCheck(filepath.Join(wd, "kernel-check")),
 		check.WithWorkdir(wd),
 		check.WithSysdir(cfg.Sysdir),
-		check.WithIgnRedeclErr(true),
 	)
 	sc.SetupWorkdir()
 	defer os.RemoveAll(wd)
