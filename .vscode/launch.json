@@ -45,6 +45,7 @@
                 "-db=${workspaceFolder}/data/database/linux.db",
                 "-os=linux",
                 "-model=gemini-2.5-flash",
+                "-kernel=/vol/linux/v6.18",
                 "-outdir=${workspaceFolder}/workdir/debug",
                 "-varlist=${workspaceFolder}/data/varlist.txt",
             ],
