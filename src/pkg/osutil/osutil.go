@@ -13,6 +13,7 @@ const (
 	unknown OsType = iota
 	Linux
 	FreeBSD
+	OpenBSD
 )
 
 // String returns the string representation of OsType
@@ -22,6 +23,8 @@ func (o OsType) String() string {
 		return "linux"
 	case FreeBSD:
 		return "freebsd"
+	case OpenBSD:
+		return "openbsd"
 	default:
 		return "unknown"
 	}
@@ -34,6 +37,8 @@ func (o OsType) KernFilePath(prefix string) string {
 		return filepath.Join(prefix, "vmlinux")
 	case FreeBSD:
 		return filepath.Join(prefix, "sys", runtime.GOARCH, "compile", "CLOUD", "kernel.full")
+	case OpenBSD:
+		return filepath.Join(prefix, "sys", "arch", runtime.GOARCH, "compile", "CLOUD", "obj", "bsd.gdb")
 	default:
 		return ""
 	}
@@ -46,6 +51,8 @@ func ParseOsType(s string) (OsType, error) {
 		return Linux, nil
 	case "freebsd":
 		return FreeBSD, nil
+	case "openbsd":
+		return OpenBSD, nil
 	default:
 		return unknown, fmt.Errorf("unknown os type: %s", s)
 	}

@@ -44,6 +44,13 @@ var (
 			".vop_getextattr", ".vop_setextattr", ".pru_control", ".pru_attach",
 			".pru_bind", ".pru_connect", ".pru_send", ".pru_rcvd", ".ph_type",
 		},
+		osu.OpenBSD: {
+			".d_ioctl", ".d_open", ".d_read", ".d_write", ".d_mmap", ".d_poll", ".d_kqfilter",
+			".fo_ioctl", ".fo_read", ".fo_write", ".fo_poll", ".fo_kqfilter",
+			".vop_ioctl", ".vop_read", ".vop_write", ".vop_lookup", ".vop_create", ".vop_mkdir", ".vop_setattr",
+			".pru_control", ".pru_attach", ".pru_bind", ".pru_connect", ".pru_send", ".pru_rcvd",
+			".ioctl", ".mmap", ".unlocked_ioctl",
+		},
 	}
 )
 
