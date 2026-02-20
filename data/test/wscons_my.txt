@@ -1,0 +1,15 @@
+include <sys/time.h>
+include <dev/wscons/wsconsio.h>
+
+ioctl$WSDISPLAYIO_GETPARAM(fd fd_wsdisplay, cmd const[WSDISPLAYIO_GETPARAM], arg ptr[inout, wsdisplay_param])
+
+wsdisplay_param_id = WSDISPLAYIO_PARAM_BACKLIGHT, WSDISPLAYIO_PARAM_BRIGHTNESS, WSDISPLAYIO_PARAM_CONTRAST
+
+wsdisplay_param {
+	param	flags[wsdisplay_param_id, int32]
+	min	int32
+	max	int32
+	curval	int32
+	reserved	array[int32, 4]
+}
+
