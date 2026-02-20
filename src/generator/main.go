@@ -308,9 +308,6 @@ func checkConfig(cfg *ProgConfig) error {
 	for f := range strings.SplitSeq(cfg.FixSysPrompt, ",") {
 		fileExistHelperFunc(f, "-fix-system-prompt")
 	}
-	if scfe.err != nil {
-		return scfe.err
-	}
 
 	// -os
 	osType, err := osu.ParseOsType(cfg.Os)
@@ -322,6 +319,10 @@ func checkConfig(cfg *ProgConfig) error {
 	fileExistHelperFunc(cfg.Kernel, "-kernel")
 	kernelObjPath := osType.KernFilePath(cfg.Kernel)
 	fileExistHelperFunc(kernelObjPath, "-kernel")
+
+	if scfe.err != nil {
+		return scfe.err
+	}
 
 	// -outdir
 	if cfg.Outdir == "" {
