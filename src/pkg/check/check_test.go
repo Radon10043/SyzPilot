@@ -70,6 +70,33 @@ func TestCheckValidFreebsd(t *testing.T) {
 	os.RemoveAll(sc.Workdir)
 }
 
+func TestCheckValidOpenbsd(t *testing.T) {
+	if runtime.GOOS != "openbsd" {
+		t.Skip("skip openbsd specific test on non-openbsd OS")
+	}
+	b, err := os.ReadFile(
+		filepath.Join(root, "data", "test", "wscons_my.txt"),
+	)
+	if err != nil {
+		t.Fatalf("failed to read spec file: %v", err)
+	}
+	fpath, err := sc.AddSpec(string(b))
+	if err != nil {
+		t.Fatalf("failed to add spec: %v", err)
+	}
+	sc.KernelForExtract = "/root/openbsd/extract/23290a22"
+	sc.KernelForCheck = "/root/openbsd/build/23290a22"
+	_, _, valid := sc.ExtractConst(filepath.Base(fpath))
+	if !valid {
+		t.Fatalf("syz-extract report spec is invalid, exptected valid.")
+	}
+	_, _, valid = sc.CheckValidity()
+	if !valid {
+		t.Fatalf("syz-check report spec is invalid, expected valid. ")
+	}
+	os.RemoveAll(sc.Workdir)
+}
+
 func TestCheckValid(t *testing.T) {
 	b, err := os.ReadFile(filepath.Join(root, "data", "test", "dev_md.txt"))
 	if err != nil {
