@@ -18,6 +18,7 @@
 #include <llvm/Support/Path.h>
 
 #include "db.hpp"
+#include <pthread.h>
 #include <unistd.h>
 
 using namespace clang;
@@ -334,6 +335,21 @@ void workThread(const CompilationDatabase &compilations, std::vector<std::string
     tool.run(newFrontendActionFactory<MyFrontendAction>().get());
 }
 
+struct ThreadArgs {
+    const CompilationDatabase *compilations;
+    std::vector<std::string> files;
+};
+
+/**
+ * workPthread is a wrapper for workThread to be used with pthreads
+ */
+static void *workPthread(void *arg) {
+    auto *args = static_cast<ThreadArgs *>(arg);
+    workThread(*args->compilations, args->files);
+    delete args;
+    return nullptr;
+}
+
 /**
  * command line options
  */
@@ -383,17 +399,28 @@ int main(int argc, const char **argv) {
     size_t batchSize = sz / jobs;
     size_t rem = sz % jobs;
     size_t start = 0;
+
+    pthread_attr_t attr;
+    pthread_attr_init(&attr);
+    pthread_attr_setstacksize(&attr, 32 * 1024 * 1024);
+    std::vector<pthread_t> pthreads(jobs);
+
+    /* start parallel analysis */
     for (int i = 0; i < jobs; i++) {
         size_t cnt = batchSize + (i < (int)rem ? 1 : 0);
         std::vector<std::string> threadFiles(targetFiles.begin() + start, targetFiles.begin() + start + cnt);
-        threads.emplace_back(workThread, std::cref(*compilations), std::move(threadFiles));
+        auto *args = new ThreadArgs{compilations.get(), std::move(threadFiles)};
+        if (pthread_create(&pthreads[i], &attr, workPthread, args) != 0) {
+            errs() << "Failed to create thread " << i << "\n";
+            delete args;
+            exit(1);
+        }
         start += cnt;
     }
 
-    /* start parallel analysis */
-    for (auto &t : threads)
-        if (t.joinable())
-            t.join();
+    pthread_attr_destroy(&attr);
+    for (int i = 0; i < jobs; i++)
+        pthread_join(pthreads[i], nullptr);
 
     /* wipe butt */
     DBMgr = nullptr;
