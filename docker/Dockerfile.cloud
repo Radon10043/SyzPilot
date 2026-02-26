@@ -22,6 +22,8 @@ RUN apt-get install -y bmake libarchive-tools libbsd-dev time libarchive-dev lib
 RUN apt-get install -y gcc-arm-linux-gnueabi gcc-aarch64-linux-gnu gcc-mips64el-linux-gnuabi64
 RUN apt-get install -y gcc-powerpc64le-linux-gnu gcc-riscv64-linux-gnu gcc-s390x-linux-gnu
 
+RUN pip install compiledb
+
 # Install LLVM-19
 RUN wget https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/LLVM-19.1.7-Linux-X64.tar.xz
 RUN mkdir /llvm-19 && tar -C /llvm-19 -xvf LLVM-19.1.7-Linux-X64.tar.xz --strip-components=1
