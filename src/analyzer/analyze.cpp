@@ -29,6 +29,20 @@ using namespace llvm;
 static DatabaseManager *DBMgr = nullptr;
 std::mutex DBMutex;
 
+/**
+ * command line options
+ */
+static cl::OptionCategory MyToolCategory("Kernel analyzer options");
+static cl::opt<std::string> DatabasePath("i", cl::desc("path to compile_commands.json"), cl::value_desc("path"),
+                                         cl::Required, cl::cat(MyToolCategory));
+static cl::opt<int> ParallelJobs("j", cl::desc("number of parallel jobs (default: 1)"), cl::init(1),
+                                 cl::cat(MyToolCategory));
+static cl::opt<std::string> OutDBPath("o", cl::desc("path to output database (default: data/kernel.db)"),
+                                      cl::init("data/kernel.db"), cl::value_desc("path"), cl::cat(MyToolCategory));
+static llvm::cl::list<std::string> ExtraIncludes("I", llvm::cl::desc("path to be included"),
+                                                 llvm::cl::value_desc("directory"), llvm::cl::Prefix,
+                                                 llvm::cl::ZeroOrMore);
+
 struct AnalysisContext {
     std::vector<FuncInfo> funcs;
     std::vector<RecordInfo> records;
@@ -328,10 +342,42 @@ private:
  */
 void workThread(const CompilationDatabase &compilations, std::vector<std::string> files) {
     ClangTool tool(compilations, files);
-#ifdef CLANG_RESOURCE_DIR
+
+#ifdef __CLANG_RESOURCE_DIR__
     tool.appendArgumentsAdjuster(
-        getInsertArgumentAdjuster("-isystem" CLANG_RESOURCE_DIR "/include", ArgumentInsertPosition::BEGIN));
+        getInsertArgumentAdjuster("-isystem" __CLANG_RESOURCE_DIR__ "/include", ArgumentInsertPosition::BEGIN));
 #endif
+
+#ifdef __NETBSD_PATCH__
+    /* adjust command line arguments to make them suitable for analyzing NetBSD kernel code */
+    tool.appendArgumentsAdjuster([](const clang::tooling::CommandLineArguments &args, llvm::StringRef filename) {
+        clang::tooling::CommandLineArguments adjusted;
+        for (size_t i = 0; i < args.size(); ++i) {
+            llvm::StringRef arg = args[i];
+            // prevent passing -Werror to avoid compilation errors due to warnings in the kernel code
+            if (arg == "-Werror")
+                continue;
+            adjusted.push_back(args[i]);
+        }
+        adjusted.push_back("--target=x86_64-unknown-netbsd");
+        adjusted.push_back("-U__linux__");
+        adjusted.push_back("-Ulinux");
+        adjusted.push_back("-U__gnu_linux__");
+        adjusted.push_back("-D__NetBSD__");
+        adjusted.push_back("-D_KERNEL");
+        adjusted.push_back("-Wno-array-parameter");
+        adjusted.push_back("-Wno-unknown-warning-option");
+        adjusted.push_back("-Wno-unknown-argument");
+        return adjusted;
+    });
+#endif
+
+    tool.appendArgumentsAdjuster([](const clang::tooling::CommandLineArguments &args, llvm::StringRef filename) {
+        clang::tooling::CommandLineArguments adjusted = args;
+        for (const auto &inc : ExtraIncludes)
+            adjusted.push_back("-I" + inc);
+        return adjusted;
+    });
     tool.run(newFrontendActionFactory<MyFrontendAction>().get());
 }
 
@@ -350,17 +396,6 @@ static void *workPthread(void *arg) {
     return nullptr;
 }
 
-/**
- * command line options
- */
-static cl::OptionCategory MyToolCategory("Kernel analyzer options");
-static cl::opt<std::string> DatabasePath("i", cl::desc("path to compile_commands.json"), cl::value_desc("path"),
-                                         cl::Required, cl::cat(MyToolCategory));
-static cl::opt<int> ParallelJobs("j", cl::desc("number of parallel jobs (default: 1)"), cl::init(1),
-                                 cl::cat(MyToolCategory));
-static cl::opt<std::string> OutDBPath("o", cl::desc("path to output database (default: data/kernel.db)"),
-                                      cl::init("data/kernel.db"), cl::value_desc("path"), cl::cat(MyToolCategory));
-
 int main(int argc, const char **argv) {
     /* parse command line options */
     cl::HideUnrelatedOptions(MyToolCategory);
@@ -368,6 +403,14 @@ int main(int argc, const char **argv) {
 
     DatabaseManager mgr(OutDBPath);
     DBMgr = &mgr;
+
+    /* make extra includes absolute */
+    for (auto& inc : ExtraIncludes) {
+        llvm::SmallString<256> path(inc);
+        llvm::sys::fs::make_absolute(path);
+        llvm::sys::path::remove_dots(path, true);
+        inc = path.str().str();
+    }
 
     /* load compile_commands.json specified by user */
     std::string err;
