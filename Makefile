@@ -1,6 +1,6 @@
 CXX := ccache clang++
 CXX_FLAGS := $(shell pkg-config --cflags sqlite3) -pthread \
-			-DCLANG_RESOURCE_DIR=\"$(shell clang -print-resource-dir)\"
+			-D__CLANG_RESOURCE_DIR__=\"$(shell clang -print-resource-dir)\"
 CLANG_LIBS := -lclangTooling -lclangFrontend -lclangSerialization \
 			-lclangDriver 	-lclangParse -lclangSema -lclangAnalysis \
 			-lclangEdit -lclangAST -lclangLex -lclangBasic -lclangASTMatchers \
@@ -14,6 +14,12 @@ LD_FLAGS := $(shell $(LLVM_CONFIG) --ldflags) $(shell pkg-config --libs sqlite3)
 
 GO := go
 GOFLAGS :=
+
+TARGETOS ?= $(shell go env GOOS)
+
+ifeq ($(shell echo $(TARGETOS) | tr '[:upper:]' '[:lower:]'),netbsd)
+	CXX_FLAGS += -D__NETBSD_PATCH__
+endif
 
 ifeq ("$(DEBUG)", "true")
 	CXX_FLAGS += $(shell $(LLVM_CONFIG) --cxxflags) -fno-rtti -O0 -g
