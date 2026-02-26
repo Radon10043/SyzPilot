@@ -161,7 +161,11 @@ func (sc *SpecCheck) ExtractConst(fname string) (*bytes.Buffer, *bytes.Buffer, b
 // return stdout and stderr of the command, also validity of the spec
 func (sc *SpecCheck) CheckValidity() (*bytes.Buffer, *bytes.Buffer, bool) {
 	var stdout, stderr bytes.Buffer
-	cmd := exec.Command(sc.SyzCheck, "-obj-amd64="+sc.Os.KernFilePath(sc.KernelForCheck))
+	cmd := exec.Command(
+		sc.SyzCheck,
+		"-obj-"+runtime.GOARCH+"="+sc.Os.KernFilePath(sc.KernelForCheck),
+		"-os="+sc.Os.String(),
+	)
 	cmd.Dir = sc.Workdir
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
