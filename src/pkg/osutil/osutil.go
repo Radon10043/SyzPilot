@@ -14,6 +14,7 @@ const (
 	Linux
 	FreeBSD
 	OpenBSD
+	NetBSD
 )
 
 // String returns the string representation of OsType
@@ -25,6 +26,8 @@ func (o OsType) String() string {
 		return "freebsd"
 	case OpenBSD:
 		return "openbsd"
+	case NetBSD:
+		return "netbsd"
 	default:
 		return "unknown"
 	}
@@ -39,6 +42,8 @@ func (o OsType) KernFilePath(prefix string) string {
 		return filepath.Join(prefix, "sys", runtime.GOARCH, "compile", "CLOUD", "kernel.full")
 	case OpenBSD:
 		return filepath.Join(prefix, "sys", "arch", runtime.GOARCH, "compile", "CLOUD", "obj", "bsd.gdb")
+	case NetBSD:
+		return filepath.Join(prefix, "sys", "arch", runtime.GOARCH, "compile", "obj", "CLOUD", "netbsd.gdb")
 	default:
 		return ""
 	}
@@ -53,6 +58,8 @@ func ParseOsType(s string) (OsType, error) {
 		return FreeBSD, nil
 	case "openbsd":
 		return OpenBSD, nil
+	case "netbsd":
+		return NetBSD, nil
 	default:
 		return unknown, fmt.Errorf("unknown os type: %s", s)
 	}

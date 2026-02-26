@@ -51,6 +51,13 @@ var (
 			".pru_control", ".pru_attach", ".pru_bind", ".pru_connect", ".pru_send", ".pru_rcvd",
 			".ioctl", ".mmap", ".unlocked_ioctl",
 		},
+		osu.NetBSD: {
+			".d_ioctl", ".d_open", ".d_read", ".d_write", ".d_mmap", ".d_poll", ".d_kqfilter", ".d_discard",
+			".fo_ioctl", ".fo_read", ".fo_write", ".fo_poll", ".fo_kqfilter", ".fo_mmap", ".fo_fcntl", ".fo_stat", ".fo_close",
+			".vop_ioctl", ".vop_read", ".vop_write", ".vop_lookup", ".vop_create", ".vop_mkdir", ".vop_setattr", ".vop_getattr",
+			".vop_getextattr", ".vop_setextattr", ".vop_mknod", ".vop_symlink", ".vop_readdir", ".vop_kqfilter",
+			".pru_control", ".pru_attach", ".pru_bind", ".pru_connect", ".pru_send", ".pru_rcvd", ".pru_listen", ".pru_accept", ".pru_disconnect",
+		},
 	}
 )
 
