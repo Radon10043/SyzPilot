@@ -42,3 +42,16 @@ index 843004d19..b2e1a1e83 100644
  
  resource ipc_msq[ipc]
  msgget(key proc[2039379027, 4], flags flags[msgget_flags]) ipc_msq
+diff --git a/sys/targets/targets.go b/sys/targets/targets.go
+index a076d2710..e7970ec98 100644
+--- a/sys/targets/targets.go
++++ b/sys/targets/targets.go
+@@ -426,7 +426,7 @@ var List = map[string]map[string]*Target{
+ 				"-static-pie",
+ 				"--sysroot", sourceDirVar + "/dest/",
+ 			},
+-			CCompiler: sourceDirVar + "/tools/bin/x86_64--netbsd-g++",
++			CCompiler: sourceDirVar + "/tools/bin/x86_64--netbsd-clang++",
+ 		},
+ 	},
+ 	OpenBSD: {
