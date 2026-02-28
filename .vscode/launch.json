@@ -114,6 +114,16 @@
                 "-jobs=2",
             ],
             "preLaunchTask": "make generator"
+        },
+        {
+            "name": "go: launch syz-manager",
+            "type": "go",
+            "request": "launch",
+            "mode": "exec",
+            "program": "${workspaceFolder}/syzkaller/bin/syz-manager",
+            "args": [
+                "-config=${workspaceFolder}/workdir/fuzz/test.cfg"
+            ]
         }
     ]
 }
