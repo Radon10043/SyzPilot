@@ -1,3 +1,51 @@
+diff --git a/executor/common_bsd.h b/executor/common_bsd.h
+index 1e0389af5..59d8ba65b 100644
+--- a/executor/common_bsd.h
++++ b/executor/common_bsd.h
+@@ -223,12 +223,7 @@ static void initialize_tun(int tun_id)
+ 	}
+ #endif
+ 	if (tunfd == -1) {
+-#if SYZ_EXECUTOR
+-		failmsg("tun: can't open device", "device=%s", tun_device);
+-#else
+-		printf("tun: can't open %s: errno=%d\n", tun_device, errno);
+ 		return;
+-#endif // SYZ_EXECUTOR
+ 	}
+ 	// Remap tun onto higher fd number to hide it from fuzzer and to keep
+ 	// fd numbers stable regardless of whether tun is opened or not (also see kMaxFd).
+diff --git a/executor/executor.cc b/executor/executor.cc
+index d6bba7aa7..c96bccf21 100644
+--- a/executor/executor.cc
++++ b/executor/executor.cc
+@@ -72,7 +72,11 @@ const int kOutPipeFd = kMaxFd - 2; // remapped from stdout
+ const int kCoverFd = kOutPipeFd - kMaxThreads;
+ const int kExtraCoverFd = kCoverFd - 1;
+ const int kMaxArgs = 9;
++#ifdef GOOS_netbsd
++const int kCoverSize = 256 << 10;
++#else
+ const int kCoverSize = 512 << 10;
++#endif
+ const int kFailStatus = 67;
+ 
+ // Two approaches of dealing with kcov memory.
+diff --git a/executor/subprocess.h b/executor/subprocess.h
+index d2b732725..059dec11c 100644
+--- a/executor/subprocess.h
++++ b/executor/subprocess.h
+@@ -36,8 +36,9 @@ public:
+ 			}
+ 		}
+ 		for (int i = max_fd + 1; i < kFdLimit; i++) {
+-			if (posix_spawn_file_actions_addclose(&actions, i))
++			if (fcntl(i, F_GETFD) != -1 && posix_spawn_file_actions_addclose(&actions, i)) {
+ 				fail("posix_spawn_file_actions_addclose failed");
++			}
+ 		}
+ 
+ 		posix_spawnattr_t attr;
 diff --git a/sys/netbsd/dev_tprof.txt b/sys/netbsd/dev_tprof.txt
 index f360f3f7b..384be2899 100644
 --- a/sys/netbsd/dev_tprof.txt
