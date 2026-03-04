@@ -24,11 +24,6 @@ RUN apt-get install -y gcc-powerpc64le-linux-gnu gcc-riscv64-linux-gnu gcc-s390x
 
 RUN pip install compiledb
 
-# Install LLVM-19
-RUN wget https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/LLVM-19.1.7-Linux-X64.tar.xz
-RUN mkdir /llvm-19 && tar -C /llvm-19 -xvf LLVM-19.1.7-Linux-X64.tar.xz --strip-components=1
-RUN rm LLVM-19.1.7-Linux-X64.tar.xz
-
 # Install golang-1.23.6
 RUN wget https://go.dev/dl/go1.23.6.linux-amd64.tar.gz
 RUN tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz && \
@@ -43,3 +38,8 @@ RUN tar -xzvf v23.5.26.tar.gz && \
     make install && \
     popd && \
     rm -rf v23.5.26.tar.gz flatbuffers-23.5.26
+
+# Install LLVM-19
+RUN wget https://github.com/llvm/llvm-project/releases/download/llvmorg-19.1.7/LLVM-19.1.7-Linux-X64.tar.xz
+RUN mkdir /llvm-19 && tar -C /llvm-19 -xvf LLVM-19.1.7-Linux-X64.tar.xz --strip-components=1
+RUN rm LLVM-19.1.7-Linux-X64.tar.xz
