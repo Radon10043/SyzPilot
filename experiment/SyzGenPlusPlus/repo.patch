@@ -1,0 +1,224 @@
+diff --git a/hooks/linux/client/Makefile b/hooks/linux/client/Makefile
+index 11e3802..af0d480 100644
+--- a/hooks/linux/client/Makefile
++++ b/hooks/linux/client/Makefile
+@@ -6,8 +6,8 @@ CFLAGS=-I../lib
+ all: client getfd
+ 
+ getfd: getfd.o
+-	gcc -o $@ $^
++	gcc -static -o $@ $^
+ client: client.o
+-	gcc -o $@ $^
++	gcc -static -o $@ $^
+ clean:
+ 	rm *.o client getfd
+\ No newline at end of file
+diff --git a/hooks/linux/src/hook_ftrace.c b/hooks/linux/src/hook_ftrace.c
+index 9636e24..4c91d65 100644
+--- a/hooks/linux/src/hook_ftrace.c
++++ b/hooks/linux/src/hook_ftrace.c
+@@ -3,7 +3,7 @@
+ #include <linux/kernel.h>
+ #include <linux/init.h>
+ 
+-#include "ftrace.h"
++#include "../lib/ftrace.h"
+ 
+ static void copy_from_user_callback(
+     unsigned long ip, 
+diff --git a/hooks/linux/src/hook_kprobe.c b/hooks/linux/src/hook_kprobe.c
+index f7382f8..c1cd3d2 100644
+--- a/hooks/linux/src/hook_kprobe.c
++++ b/hooks/linux/src/hook_kprobe.c
+@@ -3,8 +3,8 @@
+ #include <linux/init.h>
+ #include <linux/ptrace.h>
+ 
+-#include "ftrace.h"
+-#include "interface.h"
++#include "../lib/ftrace.h"
++#include "../lib/interface.h"
+ 
+ // See samples/kprobes/kprobe_example.c for examples
+ #define PRE_HANDLER_KERNEL(name, addr, size)   \
+diff --git a/hooks/linux/src/interface.c b/hooks/linux/src/interface.c
+index b961c03..a5b7348 100644
+--- a/hooks/linux/src/interface.c
++++ b/hooks/linux/src/interface.c
+@@ -5,8 +5,8 @@
+ #include <linux/mm.h>
+ #include <linux/file.h>
+ 
+-#include "interface.h"
+-#include "hook.h"
++#include "../lib/interface.h"
++#include "../lib/hook.h"
+ 
+ struct hook {
+     spinlock_t lock;
+@@ -96,7 +96,7 @@ static int interface_mmap(struct file *filep, struct vm_area_struct *vma) {
+     }
+     if (!hook->data) {
+         hook->data = data;
+-        vma->vm_flags |= VM_DONTEXPAND;
++        vm_flags_set(vma, VM_DONTEXPAND);
+         spin_unlock_irqrestore(&hook->lock, flags);
+         for (off = 0; off < size; off += PAGE_SIZE) {
+             page = vmalloc_to_page(hook->data + off);
+@@ -123,14 +123,15 @@ static int interface_get_fd(unsigned long arg) {
+         return -EBADF;
+ 
+     f = fdget(ops.fd);
+-    if (!f.file)
++    struct file *filp = fd_file(f);
++    if (!filp)
+         return -EBADF;
+ 
+-    ops.open = (unsigned long)f.file->f_op->open;
+-    ops.read = (unsigned long)f.file->f_op->read;
+-    ops.write = (unsigned long)f.file->f_op->write;
+-    ops.unlocked_ioctl = (unsigned long)f.file->f_op->unlocked_ioctl;
+-    ops.compat_ioctl = (unsigned long)f.file->f_op->compat_ioctl;
++    ops.open = (unsigned long)filp->f_op->open;
++    ops.read = (unsigned long)filp->f_op->read;
++    ops.write = (unsigned long)filp->f_op->write;
++    ops.unlocked_ioctl = (unsigned long)filp->f_op->unlocked_ioctl;
++    ops.compat_ioctl = (unsigned long)filp->f_op->compat_ioctl;
+     return copy_to_user((void *)arg, &ops, sizeof(ops));
+ }
+ 
+diff --git a/main.py b/main.py
+index 7d02856..f456119 100644
+--- a/main.py
++++ b/main.py
+@@ -3,6 +3,9 @@
+ import argparse
+ import logging
+ import time
++import sys
++
++sys.set_int_max_str_digits(0)
+ 
+ from syzgen.target import Target
+ 
+diff --git a/setup.sh b/setup.sh
+index 1b47829..e996fb8 100755
+--- a/setup.sh
++++ b/setup.sh
+@@ -9,29 +9,14 @@ pip3 install virtualenv
+ 
+ get_python_version() {
+     python_dir=$(dirname $(which python3))
+-
+     version=$(python3 --version)
+     version=${version#Python *}
+     version=${version%.*}
+-    if [ "$version" \> "3.7" ]; then
+-        echo "python3"
+-    else
+-        versions="3.8 3.9"
+-        for v in $versions; do
+-            version="python$v"
+-            ret=$(which $version)
+-            if [ ! -z "$ret" ]; then
+-                echo "$version"
+-                break
+-            fi
+-        done
+-    fi
++    echo "$version"
+ }
+ 
++# I use 3.10 :)
+ version="$(get_python_version)"
+-if [ -z "$version" ]; then
+-    echo "error: did not found a python version >= 3.8" & exit 1
+-fi
+ echo "got python version $version"
+ 
+ virtualenv ${SYZGEN} --python=$(which $version)
+@@ -58,7 +43,7 @@ install_darwin_dependency () {
+ }
+ 
+ install_linux_dependency () {
+-    sudo apt install clang-format flex bison libelf-dev libssl-dev
++    sudo apt install -y clang-format flex bison libelf-dev libssl-dev
+     cd hooks/linux/client
+     make getfd
+     cd ../../../
+@@ -98,25 +83,28 @@ echo "GOPATH=\"${GOPATH}\"" >> $VIRTUAL_ENV
+ echo "export GOPATH" >> $VIRTUAL_ENV
+ echo "PATH=${GOROOT}/bin:\$PATH" >> $VIRTUAL_ENV
+ echo "export PATH" >> $VIRTUAL_ENV
++echo "export http_proxy=$http_proxy" >> $VIRTUAL_ENV
++echo "export https_proxy=$https_proxy" >> $VIRTUAL_ENV
+ 
+ # install python dependencies
+ source ${VIRTUAL_ENV}
+-pip install -r requirements.txt
++# pip install -r requirements.txt
+ 
+ echo "installing custom cle..."
+ # install custom cle to support macOS driver
+-git clone git@github.com:angr/cle.git
+-cp cle.patch cle/
++git clone https://github.com/angr/cle || true
+ cd cle
+-git checkout -b dev 0eba8ae29f5f2386234dc252581bfce1b4994fac
+-git apply cle.patch
++git checkout -b dev 0eba8ae29f5f2386234dc252581bfce1b4994fac || true
++git clean -fdx && git checkout .
++cp ../cle.patch .
++git apply --3way cle.patch
+ rm cle.patch
+ pip install .
+ cd ..
+ 
+ # install angr-targets
+ echo "installing custom angr-targets..."
+-git clone git@github.com:angr/angr-targets.git
++git clone https://github.com/angr/angr-targets || true
+ cd angr-targets
+ pip install -e .
+ cd ..
+@@ -127,8 +115,9 @@ cd ..
+ 
+ mkdir -p gopath/src/github.com/google
+ cd gopath/src/github.com/google
+-git clone -b ${syzkaller_branch} git@github.com:CvvT/syzkaller.git
++git clone -b ${syzkaller_branch} --depth 1 https://github.com/CvvT/syzkaller || true
+ cd syzkaller
++sed -i '/^AlignTrailingComments: false$/d' .clang-format
+ make generate
+ make SOURCEDIR=tmp
+ cd ../../../../../
+diff --git a/syzgen/analysis/plugins/error_path.py b/syzgen/analysis/plugins/error_path.py
+index bb1f9cf..e5b1cfc 100644
+--- a/syzgen/analysis/plugins/error_path.py
++++ b/syzgen/analysis/plugins/error_path.py
+@@ -202,7 +202,7 @@ class DetectErrorPathPlugin(
+ 
+         res = True
+         try:
+-            for values in defs.register_definitions.load(source.reg_offset, source.size).values.values():
++            for values in defs.register_definitions.load(source.reg_offset, source.size).values():
+                 if not self._check_all_values(module, values, rd, source, defs, addr, target_func, visited, targets):
+                     visited[(source.reg_offset, addr, t)] = False
+                     res = False
+diff --git a/syzgen/target/linux.py b/syzgen/target/linux.py
+index 46a3776..0390dbd 100644
+--- a/syzgen/target/linux.py
++++ b/syzgen/target/linux.py
+@@ -77,9 +77,9 @@ class LinuxTarget(Target):
+                 os.getcwd(), "linux-distro", f"linux-{version}-raw")
+         if image:
+             config["image"] = os.path.abspath(
+-                os.path.join(image, "stretch.img"))
++                os.path.join(image, "bullseye.img"))
+             config["sshkey"] = os.path.abspath(
+-                os.path.join(image, "stretch.id_rsa"))
++                os.path.join(image, "bullseye.id_rsa"))
+         return config
+ 
+     def init_model(self, module_name: str, path: str, ops: Dict[str, int]) -> LinuxDriverModel:
