@@ -1,5 +1,25 @@
 # SyzGenPlusPlus
 
+this document shows how to setup SyzGenPlusPlus and use it for generating syscall descriptions and fuzzing.
+
+please replace the following variables according to your actual situation:
+- `$CLOUD`: directory for saveing cloud source
+- `$SYZGENPP`: directory for saving SyzGenPlusPlus source
+
+create a docker image via `$CLOUD/experiment/SyzGenPlusPlus/Dockerfile` and enter the container.
+```bash
+docker build -t syzgenpp:latest --network host -f $CLOUD/experiment/SyzGenPlusPlus/Dockerfile .
+docker run \
+    -d \
+    --cpus 16 \
+    --network host \
+    --privileged \
+    --name syzgenpp-exp \
+    syzgenpp:latest tail -f /dev/null
+docker exec -it syzgenpp-exp bash
+```
+
+in the container, run following commands to setup SyzGenPlusPlus and generate syscall descriptions.
 ```bash
 git clone https://github.com/seclab-ucr/SyzGenPlusPlus
 cd SyzGenPlusPlus
@@ -14,10 +34,14 @@ cp $CLOUD/scripts/linux/create-image.sh .
 chmod +x ./create-image.sh
 ./create-image.sh
 
+cd $SYZGENPP
 ./setup.sh
 source fuzz/bin/activate
 pip install pexpect ipython angr==9.2.42 pycparser==2.21 "capstone<5.0.0" "setuptools<70.0.0"
 python3 scripts/genConfig.py --name 6.18 -t linux --type qemu --image linux-distro/image --version 6.18
 python3 main.py -s find_drivers
+
 jq -r 'to_entries[] | select(.value.ops != null) | .key' workdir/6.18/model/services.json | xargs -I {} python3 main.py -s all --target {}
 ```
+
+integrate them into syzkaller and feel free to perform fuzzing.
