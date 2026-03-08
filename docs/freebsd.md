@@ -18,8 +18,9 @@ Download FreeBSD image from [https://download.freebsd.org/snapshots/VM-IMAGES](h
 cd $VMDIR
 wget https://download.freebsd.org/snapshots/VM-IMAGES/15.0-STABLE/amd64/Latest/FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz
 unxz -k FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz
-qemu-img resize FreeBSD-15.0-STABLE-amd64-ufs.qcow2 200G
-qemu-system-x86_64 -m 16G -smp 16 -hda ./FreeBSD-15.0-STABLE-amd64-ufs.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host
+mv FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz dev.qcow2
+qemu-img resize dev.qcow2 200G
+qemu-system-x86_64 -m 16G -smp 16 -hda ./dev.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host
 ```
 
 press 3 and input `set console="comconsole"` and `boot`.
@@ -97,12 +98,12 @@ download source of FreeBSD, generate `compile_commands.json` and build kernel:
 ```sh
 # run following commands on vm
 cd /root
-mkdir -p freebsd/build freebsd/extract  # former for kernel building, latter for const extraction
-cd freebsd/build
-git clone -b release/15.0.0 --depth 1 https://github.com/freebsd/freebsd-src 15.0.0
-cp -r 15.0.0 ../extract/15.0.0
+mkdir -p freebsd/15.0.0
+cd freebsd/15.0.0
+git clone -b release/15.0.0 --depth 1 https://github.com/freebsd/freebsd-src build
+cp -r build extract # former for kernel building, latter for const extraction
 
-cd 15.0.0/sys/amd64/conf
+cd build/sys/amd64/conf
 cp $CLOUD_VM/configs/kernel/freebsd.config CLOUD
 config CLOUD && cd ../compile/CLOUD
 make cleandepend && make depend
@@ -143,34 +144,18 @@ shutdown -p now
 
 ### start fuzzing
 
-Back on the host, let's duplicate an image to differentiate between the development machine and the fuzzing target machine (vm needs to be turned off first).
+start vm with image `dev.qcow2` and ssh to it:
+```bash
+# run following commands on host
+# start vm in daemon
+qemu-system-x86_64 -m 16G -smp 16 -hda $VMDIR/dev.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -daemonize -cpu host -display none
+ssh -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
+```
+
+generate and install ssh key:
 ```bash
 # run following commands on host
 cd $VMDIR
-mv FreeBSD-15.0-STABLE-amd64-ufs.qcow2 dev.qcow2
-cp dev.qcow2 target.qcow2
-```
-
-build kernel on host:
-```bash
-# run following commands on host
-cd $KERNSRC_HOST
-git clone -b release/15.0.0 --depth 1 https://github.com/freebsd/freebsd-src 15.0.0
-cd 15.0.0
-cp $CLOUD_HOST/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
-
-mkdir build dist
-MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 buildworld
-MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 buildkernel KERNCONF=CLOUD
-MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 installkernel KERNCONF=CLOUD DESTDIR=$PWD/dist
-```
-
-start fuzz target vm, generate and install ssh key:
-```bash
-# run following commands on host
-cd $KERNSRC_HOST
-qemu-system-x86_64 -m 16G -smp 16 -hda target.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -daemonize -cpu host -display none   # start vm in daemon ...
-
 ssh-keygen -t rsa -f ./freebsd.id_rsa -N ""
 ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 ```
@@ -178,26 +163,39 @@ ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o S
 in vm, build syzkaller and copy executor programs to host:
 ```sh
 # run following commands on vm
-cd $CLOUD_HOST/syzkaller && gmake exeuctor
+cd $CLOUD/syzkaller && gmake target
 
 # run following commands on host
-scp -i ./freebsd.id_rsa -P 3733 -r -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost:$CLOUD_VM/syzkaller/freebsd_amd64 $CLOUD_HOST/syzkaller/bin
-```
-
-install kernel (built on host) to the fuzz target vm:
-```bash
-# run following commands on host
-cd $VMDIR
-scp -i ./freebsd.id_rsa -P 3733 -r -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $KERNSRC_HOST/build/15.0.0/dist/* root@localhost:/
-ssh -i ./freebsd.id_rsa -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost reboot
-
-# after vm reboot, run following commands on host
-ssh -i ./freebsd.id_rsa -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -i # output should be CLOUD
+scp -i ./freebsd.id_rsa -P 3733 -r -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost:$CLOUD/syzkaller/freebsd_amd64 $CLOUD/syzkaller/bin
 ```
 
 shutdown vm:
 ```sh
 # run following commands on vm
+shutdown -p now
+```
+
+duplicate an image to differentiate between the development machine and the fuzzing target machine.
+```bash
+# run following commands on host
+cp $VMDIR/dev.qcow2 $VMDIR/target.qcow2
+```
+
+start vm with image `target.qcow2` and ssh to it:
+```bash
+# run following commands on host
+# start vm in daemon
+qemu-system-x86_64 -m 16G -smp 16 -hda $VMDIR/target.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -daemonize -cpu host -display none
+ssh -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
+```
+
+replace kernel in `target.qcow2` with new built kernel:
+```bash
+# run following commands on host
+cd $KERNSRC/sys/amd64/compile/CLOUD
+make install
+reboot
+uname -i # expect is CLOUD
 shutdown -p now
 ```
 
@@ -393,4 +391,95 @@ run syzkaller:
 ```sh
 cd /root
 syzkaller/bin/syz-manager -config=./freebsd.cfg
+```
+
+## build and replace freebsd kernel on linux host
+
+build and replace FreeBSD kernel on Linux host is an option, but it's less efficient than build and replace it directly on FreeBSD. I'm noting this method down here, as I might need it in the future.
+
+build freebsd kernel:
+```bash
+# run following command on host
+cd $KERNSRC
+cp $CLOUD/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
+
+mkdir build dist
+MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 buildworld
+MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 buildkernel KERNCONF=CLOUD
+MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 installkernel KERNCONF=CLOUD DESTDIR=$PWD/dist
+```
+
+start freebsd vm:
+```bash
+# run following commands on host
+qemu-system-x86_64 -m 16G -smp 16 -hda target.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -daemonize -cpu host -display none   # start vm in daemon ...
+```
+
+install built kernel to vm:
+```bash
+# run following commands on host
+cd $VMDIR
+scp -P 3733 -r -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $KERNSRC_HOST/build/15.0.0/dist/* root@localhost:/
+ssh -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost reboot
+ssh -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -i # output should be CLOUD
+```
+
+## frequently used commands
+
+start freebsd vm silently.
+```bash
+qemu-system-x86_64 \
+    -m 16G \
+    -smp 16 \
+    -hda $VMDIR/dev.qcow2 \
+    -enable-kvm \
+    -net nic \
+    -net user,hostfwd=tcp::3733-:22 \
+    -cpu host \
+    -display none \
+    -daemonize
+```
+
+start vm.
+```bash
+qemu-system-x86_64 \
+    -m 16G \
+    -smp 16 \
+    -hda $VMDIR/dev.qcow2 \
+    -enable-kvm \
+    -net nic \
+    -net user,hostfwd=tcp::3733-:22 \
+    -nographic \
+    -cpu host
+```
+
+ssh to vm:
+```bash
+ssh -p 3733 \
+    -o UserKnownHostsFile=/dev/null \
+    -o StrictHostKeyChecking=no \
+    root@localhost
+```
+
+copy file(s) to vm:
+```bash
+scp -P 3733 \
+    -o UserKnownHostsFile=/dev/null \
+    -o StrictHostKeyChecking=no \
+    $HOST_PATH root@localhost:$VM_PATH
+```
+
+use sshfs to mount directory:
+```bash
+mkdir -p mnt/cloud
+sshfs -p 3733 \
+    -o "StrictHostKeyChecking=no" \
+    -o "UserKnownHostsFile=/dev/null" \
+    -o sftp_server=/usr/libexec/sftp-server \
+    -o cache=yes \
+    -o kernel_cache \
+    -o compression=no \
+    -o idmap=user \
+    -o follow_symlinks \
+    root@localhost:/root/cloud ./mnt/cloud
 ```
