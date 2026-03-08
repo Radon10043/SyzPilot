@@ -1,6 +1,11 @@
 # cloud
 
-# build
+```bash
+git clone --recurse-submodules https://github.com/Radon10043/cloud
+# if you forgot to clone with --recurse-submodules, run `git submodule update --init --recursive` under cloud directory to update submodules
+```
+
+## build
 
 ```bash
 cd $CLOUD
@@ -8,9 +13,9 @@ go mod tidy
 make
 ```
 
-# run
+## run
 
-## analyze
+### analyze
 
 We use linux v6.12 as an example.
 
@@ -33,7 +38,7 @@ flags for analyzer:
 - `-o`: path to the output database (default: ./data/kernel.db)
 - `-j`: number of parallel jobs (default: 1)
 
-## generate minitask
+### generate minitask
 
 setup .env file:
 ```bash
@@ -50,7 +55,7 @@ minimize var for spec generation:
     -model=gemini-2.5-flash > logs/minitask.log 2>&1
 ```
 
-## generate
+### generate
 
 setup .env file:
 
