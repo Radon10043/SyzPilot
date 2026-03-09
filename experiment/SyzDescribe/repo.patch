@@ -1273,11 +1273,19 @@ old mode 100644
 new mode 100755
 diff --git a/script/genspec.sh b/script/genspec.sh
 new file mode 100755
-index 0000000..6852272
+index 0000000..55e254b
 --- /dev/null
 +++ b/script/genspec.sh
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,119 @@
 +#!/bin/bash
++
++# this script is used to generate spec via SyzDescribe for each kernel bitcode file.
++#
++# usage:
++#   bash ./script/genspec.sh -k <KERNEL_DIR> -o <OUTDIR>
++#
++# skills:
++#   kill all related process: pkill genspec.sh; pkill SyzDescribe
 +
 +set -euo pipefail
 +
@@ -1285,17 +1293,24 @@ index 0000000..6852272
 +KERNEL_DIR=
 +OUTDIR=
 +
++# optional args
++TIMEOUT_DURATION="20m"
++
 +print_help() {
 +    echo "usage: $0 [ARGS]"
 +    echo "  args (required):"
-+    echo "    -k, --kernel <PATH>   Path to the kernel source directory"
-+    echo "    -o, --outdir <PATH>   Path to the output directory"
++    echo "    -k, --kernel <PATH>       Path to the kernel source directory"
++    echo "    -o, --outdir <PATH>       Path to the output directory"
 +    echo "  args (optional):"
-+    echo "    -h, --help            Show this help message and exit"
++    echo "    -t, --timeout <DURATION>  Timeout duration for SyzDescribe (default: 20m)"
++    echo "    -h, --help                Show this help message and exit"
 +}
 +
 +REPO_DIR=$(realpath $(dirname "$0")/..)
 +SYZDESCRIBE_BIN="$REPO_DIR"/build/tools/SyzDescribe/SyzDescribe
++BLACKLIST=(
++    "drivers/built-in.bc"
++)
 +
 +while [[ $# -gt 0 ]]; do
 +    case "$1" in
@@ -1310,6 +1325,10 @@ index 0000000..6852272
 +        -h|--help)
 +            print_help
 +            exit 0
++            ;;
++        -t|--timeout)
++            TIMEOUT_DURATION="$2"
++            shift 2
 +            ;;
 +        *)
 +            echo "Unknown argument: $1"
@@ -1331,15 +1350,24 @@ index 0000000..6852272
 +    exit 1
 +fi
 +
-+mapfile -t bc_files < <(find "$KERNEL_DIR" -type f -name "*.bc" | sort)
-+total_bc=${#bc_files[@]}
++mapfile -t bc_paths < <(find "$KERNEL_DIR" -type f -name "*.bc" | sort)
++total_bc=${#bc_paths[@]}
 +
 +mkdir -p $OUTDIR
-+for i in "${!bc_files[@]}"; do
-+    bc_file="${bc_files[$i]}"
-+    echo -n "[$((i+1))/$total_bc] Processing $bc_file ... "
++for i in "${!bc_paths[@]}"; do
++    bc_path="${bc_paths[$i]}"
++    cur_time=$(date +"%Y-%m-%d %H:%M:%S")
++    echo -n "[$cur_time][$((i+1))/$total_bc] Processing $bc_path ... "
 +
-+    hash=$(echo -n "$bc_file" | md5sum | cut -d' ' -f1)
++    for bl in "${BLACKLIST[@]}"; do
++        bl_path=$(realpath "$KERNEL_DIR/$bl")
++        if [[ "$bc_path" == "$bl_path" ]]; then
++            echo "blacklisted"
++            continue 2
++        fi
++    done
++
++    hash=$(echo -n "$bc_path" | md5sum | cut -d' ' -f1)
 +    workdir="$OUTDIR/$hash"
 +    if [[ -d "$workdir" ]]; then
 +        echo "skip"
@@ -1350,16 +1378,21 @@ index 0000000..6852272
 +
 +    cat <<__EOF__ > config.json
 +{
-+    "bitcode": "$bc_file",
++    "bitcode": "$bc_path",
 +    "knowledge": "$REPO_DIR/config/knowledge.json",
 +    "version": "cloudexp"
 +}
 +__EOF__
 +
-+    if _=$( "$SYZDESCRIBE_BIN" --config=config.json > /dev/null 2>&1 ); then
++    if timeout "$TIMEOUT_DURATION" "$SYZDESCRIBE_BIN" --config=config.json > /dev/null 2>&1; then
 +        echo "success"
 +    else
-+        echo "failed"
++        exit_code=$?
++        if [[ $exit_code -eq 124 ]]; then
++            echo "timeout"
++        else
++            echo "failed (exit code: $exit_code)"
++        fi
 +    fi
 +    cd - > /dev/null
 +done
