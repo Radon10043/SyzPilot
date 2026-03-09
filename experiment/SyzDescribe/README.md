@@ -1,6 +1,6 @@
 # SyzDescribe
 
-this document shows how to setup SyzDescribe and use it for generating syscall descriptions and fuzzing.
+this document shows how to setup SyzDescribe and use it for generating specifications and fuzzing.
 
 please replace the following variables according to your actual situation:
 - `$CLOUD`: directory for saveing cloud source
@@ -20,7 +20,7 @@ docker run \
 docker exec -it syzdescribe-exp bash
 ```
 
-in the container, run following commands to setup SyzDescribe and generate syscall descriptions.
+in the container, run following commands to setup SyzDescribe and generate specifications.
 ```bash
 git clone https://github.com/seclab-ucr/SyzDescribe
 cd SyzDescribe

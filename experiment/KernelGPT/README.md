@@ -1,6 +1,6 @@
 # KernelGPT
 
-this document shows how to setup KernelGPT and use it for generating syscall descriptions and fuzzing.
+this document shows how to setup KernelGPT and use it for generating specifications and fuzzing.
 
 please replace the following variables according to your actual situation:
 - `$CLOUD`: directory for saveing cloud source
@@ -57,8 +57,8 @@ echo "OPENAI_MODEL=YOUR_FAVORITE_LLM" > .env
 
 # for debugging
 python3 gen_spec.py -d analyzer/processed_handlers.json -o spec-output -n 1
-# for generating complete syscall descriptions, watch out your wallet
+# for generating complete specifications, watch out your wallet
 # python3 gen_spec.py -d analyzer/processed_handlers.json -o spec-output -n 1000
 ```
 
-integrate generated syscall descriptions into syzkaller and feel free to perform fuzzing.
+integrate generated specifications into syzkaller and feel free to perform fuzzing.
