@@ -15,4 +15,4 @@ if [ ! -z $1 ]; then
     ARCH=$1
 fi
 
-$(dirname $0)/../bin/syz-extract -build -sourcedir=$KERNEL -os=linux -includedirs=$KERNEL/fs/xfs/libxfs -arch=$ARCH
+$(dirname $0)/../../bin/syz-extract -build -sourcedir=$KERNEL -os=linux -includedirs=$KERNEL/fs/xfs/libxfs -arch=$ARCH
