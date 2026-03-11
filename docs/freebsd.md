@@ -67,16 +67,6 @@ make -j$(sysctl -n hw.ncpu) && make install
 rm -rf flatbuffers-23.5.26 v23.5.26.tar.gz
 ```
 
-(optional) run following commands to setup development environment (neovim):
-```sh
-# run following commands on vm:
-ASSUME_ALWAYS_YES=true pkg install neovim rust ripgrep fd-find lazygit
-cargo install tree-sitter-cli
-echo "export PATH=$PATH:$HOME/.cargo/bin" >> $HOME/.shrc
-exec sh
-git clone https://github.com/Radon10043/nvimcfg /root/.config/nvim # my neovim config
-```
-
 ### cloud setup
 
 download cloud and submodules:
@@ -393,6 +383,36 @@ cd /root
 syzkaller/bin/syz-manager -config=./freebsd.cfg
 ```
 
+## development environment setup (optional)
+
+### neovim
+
+run following commands to setup development environment for neovim:
+```sh
+# run following commands on vm:
+ASSUME_ALWAYS_YES=true pkg install neovim rust ripgrep fd-find lazygit
+cargo install tree-sitter-cli
+echo "export PATH=$PATH:$HOME/.cargo/bin" >> $HOME/.shrc
+exec sh
+git clone https://github.com/Radon10043/nvimcfg /root/.config/nvim # my neovim config
+```
+
+### sshfs+vscode
+
+use sshfs to mount directory on host and develop via vscode or other tools you prefer:
+```bash
+sshfs -p 3733 \
+    -o "StrictHostKeyChecking=no" \
+    -o "UserKnownHostsFile=/dev/null" \
+    -o sftp_server=/usr/libexec/sftp-server \
+    -o cache=yes \
+    -o kernel_cache \
+    -o compression=no \
+    -o idmap=user \
+    -o follow_symlinks \
+    root@localhost:$CLOUD_VM ./mnt/cloud
+```
+
 ## build and replace freebsd kernel on linux host
 
 build and replace FreeBSD kernel on Linux host is an option, but it's less efficient than build and replace it directly on FreeBSD. I'm noting this method down here, as I might need it in the future.
@@ -482,4 +502,9 @@ sshfs -p 3733 \
     -o idmap=user \
     -o follow_symlinks \
     root@localhost:/root/cloud ./mnt/cloud
+```
+
+unmount directory mounted by sshfs:
+```bash
+fusermount -u mnt/cloud
 ```
