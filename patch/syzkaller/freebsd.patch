@@ -1,62 +1,20 @@
-diff --git a/sys/freebsd/evdev.txt.const b/sys/freebsd/evdev.txt.const
-index a23d27e308..1d830eb4e3 100644
---- a/sys/freebsd/evdev.txt.const
-+++ b/sys/freebsd/evdev.txt.const
-@@ -31,7 +31,7 @@ EVIOCSKEYCODE = 2148025604
- EVIOCSKEYCODE_V2 = 2150122756
- EVIOCSREP = 2148025603
- FF_EFFECT_MAX = 87
--FF_EFFECT_MIN = 80
-+FF_EFFECT_MIN = 79
- FF_WAVEFORM_MAX = 93
- FF_WAVEFORM_MIN = 88
- SYS_ioctl = 54
-diff --git a/sys/freebsd/socket_inet_tcp.txt b/sys/freebsd/socket_inet_tcp.txt
-index e365f11a43..1344069c3b 100644
---- a/sys/freebsd/socket_inet_tcp.txt
-+++ b/sys/freebsd/socket_inet_tcp.txt
-@@ -13,6 +13,9 @@ include <netinet/tcp.h>
- include <netinet/cc/cc_newreno.h>
- include <opencrypto/cryptodev.h>
+diff --git a/sys/syz-extract/freebsd.go b/sys/syz-extract/freebsd.go
+index 1bcd9823f..1279ffccb 100644
+--- a/sys/syz-extract/freebsd.go
++++ b/sys/syz-extract/freebsd.go
+@@ -18,6 +18,7 @@ func (*freebsd) prepare(sourcedir string, build bool, arches []*Arch) error {
+ 	if !build {
+ 		return fmt.Errorf("freebsd requires -build flag")
+ 	}
++	// run make depend for GENERIC config?
+ 	return nil
+ }
  
-+define TCP_PCAP_OUT 2048
-+define TCP_PCAP_IN 4096
-+
- resource sock_tcp[sock_in]
- 
- socket$inet_tcp(domain const[AF_INET], type const[SOCK_STREAM], proto const[0]) sock_tcp
-diff --git a/sys/freebsd/sys.txt b/sys/freebsd/sys.txt
-index 8738250a38..3f302297d5 100644
---- a/sys/freebsd/sys.txt
-+++ b/sys/freebsd/sys.txt
-@@ -24,6 +24,8 @@ include <sys/specialfd.h>
- 
- type signo int32[0:SIGRTMAX]
- 
-+define SF_SYNC 4
-+
- syz_execute_func(text ptr[in, text[target]]) (disabled)
- 
- sf_hdtr {
-diff --git a/sys/freebsd/sys.txt.const b/sys/freebsd/sys.txt.const
-index 3232654af8..97d0211fdc 100644
---- a/sys/freebsd/sys.txt.const
-+++ b/sys/freebsd/sys.txt.const
-@@ -147,7 +147,7 @@ SYS_futimesat = 494
- SYS_getegid = 43
- SYS_geteuid = 25
- SYS_getgid = 47
--SYS_getgroups = 79
-+SYS_getgroups = 595
- SYS_getitimer = 86
- SYS_getlogin = 49
- SYS_getloginclass = 523
-@@ -191,7 +191,7 @@ SYS_setegid = 182
- SYS_seteuid = 183
- SYS_setfib = 175
- SYS_setgid = 181
--SYS_setgroups = 80
-+SYS_setgroups = 596
- SYS_setitimer = 83
- SYS_setlogin = 50
- SYS_setloginclass = 524
+@@ -52,6 +53,7 @@ func (*freebsd) processFile(arch *Arch, info *compiler.ConstInfo) (map[string]ui
+ 		"-D__BSD_VISIBLE=1",
+ 		"-DCOMPAT_FREEBSD13",
+ 		"-DCOMPAT_FREEBSD14",
++		"-DCOMPAT_43TTY",
+ 		"-I", filepath.Join(arch.sourceDir, "sys"),
+ 		"-I", filepath.Join(arch.sourceDir, "sys", "sys"),
+ 		"-I", filepath.Join(arch.sourceDir, "sys", "contrib", "ck", "include"),
