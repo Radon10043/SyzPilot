@@ -93,10 +93,19 @@ echo "https://mirrors.aliyun.com/openbsd/" > /etc/installurl
 # vim: vim-9.1.1706-no_x11
 # llvm: llvm-19.1.7p9
 pkg_add wget bash curl git vim fastfetch llvm go gmake
-pkg_add ccache sqlite3 bear python py3-pip gdb
+pkg_add ccache sqlite3 bear python py3-pip gdb cmake
 pip3 install compiledb --break-system-packages
 
 echo "export PATH=/root/go/bin:\$PATH" >> /root/.profile
+
+wget https://github.com/google/flatbuffers/archive/refs/tags/v23.5.26.zip
+tar -xzvf v23.5.26.tar.gz
+cd flatbuffers-23.5.26
+cmake . && make -j4 && make install
+cd ..
+rm -rf v23.5.26.tar.gz flatbuffers-23.5.26
+
+ln -s /usr/local/bin/clang-format-19 /usr/local/bin/clang
 
 rcctl -f start vmd
 rcctl enable vmd
