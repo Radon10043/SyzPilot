@@ -1,3 +1,22 @@
+diff --git a/sys/openbsd/sysctl.txt b/sys/openbsd/sysctl.txt
+index 9de673a1e..56fb1b541 100644
+--- a/sys/openbsd/sysctl.txt
++++ b/sys/openbsd/sysctl.txt
+@@ -50,12 +50,10 @@ ctl_ddb {
+ ctl_ddb_flags = DBCTL_CONSOLE, DBCTL_LOG, DBCTL_MAXLINE, DBCTL_MAXWIDTH, DBCTL_PANIC, DBCTL_RADIX, DBCTL_TABSTOP, DBCTL_TRIGGER
+ 
+ ctl_fs {
+-	n1	const[CTL_FS, int32]
+-	n2	flags[ctl_fs_flags, int32]
++	n1	int32
++	n2	int32
+ }
+ 
+-ctl_fs_flags = FS_POSIX_SETUID
+-
+ ctl_hw {
+ 	n1	const[CTL_HW, int32]
+ 	n2	flags[ctl_hw_flags, int32]
 diff --git a/sys/openbsd/vnet.txt b/sys/openbsd/vnet.txt
 index 0cbb7cebf..4869d79f0 100644
 --- a/sys/openbsd/vnet.txt
