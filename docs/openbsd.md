@@ -374,6 +374,27 @@ feel free to unmount it:
 fusermount -u ./cloud
 ```
 
+## fuzzing latest kernel
+
+> [!CAUTION]
+> If a new kernel is installed with an old user-space, the image may broken! please upgrade use-space and kernel-space first then install the customized kernel for fuzzing.
+
+upgrade user-space and kernel-space to the latest snapshot:
+```bash
+sysupgrade -s
+```
+
+compile and install customized latest OpenBSD kernel.
+```bash
+cd $KERNSRC && git pull
+cp $CLOUD/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
+cd sys/arch/amd64/conf && config CLOUD
+cd ../compile/CLOUD
+make depend && make -j4 && make install
+```
+
+then we can run fuzzing :)
+
 ## skills
 
 Press `~`+`~`+`.` to exit nest VM.
