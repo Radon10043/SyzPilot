@@ -72,7 +72,7 @@ git clone --recursive https://github.com/Radon10043/cloud
 cd $CLOUD/syzkaller
 git apply ../patch/syzkaller/generic.patch ../patch/syzkaller/netbsd.patch
 cd ..
-make all TARGETOS=netbsd
+make all TARGETOS=netbsd SOURCEDIR=$KERNSRC
 ```
 
 download source of netbsd kernel. I use 15e7fbc53d77cd7cc1d62511982b8972c4c0c421 to run cloud for specification generation, which can be built success on linux in 2026 early.
