@@ -212,6 +212,7 @@ generate and copy ssh key to target vm.
 cd $VMDIR
 ssh-keygen -t rsa -f openbsd.id_rsa -N ''
 ssh-copy-id \
+    -p 6736 \
     -o IdentitiesOnly=yes \
     -o StrictHostKeyChecking=no \
     -i ./openbsd.id_rsa \
