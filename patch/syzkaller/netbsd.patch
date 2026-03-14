@@ -190,6 +190,30 @@ index 843004d19..b2e1a1e83 100644
  
  resource ipc_msq[ipc]
  msgget(key proc[2039379027, 4], flags flags[msgget_flags]) ipc_msq
+diff --git a/sys/syz-extract/netbsd.go b/sys/syz-extract/netbsd.go
+index b2ce7d620..dbe268449 100644
+--- a/sys/syz-extract/netbsd.go
++++ b/sys/syz-extract/netbsd.go
+@@ -52,13 +52,19 @@ func (*netbsd) processFile(arch *Arch, info *compiler.ConstInfo) (map[string]uin
+ 		"-fmessage-length=0",
+ 		"-nostdinc",
+ 		"-D_KERNEL",
++		"-D__NetBSD__",
++		"-DCOMPAT_50",
++		"-DFAULT",
+ 		"-D__BSD_VISIBLE=1",
++		"-U__linux__",
+ 		"-I", filepath.Join(arch.sourceDir, "sys"),
+ 		"-I", filepath.Join(arch.sourceDir, "sys", "sys"),
+ 		"-I", filepath.Join(arch.sourceDir, "sys", "arch", "amd64"),
+ 		"-I", filepath.Join(arch.sourceDir, "common", "include"),
+ 		"-I", filepath.Join(arch.sourceDir, "sys", "compat", "linux", "common"),
+ 		"-I", filepath.Join(arch.sourceDir, "include"),
++		"-I", filepath.Join(arch.sourceDir, "sys", "external", "bsd", "common", "include"),
++		"-I", filepath.Join(arch.sourceDir, "sys", "external", "bsd", "drm2", "include"),
+ 		"-I", arch.buildDir,
+ 	}
+ 	for _, incdir := range info.Incdirs {
 diff --git a/sys/targets/targets.go b/sys/targets/targets.go
 index a076d2710..e7970ec98 100644
 --- a/sys/targets/targets.go
