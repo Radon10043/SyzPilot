@@ -1,0 +1,73 @@
+diff --git a/pkg/report/freebsd.go b/pkg/report/freebsd.go
+index 37c50eaf8..19d2f752a 100644
+--- a/pkg/report/freebsd.go
++++ b/pkg/report/freebsd.go
+@@ -4,7 +4,13 @@
+ package report
+ 
+ import (
++	"bytes"
++	"fmt"
++	"path/filepath"
+ 	"regexp"
++	"time"
++
++	"github.com/google/syzkaller/pkg/osutil"
+ )
+ 
+ type freebsd struct {
+@@ -26,7 +32,54 @@ func (ctx *freebsd) Parse(output []byte) *Report {
+ 	return simpleLineParser(output, freebsdOopses, freebsdStackParams, ctx.ignores)
+ }
+ 
++// dirty implementation, but at least it works
+ func (ctx *freebsd) Symbolize(rep *Report) error {
++	kernelBin := filepath.Join(ctx.kernelDirs.Obj, ctx.target.KernelObject)
++	re := regexp.MustCompile(`#[0-9]+ 0xffffffff`)
++	lines := bytes.Split(rep.Report, []byte("\r\n"))
++
++	// collect all addresses from the stack trace
++	type pair struct {
++		lnum int
++		addr []byte
++	}
++	var pairs []pair
++	for i, line := range lines {
++		if !re.Match(line) {
++			continue
++		}
++		parts := bytes.Split(line, []byte(" "))
++		if len(parts) < 2 {
++			continue
++		}
++		pairs = append(pairs, pair{lnum: i, addr: parts[1]})
++	}
++
++	// symbolize addresses in batch
++	timeout := 10 * time.Second
++	args := []string{"-e", kernelBin}
++	for _, pair := range pairs {
++		args = append(args, string(pair.addr))
++	}
++	output, err := osutil.RunCmd(timeout, "", "addr2line", args...)
++	if err != nil {
++		return err
++	}
++	outputSlices := bytes.Split(output, []byte("\n"))
++	outputSlices = outputSlices[:len(outputSlices)-1] // remove trailing empty line
++	if len(outputSlices) != len(pairs) {
++		return fmt.Errorf("len(outputSlices)=%v, want %v", len(outputSlices), len(pairs))
++	}
++
++	// append symbolized lines to the end of each line of report
++	for i, pair := range pairs {
++		line := lines[pair.lnum]
++		symbolized := outputSlices[i]
++		symbPath := osutil.Abs(string(symbolized))
++		lines[pair.lnum] = fmt.Appendf(nil, "%s %s", line, symbPath)
++	}
++	rep.Report = bytes.Join(lines, []byte("\r\n"))
++
+ 	return nil
+ }
+ 
