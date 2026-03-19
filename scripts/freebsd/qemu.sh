@@ -16,6 +16,6 @@ qemu-system-x86_64 \
     -device virtio-rng-pci \
     -enable-kvm \
     -device e1000,netdev=net0 \
-    -netdev user,id=net0,restrict=on,hostfwd=tcp:127.0.0.1:3733-:22 \
+    -netdev user,id=net0,restrict=on,hostfwd=tcp:127.0.0.1:37333-:22 \
     -hda $IMAGE \
     -snapshot

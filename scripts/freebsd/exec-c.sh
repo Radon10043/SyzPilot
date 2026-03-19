@@ -8,7 +8,7 @@
 
 set -e
 
-scp -P 3733 \
+scp -P 37333 \
     -F /dev/null \
     -o UserKnownHostsFile=/dev/null \
     -o IdentitiesOnly=yes \
@@ -19,7 +19,7 @@ scp -P 3733 \
     -v \
     $REPRO root@localhost:/tmp/repro.c
 
-ssh -p 3733 \
+ssh -p 37333 \
     -F /dev/null \
     -o UserKnownHostsFile=/dev/null \
     -o IdentitiesOnly=yes \

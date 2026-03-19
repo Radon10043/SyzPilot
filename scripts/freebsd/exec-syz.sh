@@ -10,7 +10,7 @@ set -e
 
 CLOUD=$(realpath $(dirname $0)/../..)
 
-scp -P 3733 \
+scp -P 37333 \
     -F /dev/null \
     -o UserKnownHostsFile=/dev/null \
     -o IdentitiesOnly=yes \
@@ -21,7 +21,7 @@ scp -P 3733 \
     -v \
     $CLOUD/syzkaller/bin/freebsd_amd64/* root@localhost:/tmp/
 
-scp -P 3733 \
+scp -P 37333 \
     -F /dev/null \
     -o UserKnownHostsFile=/dev/null \
     -o IdentitiesOnly=yes \
@@ -32,7 +32,7 @@ scp -P 3733 \
     -v \
     $REPRO root@localhost:/tmp/repro.syz
 
-ssh -p 3733 \
+ssh -p 37333 \
     -F /dev/null \
     -o UserKnownHostsFile=/dev/null \
     -o IdentitiesOnly=yes \
