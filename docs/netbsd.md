@@ -173,7 +173,7 @@ load kcov and vhci modules.
 ```sh
 # run following commands on vm
 cd /dev
-sh MAKEDEV kcov vhci0 vhci1 vhci2 vhci3
+sh MAKEDEV kcov
 ```
 
 feel free to run `poweroff` to shutdown vm.
