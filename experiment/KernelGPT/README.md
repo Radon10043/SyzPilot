@@ -62,3 +62,10 @@ python3 gen_spec.py -d analyzer/processed_handlers.json -o spec-output -n 1
 ```
 
 integrate generated specifications into syzkaller and feel free to perform fuzzing.
+
+If you want to re-extract const for KernelGPT's specs:
+```bash
+cd $KERNLGPT/syzkaller
+make bin/syz-extract
+ls sys/linux/gpt4*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=/vol/linux/v6.18/extract/ -os=linux -arch=amd64
+```
