@@ -43,3 +43,6 @@ cd $SYZDESCRIBE
 ```
 
 integrate them into syzkaller and feel free to perform fuzzing.
+```bash
+find $SYZDESCRIBE/workdir -name "syz*" | xargs -I {} cp {} $SYZKALLER/sys/linux
+```
