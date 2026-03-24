@@ -17,6 +17,8 @@ RUN apt-get install -y unzip gettext ccache git-email cpio gawk lsb-release soft
 RUN apt-get install -y cloc openssh-server python3 python3-pip python3-dev language-pack-en-base jq
 RUN apt-get install -y pkg-config libzstd-dev libxml2-dev zlib1g-dev sshfs bear
 
+RUN pip install transformers rich loguru pyyaml openai dotenv psutil
+
 # Install golang-1.23.6
 RUN wget https://go.dev/dl/go1.23.6.linux-amd64.tar.gz
 RUN tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz && \
