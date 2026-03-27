@@ -78,10 +78,10 @@ RUN /bin/bash -c 'ln -s ${BASE}/klee_src /root/ && ln -s ${BASE}/klee_build* /ro
 # TODO Remove when STP is fixed
 RUN /bin/bash -c 'echo "export LD_LIBRARY_PATH=$(cd ${BASE}/metaSMT-*-deps/stp-git-basic/lib/ && pwd):$LD_LIBRARY_PATH" >> /root/.bashrc'
 
-# Install golang-1.23.6
-RUN wget https://go.dev/dl/go1.23.6.linux-amd64.tar.gz
-RUN tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz && \
-    rm go1.23.6.linux-amd64.tar.gz
+# Install golang-1.24.4
+RUN wget https://go.dev/dl/go1.24.4.linux-amd64.tar.gz
+RUN tar -C /usr/local -xzf go1.24.4.linux-amd64.tar.gz && \
+    rm go1.24.4.linux-amd64.tar.gz
 RUN /bin/bash -c 'echo "export PATH=/usr/local/go/bin:$PATH" >> /root/.bashrc'
 
 # Install LLVM-15
