@@ -7,6 +7,19 @@ please replace the following variables according to your actual situation:
 - `$KERNELGPT`: directory for saving KernelGPT source
 - `$KERNSRC`: directory for saving linux kernel source
 
+## TL;DR
+
+Hope the following commands are self-evident.
+```bash
+cd $KERNELGPT
+git apply -3 $CLOUD/experiment/KernelGPT/repo.patch
+git submodule update --init --recursive
+git -C syzkaller-KernelGPT apply $CLOUD/experiment/KernelGPT/specs#linux-v6.7#gpt-4.patch
+git -C syzkaller-KernelGEM apply $CLOUD/experiment/KernelGPT/specs#linux-v6.18#gemini-3-flash-preview.patch
+```
+
+## setup KernelGPT
+
 create a docker image via `$CLOUD/experiment/KernelGPT/Dockerfile` and enter the container.
 ```bash
 docker build -t kernelgpt:latest --network host -f $CLOUD/experiment/KernelGPT/Dockerfile .
@@ -67,5 +80,5 @@ If you want to re-extract const for KernelGPT's specs:
 ```bash
 cd $KERNLGPT/syzkaller
 make bin/syz-extract
-ls sys/linux/gpt4*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=/vol/linux/v6.18/extract/ -os=linux -arch=amd64
+ls sys/linux/gpt4*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$KERNSRC -os=linux -arch=amd64
 ```
