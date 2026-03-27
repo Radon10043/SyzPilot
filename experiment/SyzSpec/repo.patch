@@ -1,10 +1,11 @@
 diff --git a/.gitignore b/.gitignore
 new file mode 100644
-index 0000000..27ba0d8
+index 0000000..1c50c80
 --- /dev/null
 +++ b/.gitignore
-@@ -0,0 +1,2 @@
+@@ -0,0 +1,3 @@
 +build/
++workdir/
 +log.txt
 \ No newline at end of file
 diff --git a/.gitmodules b/.gitmodules
@@ -736,6 +737,183 @@ index c2f3e40..7140f7e 100644
          )
  
  foreach (_suffix ${LIB_BC_SUFFIX})
+diff --git a/scripts/genspec.sh b/scripts/genspec.sh
+new file mode 100755
+index 0000000..370f0ac
+--- /dev/null
++++ b/scripts/genspec.sh
+@@ -0,0 +1,170 @@
++#!/bin/bash
++
++# this script generates syscall specifications for subsystems used in SyzSpec paper
++#
++# usage:
++#   SYZSPEC=$SYZSPEC KERNSRC=$KERNSRC OUTDIR=$OUTDIR $SYZSPEC/scripts/genspec.sh
++
++set -e
++
++if [ -z "$SYZSPEC" ] || [ -z "$KERNSRC" ] || [ -z "$OUTDIR" ]; then
++    echo "Usage: SYZSPEC=\$SYZSPEC KERNSRC=\$KERNSRC OUTDIR=\$OUTDIR $0"
++    exit 1
++fi
++
++mkdir -p $OUTDIR && cd $OUTDIR
++
++# ppp
++mkdir ppp && cd ppp
++nohup $SYZSPEC/build/bin/klee \
++    --entry-point=ppp_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_ppp" \
++    --spec-suffix="" \
++    --spec-output="ppp" $KERNSRC/drivers/net/ppp/built-in.bc &
++cd ..
++
++# i2c
++mkdir i2c && cd i2c
++nohup $SYZSPEC/build/bin/klee \
++    --entry-point=i2cdev_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_i2c" \
++    --spec-suffix="" \
++    --spec-output="i2c" $KERNSRC/drivers/i2c/built-in.bc &
++cd ..
++
++# infiniband
++mkdir infiniband && cd infiniband
++nohup $SYZSPEC/build/bin/klee \
++    --entry-point=ib_uverbs_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_infiniband" \
++    --spec-suffix="" \
++    --spec-output="infiniband" $KERNSRC/drivers/infiniband/core/built-in.bc &
++cd ..
++
++# input_event
++mkdir input_event && cd input_event
++nohup $SYZSPEC/build/bin/klee \
++    --entry-point=evdev_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_evdev" \
++    --spec-suffix="" \
++    --spec-output="input_event" \
++    $KERNSRC/drivers/input/built-in.bc &
++cd ..
++
++# mapper
++mkdir mapper && cd mapper
++nohup $SYZSPEC/build/bin/klee \
++    --entry-point=dm_ctl_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_dm" \
++    --spec-suffix="" \
++    --spec-output="mapper" \
++    $KERNSRC/drivers/md/built-in.bc &
++cd ..
++
++# ptmx
++mkdir ptmx && cd ptmx
++nohup $SYZSPEC/build/bin/klee \
++    --entry-point=tty_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_ptmx" \
++    --spec-suffix="" \
++    --spec-output="ptmx" \
++    $KERNSRC/drivers/tty/built-in.bc &
++cd ..
++
++# sg
++mkdir sg && cd sg
++nohup $SYZSPEC/build/bin/klee \
++    --entry-point=sg_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_sg" \
++    --spec-suffix="" \
++    --spec-output="sg" \
++    $KERNSRC/drivers/scsi/built-in.bc &
++cd ..
++
++# snd_seq
++mkdir snd_seq && cd snd_seq
++nohup $SYZSPEC/build/bin/klee \
++    --entry-point=snd_seq_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_snd_seq" \
++    --spec-suffix="" \
++    --spec-output="snd_seq" \
++    $KERNSRC/sound/core/seq/built-in.bc &
++cd ..
++
++# uinput
++mkdir uinput && cd uinput
++nohup $SYZSPEC/build/bin/klee \
++    --entry-point=uinput_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_uinput" \
++    --spec-suffix="" \
++    --spec-output="uinput" \
++    $KERNSRC/drivers/input/misc/built-in.bc &
++cd ..
++
++# io_uring_register (__do_sys_io_uring_register: fd, opcode, arg, nr_args)
++mkdir io_uring_register && cd io_uring_register
++nohup $SYZSPEC/build/bin/klee \
++    --entry-point=__do_sys_io_uring_register \
++    --spec-arguments-index=0 \
++    --spec-arguments-num=4 \
++    --spec-interface-name=io_uring_register \
++    --spec-prefix="" \
++    --spec-suffix="" \
++    --spec-output="iouring_register" \
++    $KERNSRC/io_uring/built-in.bc &
++cd ..
++
++# io_uring_setup (__do_sys_io_uring_setup: entries, params)
++mkdir io_uring_setup && cd io_uring_setup
++nohup $SYZSPEC/build/bin/klee \
++    --entry-point=__do_sys_io_uring_setup \
++    --spec-arguments-index=0 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=io_uring_setup \
++    --spec-prefix="" \
++    --spec-suffix="" \
++    --spec-output="iouring_setup" \
++    $KERNSRC/io_uring/built-in.bc &
++cd ..
++
++# io_uring_enter (__do_sys_io_uring_enter: fd, to_submit, min_complete, flags, argp, argsz)
++mkdir io_uring_enter && cd io_uring_enter
++nohup $SYZSPEC/build/bin/klee \
++    --entry-point=__do_sys_io_uring_enter \
++    --spec-arguments-index=0 \
++    --spec-arguments-num=6 \
++    --spec-interface-name=io_uring_enter \
++    --spec-prefix="" \
++    --spec-suffix="" \
++    --spec-output="iouring_enter" \
++    $KERNSRC/io_uring/built-in.bc &
++cd ..
++
++echo "all tasks run in background, you can check the output in $OUTDIR"
+\ No newline at end of file
 diff --git a/syzkaller b/syzkaller
 new file mode 160000
 index 0000000..ac3c71e
