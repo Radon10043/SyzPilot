@@ -46,8 +46,8 @@ done
 
 logs=()
 while IFS= read -r title; do
-    desc=$(find $CRASH_DIR -name description -exec grep -l "$title" {} +)
-    new_logs=$(find $(dirname $desc) -name "log*")
+    desc=$(find "$CRASH_DIR" -name description -exec grep -Fl "$title" {} +)
+    new_logs=$(find $(dirname "$desc") -name "log*")
     logs+=("${new_logs[@]}")
 done < "$INTEREST_CRASH"
 
