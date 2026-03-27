@@ -6,6 +6,18 @@ please replace the following variables according to your actual situation:
 - `$CLOUD`: directory for saveing cloud source
 - `$SYZGENPP`: directory for saving SyzGenPlusPlus source
 
+## TL;DR
+
+Hope the following commands are self-evident.
+```bash
+cd $SYZGENPP
+git apply -3 $CLOUD/experiment/SyzGenPlusPlus/repo.patch
+git submodule update --init --recursive
+git -C syzkaller apply $CLOUD/experiment/SyzGenPlusPlus/specs#linux-v6.18.patch
+```
+
+## setup SyzGenPlusPlus
+
 create a docker image via `$CLOUD/experiment/SyzGenPlusPlus/Dockerfile` and enter the container.
 ```bash
 docker build -t syzgenpp:latest --network host -f $CLOUD/experiment/SyzGenPlusPlus/Dockerfile .
@@ -45,3 +57,14 @@ jq -r 'to_entries[] | select(.value.ops != null) | .key' workdir/6.18/model/serv
 ```
 
 integrate them into syzkaller and feel free to perform fuzzing.
+```bash
+cd $SYZGENPP
+cp gopath/src/github.com/google/syzkaller/sys/linux/*_gen.txt syzkaller/sys/linux
+```
+
+If you want to re-extract const for KernelGPT's specs:
+```bash
+cd $KERNLGPT/syzkaller
+make bin/syz-extract
+ls sys/linux/gpt4*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$KERNSRC -os=linux -arch=amd64
+```

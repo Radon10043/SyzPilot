@@ -1,3 +1,11 @@
+diff --git a/.gitmodules b/.gitmodules
+index e69de29..9deec67 100644
+--- a/.gitmodules
++++ b/.gitmodules
+@@ -0,0 +1,3 @@
++[submodule "syzkaller"]
++	path = syzkaller
++	url = https://github.com/google/syzkaller
 diff --git a/hooks/linux/client/Makefile b/hooks/linux/client/Makefile
 index 11e3802..af0d480 100644
 --- a/hooks/linux/client/Makefile
@@ -222,3 +230,10 @@ index 46a3776..0390dbd 100644
          return config
  
      def init_model(self, module_name: str, path: str, ops: Dict[str, int]) -> LinuxDriverModel:
+diff --git a/syzkaller b/syzkaller
+new file mode 160000
+index 0000000..ac3c71e
+--- /dev/null
++++ b/syzkaller
+@@ -0,0 +1 @@
++Subproject commit ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
