@@ -1,8 +1,8 @@
 diff --git a/.gitignore b/.gitignore
-index ad557cc..b162179 100644
+index ad557cc..cca9bd1 100644
 --- a/.gitignore
 +++ b/.gitignore
-@@ -15,3 +15,11 @@ starcoder-*/
+@@ -15,3 +15,14 @@ starcoder-*/
  *.tmp
  tmp
  .cache
@@ -14,17 +14,23 @@ index ad557cc..b162179 100644
 +spec-gen/analyzer/*.txt
 +spec-gen/analyzer/processed_*.json
 +spec-gen/spec-output
++spec-gen/log-macro-no-header.txt
++spec-gen/missing.txt
++spec-eval/debug
 \ No newline at end of file
 diff --git a/.gitmodules b/.gitmodules
-index 4bab15f..1d8eacb 100644
+index 4bab15f..7767b18 100644
 --- a/.gitmodules
 +++ b/.gitmodules
-@@ -4,3 +4,6 @@
+@@ -4,3 +4,9 @@
  [submodule "linux"]
  	path = linux
  	url = https://github.com/torvalds/linux.git
 +[submodule "syzkaller4cloudexp"]
-+	path = syzkaller4cloudexp
++	path = syzkaller-KernelGEM
++	url = https://github.com/google/syzkaller
++[submodule "syzkaller-KernelGPT"]
++	path = syzkaller-KernelGPT
 +	url = https://github.com/google/syzkaller
 diff --git a/linux b/linux
 index d2f51b3..7d0a66e 160000
@@ -34,14 +40,15 @@ index d2f51b3..7d0a66e 160000
 -Subproject commit d2f51b3516dade79269ff45eae2a7668ae711b25
 +Subproject commit 7d0a66e4bb9081d75c82ec4957c50034cb0ea449
 diff --git a/requirements.txt b/requirements.txt
-index ff8ac55..a27c35d 100644
+index ff8ac55..ee79a6f 100644
 --- a/requirements.txt
 +++ b/requirements.txt
-@@ -3,3 +3,4 @@ rich
+@@ -3,3 +3,5 @@ rich
  loguru
  pyyaml
  openai
 +dotenv
++psutil
 diff --git a/spec-gen/analyzer/Makefile b/spec-gen/analyzer/Makefile
 index 603be09..85d94a5 100644
 --- a/spec-gen/analyzer/Makefile
@@ -329,10 +336,17 @@ index 500bfdc..ac3c71e 160000
 @@ -1 +1 @@
 -Subproject commit 500bfdc41735bc8d617cbfd4f1ab6b5980c8f1e5
 +Subproject commit ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
-diff --git a/syzkaller4cloudexp b/syzkaller4cloudexp
+diff --git a/syzkaller-KernelGEM b/syzkaller-KernelGEM
 new file mode 160000
 index 0000000..ac3c71e
 --- /dev/null
-+++ b/syzkaller4cloudexp
++++ b/syzkaller-KernelGEM
+@@ -0,0 +1 @@
++Subproject commit ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
+diff --git a/syzkaller-KernelGPT b/syzkaller-KernelGPT
+new file mode 160000
+index 0000000..ac3c71e
+--- /dev/null
++++ b/syzkaller-KernelGPT
 @@ -0,0 +1 @@
 +Subproject commit ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
