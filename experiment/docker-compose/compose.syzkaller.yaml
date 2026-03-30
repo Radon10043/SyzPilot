@@ -45,6 +45,25 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg" > "$$WORKDIR/fuzz.cfg"
         timeout -s KILL 24h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
+  linux-v6.17.13-kernel:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: __LINUX_6_17_13_KERNEL__
+      IMAGE: __DEBIAN_BULLSEYE__
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "6.17.13"
+      SUBSYSTEM: kernel
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg" > "$$WORKDIR/fuzz.cfg"
+        timeout -s KILL 24h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
   linux-v6.12.63-kernel:
     <<: *base
     environment:
