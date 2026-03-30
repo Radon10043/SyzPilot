@@ -7,7 +7,7 @@
 ### General configuration ###
 #############################
 x-base: &base
-  image: github.com/seclab-ucr/SyzSpec:latest
+  image: github.com/seclab-ucr/syzspec:latest
   privileged: true
   cpus: __CPUS__
   environment: &env
