@@ -7,6 +7,18 @@ please replace the following variables according to your actual situation:
 - `$SYZSPEC`: directory for saving SyzSpec source
 - `$KERNSRC`: directory for saving linux kernel source
 
+# TL;DR
+
+Hope the following commands are self-evident.
+```bash
+cd $SYZSPEC
+git apply -3 $CLOUD/experiment/SyzSpec/repo.patch
+git submodule update --init --recursive
+git -C syzkaller apply $CLOUD/experiment/SyzSpec/specs#linux-v6.18.patch
+```
+
+# setup SyzSpec
+
 create a docker image via `$CLOUD/experiment/SyzDescribe/Dockerfile` and enter the container.
 ```bash
 docker build -t syzspec:latest --network host -f $CLOUD/experiment/SyzDescribe/Dockerfile .
@@ -59,8 +71,28 @@ $SYZSPEC/build/bin/klee \
 	--spec-arguments-index=1 \
 	--spec-arguments-num=2 \
 	--spec-interface-name=ioctl \
-	--spec-prefix="fd fd_spec" \
+	--spec-prefix="fd fd_syzspec_ppp" \
 	--spec-suffix="" \
 	--spec-output="ioctl" \
+    --max-time=24h \
 	$KERNSRC/drivers/net/ppp/built-in.bc
+```
+
+generate specification for subsystems used in SyzSpec paper (24h timeout):
+```bash
+cd $SYZPSEC
+SYZSPEC=$SYZSPEC KERNSRC=$KERNSRC OUTDIR=./workdir ./scripts/genspec.sh
+```
+
+copy generated specs to syzkaller:
+```bash
+cd $SYZSPEC
+find workdir/ -name "syz*.txt" | xargs cp -I {} syzkaller/sys/linux/
+```
+
+manually fix generated spec, then extract consts and format generated specs:
+```bash
+cd $SYZSPEC/syzkaller
+make bin/syz-extract
+ls sys/linux/syz*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$KERNSRC -os=linux -arch=amd64
 ```
