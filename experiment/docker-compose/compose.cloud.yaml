@@ -33,7 +33,7 @@ services:
       KERNEL: __LINUX_V_6_18_KERNEL__
       IMAGE: __DEBIAN_BULLSEYE__
       KERNEL_NAME: linux
-      KERNEL_VERSION: "6.18"
+      KERNEL_VERSION: "v6.18"
       SUBSYSTEM: kernel
     command:
       - bash
@@ -52,7 +52,7 @@ services:
       KERNEL: __LINUX_6_17_13_KERNEL__
       IMAGE: __DEBIAN_BULLSEYE__
       KERNEL_NAME: linux
-      KERNEL_VERSION: "6.17.13"
+      KERNEL_VERSION: "v6.17.13"
       SUBSYSTEM: kernel
     command:
       - bash
@@ -71,7 +71,7 @@ services:
       KERNEL: __LINUX_V_6_12_63_KERNEL__
       IMAGE: __DEBIAN_BULLSEYE__
       KERNEL_NAME: linux
-      KERNEL_VERSION: "6.12.63"
+      KERNEL_VERSION: "v6.12.63"
       SUBSYSTEM: kernel
     command:
       - bash
@@ -90,7 +90,7 @@ services:
       KERNEL: __LINUX_V_6_6_119_KERNEL__
       IMAGE: __DEBIAN_BULLSEYE__
       KERNEL_NAME: linux
-      KERNEL_VERSION: "6.6.119"
+      KERNEL_VERSION: "v6.6.119"
       SUBSYSTEM: kernel
     command:
       - bash
@@ -109,7 +109,7 @@ services:
       KERNEL: __LINUX_V_6_1_159_KERNEL__
       IMAGE: __DEBIAN_BULLSEYE__
       KERNEL_NAME: linux
-      KERNEL_VERSION: "6.1.159"
+      KERNEL_VERSION: "v6.1.159"
       SUBSYSTEM: kernel
     command:
       - bash
@@ -128,7 +128,7 @@ services:
       KERNEL: __LINUX_V_5_15_197_KERNEL__
       IMAGE: __DEBIAN_BULLSEYE__
       KERNEL_NAME: linux
-      KERNEL_VERSION: "5.15.197"
+      KERNEL_VERSION: "v5.15.197"
       SUBSYSTEM: kernel
     command:
       - bash
@@ -140,33 +140,14 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg" > "$$WORKDIR/fuzz.cfg"
         timeout -s KILL 24h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  linux-v5.10.247-kernel:
-    <<: *base
-    environment:
-      <<: *env
-      KERNEL: __LINUX_V_5_10_247_KERNEL__
-      IMAGE: __DEBIAN_BULLSEYE__
-      KERNEL_NAME: linux
-      KERNEL_VERSION: "5.10.247"
-      SUBSYSTEM: kernel
-    command:
-      - bash
-      - -ceu
-      - |
-        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
-        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg" > "$$WORKDIR/fuzz.cfg"
-        timeout -s KILL 24h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
-
-  freebsd-15.0-kernel:
+  freebsd-15.0.0-kernel:
     <<: *base
     environment:
       <<: *env
       IMAGE: __FREEBSD_15_0__
       SSHKEY: __FREEBSD_15_0_SSHKEY__
       KERNEL_NAME: freebsd
-      KERNEL_VERSION: "15.0"
+      KERNEL_VERSION: "15.0.0"
       SUBSYSTEM: kernel
     command:
       - bash
@@ -178,14 +159,14 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg" > "$$WORKDIR/fuzz.cfg"
         timeout -s KILL 24h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  freebsd-14.3-kernel:
+  freebsd-14.3.0-kernel:
     <<: *base
     environment:
       <<: *env
       IMAGE: __FREEBSD_14_3__
       SSHKEY: __FREEBSD_14_3_SSHKEY__
       KERNEL_NAME: freebsd
-      KERNEL_VERSION: "14.3"
+      KERNEL_VERSION: "14.3.0"
       SUBSYSTEM: kernel
     command:
       - bash
@@ -197,14 +178,14 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg" > "$$WORKDIR/fuzz.cfg"
         timeout -s KILL 24h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  freebsd-13.5-kernel:
+  freebsd-13.5.0-kernel:
     <<: *base
     environment:
       <<: *env
       IMAGE: __FREEBSD_13_5__
       SSHKEY: __FREEBSD_13_5_SSHKEY__
       KERNEL_NAME: freebsd
-      KERNEL_VERSION: "13.5"
+      KERNEL_VERSION: "13.5.0"
       SUBSYSTEM: kernel
     command:
       - bash
