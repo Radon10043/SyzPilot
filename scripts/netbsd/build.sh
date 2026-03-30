@@ -9,11 +9,46 @@
 set -euo pipefail
 
 CLOUD=$(realpath $(dirname $0)/../..)
-NETBSD_SRC=$(realpath $1)
 
-cd $NETBSD_SRC
+# required args
+SOURCEDIR=
+JOBS=
+
+print_help() {
+    echo "usage: $0 [ARGS]"
+    echo "  args (required):"
+    echo "    -s,--sourcedir    <SOURCEDIR>     path to the NetBSD source directory"
+    echo "    -j,--jobs         <JOBS>          number of jobs to run in parallel for building"
+    echo "  args (optional):"
+    echo "    -h, --help                        print help message"
+}
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+    -s | --sourcedir)
+        SOURCEDIR=$(realpath $2)
+        shift
+        shift
+        ;;
+    -j | --jobs)
+        JOBS=$2
+        shift
+        shift
+        ;;
+    -h | --help)
+        print_help
+        exit 0
+        ;;
+    *)
+        echo "unknown arg: $1"
+        exit 1
+        ;;
+    esac
+done
+
+cd $SOURCEDIR
 cp $CLOUD/configs/kernel/netbsd.config sys/arch/amd64/conf/CLOUD
-./build.sh -j16 -m amd64 -c clang -U -T ../tools tools
-./build.sh -j16 -m amd64 -c clang -U -T ../tools -D ../dest distribution
-./build.sh -j16 -m amd64 -c clang -U -T ../tools -N 4 kernel=CLOUD | tee build.log
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools tools
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools -D ../dest distribution
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools -N 4 kernel=CLOUD | tee build.log
 compiledb --parse build.log
