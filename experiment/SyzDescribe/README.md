@@ -1,4 +1,4 @@
-# SyzDescribe
+# setup SyzDescribe
 
 this document shows how to setup SyzDescribe and use it for generating specifications and fuzzing.
 
@@ -6,18 +6,6 @@ please replace the following variables according to your actual situation:
 - `$CLOUD`: directory for saveing cloud source
 - `$SYZDESCRIBE`: directory for saving SyzDescribe source
 - `$KERNSRC`: directory for saving linux kernel source
-
-## TL;DR
-
-Hope the following commands are self-evident.
-```bash
-cd $SYZDESCRIBE
-git apply -3 $CLOUD/experiment/SyzDescribe/repo.patch
-git submodule update --init --recursive
-git -C syzkaller-SyzDescribe apply $CLOUD/experiment/SyzDescribe/specs#linux-v6.18.patch
-```
-
-## setup SyzDescribe
 
 create a docker image via `$CLOUD/experiment/SyzDescribe/Dockerfile` and enter the container.
 ```bash

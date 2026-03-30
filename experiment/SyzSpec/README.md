@@ -1,4 +1,4 @@
-## SyzSpec
+# setup SyzSpec
 
 this document shows how to setup SyzSpec and use it for generating syscall specifications and fuzzing.
 
@@ -6,18 +6,6 @@ please replace the following variables according to your actual situation:
 - `$CLOUD`: directory for saveing cloud source
 - `$SYZSPEC`: directory for saving SyzSpec source
 - `$KERNSRC`: directory for saving linux kernel source
-
-# TL;DR
-
-Hope the following commands are self-evident.
-```bash
-cd $SYZSPEC
-git apply -3 $CLOUD/experiment/SyzSpec/repo.patch
-git submodule update --init --recursive
-git -C syzkaller apply $CLOUD/experiment/SyzSpec/specs#linux-v6.18.patch
-```
-
-# setup SyzSpec
 
 create a docker image via `$CLOUD/experiment/SyzDescribe/Dockerfile` and enter the container.
 ```bash

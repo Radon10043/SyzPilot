@@ -1,22 +1,10 @@
-# SyzGenPlusPlus
+# setup SyzGenPlusPlus
 
 this document shows how to setup SyzGenPlusPlus and use it for generating specifications and fuzzing.
 
 please replace the following variables according to your actual situation:
 - `$CLOUD`: directory for saveing cloud source
 - `$SYZGENPP`: directory for saving SyzGenPlusPlus source
-
-## TL;DR
-
-Hope the following commands are self-evident.
-```bash
-cd $SYZGENPP
-git apply -3 $CLOUD/experiment/SyzGenPlusPlus/repo.patch
-git submodule update --init --recursive
-git -C syzkaller apply $CLOUD/experiment/SyzGenPlusPlus/specs#linux-v6.18.patch
-```
-
-## setup SyzGenPlusPlus
 
 create a docker image via `$CLOUD/experiment/SyzGenPlusPlus/Dockerfile` and enter the container.
 ```bash

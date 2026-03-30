@@ -1,4 +1,4 @@
-# KernelGPT
+# setup KernelGPT
 
 this document shows how to setup KernelGPT and use it for generating specifications and fuzzing.
 
@@ -6,19 +6,6 @@ please replace the following variables according to your actual situation:
 - `$CLOUD`: directory for saveing cloud source
 - `$KERNELGPT`: directory for saving KernelGPT source
 - `$KERNSRC`: directory for saving linux kernel source
-
-## TL;DR
-
-Hope the following commands are self-evident.
-```bash
-cd $KERNELGPT
-git apply -3 $CLOUD/experiment/KernelGPT/repo.patch
-git submodule update --init --recursive
-git -C syzkaller-KernelGPT apply $CLOUD/experiment/KernelGPT/specs#linux-v6.7#gpt-4.patch
-git -C syzkaller-KernelGEM apply $CLOUD/experiment/KernelGPT/specs#linux-v6.18#gemini-3-flash-preview.patch
-```
-
-## setup KernelGPT
 
 create a docker image via `$CLOUD/experiment/KernelGPT/Dockerfile` and enter the container.
 ```bash
