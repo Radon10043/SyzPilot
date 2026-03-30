@@ -739,10 +739,10 @@ index c2f3e40..7140f7e 100644
  foreach (_suffix ${LIB_BC_SUFFIX})
 diff --git a/scripts/genspec.sh b/scripts/genspec.sh
 new file mode 100755
-index 0000000..370f0ac
+index 0000000..ad1066c
 --- /dev/null
 +++ b/scripts/genspec.sh
-@@ -0,0 +1,170 @@
+@@ -0,0 +1,181 @@
 +#!/bin/bash
 +
 +# this script generates syscall specifications for subsystems used in SyzSpec paper
@@ -768,6 +768,7 @@ index 0000000..370f0ac
 +    --spec-interface-name=ioctl \
 +    --spec-prefix="fd fd_syzspec_ppp" \
 +    --spec-suffix="" \
++    --max-time=24h \
 +    --spec-output="ppp" $KERNSRC/drivers/net/ppp/built-in.bc &
 +cd ..
 +
@@ -780,6 +781,7 @@ index 0000000..370f0ac
 +    --spec-interface-name=ioctl \
 +    --spec-prefix="fd fd_syzspec_i2c" \
 +    --spec-suffix="" \
++    --max-time=24h \
 +    --spec-output="i2c" $KERNSRC/drivers/i2c/built-in.bc &
 +cd ..
 +
@@ -805,6 +807,7 @@ index 0000000..370f0ac
 +    --spec-prefix="fd fd_syzspec_evdev" \
 +    --spec-suffix="" \
 +    --spec-output="input_event" \
++    --max-time=24h \
 +    $KERNSRC/drivers/input/built-in.bc &
 +cd ..
 +
@@ -818,6 +821,7 @@ index 0000000..370f0ac
 +    --spec-prefix="fd fd_syzspec_dm" \
 +    --spec-suffix="" \
 +    --spec-output="mapper" \
++    --max-time=24h \
 +    $KERNSRC/drivers/md/built-in.bc &
 +cd ..
 +
@@ -831,6 +835,7 @@ index 0000000..370f0ac
 +    --spec-prefix="fd fd_syzspec_ptmx" \
 +    --spec-suffix="" \
 +    --spec-output="ptmx" \
++    --max-time=24h \
 +    $KERNSRC/drivers/tty/built-in.bc &
 +cd ..
 +
@@ -844,6 +849,7 @@ index 0000000..370f0ac
 +    --spec-prefix="fd fd_syzspec_sg" \
 +    --spec-suffix="" \
 +    --spec-output="sg" \
++    --max-time=24h \
 +    $KERNSRC/drivers/scsi/built-in.bc &
 +cd ..
 +
@@ -857,6 +863,7 @@ index 0000000..370f0ac
 +    --spec-prefix="fd fd_syzspec_snd_seq" \
 +    --spec-suffix="" \
 +    --spec-output="snd_seq" \
++    --max-time=24h \
 +    $KERNSRC/sound/core/seq/built-in.bc &
 +cd ..
 +
@@ -870,6 +877,7 @@ index 0000000..370f0ac
 +    --spec-prefix="fd fd_syzspec_uinput" \
 +    --spec-suffix="" \
 +    --spec-output="uinput" \
++    --max-time=24h \
 +    $KERNSRC/drivers/input/misc/built-in.bc &
 +cd ..
 +
@@ -883,6 +891,7 @@ index 0000000..370f0ac
 +    --spec-prefix="" \
 +    --spec-suffix="" \
 +    --spec-output="iouring_register" \
++    --max-time=24h \
 +    $KERNSRC/io_uring/built-in.bc &
 +cd ..
 +
@@ -896,6 +905,7 @@ index 0000000..370f0ac
 +    --spec-prefix="" \
 +    --spec-suffix="" \
 +    --spec-output="iouring_setup" \
++    --max-time=24h \
 +    $KERNSRC/io_uring/built-in.bc &
 +cd ..
 +
@@ -909,6 +919,7 @@ index 0000000..370f0ac
 +    --spec-prefix="" \
 +    --spec-suffix="" \
 +    --spec-output="iouring_enter" \
++    --max-time=24h \
 +    $KERNSRC/io_uring/built-in.bc &
 +cd ..
 +
