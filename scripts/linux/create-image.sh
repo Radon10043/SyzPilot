@@ -196,8 +196,4 @@ echo 'ATTR{name}=="vim2m", SYMLINK+="vim2m"' | sudo tee -a $DIR/etc/udev/rules.d
 
 # Build a disk image
 dd if=/dev/zero of=$RELEASE.img bs=1M seek=$SEEK count=1
-sudo mkfs.ext4 -F $RELEASE.img
-sudo mkdir -p /mnt/$DIR
-sudo mount -o loop $RELEASE.img /mnt/$DIR
-sudo cp -a $DIR/. /mnt/$DIR/.
-sudo umount /mnt/$DIR
+mkfs.ext4 -F -d $DIR $RELEASE.img
