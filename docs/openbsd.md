@@ -87,7 +87,7 @@ run following commands for basic package installation:
 # if you need proxy, uncomment following commands
 # echo "export http_proxy=http://10.0.2.2:7890" >> /root/.profile
 # echo "export https_proxy=http://10.0.2.2:7890" >> /root/.profile
-# exec ksh
+# . ~/.profile
 
 echo "https://mirrors.aliyun.com/openbsd/" > /etc/installurl
 # vim: vim-9.1.1706-no_x11
@@ -105,7 +105,7 @@ cmake . && make -j4 && make install
 cd ..
 rm -rf v23.5.26.tar.gz flatbuffers-23.5.26
 
-ln -s /usr/local/bin/clang-format-19 /usr/local/bin/clang
+ln -s /usr/local/bin/clang-format-19 /usr/local/bin/clang-format
 
 rcctl -f start vmd
 rcctl enable vmd

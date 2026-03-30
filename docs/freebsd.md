@@ -12,13 +12,13 @@ Please replace the following variables according to the actual situation:
 
 ### environment setup
 
-Download FreeBSD image from [https://download.freebsd.org/snapshots/VM-IMAGES](https://download.freebsd.org/snapshots/VM-IMAGES). I use [15.0-STABLE/amd64/Latest/FreeBSD-15.0-STABLE-amd6-ufs.qcow2.xz](https://download.freebsd.org/snapshots/VM-IMAGES/15.0-STABLE/amd64/Latest/FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz).
+Download FreeBSD image from [https://download.freebsd.org/snapshots/VM-IMAGES](https://download.freebsd.org/snapshots/VM-IMAGES). I use [15.0-STABLE/amd64/Latest/FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz](https://download.freebsd.org/snapshots/VM-IMAGES/15.0-STABLE/amd64/Latest/FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz).
 ```bash
 # run following commands on host
 cd $VMDIR
 wget https://download.freebsd.org/snapshots/VM-IMAGES/15.0-STABLE/amd64/Latest/FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz
 unxz -k FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz
-mv FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz dev.qcow2
+mv FreeBSD-15.0-STABLE-amd64-ufs.qcow2 dev.qcow2
 qemu-img resize dev.qcow2 200G
 qemu-system-x86_64 -m 16G -smp 16 -hda ./dev.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host
 ```
@@ -64,6 +64,7 @@ tar -xzvf v23.5.26.tar.gz
 cd flatbuffers-23.5.26
 cmake -G "Unix Makefiles"
 make -j$(sysctl -n hw.ncpu) && make install
+cd ..
 rm -rf flatbuffers-23.5.26 v23.5.26.tar.gz
 ```
 
