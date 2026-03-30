@@ -1,22 +1,5 @@
-diff --git a/executor/common_bsd.h b/executor/common_bsd.h
-index 1e0389af5..59d8ba65b 100644
---- a/executor/common_bsd.h
-+++ b/executor/common_bsd.h
-@@ -223,12 +223,7 @@ static void initialize_tun(int tun_id)
- 	}
- #endif
- 	if (tunfd == -1) {
--#if SYZ_EXECUTOR
--		failmsg("tun: can't open device", "device=%s", tun_device);
--#else
--		printf("tun: can't open %s: errno=%d\n", tun_device, errno);
- 		return;
--#endif // SYZ_EXECUTOR
- 	}
- 	// Remap tun onto higher fd number to hide it from fuzzer and to keep
- 	// fd numbers stable regardless of whether tun is opened or not (also see kMaxFd).
 diff --git a/executor/executor.cc b/executor/executor.cc
-index d6bba7aa7..c96bccf21 100644
+index d6bba7aa7d..c96bccf213 100644
 --- a/executor/executor.cc
 +++ b/executor/executor.cc
 @@ -72,7 +72,11 @@ const int kOutPipeFd = kMaxFd - 2; // remapped from stdout
@@ -31,23 +14,8 @@ index d6bba7aa7..c96bccf21 100644
  const int kFailStatus = 67;
  
  // Two approaches of dealing with kcov memory.
-diff --git a/executor/subprocess.h b/executor/subprocess.h
-index d2b732725..059dec11c 100644
---- a/executor/subprocess.h
-+++ b/executor/subprocess.h
-@@ -36,8 +36,9 @@ public:
- 			}
- 		}
- 		for (int i = max_fd + 1; i < kFdLimit; i++) {
--			if (posix_spawn_file_actions_addclose(&actions, i))
-+			if (fcntl(i, F_GETFD) != -1 && posix_spawn_file_actions_addclose(&actions, i)) {
- 				fail("posix_spawn_file_actions_addclose failed");
-+			}
- 		}
- 
- 		posix_spawnattr_t attr;
 diff --git a/sys/netbsd/dev_dm.txt b/sys/netbsd/dev_dm.txt
-index ecb1648b7..095a2ec9b 100644
+index ecb1648b7a..095a2ec9b5 100644
 --- a/sys/netbsd/dev_dm.txt
 +++ b/sys/netbsd/dev_dm.txt
 @@ -2,6 +2,8 @@
@@ -60,7 +28,7 @@ index ecb1648b7..095a2ec9b 100644
  
  resource fd_dm[fd]
 diff --git a/sys/netbsd/dev_dm.txt.const b/sys/netbsd/dev_dm.txt.const
-index 9ee97e278..03029d0d1 100644
+index 9ee97e278c..03029d0d1f 100644
 --- a/sys/netbsd/dev_dm.txt.const
 +++ b/sys/netbsd/dev_dm.txt.const
 @@ -1,6 +1,6 @@
@@ -72,7 +40,7 @@ index 9ee97e278..03029d0d1 100644
  SYS_ioctl = amd64:54
  SYS_openat = amd64:468
 diff --git a/sys/netbsd/dev_hdaudio.txt b/sys/netbsd/dev_hdaudio.txt
-index c5227fd97..70f0cbb35 100644
+index c5227fd97d..70f0cbb35b 100644
 --- a/sys/netbsd/dev_hdaudio.txt
 +++ b/sys/netbsd/dev_hdaudio.txt
 @@ -2,6 +2,8 @@
@@ -85,7 +53,7 @@ index c5227fd97..70f0cbb35 100644
  
  resource fd_hdaudio[fd]
 diff --git a/sys/netbsd/dev_hdaudio.txt.const b/sys/netbsd/dev_hdaudio.txt.const
-index ac1981a3e..aff66e578 100644
+index ac1981a3e8..aff66e578c 100644
 --- a/sys/netbsd/dev_hdaudio.txt.const
 +++ b/sys/netbsd/dev_hdaudio.txt.const
 @@ -1,6 +1,6 @@
@@ -97,7 +65,7 @@ index ac1981a3e..aff66e578 100644
  HDAUDIO_AFG_WIDGET_INFO = amd64:3222292480
  HDAUDIO_FGRP_CODEC_INFO = amd64:3222300676
 diff --git a/sys/netbsd/dev_i2c.txt b/sys/netbsd/dev_i2c.txt
-index 5c65068f4..ab64956c0 100644
+index 5c65068f41..ab64956c08 100644
 --- a/sys/netbsd/dev_i2c.txt
 +++ b/sys/netbsd/dev_i2c.txt
 @@ -2,6 +2,8 @@
@@ -110,7 +78,7 @@ index 5c65068f4..ab64956c0 100644
  
  resource fd_i2c[fd]
 diff --git a/sys/netbsd/dev_i2c.txt.const b/sys/netbsd/dev_i2c.txt.const
-index 020047125..685aadd01 100644
+index 020047125a..685aadd013 100644
 --- a/sys/netbsd/dev_i2c.txt.const
 +++ b/sys/netbsd/dev_i2c.txt.const
 @@ -1,6 +1,6 @@
@@ -122,7 +90,7 @@ index 020047125..685aadd01 100644
  I2C_OP_READ = amd64:0
  I2C_OP_READ_BLOCK = amd64:5
 diff --git a/sys/netbsd/dev_tprof.txt b/sys/netbsd/dev_tprof.txt
-index f360f3f7b..abfbd3fe1 100644
+index f360f3f7b2..abfbd3fe15 100644
 --- a/sys/netbsd/dev_tprof.txt
 +++ b/sys/netbsd/dev_tprof.txt
 @@ -2,6 +2,8 @@
@@ -135,7 +103,7 @@ index f360f3f7b..abfbd3fe1 100644
  
  resource fd_tprof[fd]
 diff --git a/sys/netbsd/dev_tprof.txt.const b/sys/netbsd/dev_tprof.txt.const
-index 9ee2730d6..7deebd1fe 100644
+index 9ee2730d67..7deebd1fe9 100644
 --- a/sys/netbsd/dev_tprof.txt.const
 +++ b/sys/netbsd/dev_tprof.txt.const
 @@ -1,11 +1,11 @@
@@ -154,7 +122,7 @@ index 9ee2730d6..7deebd1fe 100644
  TPROF_PARAM_KERN = amd64:1
  TPROF_PARAM_USER = amd64:2
 diff --git a/sys/netbsd/dev_wscons.txt b/sys/netbsd/dev_wscons.txt
-index d592e4ae2..317430572 100644
+index d592e4ae21..317430572f 100644
 --- a/sys/netbsd/dev_wscons.txt
 +++ b/sys/netbsd/dev_wscons.txt
 @@ -2,6 +2,8 @@
@@ -167,7 +135,7 @@ index d592e4ae2..317430572 100644
  include <dev/wscons/wsdisplay_usl_io.h>
  include <sys/selinfo.h>
 diff --git a/sys/netbsd/dev_wscons.txt.const b/sys/netbsd/dev_wscons.txt.const
-index a41ca8a1e..329b82081 100644
+index a41ca8a1ed..329b820812 100644
 --- a/sys/netbsd/dev_wscons.txt.const
 +++ b/sys/netbsd/dev_wscons.txt.const
 @@ -1,6 +1,6 @@
@@ -179,7 +147,7 @@ index a41ca8a1e..329b82081 100644
  KDDISABIO = amd64:536890173
  KDENABIO = amd64:536890172
 diff --git a/sys/netbsd/ipc.txt b/sys/netbsd/ipc.txt
-index 843004d19..b2e1a1e83 100644
+index 843004d19f..b2e1a1e837 100644
 --- a/sys/netbsd/ipc.txt
 +++ b/sys/netbsd/ipc.txt
 @@ -14,6 +14,7 @@ resource ipc[int32]: 0, 0xffffffffffffffff
@@ -191,7 +159,7 @@ index 843004d19..b2e1a1e83 100644
  resource ipc_msq[ipc]
  msgget(key proc[2039379027, 4], flags flags[msgget_flags]) ipc_msq
 diff --git a/sys/syz-extract/netbsd.go b/sys/syz-extract/netbsd.go
-index b2ce7d620..dbe268449 100644
+index b2ce7d620a..dbe2684491 100644
 --- a/sys/syz-extract/netbsd.go
 +++ b/sys/syz-extract/netbsd.go
 @@ -52,13 +52,19 @@ func (*netbsd) processFile(arch *Arch, info *compiler.ConstInfo) (map[string]uin
@@ -215,7 +183,7 @@ index b2ce7d620..dbe268449 100644
  	}
  	for _, incdir := range info.Incdirs {
 diff --git a/sys/targets/targets.go b/sys/targets/targets.go
-index a076d2710..e7970ec98 100644
+index a076d2710f..e7970ec985 100644
 --- a/sys/targets/targets.go
 +++ b/sys/targets/targets.go
 @@ -426,7 +426,7 @@ var List = map[string]map[string]*Target{
