@@ -71,8 +71,70 @@ index 37c50eaf8..c7512a6e4 100644
  	return nil
  }
  
+diff --git a/sys/freebsd/socket_inet_tcp.txt b/sys/freebsd/socket_inet_tcp.txt
+index 57ede4284..9c6ba7fdf 100644
+--- a/sys/freebsd/socket_inet_tcp.txt
++++ b/sys/freebsd/socket_inet_tcp.txt
+@@ -13,6 +13,9 @@ include <netinet/tcp.h>
+ include <netinet/cc/cc_newreno.h>
+ include <opencrypto/cryptodev.h>
+ 
++define TCP_PCAP_OUT 2048
++define TCP_PCAP_IN 4096
++
+ resource sock_tcp[sock_in]
+ 
+ socket$inet_tcp(domain const[AF_INET], type const[SOCK_STREAM], proto const[0]) sock_tcp
+diff --git a/sys/freebsd/socket_inet_tcp.txt.const b/sys/freebsd/socket_inet_tcp.txt.const
+index 762b8de25..5cf0aa7bb 100644
+--- a/sys/freebsd/socket_inet_tcp.txt.const
++++ b/sys/freebsd/socket_inet_tcp.txt.const
+@@ -37,6 +37,8 @@ TCP_MD5SIG = 16
+ TCP_NODELAY = 1
+ TCP_NOOPT = 8
+ TCP_NOPUSH = 4
++TCP_PCAP_IN = 4096
++TCP_PCAP_OUT = 2048
+ TCP_REMOTE_UDP_ENCAPS_PORT = 71
+ TCP_RXTLS_ENABLE = 41
+ TCP_RXTLS_MODE = 42
+diff --git a/sys/freebsd/sys.txt b/sys/freebsd/sys.txt
+index 8738250a3..3f302297d 100644
+--- a/sys/freebsd/sys.txt
++++ b/sys/freebsd/sys.txt
+@@ -24,6 +24,8 @@ include <sys/specialfd.h>
+ 
+ type signo int32[0:SIGRTMAX]
+ 
++define SF_SYNC 4
++
+ syz_execute_func(text ptr[in, text[target]]) (disabled)
+ 
+ sf_hdtr {
+diff --git a/sys/freebsd/sys.txt.const b/sys/freebsd/sys.txt.const
+index 3232654af..97d0211fd 100644
+--- a/sys/freebsd/sys.txt.const
++++ b/sys/freebsd/sys.txt.const
+@@ -147,7 +147,7 @@ SYS_futimesat = 494
+ SYS_getegid = 43
+ SYS_geteuid = 25
+ SYS_getgid = 47
+-SYS_getgroups = 79
++SYS_getgroups = 595
+ SYS_getitimer = 86
+ SYS_getlogin = 49
+ SYS_getloginclass = 523
+@@ -191,7 +191,7 @@ SYS_setegid = 182
+ SYS_seteuid = 183
+ SYS_setfib = 175
+ SYS_setgid = 181
+-SYS_setgroups = 80
++SYS_setgroups = 596
+ SYS_setitimer = 83
+ SYS_setlogin = 50
+ SYS_setloginclass = 524
 diff --git a/sys/syz-extract/freebsd.go b/sys/syz-extract/freebsd.go
-index 1bcd9823f..8201563d5 100644
+index 1bcd9823f..57aa66e01 100644
 --- a/sys/syz-extract/freebsd.go
 +++ b/sys/syz-extract/freebsd.go
 @@ -8,8 +8,10 @@ import (
@@ -86,12 +148,13 @@ index 1bcd9823f..8201563d5 100644
  )
  
  type freebsd struct{}
-@@ -40,6 +42,28 @@ func (*freebsd) prepareArch(arch *Arch) error {
+@@ -40,6 +42,46 @@ func (*freebsd) prepareArch(arch *Arch) error {
  		filepath.Join(arch.buildDir, "x86")); err != nil {
  		return fmt.Errorf("failed to create link: %w", err)
  	}
 +
 +	// Generate necessary headers under sys/syzkaller for const extraction.
++	// device_if.h, bus_if.h, etc..
 +	syzDir := filepath.Join(arch.sourceDir, "sys", "syzkaller")
 +	awkArgs := []string{
 +		"-f",
@@ -107,15 +170,32 @@ index 1bcd9823f..8201563d5 100644
 +		return fmt.Errorf("failed to run awk: %w", err)
 +	}
 +
-+	// opt_cam.h is required for some headers although it is empty.
-+	if err := osutil.WriteFile(filepath.Join(syzDir, "opt_cam.h"), []byte("")); err != nil {
-+		return fmt.Errorf("failed to create opt_cam.h: %w", err)
++	// Generate vnode_if.h.
++	awkArgs = []string{
++		"-f",
++		filepath.Join(arch.sourceDir, "sys", "tools", "vnode_if.awk"),
++		filepath.Join(arch.sourceDir, "sys", "kern", "vnode_if.src"),
++		"-qhp",
++	}
++	if _, err := osutil.RunCmd(10*time.Second, syzDir, "awk", awkArgs...); err != nil {
++		return fmt.Errorf("failed to run awk: %w", err)
++	}
++
++	// Generate opt_*.h headers and save to sys/syzkaller.
++	confDir := filepath.Join(arch.sourceDir, "sys", "amd64", "conf")
++	configArgs := []string{
++		"-d",
++		syzDir,
++		"GENERIC",
++	}
++	if _, err := osutil.RunCmd(10*time.Second, confDir, "config", configArgs...); err != nil {
++		return fmt.Errorf("failed to run config command: %w", err)
 +	}
 +
  	return nil
  }
  
-@@ -52,10 +76,12 @@ func (*freebsd) processFile(arch *Arch, info *compiler.ConstInfo) (map[string]ui
+@@ -52,10 +94,12 @@ func (*freebsd) processFile(arch *Arch, info *compiler.ConstInfo) (map[string]ui
  		"-D__BSD_VISIBLE=1",
  		"-DCOMPAT_FREEBSD13",
  		"-DCOMPAT_FREEBSD14",
