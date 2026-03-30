@@ -2,7 +2,6 @@
 
 Please replace the following variables according to the actual situation:
 - `$EXPERIMENT_ROOT`: directory for saving experiment artifacts.
-- `$CLOUD`: directory for saving source of cloud.
 - `$JOBS`: number of parallel jobs.
 
 ## setup experiment environment
@@ -11,6 +10,13 @@ prepare ~1T free space, start up a container based on cloud image. In container,
 ```bash
 cd $EXPERIMENT_ROOT
 mkdir kernel fuzzer images
+```
+
+download cloud first, many important artifacts are in this repository:
+```bash
+cd $EXPERIMENT_ROOT/fuzzer
+git clone https://github.com/Radon10043/cloud && cd cloud
+git submodule update --init --recursive
 ```
 
 ### setup kernel/linux
@@ -24,12 +30,12 @@ git clone -b v6.6.119 --depth 1 https://github.com/gregkh v6.6.119
 git clone -b v6.1.159 --depth 1 https://github.com/gregkh v6.1.159
 git clone -b v5.15.197 --depth 1 https://github.com/gregkh v5.15.197
 
-cd $EXPERIMENT_ROOT/kernel/linux/v6.18 && cp $CLOUD/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
-cd $EXPERIMENT_ROOT/kernel/linux/v6.17.13 && cp $CLOUD/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
-cd $EXPERIMENT_ROOT/kernel/linux/v6.12.63 && cp $CLOUD/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
-cd $EXPERIMENT_ROOT/kernel/linux/v6.6.119 && cp $CLOUD/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
-cd $EXPERIMENT_ROOT/kernel/linux/v6.1.159 && cp $CLOUD/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
-cd $EXPERIMENT_ROOT/kernel/linux/v5.15.197 && cp $CLOUD/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
+cd $EXPERIMENT_ROOT/kernel/linux/v6.18 && cp $EXPERIMENT_ROOT/fuzzer/cloud/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
+cd $EXPERIMENT_ROOT/kernel/linux/v6.17.13 && cp $EXPERIMENT_ROOT/fuzzer/cloud/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
+cd $EXPERIMENT_ROOT/kernel/linux/v6.12.63 && cp $EXPERIMENT_ROOT/fuzzer/cloud/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
+cd $EXPERIMENT_ROOT/kernel/linux/v6.6.119 && cp $EXPERIMENT_ROOT/fuzzer/cloud/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
+cd $EXPERIMENT_ROOT/kernel/linux/v6.1.159 && cp $EXPERIMENT_ROOT/fuzzer/cloud/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
+cd $EXPERIMENT_ROOT/kernel/linux/v5.15.197 && cp $EXPERIMENT_ROOT/fuzzer/cloud/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
 ```
 
 ### setup kernel/netbsd
@@ -49,7 +55,7 @@ git checkout 15e7fbc5
 
 ```bash
 mkdir -p $EXPERIMENT_ROOT/images/Debian/bullseye && cd $EXPERIMENT_ROOT/images/Debian/bullseye
-cp $CLOUD/scripts/linux/create-image.sh && chmod +x ./create-image.sh
+cp $EXPERIMENT_ROOT/fuzzer/cloud/scripts/linux/create-image.sh && chmod +x ./create-image.sh
 ./create-image.sh
 ```
 
