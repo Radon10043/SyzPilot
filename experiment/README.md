@@ -13,7 +13,7 @@ cd $EXPERIMENT_ROOT
 mkdir kernel fuzzer images
 ```
 
-### setup linux kernels
+### setup kernel/linux
 
 ```bash
 mkdir $EXPERIMENT_ROOT/kernel/linux && cd $EXPERIMENT_ROOT/kernel/linux
@@ -32,7 +32,7 @@ cd $EXPERIMENT_ROOT/kernel/linux/v6.1.159 && cp $CLOUD/configs/kernel/linux.cfg 
 cd $EXPERIMENT_ROOT/kernel/linux/v5.15.197 && cp $CLOUD/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
 ```
 
-### setup netbsd kernels
+### setup kernel/netbsd
 
 ```bash
 cd $EXPERIMENT_ROOT
@@ -45,7 +45,7 @@ git fetch --depth 1 origin 15e7fbc53d77cd7cc1d62511982b8972c4c0c421
 git checkout 15e7fbc5
 ```
 
-### setup linux image
+### setup image/linux
 
 ```bash
 mkdir -p $EXPERIMENT_ROOT/images/Debian/bullseye && cd $EXPERIMENT_ROOT/images/Debian/bullseye
@@ -53,7 +53,7 @@ cp $CLOUD/scripts/linux/create-image.sh && chmod +x ./create-image.sh
 ./create-image.sh
 ```
 
-### setup freebsd images
+### setup image/freebsd
 
 (host) generate a sshkey:
 ```bash
@@ -273,7 +273,7 @@ ssh -i ./freebsd.id_rsa -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKey
 
 qemu, git clone, gmake, scp
 
-### setup openbsd images
+### setup image/openbsd
 
 (host) generate sshkey for openbsd images:
 ```bash
@@ -590,7 +590,7 @@ ssh -i ./openbsd.id_rsa -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKey
 shutdown -p now
 ```
 
-### setup netbsd images
+### setup image/netbsd
 
 (hsot) generate sshkey:
 ```bash
