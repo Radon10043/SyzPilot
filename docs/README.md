@@ -97,3 +97,88 @@ Some flags of generator:
     - `-otl-system-prompt`: path to file(s) for outline prompt, use comma to separate multiple files (default: `$PWD/data/prompts/outline/instruction.md,$PWD/data/prompts/outline/example_media.md,$PWD/data/prompts/outline/example_ppp.md`)
     - `-gen-system-prompt`: path to file(s) for generate prompt, use comma to separate multiple files (default: `$PWD/data/prompts/generate/instruction.md,$PWD/data/prompts/generate/example_media.md,$PWD/data/prompts/generate/example_ppp.md`)
     - `-fix-system-prompt`: path to file(s) for fix prompt, use comma to separate multiple files (default: `$PWD/data/prompts/fix/instruction.md,$PWD/data/prompts/fix/example_v4l2.md`)
+
+# trophies
+
+## merged specifications
+
+- [PR#6961](https://github.com/google/syzkaller/pull/6961)
+- [PR#6943](https://github.com/google/syzkaller/pull/6943)
+- [PR#6922](https://github.com/google/syzkaller/pull/6922)
+- [PR#6875](https://github.com/google/syzkaller/pull/6875)
+- [PR#6790](https://github.com/google/syzkaller/pull/6790)
+- [PR#6746](https://github.com/google/syzkaller/pull/6746)
+- [PR#6555](https://github.com/google/syzkaller/pull/6555)
+- [PR#6525](https://github.com/google/syzkaller/pull/6525)
+
+## linux bugs
+
+- [CVE-2026-23214](https://lore.kernel.org/linux-cve-announce/2026021800-CVE-2026-23214-c822@gregkh/), [WARNING in find_free_extent](https://groups.google.com/g/syzkaller/c/4_Wizixja3I)
+- [CVE-2026-23249](https://lore.kernel.org/linux-cve-announce/2026031843-CVE-2026-23249-c309@gregkh/), [general protection fault in xchk_btree](https://groups.google.com/g/syzkaller/c/PdqG_MarO5Y)
+- [CVE-2026-23250](https://lore.kernel.org/linux-cve-announce/2026031845-CVE-2026-23250-271e@gregkh/), [general protection fault in xchk_metadata_inode_forks](https://groups.google.com/g/syzkaller/c/RsEEzP_yxlc/m/rE0a7FDoAQAJ)
+- [CVE-2026-23251](https://lore.kernel.org/linux-cve-announce/2026031845-CVE-2026-23251-259a@gregkh/), [general protection fault in xfarray_destroy](https://groups.google.com/g/syzkaller/c/CIKKUTDIRq4)
+- [CVE-2026-23252](https://lore.kernel.org/linux-cve-announce/2026031846-CVE-2026-23252-6bef@gregkh/), [general protection fault in alloc_file_pseudo](https://groups.google.com/g/syzkaller/c/CIKKUTDIRq4)
+- [CVE-2026-23223](https://lore.kernel.org/linux-cve-announce/2026021806-CVE-2026-23223-e3d3@gregkh/), [KASAN slab-use-after-free Read in xchk_btree_check_block_owner](https://groups.google.com/g/syzkaller/c/PdqG_MarO5Y/m/RR-4ffJuAgAJ)
+- [WARNING in iterate_dir](https://groups.google.com/g/syzkaller/c/psHLMX5Drko/m/CRsGM-3fCQAJ)
+- [KASAN: slab-use-after-free Write in dvb_device_open](https://groups.google.com/g/syzkaller/c/gopfrRcxp4w/m/yBhPduWTAwAJ)
+- [KFENCE: use-after-free read in dvb_frontend_release](https://groups.google.com/g/syzkaller/c/gopfrRcxp4w/m/yBhPduWTAwAJ)
+- [KASAN: slab-use-after-free Read in dvb_frontend_thread](https://groups.google.com/g/syzkaller/c/gopfrRcxp4w/m/yBhPduWTAwAJ)
+- [WARNING: still has locks held in _dmxdev_lock](https://groups.google.com/g/syzkaller/c/gopfrRcxp4w/m/yBhPduWTAwAJ)
+- [WARNING: bad unlock balance in _dmxdev_unlock](https://groups.google.com/g/syzkaller/c/gopfrRcxp4w/m/yBhPduWTAwAJ)
+- [possible deadlock in dvb_dvr_release](https://groups.google.com/g/syzkaller/c/gopfrRcxp4w/m/yBhPduWTAwAJ)
+- [possible deadlock in ocfs2_try_to_free_truncate_log](https://groups.google.com/g/syzkaller/c/Pjrgfrlrk68/m/5IfA3Y_SAQAJ) (*syzbot report before but cannot generate reproducer*)
+- [WARNING in exc_debug_kernel](https://groups.google.com/g/syzkaller/c/PoXFwx7Qw3w/m/ywb0H7Y_BAAJ)
+- [general protection fault in dvb_device_open](https://groups.google.com/g/syzkaller/c/h3rqEuibYtk/m/5g2nKlWLAAAJ)
+
+bugs related to our generated specification and reported by syzbot:
+
+- [CVE-2026-23253](https://lore.kernel.org/linux-cve-announce/2026031846-CVE-2026-23253-b1c6@gregkh/), [BUG: corrupted list in io_poll_remove_entries](https://syzkaller.appspot.com/bug?extid=ab12f0c08dd7ab8d057c)
+- [memory leak in dvb_register_device](https://syzkaller.appspot.com/bug?extid=d37184d9d8cc34602616)
+- [KMSAN: uninit-value in vidtv_ts_null_write_into](https://syzkaller.appspot.com/bug?extid=96f901260a0b2d29cd1a)
+- [KASAN: slab-use-after-free Read in dvb_frontend_release](https://syzkaller.appspot.com/bug?extid=ae466a728017ec940b41)
+- [KMSAN: uninit-value in dvb_demux_read](https://syzkaller.appspot.com/bug?extid=bd7c90de4c9f1f8ab660)
+- [memory leak in vidtv_psi_service_desc_init](https://syzkaller.appspot.com/bug?extid=639ebc6ec75e96674741)
+- [KMSAN: uninit-value in dvbdmx_release_ts_feed](https://syzkaller.appspot.com/bug?extid=01d4620886bee3db0e74)
+- [BUG: corrupted list in io_poll_remove_entries](https://syzkaller.appspot.com/bug?extid=ab12f0c08dd7ab8d057c)
+- [general protection fault in nilfs_mdt_save_to_shadow_map](https://syzkaller.appspot.com/bug?extid=4b4093b1f24ad789bf37)
+- [WARNING in nilfs_btree_mark](https://syzkaller.appspot.com/bug?extid=98a040252119df0506f8)
+- [general protection fault in bio_add_page](https://syzkaller.appspot.com/bug?extid=ed8bc247f231c1a48e21)
+- [general protection fault in bio_alloc_bioset](https://syzkaller.appspot.com/bug?extid=09ddb593eea76a158f42)
+
+## freebsd bugs
+
+- [bug#293888](https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=293888)
+- [bug#293890](https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=293890)
+- [bug#293891](https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=293891)
+- [bug#293892](https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=293892)
+- [bug#293893](https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=293893)
+- [bug#293895](https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=293895)
+- [bug#293898](https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=293898)
+- [bug#293899](https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=293899)
+- [bug#293900](https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=293900)
+- [bug#293901](https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=293901)
+
+test cases generated by our tool are incorporated into FreeBSD's test suite:
+
+- [stress2: Added syzkaller reproducers. Update the exclude file](https://cgit.freebsd.org/src/commit/?id=4f8a1b4dffa8a6fa5fbe7fce05278792afd83a82)
+
+## openbsd bugs
+
+- [uvm_fault: dovutimens](https://marc.info/?l=openbsd-bugs&m=177398214322506&w=2)
+- [uvm_fault: lptpushbytes](https://marc.info/?l=openbsd-bugs&m=177398271022704&w=2)
+
+## netbsd bugs
+
+- [assert failed: chp->ch_drive[drive].drv_softc == NULL](https://mail-index.netbsd.org/netbsd-bugs/2026/04/02/msg092421.html)
+- [assert failed: hispgrp->pg_jobc > NUM](https://mail-index.netbsd.org/netbsd-bugs/2026/04/02/msg092422.html)
+- [assert failed: it->it_time.it_value.tv_sec >= NUM](https://mail-index.netbsd.org/netbsd-bugs/2026/04/02/msg092423.html)
+- [assert failed: kn->kn_fop == &proc_filtops](https://mail-index.netbsd.org/netbsd-bugs/2026/04/02/msg092424.html)
+- [assert failed: kq->kq_fdp == fdp](https://mail-index.netbsd.org/netbsd-bugs/2026/04/02/msg092425.html)
+- [assert failed: ks->ks_pshared_proc == NULL](https://mail-index.netbsd.org/netbsd-bugs/2026/04/02/msg092426.html)
+- [assert failed: ps->ps_endoffset != endoffset](https://mail-index.netbsd.org/netbsd-bugs/2026/04/02/msg092427.html)
+- [assert failed: sc->sc_base.me_evp != NULL](https://mail-index.netbsd.org/netbsd-bugs/2026/04/02/msg092428.html)
+- [assert failed: ts->tv_nsec >= NUM](https://mail-index.netbsd.org/netbsd-bugs/2026/04/02/msg092429.html)
+- [assert failed: uio->uio_iovcnt > NUM](https://mail-index.netbsd.org/netbsd-bugs/2026/04/02/msg092430.html)
+- [panic: ASan: Unauthorized Access In ADDR: Addr ADDR [ADDR bytes, read, KmemRedZone]](https://mail-index.netbsd.org/netbsd-bugs/2026/04/02/msg092431.html)
+- [panic: ASan: Unauthorized Access In ADDR: Addr ADDR [NUM byte, read, KmemRedZone]](https://mail-index.netbsd.org/netbsd-bugs/2026/04/02/msg092432.html)
+- [panic: LOCKDEBUG: Mutex error: rw_vector_enter,NUM: spin lock held](https://mail-index.netbsd.org/netbsd-bugs/2026/04/02/msg092433.html)
