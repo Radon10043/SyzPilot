@@ -1,3 +1,5 @@
+// TODO: minitask only support generating outlines for variables now, we can extend it to support functions in the future
+
 package main
 
 import (

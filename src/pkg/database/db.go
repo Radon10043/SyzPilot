@@ -5,6 +5,15 @@ import (
 	"gorm.io/gorm"
 )
 
+// Entry is a common interface for database entities that contain source code
+// and can be used as input to the spec generation pipeline (e.g., GlobalVar, Function).
+type Entry interface {
+	GetName() string
+	GetCode() string
+	GetFile() string
+	GetLine() int
+}
+
 type Database struct {
 	Path   string   // path to the SQLite database file
 	gormDB *gorm.DB // GORM database connection
@@ -60,6 +69,17 @@ type MacroDef struct {
 	Code string // macro code
 }
 
+// Entry interface implementation for Function
+func (f Function) GetName() string { return f.Name }
+func (f Function) GetCode() string { return f.Code }
+func (f Function) GetFile() string { return f.File }
+func (f Function) GetLine() int    { return f.Line }
+
+// specify table name for Function model
+func (Function) TableName() string {
+	return "functions"
+}
+
 // Connect connect to the SQLite database
 func (db *Database) Connect() error {
 	gormDB, err := gorm.Open(sqlite.Open(db.Path), &gorm.Config{})
@@ -75,6 +95,13 @@ func (db *Database) GetFunction(name string) (Function, error) {
 		return fun, gorm.ErrRecordNotFound
 	}
 	return fun, nil
+}
+
+// GetAllFunction get all functions from the database
+func (db *Database) GetAllFunction() ([]Function, error) {
+	var fns []Function
+	result := db.gormDB.Find(&fns)
+	return fns, result.Error
 }
 
 // GetRecord get record data by record name
@@ -136,6 +163,12 @@ func (db *Database) GetTypedef(def string) (Typedef, error) {
 	}
 	return td, nil
 }
+
+// Entry interface implementation for GlobalVar
+func (gv GlobalVar) GetName() string { return gv.Name }
+func (gv GlobalVar) GetCode() string { return gv.Code }
+func (gv GlobalVar) GetFile() string { return gv.File }
+func (gv GlobalVar) GetLine() int    { return gv.Line }
 
 // specify table name for GlobalVar model
 func (GlobalVar) TableName() string {

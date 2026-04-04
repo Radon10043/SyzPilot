@@ -16,7 +16,7 @@ import (
 
 // ExecGenerateStep execute the generate step of the write spec process
 func ExecGenerateStep(
-	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, logger *log.Logger, sh *StageHelper,
+	kAgent *agent.Agent, sysPrompt string, entry database.Entry, logger *log.Logger, sh *StageHelper,
 ) error {
 	type genContent struct {
 		Spec     []pool.SpecElement    `json:"spec"`
@@ -82,7 +82,7 @@ func ExecGenerateStep(
 	ctxSpec.WriteString(ctxPool.Syzlang())
 
 	// prompt agent to generate spec for the element
-	if jstr, err = collectSpec(kAgent, sysPrompt, ctxSpec, gvEntry, telem, logger); err != nil {
+	if jstr, err = collectSpec(kAgent, sysPrompt, ctxSpec, entry, telem, logger); err != nil {
 		return err
 	}
 	if err = sh.SaveQueryMessages(kAgent, "generate-"); err != nil {
@@ -104,7 +104,7 @@ func ExecGenerateStep(
 
 // collectSpec prompt agent to generate syscall spec for a given task element
 func collectSpec(
-	kAgent *agent.Agent, sysPrompt string, ctxSpec strings.Builder, gvEntry *database.GlobalVar, telem *queue.TaskQueueElem, logger *log.Logger,
+	kAgent *agent.Agent, sysPrompt string, ctxSpec strings.Builder, entry database.Entry, telem *queue.TaskQueueElem, logger *log.Logger,
 ) (string, error) {
 	// prompt agent to generate spec to complete part of todo tasks
 	var (
@@ -112,7 +112,7 @@ func collectSpec(
 		jstr  string
 	)
 	kAgent.Purge()
-	response, err := genSpec(kAgent, sysPrompt, ctxSpec, gvEntry, telem, logger)
+	response, err := genSpec(kAgent, sysPrompt, ctxSpec, entry, telem, logger)
 	if err != nil {
 		return "", err
 	}
@@ -125,7 +125,7 @@ func collectSpec(
 
 // genSpec prompt agent to generate syscall spec iteratively
 func genSpec(
-	kAgent *agent.Agent, sysPrompt string, ctxSpec strings.Builder, gvEntry *database.GlobalVar, telem *queue.TaskQueueElem, logger *log.Logger,
+	kAgent *agent.Agent, sysPrompt string, ctxSpec strings.Builder, entry database.Entry, telem *queue.TaskQueueElem, logger *log.Logger,
 ) (*llms.ContentResponse, error) {
 	// make agent ready for spec generation stage
 	var err error
@@ -138,7 +138,7 @@ func genSpec(
 	var response *llms.ContentResponse
 	humanMsg := fmt.Sprintf(
 		"```c\n%s\n```\n\nPlease write specification for %s `%s`\n\n",
-		gvEntry.Code, telem.Type, telem.Name,
+		entry.GetCode(), telem.Type, telem.Name,
 	)
 	if ctxSpec.Len() > 0 {
 		humanMsg += fmt.Sprintf(

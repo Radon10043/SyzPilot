@@ -13,13 +13,13 @@ import (
 
 // ExecOutlineStep execute the outline step of the write spec process
 func ExecOutlineStep(
-	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, logger *log.Logger, sh *StageHelper,
+	kAgent *agent.Agent, sysPrompt string, entry database.Entry, logger *log.Logger, sh *StageHelper,
 ) error {
 	var (
 		err  error
 		jstr string
 	)
-	if jstr, err = collectOutline(kAgent, sysPrompt, gvEntry, logger); err != nil {
+	if jstr, err = collectOutline(kAgent, sysPrompt, entry, logger); err != nil {
 		return err
 	}
 	if sh.Tqueue, err = queue.NewTaskQueueFromJson(jstr); err != nil {
@@ -31,16 +31,16 @@ func ExecOutlineStep(
 	return nil
 }
 
-// collectOutline prompt agent to outline todo tasks or reuse existing outline for a global variable
+// collectOutline prompt agent to outline todo tasks or reuse existing outline for a database entry
 func collectOutline(
-	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, logger *log.Logger,
+	kAgent *agent.Agent, sysPrompt string, entry database.Entry, logger *log.Logger,
 ) (string, error) {
 	var (
 		outline string
 		found   bool
 	)
 	kAgent.Purge()
-	response, err := genOutline(kAgent, sysPrompt, gvEntry, logger)
+	response, err := genOutline(kAgent, sysPrompt, entry, logger)
 	if err != nil {
 		return "", err
 	}
@@ -51,9 +51,9 @@ func collectOutline(
 	return outline, nil
 }
 
-// genOutline prompt agent to outline todo tasks for a global variable
+// genOutline prompt agent to outline todo tasks for a database entry
 func genOutline(
-	kAgent *agent.Agent, sysPrompt string, gvEntry *database.GlobalVar, logger *log.Logger,
+	kAgent *agent.Agent, sysPrompt string, entry database.Entry, logger *log.Logger,
 ) (*llms.ContentResponse, error) {
 	// make agent ready for outline stage
 	var err error
@@ -64,7 +64,7 @@ func genOutline(
 
 	// prompt agent to outline todo tasks
 	var response *llms.ContentResponse
-	kAgent.AddHumanMessage(gvEntry.Code)
+	kAgent.AddHumanMessage(entry.GetCode())
 	for {
 		response, err = kAgent.Query()
 		if err != nil {

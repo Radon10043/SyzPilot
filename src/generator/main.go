@@ -25,6 +25,12 @@ import (
 	"github.com/tmc/langchaingo/llms/openai"
 )
 
+// RefEntry is a struct to store reference entry for spec generation,
+type RefEntry struct {
+	Type string // only support "variable" and "function" currently
+	Name string
+}
+
 type ProgConfig struct {
 	// agent configs
 	Model string
@@ -37,7 +43,7 @@ type ProgConfig struct {
 	ExtractBin string
 	CheckBin   string
 	Kernel     string
-	Varlist    string
+	Ref        string
 	Resume     bool
 	Prefix     string
 
@@ -81,8 +87,8 @@ func main() {
 	cfg.CheckBin = stap.toAbsPath(cfg.CheckBin)
 	cfg.Kernel = stap.toAbsPath(cfg.Kernel)
 	cfg.Sysdir = stap.toAbsPath(cfg.Sysdir)
-	if cfg.Varlist != "" {
-		cfg.Varlist = stap.toAbsPath(cfg.Varlist)
+	if cfg.Ref != "" {
+		cfg.Ref = stap.toAbsPath(cfg.Ref)
 	}
 	if cfg.Prefix != "" {
 		cfg.Prefix = stap.toAbsPath(cfg.Prefix)
@@ -130,8 +136,8 @@ func main() {
 
 	// create a queue that used to prompt llm for spec generation
 	log.Println("Generating queue ...")
-	varlist := readVarlist(cfg.Varlist)
-	queue, err := createQueue(&db, varlist)
+	refEntries := readRefFile(cfg.Ref)
+	queue, err := createQueue(&db, refEntries)
 	if err != nil {
 		log.Fatalf("failed to create queue: %v\n", err)
 	}
@@ -175,15 +181,15 @@ func main() {
 	go func() {
 		defer resWg.Done()
 		for res := range ress {
-			log.Printf("[T%d][%s] write job result: err=%v", res.Tid, res.Gv.Name, res.Err)
+			log.Printf("[T%d][%s] write job result: err=%v", res.Tid, res.Entry.GetName(), res.Err)
 		}
 	}()
 
 	// start to dispatch write jobs
-	for i, gv := range queue {
+	for i, entry := range queue {
 		jobs <- WriteJob{
 			Progress:     fmt.Sprintf("%d/%d", i+1, len(queue)),
-			Gv:           &gv,
+			Entry:        entry,
 			SysPromptMap: &sysPromptMap,
 		}
 	}
@@ -194,9 +200,9 @@ func main() {
 	log.Printf("all write jobs have been completed.\n")
 }
 
-// readVarlist read global variable list from user-specified file, return a slice of global variable names
-func readVarlist(path string) []string {
-	var vlist []string
+// readRefFile read reference entries from user-specified file, return a slice of RefEntry
+func readRefFile(path string) []RefEntry {
+	var entries []RefEntry
 	data, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatalf("failed to read varlist file: %v\n", err)
@@ -207,22 +213,33 @@ func readVarlist(path string) []string {
 		if line == "" {
 			continue
 		}
-		vlist = append(vlist, line)
+		tmp := strings.Split(line, ",")
+		typ, name := strings.TrimSpace(tmp[0]), strings.TrimSpace(tmp[1])
+		entries = append(entries, RefEntry{Type: typ, Name: name})
 	}
-	return vlist
+	return entries
 }
 
-// createQueue creates a queue includes global variables that includes interested keys
-func createQueue(db *database.Database, varlist []string) ([]database.GlobalVar, error) {
-	var (
-		queue []database.GlobalVar
-	)
-	for _, v := range varlist {
-		gv, err := db.GetGlobalVar(v)
-		if err != nil {
-			return nil, fmt.Errorf("failed to get global variable from database: %v", err)
+// createQueue creates a queue of database entities from reference entries
+func createQueue(db *database.Database, refEntries []RefEntry) ([]database.Entry, error) {
+	var queue []database.Entry
+	for _, ref := range refEntries {
+		switch ref.Type {
+		case "variable":
+			gv, err := db.GetGlobalVar(ref.Name)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get global variable %q from database: %v", ref.Name, err)
+			}
+			queue = append(queue, gv)
+		case "function":
+			fn, err := db.GetFunction(ref.Name)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get function %q from database: %v", ref.Name, err)
+			}
+			queue = append(queue, fn)
+		default:
+			return nil, fmt.Errorf("unsupported reference type %q for entry %q", ref.Type, ref.Name)
 		}
-		queue = append(queue, gv)
 	}
 	return queue, nil
 }
@@ -241,7 +258,7 @@ func setConfigs() *ProgConfig {
 	flag.StringVar(&cfg.Kernel, "kernel", "", "Path to kernel used for spec extraction")
 	flag.StringVar(&cfg.Sysdir, "sysdir", "./syzkaller/sys/", "Path to the sys directory (syzkaller/sys like structure)")
 	flag.BoolVar(&cfg.Resume, "resume", true, "Whether to resume from previous interrupted run")
-	flag.StringVar(&cfg.Varlist, "varlist", "", "Path to the global variable list file")
+	flag.StringVar(&cfg.Ref, "ref", "", "Path to the reference entries file")
 	flag.IntVar(&cfg.MaxFix, "max-fix", 5, "Maximum number of fix attempts for invalid specs")
 	flag.IntVar(&cfg.MaxRetry, "max-retry", 5, "Maximum number of retry attempts for writing spec (-1 means infinite retries)")
 	flag.IntVar(&cfg.Jobs, "jobs", 1, "Maximum number of parallel jobs.")
@@ -296,8 +313,8 @@ func checkConfig(cfg *ProgConfig) error {
 	if cfg.Prefix != "" {
 		fileExistHelperFunc(cfg.Prefix, "-prefix")
 	}
-	if cfg.Varlist != "" {
-		fileExistHelperFunc(cfg.Varlist, "-varlist")
+	if cfg.Ref != "" {
+		fileExistHelperFunc(cfg.Ref, "-ref")
 	}
 	for f := range strings.SplitSeq(cfg.OtlSysPrompt, ",") {
 		fileExistHelperFunc(f, "-otl-system-prompt")
@@ -343,25 +360,25 @@ func checkConfig(cfg *ProgConfig) error {
 }
 
 type WriteJob struct {
-	Progress     string              // a prefix to indicate progress, e.g., "1/100"
-	Gv           *database.GlobalVar // the global variable entry to write spec for
-	SysPromptMap *map[string]string  // system prompt map
-	Db           *database.Database  // database instance
+	Progress     string             // a prefix to indicate progress, e.g., "1/100"
+	Entry        database.Entry     // the database entry (variable or function) to write spec for
+	SysPromptMap *map[string]string // system prompt map
+	Db           *database.Database // database instance
 }
 
 type WriteJobRes struct {
-	Tid int                 // task id
-	Gv  *database.GlobalVar // global variable entry
-	Err error               // error during writing spec
+	Tid   int            // task id
+	Entry database.Entry // database entry
+	Err   error          // error during writing spec
 }
 
-// writeJob start a job to write syscall spec for a global variable
+// writeJob start a job to write syscall spec for a database entry (variable or function)
 func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJob, wjr chan<- WriteJobRes) {
 	logger := log.New(os.Stdout, "[T"+strconv.Itoa(tid)+"] ", log.LstdFlags|log.Lmsgprefix)
 	res := WriteJobRes{
-		Tid: tid,
-		Gv:  nil,
-		Err: nil,
+		Tid:   tid,
+		Entry: nil,
+		Err:   nil,
 	}
 
 	// create a SpecCheck instances
@@ -432,10 +449,10 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 		var (
 			logPrefix  = fmt.Sprintf("[T%d][%s]", tid, wj.Progress)
 			specPrefix = ""
-			gv         = wj.Gv
+			entry      = wj.Entry
 			spm        = wj.SysPromptMap
 		)
-		res.Gv = gv
+		res.Entry = entry
 
 		// set prefix of spec
 		if cfg.Prefix != "" {
@@ -444,27 +461,27 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 		}
 
 		// start writing spec
-		specdir := filepath.Join(cfg.Outdir, "specs", gv.Name+"#"+cfg.Model)
+		specdir := filepath.Join(cfg.Outdir, "specs", entry.GetName()+"#"+cfg.Model)
 		fp := filepath.Join(specdir, "spec#comp.txt")
 		if _, err := os.Stat(fp); err == nil && cfg.Resume {
-			logger.Printf("Complete spec for global variable %s exists, reuse existing and skip generation.\n", gv.Name)
+			logger.Printf("Complete spec for %s exists, reuse existing and skip generation.\n", entry.GetName())
 			wjr <- res
 			continue
 		}
-		spec, err := writeSpec(kAgent, sc, spm, gv, cfg, specPrefix, logPrefix)
+		spec, err := writeSpec(kAgent, sc, spm, entry, cfg, specPrefix, logPrefix)
 		for j := 0; j < cfg.MaxRetry && err != nil; j++ {
 			logger.Printf(
-				"Retrying to write spec for global variable %s, err=%s (attempt %d/%d) ...\n",
-				gv.Name, err, j+1, cfg.MaxRetry,
+				"Retrying to write spec for %s, err=%s (attempt %d/%d) ...\n",
+				entry.GetName(), err, j+1, cfg.MaxRetry,
 			)
 			// sleep for a while before write spec again to avoid frequent requests
 			slpTime := rand.Int31n(11) + 10
 			time.Sleep(time.Duration(slpTime) * time.Second)
-			spec, err = writeSpec(kAgent, sc, spm, gv, cfg, specPrefix, logPrefix)
+			spec, err = writeSpec(kAgent, sc, spm, entry, cfg, specPrefix, logPrefix)
 		}
 		if err != nil {
-			logger.Printf("failed to write spec for global variable %s: %v\n", gv.Name, err)
-			logger.Printf("Skip global variable %s and continue with next one.\n", gv.Name)
+			logger.Printf("failed to write spec for %s: %v\n", entry.GetName(), err)
+			logger.Printf("Skip %s and continue with next one.\n", entry.GetName())
 			res.Err = err
 			wjr <- res
 			continue
@@ -478,7 +495,7 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 			wjr <- res
 			continue
 		}
-		logger.Printf("Spec for global variable %s has been generated successfully.\n", gv.Name)
+		logger.Printf("Spec for %s has been generated successfully.\n", entry.GetName())
 
 		// restore workdir for next write job, if we cannot restore workdir, subsequent jobs cannot be executed correctly,
 		// so we set res.Err and return directly
@@ -491,19 +508,19 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 	}
 }
 
-// writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a global variable,
+// writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a database entry,
 // return the final syzlang spec and whether it is valid
 func writeSpec(
 	kAgent *agent.Agent,
 	sc *check.SpecCheck,
 	sysPromptMap *map[string]string,
-	gvEntry *database.GlobalVar,
+	entry database.Entry,
 	cfg *ProgConfig,
 	specPrefix string,
 	logPrefix string,
 ) (string, error) {
 	// init and pool default value for stage.StageHelper
-	specdir := filepath.Join(cfg.Outdir, "specs", gvEntry.Name+"#"+cfg.Model)
+	specdir := filepath.Join(cfg.Outdir, "specs", entry.GetName()+"#"+cfg.Model)
 	var sh *stage.StageHelper = &stage.StageHelper{
 		Workdir:    specdir,
 		Next:       "outline",
@@ -560,7 +577,7 @@ func writeSpec(
 			sh.Spool.Clear()
 			break
 		}
-		if err := execWriteStep(kAgent, sysPromptMap, gvEntry, sh); err != nil {
+		if err := execWriteStep(kAgent, sysPromptMap, entry, sh); err != nil {
 			return "", fmt.Errorf("failed to exec write step: %v", err)
 		}
 		if err := sh.WriteCurrStat(); err != nil {
@@ -581,18 +598,14 @@ func writeSpec(
 
 // execWriteStep execute one step of the write spec process according to sh.Next
 func execWriteStep(
-	kAgent *agent.Agent, sysPromptMap *map[string]string, gvEntry *database.GlobalVar, sh *stage.StageHelper,
+	kAgent *agent.Agent, sysPromptMap *map[string]string, entry database.Entry, sh *stage.StageHelper,
 ) error {
-	// TODO: looks messy, refactor is needed:
-	//	- some elements from SyzPool will be labeled as false, which step cause it?
-	//	- Many elements in the Pool (agent generated and sysdir exists), we need to make Pool more targeted
-	//  - Pool processing is messy, tidy them later
-	logger := log.New(os.Stdout, sh.LogPrefix+"["+gvEntry.Name+"]["+sh.Next+"] ", log.LstdFlags|log.Lmsgprefix)
+	logger := log.New(os.Stdout, sh.LogPrefix+"["+entry.GetName()+"]["+sh.Next+"] ", log.LstdFlags|log.Lmsgprefix)
 	switch sh.Next {
 	case "outline":
-		return stage.ExecOutlineStep(kAgent, (*sysPromptMap)["outline"], gvEntry, logger, sh)
+		return stage.ExecOutlineStep(kAgent, (*sysPromptMap)["outline"], entry, logger, sh)
 	case "generate":
-		return stage.ExecGenerateStep(kAgent, (*sysPromptMap)["generate"], gvEntry, logger, sh)
+		return stage.ExecGenerateStep(kAgent, (*sysPromptMap)["generate"], entry, logger, sh)
 	case "fix":
 		return stage.ExecFixStep(kAgent, (*sysPromptMap)["fix"], logger, sh)
 	case "complete":
