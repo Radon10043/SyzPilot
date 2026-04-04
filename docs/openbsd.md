@@ -421,6 +421,14 @@ ssh -p 6736 \
     root@localhost
 ```
 
+copy file(s) to vm:
+```bash
+scp -P 6736 \
+    -o UserKnownHostsFile=/dev/null \
+    -o StrictHostKeyChecking=no \
+    $HOST_PATH root@localhost:$VM_PATH
+```
+
 use sshfs to mount directory:
 ```bash
 sshfs -p 6736 \
