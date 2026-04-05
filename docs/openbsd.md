@@ -400,7 +400,7 @@ then we can run fuzzing :)
 
 Press `~`+`~`+`.` to exit nest VM.
 
-run qemu silently:
+run vm silently:
 ```bash
 qemu-system-x86_64 \
     -enable-kvm \
@@ -411,6 +411,19 @@ qemu-system-x86_64 \
     -nic user,model=virtio,hostfwd=tcp::6736-:22 \
     -display none \
     -daemonize
+```
+
+start vm.
+```bash
+qemu-system-x86_64 \
+    -enable-kvm \
+    -m 16G \
+    -smp 16 \
+    -cpu host \
+    -drive file=vm/dev.qcow2,format=qcow2 \
+    -nic user,model=virtio,hostfwd=tcp::6736-:22 \
+    -display none \
+    -nographic
 ```
 
 ssh to openbsd vm:

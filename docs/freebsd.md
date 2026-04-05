@@ -107,7 +107,7 @@ analyze `compile_commands.json` of FreeBSD and create kernel source database:
 # run following commands on vm
 cd $CLOUD_VM
 ./bin/analyzer \
-    -i $KERNSRC_VM/build/15.0.0/sys/amd64/conf/compile/CLOUD/compile_commands.json \
+    -i $KERNSRC_VM/build/15.0.0/sys/amd64/compile/CLOUD/compile_commands.json \
     -j 8 \
     -o $CLOUD/data/database/freebsd.db
 ```
