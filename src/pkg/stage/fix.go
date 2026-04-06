@@ -64,7 +64,6 @@ func ExecFixStep(kAgent *agent.Agent, sysPrompt string, logger *log.Logger, sh *
 	}
 
 	bfPool = getConsPool(sh.Pool)
-	bfPool.Merge(getConsPool(sh.Rpool))
 	bfPool.Merge(sh.Spool)
 	bfSpec = bfPool.Syzlang()
 	if afSpec, valid, err = fixSpec(kAgent, sysPrompt, bfSpec, logger, sh); err != nil {
@@ -174,11 +173,11 @@ func checkSpecValidity(sc *check.SpecCheck, spec string) (*bytes.Buffer, *bytes.
 // createErrBlock create an error block from stdout and stderr of `make extract` or `syz-check`
 func createErrBlock(stdout *bytes.Buffer, stderr *bytes.Buffer, sh *StageHelper) (string, error) {
 	// format stdout and stderr messages
-	fmtStdout, err := formatMessages(stdout, sh.SpecPrefix)
+	fmtStdout, err := formatMessages(stdout, sh.SpecPrefix, true)
 	if err != nil {
 		return "", fmt.Errorf("failed to extract error messages: %v", err)
 	}
-	fmtStderr, err := formatMessages(stderr, sh.SpecPrefix)
+	fmtStderr, err := formatMessages(stderr, sh.SpecPrefix, true)
 	if err != nil {
 		return "", fmt.Errorf("failed to extract error messages: %v", err)
 	}
@@ -197,9 +196,10 @@ func createErrBlock(stdout *bytes.Buffer, stderr *bytes.Buffer, sh *StageHelper)
 	return errBlock.String(), nil
 }
 
-// formatMessages format error messages from stdout/stderr of `make extract` or `syz-check`, specifically
-// adjust line numbers according to prefix length
-func formatMessages(buf *bytes.Buffer, prefix string) ([]string, error) {
+// formatMessages format error messages from stdout/stderr of `syz-extract` or `syz-check`, specifically
+// adjust line numbers according to prefix length. If the trim is set to true, function will discard error
+// messages greater than 20 lines
+func formatMessages(buf *bytes.Buffer, prefix string, trim bool) ([]string, error) {
 	type specError struct {
 		Path   string
 		Line   int
@@ -247,6 +247,12 @@ func formatMessages(buf *bytes.Buffer, prefix string) ([]string, error) {
 			se.Line -= prefixLineLen
 			msgs = append(msgs, fmt.Sprintf("%s:%d:%d:%s", se.Path, se.Line, se.Column, se.Issue))
 		}
+	}
+
+	// if trim is true, discard error messages greater than 20 lines, since they are likely to be caused
+	// by the same root cause and may overwhelm the agent
+	if trim && len(msgs) > 20 {
+		msgs = msgs[:20]
 	}
 
 	return msgs, scanner.Err()
