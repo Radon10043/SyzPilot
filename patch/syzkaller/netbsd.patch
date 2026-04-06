@@ -14,6 +14,24 @@ index d6bba7aa7d..c96bccf213 100644
  const int kFailStatus = 67;
  
  // Two approaches of dealing with kcov memory.
+diff --git a/executor/subprocess.h b/executor/subprocess.h
+index d2b7327254..5b84285dbe 100644
+--- a/executor/subprocess.h
++++ b/executor/subprocess.h
+@@ -36,8 +36,13 @@ public:
+ 			}
+ 		}
+ 		for (int i = max_fd + 1; i < kFdLimit; i++) {
++#ifndef GOOS_netbsd
+ 			if (posix_spawn_file_actions_addclose(&actions, i))
+ 				fail("posix_spawn_file_actions_addclose failed");
++#else
++			if (fcntl(i, F_GETFD) != -1 && posix_spawn_file_actions_addclose(&actions, i))
++				fail("posix_spawn_file_actions_addclose failed");
++#endif
+ 		}
+ 
+ 		posix_spawnattr_t attr;
 diff --git a/sys/netbsd/dev_dm.txt b/sys/netbsd/dev_dm.txt
 index ecb1648b7a..095a2ec9b5 100644
 --- a/sys/netbsd/dev_dm.txt
