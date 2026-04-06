@@ -1,0 +1,3 @@
+variable,vgem_driver
+variable,virtio_gpu_ioctls
+variable,vmwgfx_driver_fops

@@ -1,0 +1,4 @@
+variable,cuse_frontend_fops
+variable,fuse_dev_operations
+variable,fuse_dir_operations
+variable,fuse_file_operations

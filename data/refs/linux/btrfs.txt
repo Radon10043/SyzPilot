@@ -1,0 +1,3 @@
+variable,btrfs_ctl_fops
+variable,btrfs_dir_file_operations
+variable,btrfs_file_operations

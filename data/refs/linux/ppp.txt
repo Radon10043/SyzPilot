@@ -1,0 +1,10 @@
+variable,async_ops
+variable,ppp_device_fops
+variable,ppp_ldisc
+variable,ppp_sync_ldisc
+variable,pppoe_ops
+variable,pppoe_proto
+variable,pppol2tp_ops
+variable,pptp_chan_ops
+variable,pptp_ops
+variable,sync_ops

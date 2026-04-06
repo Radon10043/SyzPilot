@@ -1,0 +1,2 @@
+variable,_dev_ioctl_fops
+variable,autofs_root_operations

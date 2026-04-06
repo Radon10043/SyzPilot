@@ -1,0 +1,2 @@
+variable,ptp_clock_ops
+variable,vmclock_miscdev_fops

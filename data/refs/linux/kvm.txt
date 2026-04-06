@@ -1,0 +1,5 @@
+variable,kvm_chardev_ops
+variable,kvm_device_fops
+variable,kvm_gmem_fops
+variable,kvm_vcpu_fops
+variable,kvm_vm_fops

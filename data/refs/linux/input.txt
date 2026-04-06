@@ -1,0 +1,5 @@
+variable,evdev_fops
+variable,joydev_fops
+variable,serport_ldisc
+variable,sur40_video_ioctl_ops
+variable,uinput_fops

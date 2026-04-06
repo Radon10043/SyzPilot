@@ -1,0 +1,4 @@
+variable,wskbd_cdevsw
+variable,wsmouse_cdevsw
+variable,wsdisplay_cdevsw
+variable,wsmux_cdevsw

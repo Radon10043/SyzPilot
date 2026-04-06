@@ -1,0 +1,1 @@
+variable,hdaudio_cdevsw

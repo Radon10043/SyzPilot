@@ -1,0 +1,2 @@
+variable,f2fs_dir_operations
+variable,f2fs_file_operations

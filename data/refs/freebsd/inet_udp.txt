@@ -1,0 +1,2 @@
+variable,udp_protosw
+variable,udp6_protosw

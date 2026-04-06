@@ -1,0 +1,2 @@
+variable,evdev_cdevsw
+variable,uinput_cdevsw
