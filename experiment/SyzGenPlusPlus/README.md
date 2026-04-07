@@ -52,7 +52,13 @@ cp gopath/src/github.com/google/syzkaller/sys/linux/*_gen.txt syzkaller/sys/linu
 
 If you want to re-extract const for KernelGPT's specs:
 ```bash
-cd $KERNLGPT/syzkaller
+cd $SYZGENPP/syzkaller
 make bin/syz-extract
-ls sys/linux/gpt4*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$KERNSRC -os=linux -arch=amd64
+ls sys/linux/*_gen.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$KERNSRC -os=linux -arch=amd64
+```
+
+generate specs for subsystems:
+```bash
+cd $SYZGENPP
+./run_subsystems.sh
 ```

@@ -110,6 +110,210 @@ index 7d02856..f456119 100644
  
  from syzgen.target import Target
  
+diff --git a/run_subsystems.sh b/run_subsystems.sh
+new file mode 100755
+index 0000000..147eff9
+--- /dev/null
++++ b/run_subsystems.sh
+@@ -0,0 +1,198 @@
++#!/bin/bash
++#
++# Generate specifications for Linux kernel subsystems using SyzGenPlusPlus
++#
++# Subsystems: comedi, dri, fuse, i2c, input, kvm, ptp, ppp, rdma_cm, sequencer, sg
++#
++# Usage:
++#   ./run_subsystems.sh              # Run all subsystems
++#   ./run_subsystems.sh fuse kvm     # Run only specified subsystems
++#
++# Notes:
++#   - For devices sharing the same ioctl handler within a subsystem, only one representative is analyzed
++#   - Generated specs are placed in: gopath/src/github.com/google/syzkaller/sys/linux/
++#
++
++set -euo pipefail
++
++SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
++cd "$SCRIPT_DIR"
++
++CONFIG="config"
++LOG_DIR="logs/subsystems"
++mkdir -p "$LOG_DIR"
++
++TIMESTAMP=$(date +%Y%m%d_%H%M%S)
++MAIN_LOG="$LOG_DIR/run_all_${TIMESTAMP}.log"
++
++# ============================================================================
++# Subsystem -> representative device mapping
++# For device groups sharing the same ioctl handler, only one representative is selected
++# ============================================================================
++declare -A SUBSYSTEM_DRIVERS
++
++# comedi: /dev/comedi0 - /dev/comedi4 share the same ioctl handler
++SUBSYSTEM_DRIVERS[comedi]="comedi0"
++
++# dri: /dev/dri/card0,card1,card2,renderD128 share the same ioctl handler
++# card and renderD128 both use drm_ioctl, but renderD128 is a render-only node with a potentially different entry
++SUBSYSTEM_DRIVERS[dri]="card0 renderD128"
++
++# fuse: /dev/fuse
++SUBSYSTEM_DRIVERS[fuse]="fuse"
++
++# i2c: /dev/i2c-0 (named i2c_0 in services.json)
++SUBSYSTEM_DRIVERS[i2c]="i2c_0"
++
++# input: event0,mice,mouse0 share the same handler; uinput has its own ioctl
++SUBSYSTEM_DRIVERS[input]="event0 uinput"
++
++# kvm: /dev/kvm
++SUBSYSTEM_DRIVERS[kvm]="kvm"
++
++# ptp: /dev/ptp0
++SUBSYSTEM_DRIVERS[ptp]="ptp0"
++
++# ppp: /dev/ppp
++SUBSYSTEM_DRIVERS[ppp]="ppp"
++
++# rdma_cm: /dev/infiniband/rdma_cm
++SUBSYSTEM_DRIVERS[rdma_cm]="rdma_cm"
++
++# sequencer: /dev/sequencer and /dev/sequencer2 share the same ioctl handler
++SUBSYSTEM_DRIVERS[sequencer]="sequencer"
++
++# sg: /dev/sg0, sg1 share the same ioctl handler
++SUBSYSTEM_DRIVERS[sg]="sg0"
++
++# ============================================================================
++# Subsystem list to process
++# ============================================================================
++ALL_SUBSYSTEMS=(comedi dri fuse i2c input kvm ptp ppp rdma_cm sequencer sg)
++
++if [[ $# -gt 0 ]]; then
++    SUBSYSTEMS=("$@")
++else
++    SUBSYSTEMS=("${ALL_SUBSYSTEMS[@]}")
++fi
++
++# ============================================================================
++# Helper functions
++# ============================================================================
++log() {
++    local msg="[$(date '+%Y-%m-%d %H:%M:%S')] $1"
++    echo "$msg" | tee -a "$MAIN_LOG"
++}
++
++run_step() {
++    local step="$1"
++    local target="$2"
++    local log_file="$3"
++
++    log "  Running: python3 main.py -s $step --target $target"
++    if python3 main.py -s "$step" --target "$target" >> "$log_file" 2>&1; then
++        log "  Done: $step for $target"
++        return 0
++    else
++        log "  Failed: $step for $target (exit code: $?), see $log_file"
++        return 1
++    fi
++}
++
++# ============================================================================
++# Main workflow
++# ============================================================================
++log "=========================================="
++log "SyzGenPlusPlus subsystem spec generation"
++log "=========================================="
++log "Config: $CONFIG"
++log "Log dir: $LOG_DIR"
++log ""
++
++TOTAL=0
++SUCCESS=0
++FAILED=0
++
++for subsys in "${SUBSYSTEMS[@]}"; do
++    log "------------------------------------------"
++    log "Subsystem: $subsys"
++    log "------------------------------------------"
++
++    drivers="${SUBSYSTEM_DRIVERS[$subsys]:-}"
++
++    for driver in $drivers; do
++        TOTAL=$((TOTAL + 1))
++        driver_log="$LOG_DIR/${subsys}_${driver}_${TIMESTAMP}.log"
++
++        log "  Device: $driver"
++        log "  Log: $driver_log"
++
++        echo "# SyzGenPlusPlus analysis for $driver (subsystem: $subsys)" > "$driver_log"
++        echo "# Started at: $(date)" >> "$driver_log"
++        echo "" >> "$driver_log"
++
++        failed=0
++
++        # Step 1: Extract commands (find_cmd)
++        if ! run_step "find_cmd" "$driver" "$driver_log"; then
++            failed=1
++        fi
++
++        # Step 2: Infer types (infer_type)
++        if [[ $failed -eq 0 ]]; then
++            if ! run_step "infer_type" "$driver" "$driver_log"; then
++                failed=1
++            fi
++        fi
++
++        # Step 3: Generate template (gen_template)
++        if [[ $failed -eq 0 ]]; then
++            if ! run_step "gen_template" "$driver" "$driver_log"; then
++                failed=1
++            fi
++        fi
++
++        if [[ $failed -eq 0 ]]; then
++            SUCCESS=$((SUCCESS + 1))
++            log "  Result: SUCCESS"
++        else
++            FAILED=$((FAILED + 1))
++            log "  Result: FAILED"
++        fi
++
++        echo "" >> "$driver_log"
++        echo "# Finished at: $(date)" >> "$driver_log"
++    done
++done
++
++log ""
++log "=========================================="
++log "Summary"
++log "=========================================="
++log "Total devices: $TOTAL"
++log "Success: $SUCCESS"
++log "Failed: $FAILED"
++log ""
++log "Generated specs are in:"
++log "  gopath/src/github.com/google/syzkaller/sys/linux/"
++log "=========================================="
++
++# List generated spec files
++log ""
++log "Generated spec files:"
++SPEC_DIR="gopath/src/github.com/google/syzkaller/sys/linux"
++if [[ -d "$SPEC_DIR" ]]; then
++    for subsys in "${SUBSYSTEMS[@]}"; do
++        drivers="${SUBSYSTEM_DRIVERS[$subsys]:-}"
++        for driver in $drivers; do
++            spec_file="$SPEC_DIR/${driver}_gen.txt"
++            if [[ -f "$spec_file" ]]; then
++                log "  $spec_file ($(wc -l < "$spec_file") lines)"
++            fi
++        done
++    done
++fi
++
++if [[ $FAILED -gt 0 ]]; then
++    exit 1
++fi
 diff --git a/setup.sh b/setup.sh
 index 1b47829..e996fb8 100755
 --- a/setup.sh
