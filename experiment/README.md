@@ -42,13 +42,50 @@ cd $EXPERIMENT_ROOT/kernel/linux/v5.15.197 && cp $EXPERIMENT_ROOT/fuzzer/cloud/c
 
 ```bash
 cd $EXPERIMENT_ROOT
-mkdir -p 15e7fbc5/src 98d2ae54/src 43eae48d/src
+mkdir -p 15e7fbc5/src
 
 cd 15e7fbc5/src
 git init .
 git remote add origin https://github.com/NetBSD/src
 git fetch --depth 1 origin 15e7fbc53d77cd7cc1d62511982b8972c4c0c421
 git checkout 15e7fbc5
+
+cp $CLOUD/configs/kernel/netbsd.config sys/arch/amd64/conf/CLOUD
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools tools
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools -D ../dest distribution
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=CLOUD
+```
+
+```bash
+cd $EXPERIMENT_ROOT/kernel/netbsd
+mkdir -p ceec3d80/src
+
+cd ceec3d80/src
+git init .
+git remote add origin https://github.com/NetBSD/src
+git fetch --depth 1 origin ceec3d80eed1a1082cacf866e3f09e31657b8525
+git checkout ceec3d80
+
+cp $CLOUD/configs/kernel/netbsd.config sys/arch/amd64/conf/CLOUD
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools tools
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools -D ../dest distribution
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=CLOUD
+```
+
+```bash
+cd $EXPERIMENT_ROOT/kernel/netbsd
+mkdir -p 3c0f56ea/src
+
+cd 3c0f56ea/src
+git init .
+git remote add origin https://github.com/NetBSD/src
+git fetch --depth 1 origin 3c0f56ea164d7e5bea72b1c64425fb24f9f3be6f
+git checkout 3c0f56ea
+
+cp $CLOUD/configs/kernel/netbsd.config sys/arch/amd64/conf/CLOUD
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools tools
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools -D ../dest distribution
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=CLOUD
 ```
 
 ### setup image/linux
@@ -199,37 +236,23 @@ ssh -i ./freebsd.id_rsa -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKey
 poweroff
 ```
 
-#### 13.5.0
+#### 14.2.0
 
-(host) start up vm to install freebsd kernel 13.5.0:
+(host) download 14.X image:
 ```bash
 cd $EXPERIMENT_ROOT/images/freebsd
-wget https://download.freebsd.org/snapshots/VM-IMAGES/13.5-STABLE/amd64/Latest/FreeBSD-13.5-STABLE-amd64.qcow2.xz
-unxz -k FreeBSD-13.5-STABLE-amd64.qcow2.xz
-mv FreeBSD-13.5-STABLE-amd64.qcow2 13.5.0.qcow2
-qemu-img resize 13.5.0.qcow2 100G
-qemu-system-x86_64 -m 16G -smp 16 -hda ./13.5.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host -bios /usr/share/ovmf/OVMF.fd
+wget https://download.freebsd.org/snapshots/VM-IMAGES/14.4-STABLE/amd64/Latest/FreeBSD-14.4-STABLE-amd64-ufs.qcow2.xz
+unxz -k FreeBSD-14.4-STABLE-amd64-ufs.qcow2.xz
+mv FreeBSD-14.4-STABLE-amd64-ufs.qcow2 14.2.0.qcow2
+qemu-img resize 14.2.0.qcow2 100G
+qemu-system-x86_64 -m 16G -smp 16 -hda ./14.2.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host
 # press 3, input press 3 and input `set console="comconsole"` and `boot`
 ```
 
-(vm):
+(vm) install freebsd kernel 14.2.0:
 ```sh
-chsh -s /bin/sh
-exec sh
-echo "-h" > /boot.config
-echo "autoboot_delay=\"0\"" >> /boot/loader.conf
+echo "autoboot_delay=\"-1\"" >> /boot/loader.conf
 echo "console=\"comconsole\"" >> /boot/loader.conf
-poweroff
-```
-
-(host) restart vm:
-```bash
-qemu-system-x86_64 -m 16G -smp 16 -hda ./13.5.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host
-# press 3, input press 3 and input `set console="comconsole"` and `boot`
-```
-
-(vm) install freebsd kernel 13.5.0:
-```sh
 /etc/rc.d/growfs onestart
 echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
 echo 'PermitEmptyPasswords yes' >> /etc/ssh/sshd_config
@@ -254,8 +277,8 @@ ASSUME_ALWAYS_YES=true pkg install vim dnsmasq wget tmux ccache pkgconf sqlite3 
 
 cd /root
 git clone https://github.com/Radon10043/cloud
-git clone -b release/13.5.0 --depth 1 https://github.com/freebsd/freebsd-src 13.5.0
-cd 13.5.0
+git clone -b release/14.2.0 --depth 1 https://github.com/freebsd/freebsd-src 14.2.0
+cd 14.2.0
 cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
 cd sys/amd64/conf && config CLOUD
 cd ../compile/CLOUD
@@ -266,14 +289,18 @@ reboot
 
 (host) install sshkey and verify kernel version:
 ```bash
-cd $EXPERIMENT_ROOT
+cd $EXPERIMENT_ROOT/images/freebsd
 ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of following command should like:
-#   FreeBSD freebsd 13.5-RELEASE FreeBSD 13.5-RELEASE 882b9f3f2 CLOUD amd64
+#   FreeBSD freebsd 14.2-RELEASE FreeBSD 14.2-RELEASE c8918d6c7 CLOUD amd64
 ssh -i ./freebsd.id_rsa -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -a
 ```
 
+(vm) close vm:
+```sh
+poweroff
+```
 
 #### build needed binaries
 
@@ -287,7 +314,7 @@ mkdir -p $EXPERIMENT/images/openbsd && cd $EXPERIMENT/images/openbsd
 ssh-keygen -t rsa -f openbsd.id_rsa -N ''
 ```
 
-#### 23290a22 (2025)
+#### 23290a22 (2025.12)
 
 (host) download .iso file, init a qcow2 file:
 ```bash
@@ -390,14 +417,14 @@ ssh -i ./openbsd.id_rsa -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKey
 shutdown -p now
 ```
 
-#### 507b5b4 (2024)
+#### 6bf0f93a (2025.11)
 
 (host) download .iso file, init a qcow2 file:
 ```bash
 cd $EXPERIMENT/images/openbsd
-wget https://artfiles.org/openbsd/7.6/amd64/install76.iso
-qemu-img create -f qcow2 2024-507b5b4.qcow2 100G
-qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./2024-507b5b4.qcow2,format=qcow2 -cdrom ./install76.iso -boot d -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
+# wget https://artfiles.org/openbsd/7.8/amd64/install78.iso
+qemu-img create -f qcow2 2025.11-6bf0f93a.qcow2 100G
+qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./2025.11-6bf0f93a.qcow2,format=qcow2 -cdrom ./install78.iso -boot d -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
 ```
 
 (vm) input following commands (be quick!):
@@ -444,10 +471,10 @@ Directory does not contain SHA256.sig. Continue without verification? <yes>
 
 (host) start up vm:
 ```bash
-qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./2024-507b5b4.qcow2,format=qcow2 -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
+qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./2025.11-6bf0f93a.qcow2,format=qcow2 -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
 ```
 
-(vm) install openbsd kernel (version 507b5b4, last version in 2024):
+(vm) install openbsd kernel (version 6bf0f93a, last version in 2025.11):
 ```sh
 # if you need proxy, run following commands
 # echo "export http_proxy=http://10.0.2.2:7890" >> /root/.profile
@@ -455,8 +482,8 @@ qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./2024-507b5
 # . ~/.profile
 
 echo "https://mirrors.aliyun.com/openbsd/" > /etc/installurl
-# vim: vim-9.1.1006-no_x11
-# llvm: llvm-17.0.6p12
+# vim: vim-9.1.1706-no_x11
+# llvm: llvm-19.1.7p9
 pkg_add wget bash curl git vim fastfetch llvm go gmake
 # python: python-3.x
 pkg_add ccache sqlite3 bear python py3-pip gdb cmake
@@ -465,11 +492,11 @@ echo "export PATH=/root/go/bin:\$PATH" >> /root/.profile
 
 git clone https://github.com/Radon10043/cloud
 
-mkdir openbsd-507b5b4 && cd openbsd-507b5b4
+mkdir openbsd-6bf0f93a && cd openbsd-6bf0f93a
 git init .
 git remote add origin https://github.com/openbsd/src
-git fetch --depth 1 origin 507b5b4162b0d25e34b75b8e43070e2d6faf72e5
-git checkout 507b5b4
+git fetch --depth 1 origin 6bf0f93af4a8aa5d28d638525b1eb0c5b2f57941
+git checkout 6bf0f93a
 
 cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
 cd sys/arch/amd64/conf && config CLOUD
@@ -484,7 +511,7 @@ cd $EXPERIMENT_ROOT/images/openbsd
 ssh-copy-id -i ./openbsd.id_rsa.pub -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of following command should like:
-#   OpenBSD openbsd.my.domain 7.6 CLOUD#0 amd64
+#   OpenBSD openbsd.my.domain 7.8 CLOUD#0 amd64
 ssh -i ./openbsd.id_rsa -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -a
 ```
 
@@ -493,14 +520,14 @@ ssh -i ./openbsd.id_rsa -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKey
 shutdown -p now
 ```
 
-#### 4dba83b8 (2023)
+#### 6dac8606 (2025.10)
 
 (host) download .iso file, init a qcow2 file:
 ```bash
 cd $EXPERIMENT/images/openbsd
-wget https://artfiles.org/openbsd/7.4/amd64/install74.iso
-qemu-img create -f qcow2 2023-4dba83b8.qcow2 100G
-qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./2023-4dba83b8.qcow2,format=qcow2 -cdrom ./install74.iso -boot d -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
+# wget https://artfiles.org/openbsd/7.4/amd64/install78.iso
+qemu-img create -f qcow2 2025.10-6dac8606.qcow2 100G
+qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./2025.10-6dac8606.qcow2,format=qcow2 -cdrom ./install78.iso -boot d -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
 ```
 
 (vm) input following commands (be quick!):
@@ -547,10 +574,10 @@ Directory does not contain SHA256.sig. Continue without verification? <yes>
 
 (host) start up vm:
 ```bash
-qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./2023-4dba83b8.qcow2,format=qcow2 -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
+qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./2025.10-6dac8606.qcow2,format=qcow2 -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
 ```
 
-(vm) install openbsd kernel (version 4dba83b8, last version in 2023):
+(vm) install openbsd kernel (version 6dac8606, last version in 2025.10):
 ```sh
 # if you need proxy, run following commands
 # echo "export http_proxy=http://10.0.2.2:7890" >> /root/.profile
@@ -568,11 +595,11 @@ echo "export PATH=/root/go/bin:\$PATH" >> /root/.profile
 
 git clone https://github.com/Radon10043/cloud
 
-mkdir openbsd-4dba83b8 && cd openbsd-4dba83b8
+mkdir openbsd-6dac8606 && cd openbsd-6dac8606
 git init .
 git remote add origin https://github.com/openbsd/src
-git fetch --depth 1 origin 4dba83b83de21fd6727491f01e7db6c48cac59fc
-git checkout 4dba83b8
+git fetch --depth 1 origin 6dac8606615b68ce13d259f805724b9d640096fa
+git checkout 6dac8606
 
 cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
 cd sys/arch/amd64/conf && config CLOUD
@@ -666,21 +693,21 @@ sh MAKEDEV kcov
 poweroff
 ```
 
-#### 2024-98d2ae54
+#### 2025.11-ceec3d80
 
 (host) download iso file and setup vm:
 ```bash
 cd $EXPERIMENT/images/netbsd
-wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.1/images/NetBSD-10.1-amd64.iso
-qemu-img create -f qcow2 2024-98d2ae54.qcow2 100G
-qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2024-98d2ae54.qcow2 -cdrom NetBSD-10.1-amd64.iso -boot d -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -display curses
+# wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.1/images/NetBSD-10.1-amd64.iso
+qemu-img create -f qcow2 2025.11-ceec3d80.qcow2 100G
+qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2025.11-ceec3d80.qcow2 -cdrom NetBSD-10.1-amd64.iso -boot d -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -display curses
 ```
 
 (vm) during installation, select `use serial port com0` when prompt to select bootblocks.
 
 (host) after installation complete, start vm.
 ```bash
-qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2024-98d2ae54.qcow2 -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -device virtio-rng-pci -nographic
+qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2025.11-ceec3d80.qcow2 -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -device virtio-rng-pci -nographic
 ```
 
 (vm) setup environment of netbsd:
@@ -712,7 +739,7 @@ scp -P 6382 \
     -i ./netbsd.id_rsa \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
-    $EXPERIMENT_ROOT/kernel/netbsd/98d2ae54/src/sys/arch/amd64/compile/obj/CLOUD/netbsd root@localhost:/netbsd
+    $EXPERIMENT_ROOT/kernel/netbsd/ceec3d80/src/sys/arch/amd64/compile/obj/CLOUD/netbsd root@localhost:/netbsd
 ```
 
 (vm) reboot, verify kernel version, load kcov module and poweroff vm:
@@ -720,7 +747,7 @@ scp -P 6382 \
 reboot
 
 # output of uname command should like:
-#   NetBSD  10.99.12 NetBSD 10.99.12 (CLOUD) #0: Sat Mar 28 22:53:06 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/98d2ae54...
+#   NetBSD  10.99.12 NetBSD 10.99.12 (CLOUD) #0: Sat Mar 28 22:53:06 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/ceec3d80...
 uname -a
 
 cd /dev
@@ -728,21 +755,21 @@ sh MAKEDEV kcov
 poweroff
 ```
 
-#### 2023-43eae48d
+#### 2025.10-3c0f56ea
 
 (host) download iso file and setup vm:
 ```bash
 cd $EXPERIMENT/images/netbsd
-wget https://cdn.netbsd.org/pub/NetBSD/images/9.3/NetBSD-9.3-amd64.iso
-qemu-img create -f qcow2 2023-43eae48d.qcow2 100G
-qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2023-43eae48d.qcow2 -cdrom NetBSD-10.1-amd64.iso -boot d -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -display curses
+wget https://cdn.netbsd.org/pub/NetBSD/images/10.1/NetBSD-10.1-amd64.iso
+qemu-img create -f qcow2 2025.10-3c0f56ea.qcow2 100G
+qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2025.10-3c0f56ea.qcow2 -cdrom NetBSD-10.1-amd64.iso -boot d -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -display curses
 ```
 
 (vm) during installation, select `use serial port com0` when prompt to select bootblocks.
 
 (host) after installation complete, start vm.
 ```bash
-qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2023-43eae48d.qcow2 -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -device virtio-rng-pci -nographic
+qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2025.10-3c0f56ea.qcow2 -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -device virtio-rng-pci -nographic
 ```
 
 (vm) setup environment of netbsd:
@@ -774,7 +801,7 @@ scp -P 6382 \
     -i ./netbsd.id_rsa \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
-    $EXPERIMENT_ROOT/kernel/netbsd/43eae48d/src/sys/arch/amd64/compile/obj/CLOUD/netbsd root@localhost:/netbsd
+    $EXPERIMENT_ROOT/kernel/netbsd/3c0f56ea/src/sys/arch/amd64/compile/obj/CLOUD/netbsd root@localhost:/netbsd
 ```
 
 (vm) reboot, verify kernel version, load kcov module and poweroff vm:
@@ -782,7 +809,7 @@ scp -P 6382 \
 reboot
 
 # output of uname command should like:
-#   NetBSD  10.99.10 NetBSD 10.99.10 (CLOUD) #0: Sat Mar 28 21:44:46 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/43eae48d...
+#   NetBSD  10.99.10 NetBSD 10.99.10 (CLOUD) #0: Sat Mar 28 21:44:46 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/3c0f56ea...
 uname -a
 
 cd /dev
