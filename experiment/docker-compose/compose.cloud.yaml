@@ -1,24 +1,19 @@
-# plase replace __XXX__ with actual values before using this file
-#
-# usage:
-#   docker compose -f $THIS_FILE up $SERVICE --scale $SERVICE=$NUM_INSTANCE -d
-
 #############################
 ### General configuration ###
 #############################
 x-base: &base
-  image: github.com/Radon10043/cloud:latest
+  image: github.com/radon10043/cloud:latest
   privileged: true
-  cpus: __CPUS__
+  cpus: ${EXPERIMENT_CPUS}
   environment: &env
-    VMCOUNT: __VMCOUNT__
-    CLOUD: __CLOUD__
-    SYZKALLER: __CLOUD__/syzkaller
-    OUTROOT: __OUTROOT__
+    VMCOUNT: ${EXPERIMENT_VMCOUNT}
+    CLOUD: ${EXPERIMENT_ROOT}/fuzzer/cloud
+    SYZKALLER: ${EXPERIMENT_ROOT}/fuzzer/cloud/syzkaller
+    OUTROOT: ${EXPERIMENT_ROOT}/experiment/cloud
   volumes:
     - /etc/timezone:/etc/timezone:ro
     - /etc/localtime:/etc/localtime:ro
-    - __VOLUMES__
+    - ${MOUNT:?MOUNT is required}
 
 ####################
 ### Project name ###
@@ -30,8 +25,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      KERNEL: __LINUX_V_6_18_KERNEL__
-      IMAGE: __DEBIAN_BULLSEYE__
+      KERNEL: ${EXPERIMENT_ROOT}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT}/images/Debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: kernel
@@ -49,8 +44,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      KERNEL: __LINUX_6_17_13_KERNEL__
-      IMAGE: __DEBIAN_BULLSEYE__
+      KERNEL: ${EXPERIMENT_ROOT}/kernel/linux/v6.17.13
+      IMAGE: ${EXPERIMENT_ROOT}/images/Debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.17.13"
       SUBSYSTEM: kernel
@@ -68,8 +63,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      KERNEL: __LINUX_V_6_12_63_KERNEL__
-      IMAGE: __DEBIAN_BULLSEYE__
+      KERNEL: ${EXPERIMENT_ROOT}/kernel/linux/v6.12.63
+      IMAGE: ${EXPERIMENT_ROOT}/images/Debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.12.63"
       SUBSYSTEM: kernel
@@ -87,8 +82,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      KERNEL: __LINUX_V_6_6_119_KERNEL__
-      IMAGE: __DEBIAN_BULLSEYE__
+      KERNEL: ${EXPERIMENT_ROOT}/kernel/linux/v6.6.119
+      IMAGE: ${EXPERIMENT_ROOT}/images/Debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.6.119"
       SUBSYSTEM: kernel
@@ -106,8 +101,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      KERNEL: __LINUX_V_6_1_159_KERNEL__
-      IMAGE: __DEBIAN_BULLSEYE__
+      KERNEL: ${EXPERIMENT_ROOT}/kernel/linux/v6.1.159
+      IMAGE: ${EXPERIMENT_ROOT}/images/Debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.1.159"
       SUBSYSTEM: kernel
@@ -125,8 +120,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      KERNEL: __LINUX_V_5_15_197_KERNEL__
-      IMAGE: __DEBIAN_BULLSEYE__
+      KERNEL: ${EXPERIMENT_ROOT}/kernel/linux/v5.15.197
+      IMAGE: ${EXPERIMENT_ROOT}/images/Debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v5.15.197"
       SUBSYSTEM: kernel
@@ -144,8 +139,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: __FREEBSD_15_0__
-      SSHKEY: __FREEBSD_15_0_SSHKEY__
+      IMAGE: ${EXPERIMENT_ROOT}/images/freebsd/15.0.0.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT}/images/freebsd/freebsd.id_rsa
       KERNEL_NAME: freebsd
       KERNEL_VERSION: "15.0.0"
       SUBSYSTEM: kernel
@@ -163,8 +158,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: __FREEBSD_14_3__
-      SSHKEY: __FREEBSD_14_3_SSHKEY__
+      IMAGE: ${EXPERIMENT_ROOT}/images/freebsd/14.3.0.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT}/images/freebsd/freebsd.id_rsa
       KERNEL_NAME: freebsd
       KERNEL_VERSION: "14.3.0"
       SUBSYSTEM: kernel
@@ -178,14 +173,14 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg" > "$$WORKDIR/fuzz.cfg"
         timeout -s KILL 24h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  freebsd-13.5.0-kernel:
+  freebsd-14.2.0-kernel:
     <<: *base
     environment:
       <<: *env
-      IMAGE: __FREEBSD_13_5__
-      SSHKEY: __FREEBSD_13_5_SSHKEY__
+      IMAGE: ${EXPERIMENT_ROOT}/images/freebsd/14.2.0.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT}/images/freebsd/freebsd.id_rsa
       KERNEL_NAME: freebsd
-      KERNEL_VERSION: "13.5.0"
+      KERNEL_VERSION: "14.2.0"
       SUBSYSTEM: kernel
     command:
       - bash
@@ -201,8 +196,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: __OPENBSD_23290a22__
-      SSHKEY: __OPENBSD_23290a22_SSHKEY__
+      IMAGE: ${EXPERIMENT_ROOT}/images/openbsd/2025-23290a22.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT}/images/openbsd/openbsd.id_rsa
       KERNEL_NAME: openbsd
       KERNEL_VERSION: "23290a22"
       SUBSYSTEM: kernel
@@ -216,14 +211,14 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg" > "$$WORKDIR/fuzz.cfg"
         timeout -s KILL 24h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  openbsd-507b5b4-kernel:
+  openbsd-6bf0f93a-kernel:
     <<: *base
     environment:
       <<: *env
-      IMAGE: __OPENBSD_507b5b4__
-      SSHKEY: __OPENBSD_507b5b4_SSHKEY__
+      IMAGE: ${EXPERIMENT_ROOT}/images/openbsd/2025.11-6bf0f93a.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT}/images/openbsd/openbsd.id_rsa
       KERNEL_NAME: openbsd
-      KERNEL_VERSION: "507b5b4"
+      KERNEL_VERSION: "6bf0f93a"
       SUBSYSTEM: kernel
     command:
       - bash
@@ -235,14 +230,14 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg" > "$$WORKDIR/fuzz.cfg"
         timeout -s KILL 24h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  openbsd-4dba83b8-kernel:
+  openbsd-6dac8606-kernel:
     <<: *base
     environment:
       <<: *env
-      IMAGE: __OPENBSD_4dba83b8__
-      SSHKEY: __OPENBSD_4dba83b8_SSHKEY__
+      IMAGE: ${EXPERIMENT_ROOT}/images/openbsd/2025.10-6dac8606.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT}/images/openbsd/openbsd.id_rsa
       KERNEL_NAME: openbsd
-      KERNEL_VERSION: "4dba83b8"
+      KERNEL_VERSION: "6dac8606"
       SUBSYSTEM: kernel
     command:
       - bash
@@ -258,8 +253,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: __NETBSD_15e7fbc5__
-      SSHKEY: __NETBSD_15e7fbc5_SSHKEY__
+      IMAGE: ${EXPERIMENT_ROOT}/images/netbsd/2026.1-15e7fbc5.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT}/images/netbsd/netbsd.id_rsa
       KERNEL_NAME: netbsd
       KERNEL_VERSION: "15e7fbc5"
       SUBSYSTEM: kernel
@@ -273,14 +268,14 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg" > "$$WORKDIR/fuzz.cfg"
         timeout -s KILL 24h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  netbsd-98d2ae54-kernel:
+  netbsd-ceec3d80-kernel:
     <<: *base
     environment:
       <<: *env
-      IMAGE: __NETBSD_98d2ae54__
-      SSHKEY: __NETBSD_98d2ae54_SSHKEY__
+      IMAGE: ${EXPERIMENT_ROOT}/images/netbsd/2025.11-ceec3d80.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT}/images/netbsd/netbsd.id_rsa
       KERNEL_NAME: netbsd
-      KERNEL_VERSION: "98d2ae54"
+      KERNEL_VERSION: "ceec3d80"
       SUBSYSTEM: kernel
     command:
       - bash
@@ -292,14 +287,14 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg" > "$$WORKDIR/fuzz.cfg"
         timeout -s KILL 24h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  netbsd-43eae48d-kernel:
+  netbsd-3c0f56ea-kernel:
     <<: *base
     environment:
       <<: *env
-      IMAGE: __NETBSD_43eae48d__
-      SSHKEY: __NETBSD_43eae48d_SSHKEY__
+      IMAGE: ${EXPERIMENT_ROOT}/images/netbsd/2025.10-3c0f56ea.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT}/images/netbsd/netbsd.id_rsa
       KERNEL_NAME: netbsd
-      KERNEL_VERSION: "43eae48d"
+      KERNEL_VERSION: "3c0f56ea"
       SUBSYSTEM: kernel
     command:
       - bash

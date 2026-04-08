@@ -1,13 +1,3 @@
-# plase setup the environment variables in an env file before using this. you should set following
-# variables in the env file:
-#   EXPERIMENT_ROOT: root directory of the experiment in the container, see experiment/README.md
-#   EXPERIMENT_CPUS: number of CPUs allocated for each container
-#   EXOERIMENT_VMCOUNT: number of vm used for fuzzing, expect is EXPERIMENT_CPUS / 2
-#   MOUNT: the directory to be mounted to the container
-#
-# usage:
-#   docker compose --env-file $COMPOSEENV -f $THIS_FILE up $SERVICE --scale $SERVICE=$NUM_INSTANCE -d
-
 #############################
 ### General configuration ###
 #############################
