@@ -1,0 +1,411 @@
+diff --git a/.gitignore b/.gitignore
+index ad557cc..cca9bd1 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -15,3 +15,14 @@ starcoder-*/
+ *.tmp
+ tmp
+ .cache
++
++*.o
++.env
++spec-gen/analyzer/analyze
++spec-gen/analyzer/usage
++spec-gen/analyzer/*.txt
++spec-gen/analyzer/processed_*.json
++spec-gen/spec-output
++spec-gen/log-macro-no-header.txt
++spec-gen/missing.txt
++spec-eval/debug
+\ No newline at end of file
+diff --git a/linux b/linux
+index d2f51b3..7d0a66e 160000
+--- a/linux
++++ b/linux
+@@ -1 +1 @@
+-Subproject commit d2f51b3516dade79269ff45eae2a7668ae711b25
++Subproject commit 7d0a66e4bb9081d75c82ec4957c50034cb0ea449
+diff --git a/requirements.txt b/requirements.txt
+index ff8ac55..ee79a6f 100644
+--- a/requirements.txt
++++ b/requirements.txt
+@@ -3,3 +3,5 @@ rich
+ loguru
+ pyyaml
+ openai
++dotenv
++psutil
+diff --git a/spec-gen/analyzer/Makefile b/spec-gen/analyzer/Makefile
+index 603be09..85d94a5 100644
+--- a/spec-gen/analyzer/Makefile
++++ b/spec-gen/analyzer/Makefile
+@@ -1,10 +1,14 @@
+ # Variables
+-LLVM_INCLUDE := $(shell llvm-config-14 --includedir)
+-LLVM_FLAGS := $(shell llvm-config-14 --cxxflags --ldflags --libs core)
++LLVM_INCLUDE := $(shell llvm-config --includedir)
++LLVM_CXXFLAGS := $(shell llvm-config --cxxflags)
++LLVM_LDFLAGS  := $(shell llvm-config --ldflags)
++LLVM_LIBS     := $(shell llvm-config --libs all)
++
+ CLANG_LIBS := -lclangTooling -lclangFrontend -lclangDriver -lclangSerialization \
+-             -lclangParse -lclangSema -lclangAnalysis -lclangAST -lclangBasic \
+-             -lclangEdit -lclangLex -lclangASTMatchers \
+-						 -lclangRewrite
++              -lclangParse -lclangSema -lclangAnalysis -lclangAST -lclangBasic \
++              -lclangEdit -lclangLex -lclangASTMatchers \
++              -lclangRewrite -lclangSupport
++
+ CXXFLAGS := --std=c++17 -pthread
+ LOG_FILE := analyze-compile.log
+ 
+@@ -15,16 +19,16 @@ OBJ_FILES=helper.o
+ all: analyze usage
+ 
+ analyze: analyze.cpp $(OBJ_FILES)
+-	@clang++ $^ -o $@ -I$(LLVM_INCLUDE) $(LLVM_FLAGS) $(CLANG_LIBS) $(CXXFLAGS) 2>&1 | tee $(LOG_FILE)
++	@clang++ $^ -o $@ -I$(LLVM_INCLUDE) $(CXXFLAGS) $(LLVM_CXXFLAGS) $(LLVM_LDFLAGS) $(CLANG_LIBS) $(LLVM_LIBS) 2>&1 | tee $(LOG_FILE)
+ 
+ usage: usage.cpp $(OBJ_FILES)
+-	@clang++ $^ -o $@ -I$(LLVM_INCLUDE) $(LLVM_FLAGS) $(CLANG_LIBS) $(CXXFLAGS) 2>&1 | tee $(LOG_FILE)
++	@clang++ $^ -o $@ -I$(LLVM_INCLUDE) $(CXXFLAGS) $(LLVM_CXXFLAGS) $(LLVM_LDFLAGS) $(CLANG_LIBS) $(LLVM_LIBS) 2>&1 | tee $(LOG_FILE)
+ 
+ # Compiling helper.cpp to an object file
+ helper.o: helper.cpp helper.hpp
+-	@$(CXX) -c $< -o $@ -I$(LLVM_INCLUDE) $(LLVM_FLAGS) $(CLANG_LIBS) $(CXXFLAGS) 2>&1  | tee -a $(LOG_FILE)
++	@clang++ -c $< -o $@ -I$(LLVM_INCLUDE) $(CXXFLAGS) $(LLVM_CXXFLAGS) 2>&1  | tee -a $(LOG_FILE)
+ 
+ clean:
+-	@rm -f analyze usage $(LOG_FILE)
++	@rm -f analyze usage $(LOG_FILE) *.o
+ 
+ .PHONY: all clean
+\ No newline at end of file
+diff --git a/spec-gen/gen_spec.py b/spec-gen/gen_spec.py
+index 49865b5..e73c790 100644
+--- a/spec-gen/gen_spec.py
++++ b/spec-gen/gen_spec.py
+@@ -6,6 +6,7 @@ from pathlib import Path
+ from find_utils import find_function, find_usage
+ from gen_utils import (
+     OpsType,
++    SUBSYSTEM_PATH_PATTERNS,
+     SyzSpec,
+     existing_fds,
+     find_missing_code,
+@@ -35,7 +36,7 @@ from gen_utils import (
+     update_spec_dict,
+     update_types,
+ )
+-from llm_utils import query_gpt4
++from llm_utils import query_llm
+ from loguru import logger
+ from output_spec import initialize_spec_dict, is_primitive_type, output_spec
+ from ret_types import RetTypes
+@@ -50,7 +51,7 @@ OUTPUT_DIR = Path("spec-output")
+ 
+ def gen_answer(prompt: str, prompt_path: Path, answer_path: Path):
+     prompt_path.write_text(prompt)
+-    answer = query_gpt4(prompt)
++    answer = query_llm(prompt)
+     if answer is None:
+         logger.error(f"[{prompt_path}] Step 1 failed")
+         return
+@@ -79,7 +80,7 @@ def gen_init(file_path: Path, ops_code, ops_name, prompt_output_path, ops_type):
+             ops_type,
+         )
+         open_prompt_path.write_text(open_prompt)
+-        open_answer = query_gpt4(open_prompt)
++        open_answer = query_llm(open_prompt)
+         open_output_path.write_text(open_answer)
+     else:
+         open_answer = open_output_path.read_text()
+@@ -181,7 +182,7 @@ def gen_sockaddr(file_path, bind_name, bind_code):
+     else:
+         prompt = gen_sockaddr_prompt(file_path, bind_code)
+         prompt_path.write_text(prompt)
+-        answer = query_gpt4(prompt)
++        answer = query_llm(prompt)
+         if answer is None:
+             logger.error(f"[{file_path}] Step 0 failed")
+             return
+@@ -536,7 +537,12 @@ def gen_spec_recursive(
+ 
+     # Step 2: Infer the unknown arg.
+     for depth in range(MAX_DEPTH):
+-        unknown_args = pop_unknown_args(spec, key_name, arg_name)
++        unknown_args = dict()
++        try:
++            unknown_args = pop_unknown_args(spec, key_name, arg_name)
++        except BaseException as e:
++            logger.error(f"Error in pop_unknown_args: {e}")
++
+         for cmd_name, cmd_data in unknown_args.items():
+             logger.info(f"[{f_name}] Step 2: unknown arg for {cmd_name}")
+ 
+@@ -809,11 +815,16 @@ def gen_driver_spec(ops_name, ops_path, ops_code, output_dir_name="drivers"):
+     ioctl_code = ioctl_info["source"]
+     statistics["ioctl_path"] = str(ioctl_path)
+ 
+-    ioctl_dict = gen_ioctl(
+-        ioctl_path,
+-        ioctl_name,
+-        ioctl_code,
+-    )
++    ioctl_dict = None
++    try:
++        ioctl_dict = gen_ioctl(
++            ioctl_path,
++            ioctl_name,
++            ioctl_code,
++        )
++    except BaseException as e:
++        logger.error("run gen_ioctl_failed:", e)
++
+     if not ioctl_dict:
+         statistics["result"] = "failed no spec"
+         logger.error(f"[{ops_name}] Failed")
+@@ -902,6 +913,14 @@ def main():
+         default=None,
+         help="path to the debug file",
+     )
++    parser.add_argument(
++        "--subsystems",
++        type=str,
++        nargs="+",
++        default=None,
++        help="list of subsystem names to generate specs for (e.g., can fuse kvm). "
++        "Only handlers matching these subsystems will be processed.",
++    )
+     args = parser.parse_args()
+ 
+     json_path = Path(args.data)
+@@ -916,6 +935,34 @@ def main():
+     debug_file = args.debug_file
+     ops_handler_data = json.loads(json_path.read_text())
+ 
++    # Filter handlers by subsystem if --subsystems is specified
++    if args.subsystems:
++        # Collect all path patterns for the requested subsystems
++        subsystem_patterns = []
++        for sub in args.subsystems:
++            if sub not in SUBSYSTEM_PATH_PATTERNS:
++                logger.warning(
++                    f"Unknown subsystem '{sub}'. "
++                    f"Available: {', '.join(sorted(SUBSYSTEM_PATH_PATTERNS.keys()))}"
++                )
++                continue
++            subsystem_patterns.extend(SUBSYSTEM_PATH_PATTERNS[sub])
++
++        # Keep only handlers whose path matches at least one pattern
++        filtered_data = {}
++        for ops_name, ops_data in ops_handler_data.items():
++            matching_paths = {}
++            for ops_path, ops_code in ops_data.items():
++                if any(pat in ops_path for pat in subsystem_patterns):
++                    matching_paths[ops_path] = ops_code
++            if matching_paths:
++                filtered_data[ops_name] = matching_paths
++        logger.info(
++            f"Subsystem filter: {len(filtered_data)} handlers matched "
++            f"(from {len(ops_handler_data)} total) for subsystems: {args.subsystems}"
++        )
++        ops_handler_data = filtered_data
++
+     logger.info(f"num of ops: {len(ops_handler_data)}")
+ 
+     generated_ops = set()
+@@ -933,30 +980,32 @@ def main():
+             continue
+ 
+         for ops_path, ops_code in ops_data.items():
+-            ops_type = get_ops_type(ops_path, ops_code)
+-
+-            ops_path = Path(ops_path)
+-            if ops_type in [OpsType.FS, OpsType.VIRT]:
+-                logger.info(f"[{ops_name}] Generating fs/virt spec")
+-                statistics = gen_driver_spec(
+-                    ops_name, ops_path, ops_code, "fsvt"
+-                )
+-            elif ops_type == OpsType.DRIVER:
+-                logger.info(f"[{ops_name}] Generating driver spec")
+-                statistics = gen_driver_spec(
+-                    ops_name,
+-                    ops_path,
+-                    ops_code,
+-                )
+-            elif ops_type == OpsType.SOCKET:
+-                logger.info(f"[{ops_name}] Generating socket spec")
+-                statistics = gen_socket_spec(
+-                    ops_name,
+-                    ops_path,
+-                    ops_code,
+-                )
+-            else:
+-                raise ValueError(f"Unknown ops type {ops_type}")
++            try:
++                ops_type = get_ops_type(ops_path, ops_code)
++                ops_path = Path(ops_path)
++                if ops_type in [OpsType.FS, OpsType.VIRT]:
++                    logger.info(f"[{ops_name}] Generating fs/virt spec")
++                    statistics = gen_driver_spec(
++                        ops_name, ops_path, ops_code, "fsvt"
++                    )
++                elif ops_type == OpsType.DRIVER:
++                    logger.info(f"[{ops_name}] Generating driver spec")
++                    statistics = gen_driver_spec(
++                        ops_name,
++                        ops_path,
++                        ops_code,
++                    )
++                elif ops_type == OpsType.SOCKET:
++                    logger.info(f"[{ops_name}] Generating socket spec")
++                    statistics = gen_socket_spec(
++                        ops_name,
++                        ops_path,
++                        ops_code,
++                    )
++                else:
++                    raise ValueError(f"Unknown ops type {ops_type}")
++            except BaseException as e:
++                logger.error(f"Failed to generate spec for {ops_name} at {ops_path}: {e}")
+             idx += 1
+             generated_ops.add(ops_name)
+             results[ops_type].append(statistics)
+diff --git a/spec-gen/gen_utils.py b/spec-gen/gen_utils.py
+index 6a1de9c..a4f8bf7 100644
+--- a/spec-gen/gen_utils.py
++++ b/spec-gen/gen_utils.py
+@@ -27,15 +27,15 @@ SOCKOPT_ARG_TEMPLATE_PATH = (
+ 
+ EXISTING_PATH = Path(__file__).parent / "existings"
+ EXISTING_TYPE_PATH = EXISTING_PATH / "types.txt"
+-EXISTING_CMD_PATh = EXISTING_PATH / "cmds.txt"
+-EXISTING_SOCKOPT_PATh = EXISTING_PATH / "sockopt.txt"
++EXISTING_CMD_PATH = EXISTING_PATH / "cmds.txt"
++EXISTING_SOCKOPT_PATH = EXISTING_PATH / "sockopt.txt"
+ EXISTING_FD_PATH = EXISTING_PATH / "fds.txt"
+ EXISTING_FILENAME_PATH = EXISTING_PATH / "filenames.txt"
+ DEV_FILES_PATH = EXISTING_PATH / "dev_files.txt"
+ 
+ existing_types = set(EXISTING_TYPE_PATH.read_text().split("\n"))
+-existing_cmds = set(EXISTING_CMD_PATh.read_text().split("\n"))
+-existing_sockopts = set(EXISTING_SOCKOPT_PATh.read_text().split("\n"))
++existing_cmds = set(EXISTING_CMD_PATH.read_text().split("\n"))
++existing_sockopts = set(EXISTING_SOCKOPT_PATH.read_text().split("\n"))
+ existing_fds = set(EXISTING_FD_PATH.read_text().split("\n"))
+ existing_filenames = set(EXISTING_FILENAME_PATH.read_text().split("\n"))
+ dev_files = set(DEV_FILES_PATH.read_text().split("\n"))
+@@ -48,6 +48,28 @@ class OpsType(Enum):
+     DRIVER = auto()
+ 
+ 
++# Mapping from subsystem name to kernel source path patterns.
++# Used by --subsystems filter in gen_spec.py.
++SUBSYSTEM_PATH_PATTERNS = {
++    "can": ["/net/can/", "/drivers/net/can/"],
++    "autofs": ["/fs/autofs/"],
++    "phonet": ["/net/phonet/"],
++    "comedi": ["/drivers/comedi/", "/drivers/staging/comedi/"],
++    "dri": ["/drivers/gpu/drm/"],
++    "fuse": ["/fs/fuse/"],
++    "i2c": ["/drivers/i2c/"],
++    "input": ["/drivers/input/"],
++    "kvm": ["/virt/kvm/"],
++    "ax25": ["/net/ax25/"],
++    "ptp": ["/drivers/ptp/"],
++    "ppp": ["/drivers/net/ppp/"],
++    "rdma_cm": ["/drivers/infiniband/"],
++    "sequencer": ["/sound/core/seq/"],
++    "sg": ["/drivers/scsi/sg."],
++    "x25": ["/net/x25/"],
++}
++
++
+ def get_ops_type(ops_path: str, ops_code: str = None):
+     """Get the ops type from the ops name and path."""
+     ops_path = str(ops_path)
+diff --git a/spec-gen/llm_utils.py b/spec-gen/llm_utils.py
+index b8b113b..f2e221d 100644
+--- a/spec-gen/llm_utils.py
++++ b/spec-gen/llm_utils.py
+@@ -1,13 +1,16 @@
+ from openai import OpenAI
+ from pathlib import Path
+ from loguru import logger
+-import time
++from dotenv import load_dotenv
+ 
++import time
++import os
+ 
+-api_key = (
+-    (Path(__file__).parent / "openai.key").read_text().strip()
+-)  # you need to create a file named "openai.key" and put your API key in it
+-client = OpenAI(api_key=api_key)
++load_dotenv()
++API_KEY = os.getenv("OPENAI_API_KEY")
++BASE_URL = os.getenv("OPENAI_BASE_URL")
++MODEL = os.getenv("OPENAI_MODEL", "gpt-4-1106-preview")
++client = OpenAI(api_key=API_KEY, base_url=BASE_URL)
+ 
+ system_message = (
+     "You are Syzkaller specification generator and "
+@@ -16,15 +19,15 @@ system_message = (
+ )
+ 
+ 
+-def query_gpt4(prompt: str, temperature=0.1):
+-    max_tokens = 4096
++def query_llm(prompt: str, temperature=0.1):
++    max_tokens = 16384
+     failure_count = 0
+     while True:
+         try:
+-            logger.info(f"Invoke GPT-4 with max_tokens={max_tokens}")
++            logger.info(f"Invoke {MODEL} with max_tokens={max_tokens}")
+             t_start = time.time()
+             response = client.chat.completions.create(
+-                model="gpt-4-1106-preview",
++                model=MODEL,
+                 messages=[
+                     {"role": "system", "content": system_message},
+                     {"role": "user", "content": prompt},
+@@ -35,7 +38,7 @@ def query_gpt4(prompt: str, temperature=0.1):
+                 n=1,
+             )
+             g_time = time.time() - t_start
+-            logger.info(f"GPT-4 response time: {g_time}")
++            logger.info(f"{MODEL} response time: {g_time}")
+             break
+         except Exception as e:
+             failure_count += 1
+diff --git a/spec-gen/repair_spec.py b/spec-gen/repair_spec.py
+index e124c21..3e1e8ae 100644
+--- a/spec-gen/repair_spec.py
++++ b/spec-gen/repair_spec.py
+@@ -4,7 +4,7 @@ from pathlib import Path
+ from loguru import logger
+ from collections import defaultdict
+ from find_utils import find_type
+-from llm_utils import query_gpt4
++from llm_utils import query_llm
+ from output_spec import SYSCALL_SPEC_KEY, INIT_SYSCALL_KEY
+ 
+ REPAIR_TEMPLATE_PATH = (
+@@ -127,7 +127,7 @@ def gen_repair(
+         .replace("SOURCE_PLACEHOLDER", source)
+     )
+     (output_path / f"{name}-{idx}.txt").write_text(repair_prompt)
+-    answer = query_gpt4(repair_prompt)
++    answer = query_llm(repair_prompt)
+     if answer is None:
+         logger.error(f"[{name}] Repair failed")
+         return
+diff --git a/syzkaller b/syzkaller
+index 500bfdc..ac3c71e 160000
+--- a/syzkaller
++++ b/syzkaller
+@@ -1 +1 @@
+-Subproject commit 500bfdc41735bc8d617cbfd4f1ab6b5980c8f1e5
++Subproject commit ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219

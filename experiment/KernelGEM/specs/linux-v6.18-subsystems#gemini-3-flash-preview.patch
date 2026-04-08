@@ -1,0 +1,2441 @@
+diff --git a/sys/linux/gemini-3-flash-preview#_dev_ioctl_fops#fs_autofs_dev-ioctl.c:791.txt b/sys/linux/gemini-3-flash-preview#_dev_ioctl_fops#fs_autofs_dev-ioctl.c:791.txt
+new file mode 100644
+index 000000000..d5570c871
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#_dev_ioctl_fops#fs_autofs_dev-ioctl.c:791.txt
+@@ -0,0 +1,97 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/auto_dev-ioctl.h>
++
++openat$KGPT_autofs(fd const[AT_FDCWD], file ptr[in, string["/dev/autofs"]], flags flags[open_flags], mode const[0]) fd_autofs
++
++ioctl$KGPT_AUTOFS_DEV_IOCTL_VERSION(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_VERSION], arg ptr[inout, autofs_dev_ioctl[void]])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_PROTOVER(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_PROTOVER], arg ptr[inout, autofs_dev_ioctl_protover])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_PROTOSUBVER(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_PROTOSUBVER], arg ptr[inout, array[int8]])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_OPENMOUNT(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_OPENMOUNT], arg ptr[inout, autofs_dev_ioctl[args_openmount]])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_CLOSEMOUNT(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_CLOSEMOUNT], arg ptr[inout, autofs_dev_ioctl[void]])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_READY(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_READY], arg ptr[inout, args_ready])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_FAIL(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_FAIL], arg ptr[inout, args_fail])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_SETPIPEFD(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_SETPIPEFD], arg ptr[inout, autofs_dev_ioctl_setpipefd])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_CATATONIC(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_CATATONIC], arg ptr[inout, autofs_dev_ioctl[void]])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_TIMEOUT(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_TIMEOUT], arg ptr[inout, autofs_dev_ioctl[args_timeout]])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_REQUESTER(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_REQUESTER], arg ptr[inout, array[int8]])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_EXPIRE(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_EXPIRE], arg ptr[inout, autofs_dev_ioctl[args_expire]])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_ASKUMOUNT(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_ASKUMOUNT], arg ptr[inout, array[int8]])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_ISMOUNTPOINT(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_ISMOUNTPOINT], arg ptr[inout, autofs_dev_ioctl_ismountpoint])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_VERSION_CMD(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_VERSION_CMD], arg ptr[inout, autofs_dev_ioctl[void]])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_ISMOUNTPOINT_CMD(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_ISMOUNTPOINT_CMD], arg ptr[inout, autofs_dev_ioctl_ismountpoint])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_OPENMOUNT_CMD(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_OPENMOUNT_CMD], arg ptr[in, autofs_dev_ioctl_openmount])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_CLOSEMOUNT_CMD(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_CLOSEMOUNT_CMD], arg ptr[inout, autofs_dev_ioctl[void]])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_CATATONIC_CMD(fd fd_autofs, cmd const[AUTOFS_DEV_IOCTL_CATATONIC_CMD], arg ptr[inout, autofs_dev_ioctl[void]])
++
++autofs_dev_ioctl_protover {
++	version	int32
++}
++
++autofs_dev_ioctl_setpipefd {
++	pipefd	int32
++}
++
++autofs_dev_ioctl_ismountpoint {
++	in	autofs_dev_ioctl_ismountpoint_in
++	out	autofs_dev_ioctl_ismountpoint_out
++}
++
++autofs_dev_ioctl_ismountpoint_in {
++	type	int32
++}
++
++autofs_dev_ioctl_ismountpoint_out {
++	devid	int32
++	magic	int32
++}
++
++autofs_dev_ioctl_openmount {
++	ver_major	int32
++	ver_minor	int32
++	size		len[parent, int32]
++	ioctlfd		int32
++	flags		int32
++	args		autofs_dev_ioctl_args_openmount
++	path		string
++}
++
++autofs_dev_ioctl_args_openmount [
++	openmount	autofs_args_openmount
++]
++
++autofs_args_openmount {
++	devid	int32
++}
+diff --git a/sys/linux/gemini-3-flash-preview#_dev_ioctl_fops#fs_autofs_dev-ioctl.c:791.txt.const b/sys/linux/gemini-3-flash-preview#_dev_ioctl_fops#fs_autofs_dev-ioctl.c:791.txt.const
+new file mode 100644
+index 000000000..9331a63e4
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#_dev_ioctl_fops#fs_autofs_dev-ioctl.c:791.txt.const
+@@ -0,0 +1,24 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++AUTOFS_DEV_IOCTL_ASKUMOUNT = amd64:3222836093
++AUTOFS_DEV_IOCTL_CATATONIC = amd64:3222836089
++AUTOFS_DEV_IOCTL_CATATONIC_CMD = amd64:121
++AUTOFS_DEV_IOCTL_CLOSEMOUNT = amd64:3222836085
++AUTOFS_DEV_IOCTL_CLOSEMOUNT_CMD = amd64:117
++AUTOFS_DEV_IOCTL_EXPIRE = amd64:3222836092
++AUTOFS_DEV_IOCTL_FAIL = amd64:3222836087
++AUTOFS_DEV_IOCTL_ISMOUNTPOINT = amd64:3222836094
++AUTOFS_DEV_IOCTL_ISMOUNTPOINT_CMD = amd64:126
++AUTOFS_DEV_IOCTL_OPENMOUNT = amd64:3222836084
++AUTOFS_DEV_IOCTL_OPENMOUNT_CMD = amd64:116
++AUTOFS_DEV_IOCTL_PROTOSUBVER = amd64:3222836083
++AUTOFS_DEV_IOCTL_PROTOVER = amd64:3222836082
++AUTOFS_DEV_IOCTL_READY = amd64:3222836086
++AUTOFS_DEV_IOCTL_REQUESTER = amd64:3222836091
++AUTOFS_DEV_IOCTL_SETPIPEFD = amd64:3222836088
++AUTOFS_DEV_IOCTL_TIMEOUT = amd64:3222836090
++AUTOFS_DEV_IOCTL_VERSION = amd64:3222836081
++AUTOFS_DEV_IOCTL_VERSION_CMD = amd64:113
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
+diff --git a/sys/linux/gemini-3-flash-preview#async_ops#drivers_net_ppp_ppp_async.c:110.txt b/sys/linux/gemini-3-flash-preview#async_ops#drivers_net_ppp_ppp_async.c:110.txt
+new file mode 100644
+index 000000000..97585ff16
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#async_ops#drivers_net_ppp_ppp_async.c:110.txt
+@@ -0,0 +1,49 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/ppp-ioctl.h>
++
++resource fd_ppp_async[fd]
++
++syz_open_dev$KGPT_ppp_async(dev ptr[in, string["/dev/tty#"]], id proc[0, 1], flags flags[open_flags]) fd_ppp_async
++
++ioctl$KGPT_PPPIOCGFLAGS(fd fd_ppp_async, cmd const[PPPIOCGFLAGS], arg ptr[out, int32])
++ioctl$KGPT_PPPIOCSFLAGS(fd fd_ppp_async, cmd const[PPPIOCSFLAGS], arg ptr[in, flags[ppp_flags, int32]])
++ioctl$KGPT_PPPIOCGASYNCMAP(fd fd_ppp_async, cmd const[PPPIOCGASYNCMAP], arg ptr[out, int32])
++ioctl$KGPT_PPPIOCSASYNCMAP(fd fd_ppp_async, cmd const[PPPIOCSASYNCMAP], arg ptr[in, int32])
++ioctl$KGPT_PPPIOCGRASYNCMAP(fd fd_ppp_async, cmd const[PPPIOCGRASYNCMAP], arg ptr[out, int32])
++ioctl$KGPT_PPPIOCSRASYNCMAP(fd fd_ppp_async, cmd const[PPPIOCSRASYNCMAP], arg ptr[in, int32])
++ioctl$KGPT_PPPIOCGXASYNCMAP(fd fd_ppp_async, cmd const[PPPIOCGXASYNCMAP], arg ptr[out, array[int32, 8]])
++ioctl$KGPT_PPPIOCSXASYNCMAP(fd fd_ppp_async, cmd const[PPPIOCSXASYNCMAP], arg ptr[in, array[int32, 8]])
++ioctl$KGPT_PPPIOCGMRU(fd fd_ppp_async, cmd const[PPPIOCGMRU], arg ptr[out, int32])
++ioctl$KGPT_PPPIOCSMRU(fd fd_ppp_async, cmd const[PPPIOCSMRU], arg ptr[in, int32])
+diff --git a/sys/linux/gemini-3-flash-preview#async_ops#drivers_net_ppp_ppp_async.c:110.txt.const b/sys/linux/gemini-3-flash-preview#async_ops#drivers_net_ppp_ppp_async.c:110.txt.const
+new file mode 100644
+index 000000000..e94df1cd8
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#async_ops#drivers_net_ppp_ppp_async.c:110.txt.const
+@@ -0,0 +1,13 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++PPPIOCGASYNCMAP = amd64:2147775576
++PPPIOCGFLAGS = amd64:2147775578
++PPPIOCGMRU = amd64:2147775571
++PPPIOCGRASYNCMAP = amd64:2147775573
++PPPIOCGXASYNCMAP = amd64:2149610576
++PPPIOCSASYNCMAP = amd64:1074033751
++PPPIOCSFLAGS = amd64:1074033753
++PPPIOCSMRU = amd64:1074033746
++PPPIOCSRASYNCMAP = amd64:1074033748
++PPPIOCSXASYNCMAP = amd64:1075868751
++__NR_ioctl = amd64:16
+diff --git a/sys/linux/gemini-3-flash-preview#autofs_root_operations#fs_autofs_root.c:32.txt b/sys/linux/gemini-3-flash-preview#autofs_root_operations#fs_autofs_root.c:32.txt
+new file mode 100644
+index 000000000..25eed59be
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#autofs_root_operations#fs_autofs_root.c:32.txt
+@@ -0,0 +1,45 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/auto_fs.h>
++
++ioctl$KGPT_AUTOFS_IOC_CATATONIC(fd fd_autofs, cmd const[AUTOFS_IOC_CATATONIC], arg ptr[in, array[int8]])
++ioctl$KGPT_AUTOFS_IOC_READY(fd fd_autofs, cmd const[AUTOFS_IOC_READY], arg autofs_wqt_t)
++ioctl$KGPT_AUTOFS_IOC_FAIL(fd fd_autofs, cmd const[AUTOFS_IOC_FAIL], arg autofs_wqt_t)
++ioctl$KGPT_AUTOFS_IOC_PROTOVER(fd fd_autofs, cmd const[AUTOFS_IOC_PROTOVER], arg ptr[out, int32])
++ioctl$KGPT_AUTOFS_IOC_PROTOSUBVER(fd fd_autofs, cmd const[AUTOFS_IOC_PROTOSUBVER], arg ptr[out, int32])
++ioctl$KGPT_AUTOFS_IOC_SETTIMEOUT(fd fd_autofs, cmd const[AUTOFS_IOC_SETTIMEOUT], arg ptr[inout, intptr])
++ioctl$KGPT_AUTOFS_IOC_EXPIRE(fd fd_autofs, cmd const[AUTOFS_IOC_EXPIRE], arg ptr[out, autofs_packet_expire])
++ioctl$KGPT_AUTOFS_IOC_EXPIRE_MULTI(fd fd_autofs, cmd const[AUTOFS_IOC_EXPIRE_MULTI], arg ptr[in, int32])
++ioctl$KGPT_AUTOFS_IOC_ASKUMOUNT(fd fd_autofs, cmd const[AUTOFS_IOC_ASKUMOUNT], arg ptr[out, int32])
+diff --git a/sys/linux/gemini-3-flash-preview#autofs_root_operations#fs_autofs_root.c:32.txt.const b/sys/linux/gemini-3-flash-preview#autofs_root_operations#fs_autofs_root.c:32.txt.const
+new file mode 100644
+index 000000000..405402438
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#autofs_root_operations#fs_autofs_root.c:32.txt.const
+@@ -0,0 +1,12 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AUTOFS_IOC_ASKUMOUNT = amd64:2147783536
++AUTOFS_IOC_CATATONIC = amd64:37730
++AUTOFS_IOC_EXPIRE = amd64:2165085029
++AUTOFS_IOC_EXPIRE_MULTI = amd64:1074041702
++AUTOFS_IOC_FAIL = amd64:37729
++AUTOFS_IOC_PROTOSUBVER = amd64:2147783527
++AUTOFS_IOC_PROTOVER = amd64:2147783523
++AUTOFS_IOC_READY = amd64:37728
++AUTOFS_IOC_SETTIMEOUT = amd64:3221787492
++__NR_ioctl = amd64:16
+diff --git a/sys/linux/gemini-3-flash-preview#ax25_proto_ops#net_ax25_af_ax25.c:2013.txt b/sys/linux/gemini-3-flash-preview#ax25_proto_ops#net_ax25_af_ax25.c:2013.txt
+new file mode 100644
+index 000000000..0f1cd60b2
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#ax25_proto_ops#net_ax25_af_ax25.c:2013.txt
+@@ -0,0 +1,52 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/asm-generic/socket.h>
++include <samples/bpf/net_shared.h>
++
++syz_init_net_socket$KGPT_ax25(domain const[AF_AX25], type flags[ax25_socket_type], proto const[0]) sock_ax25
++
++bind$KGPT_ax25_proto_ops(fd sock_ax25, addr ptr[in, sockaddr_ax25_any], addrlen len[addr])
++connect$KGPT_ax25_proto_ops(fd sock_ax25, addr ptr[in, sockaddr_ax25_any], addrlen len[addr])
++accept4$KGPT_ax25_proto_ops(fd sock_ax25, peer ptr[out, sockaddr_ax25_any, opt], peerlen ptr[inout, len[peer, int32]], flags flags[accept_flags]) sock_ax25
++sendto$KGPT_ax25_proto_ops(fd sock_ax25, buf ptr[in, array[int8]], len len[buf], f flags[send_flags], addr ptr[in, sockaddr_ax25_any, opt], addrlen len[addr])
++recvfrom$KGPT_ax25_proto_ops(fd sock_ax25, buf ptr[out, array[int8]], len len[buf], f flags[recv_flags], addr ptr[in, sockaddr_ax25_any, opt], addrlen len[addr])
++getsockopt$KGPT_SO_BINDTODEVICE(fd sock_ax25, level const[SOL_AX25], opt const[SO_BINDTODEVICE], val ptr[out, array[int8]], len ptr[inout, bytesize[val, int32]])
++setsockopt$KGPT_SO_BINDTODEVICE(fd sock_ax25, level const[SOL_AX25], opt const[SO_BINDTODEVICE], val ptr[in, array[int8]], len len[val])
++
++ax25_socket_type = SOCK_DGRAM, SOCK_SEQPACKET, SOCK_RAW
++
++sockaddr_ax25_any [
++	short	sockaddr_ax25
++	full	full_sockaddr_ax25
++] [varlen]
+diff --git a/sys/linux/gemini-3-flash-preview#ax25_proto_ops#net_ax25_af_ax25.c:2013.txt.const b/sys/linux/gemini-3-flash-preview#ax25_proto_ops#net_ax25_af_ax25.c:2013.txt.const
+new file mode 100644
+index 000000000..03ba0558c
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#ax25_proto_ops#net_ax25_af_ax25.c:2013.txt.const
+@@ -0,0 +1,15 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AF_AX25 = amd64:3
++SOCK_DGRAM = amd64:2
++SOCK_RAW = amd64:3
++SOCK_SEQPACKET = amd64:5
++SOL_AX25 = amd64:257
++SO_BINDTODEVICE = amd64:25
++__NR_accept4 = amd64:288
++__NR_bind = amd64:49
++__NR_connect = amd64:42
++__NR_getsockopt = amd64:55
++__NR_recvfrom = amd64:45
++__NR_sendto = amd64:44
++__NR_setsockopt = amd64:54
+diff --git a/sys/linux/gemini-3-flash-preview#bcm_ops#net_can_bcm.c:1768.txt b/sys/linux/gemini-3-flash-preview#bcm_ops#net_can_bcm.c:1768.txt
+new file mode 100644
+index 000000000..857f226d3
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#bcm_ops#net_can_bcm.c:1768.txt
+@@ -0,0 +1,44 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/can.h>
++
++socket$KGPT_can_bcm(domain const[AF_CAN], type const[SOCK_DGRAM], proto const[CAN_BCM]) sock_can_bcm
++
++bind$KGPT_bcm_ops(fd sock_can_bcm, addr ptr[in, sockaddr], addrlen len[addr])
++connect$KGPT_bcm_ops(fd sock_can_bcm, addr ptr[in, sockaddr], addrlen len[addr])
++accept4$KGPT_bcm_ops(fd sock_can_bcm, peer ptr[out, sockaddr, opt], peerlen ptr[inout, len[peer, int32]], flags flags[accept_flags]) sock_can_bcm
++sendto$KGPT_bcm_ops(fd sock_can_bcm, buf ptr[in, array[int8]], len len[buf], f flags[send_flags], addr ptr[in, sockaddr, opt], addrlen len[addr])
++recvfrom$KGPT_bcm_ops(fd sock_can_bcm, buf ptr[out, array[int8]], len len[buf], f flags[recv_flags], addr ptr[in, sockaddr, opt], addrlen len[addr])
++
++define CAN_BCM	2
+diff --git a/sys/linux/gemini-3-flash-preview#bcm_ops#net_can_bcm.c:1768.txt.const b/sys/linux/gemini-3-flash-preview#bcm_ops#net_can_bcm.c:1768.txt.const
+new file mode 100644
+index 000000000..20736b9ac
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#bcm_ops#net_can_bcm.c:1768.txt.const
+@@ -0,0 +1,11 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AF_CAN = amd64:29
++CAN_BCM = amd64:2
++SOCK_DGRAM = amd64:2
++__NR_accept4 = amd64:288
++__NR_bind = amd64:49
++__NR_connect = amd64:42
++__NR_recvfrom = amd64:45
++__NR_sendto = amd64:44
++__NR_socket = amd64:41
+diff --git a/sys/linux/gemini-3-flash-preview#fops#drivers_gpu_drm_i915_i915_perf.c:3754.txt b/sys/linux/gemini-3-flash-preview#fops#drivers_gpu_drm_i915_i915_perf.c:3754.txt
+new file mode 100644
+index 000000000..33e939f9e
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#fops#drivers_gpu_drm_i915_i915_perf.c:3754.txt
+@@ -0,0 +1,40 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/drm/i915_drm.h>
++
++syz_open_dev$KGPT_i915(dev ptr[in, string["/dev/dri/card#"]], id proc[0, 1], flags flags[open_flags]) fd_i915
++
++ioctl$KGPT_I915_PERF_IOCTL_ENABLE(fd fd_i915, cmd const[I915_PERF_IOCTL_ENABLE], arg ptr[in, array[int8]])
++ioctl$KGPT_I915_PERF_IOCTL_DISABLE(fd fd_i915, cmd const[I915_PERF_IOCTL_DISABLE], arg ptr[in, array[int8]])
++ioctl$KGPT_I915_PERF_IOCTL_CONFIG(fd fd_i915, cmd const[I915_PERF_IOCTL_CONFIG], arg int64)
+diff --git a/sys/linux/gemini-3-flash-preview#fops#drivers_gpu_drm_i915_i915_perf.c:3754.txt.const b/sys/linux/gemini-3-flash-preview#fops#drivers_gpu_drm_i915_i915_perf.c:3754.txt.const
+new file mode 100644
+index 000000000..5d4bd3278
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#fops#drivers_gpu_drm_i915_i915_perf.c:3754.txt.const
+@@ -0,0 +1,6 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++I915_PERF_IOCTL_CONFIG = amd64:26882
++I915_PERF_IOCTL_DISABLE = amd64:26881
++I915_PERF_IOCTL_ENABLE = amd64:26880
++__NR_ioctl = amd64:16
+diff --git a/sys/linux/gemini-3-flash-preview#fuse_dev_operations#fs_fuse_dev.c:2703.txt b/sys/linux/gemini-3-flash-preview#fuse_dev_operations#fs_fuse_dev.c:2703.txt
+new file mode 100644
+index 000000000..a2efa23a0
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#fuse_dev_operations#fs_fuse_dev.c:2703.txt
+@@ -0,0 +1,48 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/fuse.h>
++
++openat$KGPT_fuse(fd const[AT_FDCWD], file ptr[in, string["/dev/fuse"]], flags flags[open_flags], mode const[0]) fd_fuse
++
++ioctl$KGPT_FUSE_DEV_IOC_SYNC_INIT(fd fd_fuse, cmd const[FUSE_DEV_IOC_SYNC_INIT], arg ptr[in, array[int8]])
++ioctl$KGPT_FUSE_DEV_IOC_CLONE(fd fd_fuse, cmd const[FUSE_DEV_IOC_CLONE], arg ptr[in, fd])
++ioctl$KGPT_FUSE_DEV_IOC_BACKING_OPEN(fd fd_fuse, cmd const[FUSE_DEV_IOC_BACKING_OPEN], arg ptr[in, fuse_backing_map$KGPT])
++ioctl$KGPT_FUSE_DEV_IOC_BACKING_CLOSE(fd fd_fuse, cmd const[FUSE_DEV_IOC_BACKING_CLOSE], arg ptr[in, int32])
++
++fuse_backing_map$KGPT {
++	fd	int32
++	flags	int32
++	padding	int64
++}
+diff --git a/sys/linux/gemini-3-flash-preview#fuse_dev_operations#fs_fuse_dev.c:2703.txt.const b/sys/linux/gemini-3-flash-preview#fuse_dev_operations#fs_fuse_dev.c:2703.txt.const
+new file mode 100644
+index 000000000..994535f04
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#fuse_dev_operations#fs_fuse_dev.c:2703.txt.const
+@@ -0,0 +1,9 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++FUSE_DEV_IOC_BACKING_CLOSE = amd64:1074062594
++FUSE_DEV_IOC_BACKING_OPEN = amd64:1074849025
++FUSE_DEV_IOC_CLONE = amd64:2147804416
++FUSE_DEV_IOC_SYNC_INIT = amd64:58627
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
+diff --git a/sys/linux/gemini-3-flash-preview#fuse_file_operations#fs_fuse_file.c:3086.txt b/sys/linux/gemini-3-flash-preview#fuse_file_operations#fs_fuse_file.c:3086.txt
+new file mode 100644
+index 000000000..da3a7a406
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#fuse_file_operations#fs_fuse_file.c:3086.txt
+@@ -0,0 +1,38 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/fsverity.h>
++
++ioctl$KGPT_FS_IOC_MEASURE_VERITY(fd fd_fuse, cmd const[FS_IOC_MEASURE_VERITY], arg ptr[inout, fsverity_digest])
++ioctl$KGPT_FS_IOC_ENABLE_VERITY(fd fd_fuse, cmd const[FS_IOC_ENABLE_VERITY], arg ptr[in, fsverity_enable_arg])
+diff --git a/sys/linux/gemini-3-flash-preview#fuse_file_operations#fs_fuse_file.c:3086.txt.const b/sys/linux/gemini-3-flash-preview#fuse_file_operations#fs_fuse_file.c:3086.txt.const
+new file mode 100644
+index 000000000..e5d417892
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#fuse_file_operations#fs_fuse_file.c:3086.txt.const
+@@ -0,0 +1,5 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++FS_IOC_ENABLE_VERITY = amd64:1082156677
++FS_IOC_MEASURE_VERITY = amd64:3221513862
++__NR_ioctl = amd64:16
+diff --git a/sys/linux/gemini-3-flash-preview#i2cdev_fops#drivers_i2c_i2c-dev.c:639.txt b/sys/linux/gemini-3-flash-preview#i2cdev_fops#drivers_i2c_i2c-dev.c:639.txt
+new file mode 100644
+index 000000000..04d8a0530
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#i2cdev_fops#drivers_i2c_i2c-dev.c:639.txt
+@@ -0,0 +1,46 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/i2c-dev.h>
++
++syz_open_dev$KGPT_i2c(dev ptr[in, string["/dev/i2c-#"]], id proc[0, 1], flags flags[open_flags]) fd_i2c
++
++ioctl$KGPT_I2C_SLAVE(fd fd_i2c, cmd const[I2C_SLAVE], arg intptr)
++ioctl$KGPT_I2C_SLAVE_FORCE(fd fd_i2c, cmd const[I2C_SLAVE_FORCE], arg intptr)
++ioctl$KGPT_I2C_TENBIT(fd fd_i2c, cmd const[I2C_TENBIT], arg intptr)
++ioctl$KGPT_I2C_PEC(fd fd_i2c, cmd const[I2C_PEC], arg intptr)
++ioctl$KGPT_I2C_FUNCS(fd fd_i2c, cmd const[I2C_FUNCS], arg ptr[out, intptr])
++ioctl$KGPT_I2C_RDWR(fd fd_i2c, cmd const[I2C_RDWR], arg ptr[in, i2c_rdwr_ioctl_data])
++ioctl$KGPT_I2C_SMBUS(fd fd_i2c, cmd const[I2C_SMBUS], arg ptr[in, i2c_smbus_ioctl_data])
++ioctl$KGPT_I2C_RETRIES(fd fd_i2c, cmd const[I2C_RETRIES], arg intptr)
++ioctl$KGPT_I2C_TIMEOUT(fd fd_i2c, cmd const[I2C_TIMEOUT], arg intptr)
+diff --git a/sys/linux/gemini-3-flash-preview#i2cdev_fops#drivers_i2c_i2c-dev.c:639.txt.const b/sys/linux/gemini-3-flash-preview#i2cdev_fops#drivers_i2c_i2c-dev.c:639.txt.const
+new file mode 100644
+index 000000000..f6f35cf62
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#i2cdev_fops#drivers_i2c_i2c-dev.c:639.txt.const
+@@ -0,0 +1,12 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++I2C_FUNCS = amd64:1797
++I2C_PEC = amd64:1800
++I2C_RDWR = amd64:1799
++I2C_RETRIES = amd64:1793
++I2C_SLAVE = amd64:1795
++I2C_SLAVE_FORCE = amd64:1798
++I2C_SMBUS = amd64:1824
++I2C_TENBIT = amd64:1796
++I2C_TIMEOUT = amd64:1794
++__NR_ioctl = amd64:16
+diff --git a/sys/linux/gemini-3-flash-preview#isotp_ops#net_can_isotp.c:1676.txt b/sys/linux/gemini-3-flash-preview#isotp_ops#net_can_isotp.c:1676.txt
+new file mode 100644
+index 000000000..88cf690ae
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#isotp_ops#net_can_isotp.c:1676.txt
+@@ -0,0 +1,82 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/can.h>
++include <uapi/linux/can/isotp.h>
++
++resource sock_can_isotp[sock]
++
++socket$KGPT_can_isotp(domain const[AF_CAN], type const[SOCK_DGRAM], proto const[CAN_ISOTP]) sock_can_isotp
++
++bind$KGPT_isotp_ops(fd sock_can_isotp, addr ptr[in, sockaddr_can], addrlen len[addr])
++connect$KGPT_isotp_ops(fd sock_can_isotp, addr ptr[in, sockaddr_can], addrlen len[addr])
++accept4$KGPT_isotp_ops(fd sock_can_isotp, peer ptr[out, sockaddr_can, opt], peerlen ptr[inout, len[peer, int32]], flags flags[accept_flags]) sock_can_isotp
++sendto$KGPT_isotp_ops(fd sock_can_isotp, buf ptr[in, array[int8]], len len[buf], f flags[send_flags], addr ptr[in, sockaddr_can, opt], addrlen len[addr])
++recvfrom$KGPT_isotp_ops(fd sock_can_isotp, buf ptr[out, array[int8]], len len[buf], f flags[recv_flags], addr ptr[in, sockaddr_can, opt], addrlen len[addr])
++getsockopt$KGPT_CAN_ISOTP_OPTS(fd sock_can_isotp, level const[SOL_CAN_ISOTP], opt const[CAN_ISOTP_OPTS], val ptr[out, can_isotp_options], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_CAN_ISOTP_RECV_FC(fd sock_can_isotp, level const[SOL_CAN_ISOTP], opt const[CAN_ISOTP_RECV_FC], val ptr[out, can_isotp_fc_options], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_CAN_ISOTP_TX_STMIN(fd sock_can_isotp, level const[SOL_CAN_ISOTP], opt const[CAN_ISOTP_TX_STMIN], val ptr[out, int32], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_CAN_ISOTP_RX_STMIN(fd sock_can_isotp, level const[SOL_CAN_ISOTP], opt const[CAN_ISOTP_RX_STMIN], val ptr[out, int32], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_CAN_ISOTP_LL_OPTS(fd sock_can_isotp, level const[SOL_CAN_ISOTP], opt const[CAN_ISOTP_LL_OPTS], val ptr[out, can_isotp_ll_options], len ptr[inout, bytesize[val, int32]])
++setsockopt$KGPT_CAN_ISOTP_OPTS(fd sock_can_isotp, level const[SOL_CAN_ISOTP], opt const[CAN_ISOTP_OPTS], val ptr[in, can_isotp_options], len bytesize[val])
++setsockopt$KGPT_CAN_ISOTP_RECV_FC(fd sock_can_isotp, level const[SOL_CAN_ISOTP], opt const[CAN_ISOTP_RECV_FC], val ptr[in, can_isotp_fc_options], len bytesize[val])
++setsockopt$KGPT_CAN_ISOTP_TX_STMIN(fd sock_can_isotp, level const[SOL_CAN_ISOTP], opt const[CAN_ISOTP_TX_STMIN], val ptr[in, int32], len bytesize[val])
++setsockopt$KGPT_CAN_ISOTP_RX_STMIN(fd sock_can_isotp, level const[SOL_CAN_ISOTP], opt const[CAN_ISOTP_RX_STMIN], val ptr[in, int32], len bytesize[val])
++setsockopt$KGPT_CAN_ISOTP_LL_OPTS(fd sock_can_isotp, level const[SOL_CAN_ISOTP], opt const[CAN_ISOTP_LL_OPTS], val ptr[in, can_isotp_ll_options], len bytesize[val])
++
++define CAN_ISOTP	6
++
++can_isotp_options {
++	flags		int32
++	frame_txtime	int32
++	ext_address	int8
++	txpad_content	int8
++	rxpad_content	int8
++	rx_ext_address	int8
++}
++
++can_isotp_fc_options {
++	bs	int8
++	stmin	int8
++	wftmax	int8
++}
++
++can_isotp_ll_options {
++	mtu		flags[can_isotp_mtu, int8]
++	tx_dl		flags[can_isotp_tx_dl, int8]
++	tx_flags	flags[can_isotp_tx_flags, int8]
++}
++
++can_isotp_mtu = CAN_MTU, CANFD_MTU
++can_isotp_tx_dl = 8, 12, 16, 20, 24, 32, 48, 64
++can_isotp_tx_flags = CANFD_BRS
+diff --git a/sys/linux/gemini-3-flash-preview#isotp_ops#net_can_isotp.c:1676.txt.const b/sys/linux/gemini-3-flash-preview#isotp_ops#net_can_isotp.c:1676.txt.const
+new file mode 100644
+index 000000000..17da4227c
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#isotp_ops#net_can_isotp.c:1676.txt.const
+@@ -0,0 +1,22 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AF_CAN = amd64:29
++CANFD_BRS = amd64:1
++CANFD_MTU = amd64:72
++CAN_ISOTP = amd64:6
++CAN_ISOTP_LL_OPTS = amd64:5
++CAN_ISOTP_OPTS = amd64:1
++CAN_ISOTP_RECV_FC = amd64:2
++CAN_ISOTP_RX_STMIN = amd64:4
++CAN_ISOTP_TX_STMIN = amd64:3
++CAN_MTU = amd64:16
++SOCK_DGRAM = amd64:2
++SOL_CAN_ISOTP = amd64:106
++__NR_accept4 = amd64:288
++__NR_bind = amd64:49
++__NR_connect = amd64:42
++__NR_getsockopt = amd64:55
++__NR_recvfrom = amd64:45
++__NR_sendto = amd64:44
++__NR_setsockopt = amd64:54
++__NR_socket = amd64:41
+diff --git a/sys/linux/gemini-3-flash-preview#j1939_ops#net_can_j1939_socket.c:1362.txt b/sys/linux/gemini-3-flash-preview#j1939_ops#net_can_j1939_socket.c:1362.txt
+new file mode 100644
+index 000000000..d5bc55511
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#j1939_ops#net_can_j1939_socket.c:1362.txt
+@@ -0,0 +1,68 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/can/j1939.h>
++include <uapi/linux/can.h>
++
++socket$KGPT_can_j1939(domain const[AF_CAN], type const[SOCK_DGRAM], proto const[CAN_J1939]) sock_can_j1939
++
++bind$KGPT_j1939_ops(fd sock_can_j1939, addr ptr[in, sockaddr_can$KGPT], addrlen len[addr])
++connect$KGPT_j1939_ops(fd sock_can_j1939, addr ptr[in, sockaddr_can$KGPT], addrlen len[addr])
++accept4$KGPT_j1939_ops(fd sock_can_j1939, peer ptr[out, sockaddr_can$KGPT, opt], peerlen ptr[inout, len[peer, int32]], flags flags[accept_flags]) sock_can_j1939
++sendto$KGPT_j1939_ops(fd sock_can_j1939, buf ptr[in, array[int8]], len len[buf], f flags[send_flags], addr ptr[in, sockaddr_can$KGPT, opt], addrlen len[addr])
++recvfrom$KGPT_j1939_ops(fd sock_can_j1939, buf ptr[out, array[int8]], len len[buf], f flags[recv_flags], addr ptr[in, sockaddr_can$KGPT, opt], addrlen len[addr])
++getsockopt$KGPT_SO_J1939_PROMISC(fd sock_can_j1939, level const[SOL_CAN_J1939], opt const[SO_J1939_PROMISC], val ptr[out, int32], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_SO_J1939_ERRQUEUE(fd sock_can_j1939, level const[SOL_CAN_J1939], opt const[SO_J1939_ERRQUEUE], val ptr[out, int32], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_SO_J1939_SEND_PRIO(fd sock_can_j1939, level const[SOL_CAN_J1939], opt const[SO_J1939_SEND_PRIO], val ptr[out, int32], len ptr[inout, bytesize[val, int32]])
++setsockopt$KGPT_SO_J1939_FILTER(fd sock_can_j1939, level const[SOL_CAN_J1939], opt const[SO_J1939_FILTER], val ptr[in, array[j1939_filter]], len bytesize[val])
++setsockopt$KGPT_SO_J1939_SEND_PRIO(fd sock_can_j1939, level const[SOL_CAN_J1939], opt const[SO_J1939_SEND_PRIO], val ptr[in, int32], len bytesize[val])
++setsockopt$KGPT_SO_J1939_PROMISC(fd sock_can_j1939, level const[SOL_CAN_J1939], opt const[SO_J1939_PROMISC], val ptr[in, bool32], len len[val])
++setsockopt$KGPT_SO_J1939_ERRQUEUE(fd sock_can_j1939, level const[SOL_CAN_J1939], opt const[SO_J1939_ERRQUEUE], val ptr[in, bool32], len len[val])
++
++define CAN_J1939	7
++
++sockaddr_can$KGPT {
++	can_family	const[AF_CAN, int16]
++	can_ifindex	int32
++	can_addr	sockaddr_can_j1939_union
++}
++
++sockaddr_can_j1939_union [
++	j1939	sockaddr_can_j1939$KGPT
++]
++
++sockaddr_can_j1939$KGPT {
++	name	int64
++	pgn	int32
++	addr	int8
++}
+diff --git a/sys/linux/gemini-3-flash-preview#j1939_ops#net_can_j1939_socket.c:1362.txt.const b/sys/linux/gemini-3-flash-preview#j1939_ops#net_can_j1939_socket.c:1362.txt.const
+new file mode 100644
+index 000000000..e4d579390
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#j1939_ops#net_can_j1939_socket.c:1362.txt.const
+@@ -0,0 +1,18 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AF_CAN = amd64:29
++CAN_J1939 = amd64:7
++SOCK_DGRAM = amd64:2
++SOL_CAN_J1939 = amd64:107
++SO_J1939_ERRQUEUE = amd64:4
++SO_J1939_FILTER = amd64:1
++SO_J1939_PROMISC = amd64:2
++SO_J1939_SEND_PRIO = amd64:3
++__NR_accept4 = amd64:288
++__NR_bind = amd64:49
++__NR_connect = amd64:42
++__NR_getsockopt = amd64:55
++__NR_recvfrom = amd64:45
++__NR_sendto = amd64:44
++__NR_setsockopt = amd64:54
++__NR_socket = amd64:41
+diff --git a/sys/linux/gemini-3-flash-preview#kvm_chardev_ops#virt_kvm_kvm_main.c:5557.txt b/sys/linux/gemini-3-flash-preview#kvm_chardev_ops#virt_kvm_kvm_main.c:5557.txt
+new file mode 100644
+index 000000000..b23f6296a
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#kvm_chardev_ops#virt_kvm_kvm_main.c:5557.txt
+@@ -0,0 +1,51 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/kvm.h>
++
++openat$KGPT_kvm(fd const[AT_FDCWD], file ptr[in, string["/dev/kvm"]], flags flags[open_flags], mode const[0]) fd_kvm
++
++ioctl$KGPT_KVM_GET_API_VERSION(fd fd_kvm, cmd const[KVM_GET_API_VERSION], arg ptr[in, array[int8]])
++ioctl$KGPT_KVM_GET_VCPU_MMAP_SIZE(fd fd_kvm, cmd const[KVM_GET_VCPU_MMAP_SIZE], arg ptr[in, array[int8]])
++ioctl$KGPT_KVM_CREATE_VM(fd fd_kvm, cmd const[KVM_CREATE_VM], arg intptr)
++ioctl$KGPT_KVM_CHECK_EXTENSION(fd fd_kvm, cmd const[KVM_CHECK_EXTENSION], arg ptr[in, array[int8]])
++ioctl$KGPT_KVM_GET_MSR_INDEX_LIST(fd fd_kvm, cmd const[KVM_GET_MSR_INDEX_LIST], arg ptr[inout, kvm_msr_list])
++ioctl$KGPT_KVM_GET_SUPPORTED_CPUID(fd fd_kvm, cmd const[KVM_GET_SUPPORTED_CPUID], arg ptr[inout, kvm_cpuid2])
++ioctl$KGPT_KVM_GET_EMULATED_CPUID(fd fd_kvm, cmd const[KVM_GET_EMULATED_CPUID], arg ptr[inout, kvm_cpuid2])
++ioctl$KGPT_KVM_X86_GET_MCE_CAP_SUPPORTED(fd fd_kvm, cmd const[KVM_X86_GET_MCE_CAP_SUPPORTED], arg ptr[out, int64])
++ioctl$KGPT_KVM_GET_MSR_FEATURE_INDEX_LIST(fd fd_kvm, cmd const[KVM_GET_MSR_FEATURE_INDEX_LIST], arg ptr[inout, kvm_msr_list])
++ioctl$KGPT_KVM_GET_MSRS(fd fd_kvm, cmd const[KVM_GET_MSRS], arg ptr[inout, kvm_msrs])
++ioctl$KGPT_KVM_GET_SUPPORTED_HV_CPUID(fd fd_kvm, cmd const[KVM_GET_SUPPORTED_HV_CPUID], arg ptr[inout, kvm_cpuid2])
++ioctl$KGPT_KVM_GET_DEVICE_ATTR(fd fd_kvm, cmd const[KVM_GET_DEVICE_ATTR], arg ptr[in, kvm_device_attr])
++ioctl$KGPT_KVM_HAS_DEVICE_ATTR(fd fd_kvm, cmd const[KVM_HAS_DEVICE_ATTR], arg ptr[in, kvm_device_attr])
+diff --git a/sys/linux/gemini-3-flash-preview#kvm_chardev_ops#virt_kvm_kvm_main.c:5557.txt.const b/sys/linux/gemini-3-flash-preview#kvm_chardev_ops#virt_kvm_kvm_main.c:5557.txt.const
+new file mode 100644
+index 000000000..2b7fa6d90
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#kvm_chardev_ops#virt_kvm_kvm_main.c:5557.txt.const
+@@ -0,0 +1,18 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++KVM_CHECK_EXTENSION = amd64:44547
++KVM_CREATE_VM = amd64:44545
++KVM_GET_API_VERSION = amd64:44544
++KVM_GET_DEVICE_ATTR = amd64:1075359458
++KVM_GET_EMULATED_CPUID = amd64:3221794313
++KVM_GET_MSRS = amd64:3221794440
++KVM_GET_MSR_FEATURE_INDEX_LIST = amd64:3221532170
++KVM_GET_MSR_INDEX_LIST = amd64:3221532162
++KVM_GET_SUPPORTED_CPUID = amd64:3221794309
++KVM_GET_SUPPORTED_HV_CPUID = amd64:3221794497
++KVM_GET_VCPU_MMAP_SIZE = amd64:44548
++KVM_HAS_DEVICE_ATTR = amd64:1075359459
++KVM_X86_GET_MCE_CAP_SUPPORTED = amd64:2148052637
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
+diff --git a/sys/linux/gemini-3-flash-preview#kvm_device_fops#virt_kvm_kvm_main.c:4765.txt b/sys/linux/gemini-3-flash-preview#kvm_device_fops#virt_kvm_kvm_main.c:4765.txt
+new file mode 100644
+index 000000000..11e99c5f6
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#kvm_device_fops#virt_kvm_kvm_main.c:4765.txt
+@@ -0,0 +1,38 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/asm-generic/fcntl.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/kvm.h>
++
++ioctl$KGPT_KVM_SET_DEVICE_ATTR(fd fd_kvm, cmd const[KVM_SET_DEVICE_ATTR], arg ptr[in, kvm_device_attr])
+diff --git a/sys/linux/gemini-3-flash-preview#kvm_device_fops#virt_kvm_kvm_main.c:4765.txt.const b/sys/linux/gemini-3-flash-preview#kvm_device_fops#virt_kvm_kvm_main.c:4765.txt.const
+new file mode 100644
+index 000000000..86abe422c
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#kvm_device_fops#virt_kvm_kvm_main.c:4765.txt.const
+@@ -0,0 +1,4 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++KVM_SET_DEVICE_ATTR = amd64:1075359457
++__NR_ioctl = amd64:16
+diff --git a/sys/linux/gemini-3-flash-preview#kvm_vcpu_fops#virt_kvm_kvm_main.c:4105.txt b/sys/linux/gemini-3-flash-preview#kvm_vcpu_fops#virt_kvm_kvm_main.c:4105.txt
+new file mode 100644
+index 000000000..64ff63fda
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#kvm_vcpu_fops#virt_kvm_kvm_main.c:4105.txt
+@@ -0,0 +1,58 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/asm-generic/fcntl.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/kvm.h>
++
++ioctl$KGPT_KVM_RUN(fd fd_kvm, cmd const[KVM_RUN], arg ptr[in, array[int8]])
++ioctl$KGPT_KVM_GET_STATS_FD(fd fd_kvm, cmd const[KVM_GET_STATS_FD], arg ptr[in, array[int8]])
++ioctl$KGPT_KVM_GET_REGS(fd fd_kvm, cmd const[KVM_GET_REGS], arg ptr[out, kvm_regs])
++ioctl$KGPT_KVM_SET_REGS(fd fd_kvm, cmd const[KVM_SET_REGS], arg ptr[in, kvm_regs])
++ioctl$KGPT_KVM_GET_SREGS(fd fd_kvm, cmd const[KVM_GET_SREGS], arg ptr[out, kvm_sregs])
++ioctl$KGPT_KVM_SET_SREGS(fd fd_kvm, cmd const[KVM_SET_SREGS], arg ptr[in, kvm_sregs])
++ioctl$KGPT_KVM_GET_MP_STATE(fd fd_kvm, cmd const[KVM_GET_MP_STATE], arg ptr[out, array[int8]])
++ioctl$KGPT_KVM_SET_MP_STATE(fd fd_kvm, cmd const[KVM_SET_MP_STATE], arg ptr[in, array[int8]])
++ioctl$KGPT_KVM_TRANSLATE(fd fd_kvm, cmd const[KVM_TRANSLATE], arg ptr[inout, kvm_translation])
++ioctl$KGPT_KVM_SET_GUEST_DEBUG(fd fd_kvm, cmd const[KVM_SET_GUEST_DEBUG], arg ptr[in, kvm_guest_debug[array[int8]]])
++ioctl$KGPT_KVM_SET_SIGNAL_MASK(fd fd_kvm, cmd const[KVM_SET_SIGNAL_MASK], arg ptr[in, kvm_signal_mask])
++ioctl$KGPT_KVM_GET_FPU(fd fd_kvm, cmd const[KVM_GET_FPU], arg ptr[out, kvm_fpu])
++ioctl$KGPT_KVM_SET_FPU(fd fd_kvm, cmd const[KVM_SET_FPU], arg ptr[in, kvm_fpu])
++ioctl$KGPT_KVM_PRE_FAULT_MEMORY(fd fd_kvm, cmd const[KVM_PRE_FAULT_MEMORY], arg ptr[inout, kvm_pre_fault_memory$KGPT])
++
++kvm_pre_fault_memory$KGPT {
++	gpa	int64
++	size	int64
++	flags	int64
++	padding	array[int64, 5]
++}
+diff --git a/sys/linux/gemini-3-flash-preview#kvm_vcpu_fops#virt_kvm_kvm_main.c:4105.txt.const b/sys/linux/gemini-3-flash-preview#kvm_vcpu_fops#virt_kvm_kvm_main.c:4105.txt.const
+new file mode 100644
+index 000000000..3d0f64e19
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#kvm_vcpu_fops#virt_kvm_kvm_main.c:4105.txt.const
+@@ -0,0 +1,17 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++KVM_GET_FPU = amd64:2174791308
++KVM_GET_MP_STATE = amd64:2147790488
++KVM_GET_REGS = amd64:2156965505
++KVM_GET_SREGS = amd64:2167975555
++KVM_GET_STATS_FD = amd64:44750
++KVM_PRE_FAULT_MEMORY = amd64:3225464533
++KVM_RUN = amd64:44672
++KVM_SET_FPU = amd64:1101049485
++KVM_SET_GUEST_DEBUG = amd64:1078505115
++KVM_SET_MP_STATE = amd64:1074048665
++KVM_SET_REGS = amd64:1083223682
++KVM_SET_SIGNAL_MASK = amd64:1074048651
++KVM_SET_SREGS = amd64:1094233732
++KVM_TRANSLATE = amd64:3222843013
++__NR_ioctl = amd64:16
+diff --git a/sys/linux/gemini-3-flash-preview#pep_proto#net_phonet_pep.c:1348.txt b/sys/linux/gemini-3-flash-preview#pep_proto#net_phonet_pep.c:1348.txt
+new file mode 100644
+index 000000000..db7eddbd5
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#pep_proto#net_phonet_pep.c:1348.txt
+@@ -0,0 +1,55 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/sockios.h>
++include <uapi/linux/phonet.h>
++
++resource sock_phonet_pep[sock]
++
++socket$KGPT_phonet_pep(domain const[AF_PHONET], type const[SOCK_SEQPACKET], proto const[PN_PROTO_PIPE]) sock_phonet_pep
++
++connect$KGPT_pep_proto(fd sock_phonet_pep, addr ptr[in, sockaddr_pn], addrlen len[addr])
++accept4$KGPT_pep_proto(fd sock_phonet_pep, peer ptr[out, sockaddr_pn, opt], peerlen ptr[inout, len[peer, int32]], flags flags[accept_flags]) sock_phonet_pep
++sendto$KGPT_pep_proto(fd sock_phonet_pep, buf ptr[in, array[int8]], len len[buf], f flags[send_flags], addr ptr[in, sockaddr_pn, opt], addrlen len[addr])
++recvfrom$KGPT_pep_proto(fd sock_phonet_pep, buf ptr[out, array[int8]], len len[buf], f flags[recv_flags], addr ptr[in, sockaddr_pn, opt], addrlen len[addr])
++ioctl$KGPT_SIOCPNENABLEPIPE(fd sock_phonet_pep, cmd const[SIOCPNENABLEPIPE], arg ptr[in, array[int8]])
++ioctl$KGPT_SIOCINQ(fd sock_phonet_pep, cmd const[SIOCINQ], arg ptr[out, int32])
++getsockopt$KGPT_PNPIPE_ENCAP(fd sock_phonet_pep, level const[SOL_PNPIPE], opt const[PNPIPE_ENCAP], val ptr[out, int32], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_PNPIPE_IFINDEX(fd sock_phonet_pep, level const[SOL_PNPIPE], opt const[PNPIPE_IFINDEX], val ptr[out, int32], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_PNPIPE_HANDLE(fd sock_phonet_pep, level const[SOL_PNPIPE], opt const[PNPIPE_HANDLE], val ptr[out, int32], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_PNPIPE_INITSTATE(fd sock_phonet_pep, level const[SOL_PNPIPE], opt const[PNPIPE_INITSTATE], val ptr[out, int32], len ptr[inout, bytesize[val, int32]])
++setsockopt$KGPT_PNPIPE_ENCAP(fd sock_phonet_pep, level const[SOL_PNPIPE], opt const[PNPIPE_ENCAP], val ptr[in, int32], len bytesize[val])
++setsockopt$KGPT_PNPIPE_HANDLE(fd sock_phonet_pep, level const[SOL_PNPIPE], opt const[PNPIPE_HANDLE], val ptr[in, int32], len bytesize[val])
++setsockopt$KGPT_PNPIPE_INITSTATE(fd sock_phonet_pep, level const[SOL_PNPIPE], opt const[PNPIPE_INITSTATE], val ptr[in, int32], len bytesize[val])
++
++define PN_PROTO_PIPE	2
+diff --git a/sys/linux/gemini-3-flash-preview#pep_proto#net_phonet_pep.c:1348.txt.const b/sys/linux/gemini-3-flash-preview#pep_proto#net_phonet_pep.c:1348.txt.const
+new file mode 100644
+index 000000000..23ed74b5e
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#pep_proto#net_phonet_pep.c:1348.txt.const
+@@ -0,0 +1,20 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AF_PHONET = amd64:35
++PNPIPE_ENCAP = amd64:1
++PNPIPE_HANDLE = amd64:3
++PNPIPE_IFINDEX = amd64:2
++PNPIPE_INITSTATE = amd64:4
++PN_PROTO_PIPE = amd64:2
++SIOCINQ = amd64:21531
++SIOCPNENABLEPIPE = amd64:35309
++SOCK_SEQPACKET = amd64:5
++SOL_PNPIPE = amd64:275
++__NR_accept4 = amd64:288
++__NR_connect = amd64:42
++__NR_getsockopt = amd64:55
++__NR_ioctl = amd64:16
++__NR_recvfrom = amd64:45
++__NR_sendto = amd64:44
++__NR_setsockopt = amd64:54
++__NR_socket = amd64:41
+diff --git a/sys/linux/gemini-3-flash-preview#phonet_dgram_ops#net_phonet_socket.c:427.txt b/sys/linux/gemini-3-flash-preview#phonet_dgram_ops#net_phonet_socket.c:427.txt
+new file mode 100644
+index 000000000..7fb0ebf6a
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#phonet_dgram_ops#net_phonet_socket.c:427.txt
+@@ -0,0 +1,51 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/mroute6.h>
++include <uapi/linux/phonet.h>
++include <uapi/linux/mroute.h>
++
++socket$KGPT_phonet_dgram(domain const[AF_PHONET], type const[SOCK_DGRAM], proto const[0]) sock_phonet_dgram
++
++bind$KGPT_phonet_dgram_ops(fd sock_phonet_dgram, addr ptr[in, sockaddr_pn], addrlen len[addr])
++connect$KGPT_phonet_dgram_ops(fd sock_phonet_dgram, addr ptr[in, sockaddr_pn], addrlen len[addr])
++accept4$KGPT_phonet_dgram_ops(fd sock_phonet_dgram, peer ptr[out, sockaddr_pn, opt], peerlen ptr[inout, len[peer, int32]], flags flags[accept_flags]) sock_phonet_dgram
++sendto$KGPT_phonet_dgram_ops(fd sock_phonet_dgram, buf ptr[in, array[int8]], len len[buf], f flags[send_flags], addr ptr[in, sockaddr_pn, opt], addrlen len[addr])
++recvfrom$KGPT_phonet_dgram_ops(fd sock_phonet_dgram, buf ptr[out, array[int8]], len len[buf], f flags[recv_flags], addr ptr[in, sockaddr_pn, opt], addrlen len[addr])
++ioctl$KGPT_SIOCPNGETOBJECT(fd sock_phonet_dgram, cmd const[SIOCPNGETOBJECT], arg ptr[inout, int16])
++ioctl$KGPT_SIOCGETVIFCNT(fd sock_phonet_dgram, cmd const[SIOCGETVIFCNT], arg ptr[inout, sioc_vif_req])
++ioctl$KGPT_SIOCGETSGCNT(fd sock_phonet_dgram, cmd const[SIOCGETSGCNT], arg ptr[inout, sioc_sg_req])
++ioctl$KGPT_SIOCGETMIFCNT_IN6(fd sock_phonet_dgram, cmd const[SIOCGETMIFCNT_IN6], arg ptr[inout, sioc_mif_req6])
++ioctl$KGPT_SIOCGETSGCNT_IN6(fd sock_phonet_dgram, cmd const[SIOCGETSGCNT_IN6], arg ptr[inout, sioc_sg_req6])
++ioctl$KGPT_SIOCPNADDRESOURCE(fd sock_phonet_dgram, cmd const[SIOCPNADDRESOURCE], arg ptr[in, int32])
++ioctl$KGPT_SIOCPNDELRESOURCE(fd sock_phonet_dgram, cmd const[SIOCPNDELRESOURCE], arg ptr[in, int32])
+diff --git a/sys/linux/gemini-3-flash-preview#phonet_dgram_ops#net_phonet_socket.c:427.txt.const b/sys/linux/gemini-3-flash-preview#phonet_dgram_ops#net_phonet_socket.c:427.txt.const
+new file mode 100644
+index 000000000..be286ad71
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#phonet_dgram_ops#net_phonet_socket.c:427.txt.const
+@@ -0,0 +1,18 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AF_PHONET = amd64:35
++SIOCGETMIFCNT_IN6 = amd64:35296
++SIOCGETSGCNT = amd64:35297
++SIOCGETSGCNT_IN6 = amd64:35297
++SIOCGETVIFCNT = amd64:35296
++SIOCPNADDRESOURCE = amd64:35310
++SIOCPNDELRESOURCE = amd64:35311
++SIOCPNGETOBJECT = amd64:35296
++SOCK_DGRAM = amd64:2
++__NR_accept4 = amd64:288
++__NR_bind = amd64:49
++__NR_connect = amd64:42
++__NR_ioctl = amd64:16
++__NR_recvfrom = amd64:45
++__NR_sendto = amd64:44
++__NR_socket = amd64:41
+diff --git a/sys/linux/gemini-3-flash-preview#phonet_stream_ops#net_phonet_socket.c:445.txt b/sys/linux/gemini-3-flash-preview#phonet_stream_ops#net_phonet_socket.c:445.txt
+new file mode 100644
+index 000000000..c21615a17
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#phonet_stream_ops#net_phonet_socket.c:445.txt
+@@ -0,0 +1,46 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/mroute6.h>
++include <uapi/linux/phonet.h>
++include <uapi/linux/mroute.h>
++
++resource sock_phonet_stream[sock]
++
++socket$KGPT_phonet_stream(domain const[AF_PHONET], type const[SOCK_SEQPACKET], proto const[0]) sock_phonet_stream
++
++bind$KGPT_phonet_stream_ops(fd sock_phonet_stream, addr ptr[in, sockaddr_pn], addrlen len[addr])
++connect$KGPT_phonet_stream_ops(fd sock_phonet_stream, addr ptr[in, sockaddr_pn], addrlen len[addr])
++accept4$KGPT_phonet_stream_ops(fd sock_phonet_stream, peer ptr[out, sockaddr_pn, opt], peerlen ptr[inout, len[peer, int32]], flags flags[accept_flags]) sock_phonet_stream
++sendto$KGPT_phonet_stream_ops(fd sock_phonet_stream, buf ptr[in, array[int8]], len len[buf], f flags[send_flags], addr ptr[in, sockaddr_pn, opt], addrlen len[addr])
++recvfrom$KGPT_phonet_stream_ops(fd sock_phonet_stream, buf ptr[out, array[int8]], len len[buf], f flags[recv_flags], addr ptr[in, sockaddr_pn, opt], addrlen len[addr])
+diff --git a/sys/linux/gemini-3-flash-preview#phonet_stream_ops#net_phonet_socket.c:445.txt.const b/sys/linux/gemini-3-flash-preview#phonet_stream_ops#net_phonet_socket.c:445.txt.const
+new file mode 100644
+index 000000000..0d86d5105
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#phonet_stream_ops#net_phonet_socket.c:445.txt.const
+@@ -0,0 +1,10 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AF_PHONET = amd64:35
++SOCK_SEQPACKET = amd64:5
++__NR_accept4 = amd64:288
++__NR_bind = amd64:49
++__NR_connect = amd64:42
++__NR_recvfrom = amd64:45
++__NR_sendto = amd64:44
++__NR_socket = amd64:41
+diff --git a/sys/linux/gemini-3-flash-preview#ppp_ldisc#drivers_net_ppp_ppp_async.c:364.txt b/sys/linux/gemini-3-flash-preview#ppp_ldisc#drivers_net_ppp_ppp_async.c:364.txt
+new file mode 100644
+index 000000000..ca1e82fdb
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#ppp_ldisc#drivers_net_ppp_ppp_async.c:364.txt
+@@ -0,0 +1,38 @@
++meta arches["amd64"]
++
++include <asm/ioctls.h>
++include <uapi/linux/kd.h>
++include <uapi/linux/vt.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/tty.h>
++include <uapi/linux/serial.h>
++include <uapi/linux/termios.h>
++include <uapi/linux/tiocl.h>
++include <uapi/linux/ppp-ioctl.h>
++
++resource fd_tty_ppp[fd]
++
++ioctl$KGPT_TCGETX(fd fd_tty_ppp, cmd const[TCGETX], arg ptr[in, array[int8]])
++ioctl$KGPT_TCSETX(fd fd_tty_ppp, cmd const[TCSETX], arg ptr[in, array[int8]])
++ioctl$KGPT_TCSETXW(fd fd_tty_ppp, cmd const[TCSETXW], arg ptr[in, array[int8]])
++ioctl$KGPT_TCSETXF(fd fd_tty_ppp, cmd const[TCSETXF], arg ptr[in, array[int8]])
++ioctl$KGPT_PPPIOCGCHAN(fd fd_tty_ppp, cmd const[PPPIOCGCHAN], arg ptr[out, int32])
++ioctl$KGPT_PPPIOCGUNIT(fd fd_tty_ppp, cmd const[PPPIOCGUNIT], arg ptr[out, int32])
++ioctl$KGPT_TCFLSH(fd fd_tty_ppp, cmd const[TCFLSH], arg ptr[in, array[int8]])
++ioctl$KGPT_FIONREAD(fd fd_tty_ppp, cmd const[FIONREAD], arg ptr[out, int32])
++ioctl$KGPT_TCSETSF(fd fd_tty_ppp, cmd const[TCSETSF], arg ptr[in, termios])
++ioctl$KGPT_TCSETSW(fd fd_tty_ppp, cmd const[TCSETSW], arg ptr[in, termios])
++ioctl$KGPT_TCSETS(fd fd_tty_ppp, cmd const[TCSETS], arg ptr[in, termios])
++ioctl$KGPT_TCGETS(fd fd_tty_ppp, cmd const[TCGETS], arg ptr[out, termios])
++ioctl$KGPT_TCGETS2(fd fd_tty_ppp, cmd const[TCGETS2], arg ptr[out, termios2])
++ioctl$KGPT_TCSETSF2(fd fd_tty_ppp, cmd const[TCSETSF2], arg ptr[in, termios2])
++ioctl$KGPT_TCSETSW2(fd fd_tty_ppp, cmd const[TCSETSW2], arg ptr[in, termios2])
++ioctl$KGPT_TCSETS2(fd fd_tty_ppp, cmd const[TCSETS2], arg ptr[in, termios2])
++ioctl$KGPT_TCGETA(fd fd_tty_ppp, cmd const[TCGETA], arg ptr[out, termio])
++ioctl$KGPT_TCSETAF(fd fd_tty_ppp, cmd const[TCSETAF], arg ptr[in, termio])
++ioctl$KGPT_TCSETAW(fd fd_tty_ppp, cmd const[TCSETAW], arg ptr[in, termio])
++ioctl$KGPT_TCSETA(fd fd_tty_ppp, cmd const[TCSETA], arg ptr[in, termio])
++ioctl$KGPT_TIOCGLCKTRMIOS(fd fd_tty_ppp, cmd const[TIOCGLCKTRMIOS], arg ptr[out, termios])
++ioctl$KGPT_TIOCSLCKTRMIOS(fd fd_tty_ppp, cmd const[TIOCSLCKTRMIOS], arg ptr[in, termios])
++ioctl$KGPT_TIOCGSOFTCAR(fd fd_tty_ppp, cmd const[TIOCGSOFTCAR], arg ptr[out, int32])
++ioctl$KGPT_TIOCSSOFTCAR(fd fd_tty_ppp, cmd const[TIOCSSOFTCAR], arg ptr[in, int32])
+diff --git a/sys/linux/gemini-3-flash-preview#ppp_ldisc#drivers_net_ppp_ppp_async.c:364.txt.const b/sys/linux/gemini-3-flash-preview#ppp_ldisc#drivers_net_ppp_ppp_async.c:364.txt.const
+new file mode 100644
+index 000000000..03d62bd5f
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#ppp_ldisc#drivers_net_ppp_ppp_async.c:364.txt.const
+@@ -0,0 +1,27 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++FIONREAD = amd64:21531
++PPPIOCGCHAN = amd64:2147775543
++PPPIOCGUNIT = amd64:2147775574
++TCFLSH = amd64:21515
++TCGETA = amd64:21509
++TCGETS = amd64:21505
++TCGETS2 = amd64:2150388778
++TCGETX = amd64:21554
++TCSETA = amd64:21510
++TCSETAF = amd64:21512
++TCSETAW = amd64:21511
++TCSETS = amd64:21506
++TCSETS2 = amd64:1076646955
++TCSETSF = amd64:21508
++TCSETSF2 = amd64:1076646957
++TCSETSW = amd64:21507
++TCSETSW2 = amd64:1076646956
++TCSETX = amd64:21555
++TCSETXF = amd64:21556
++TCSETXW = amd64:21557
++TIOCGLCKTRMIOS = amd64:21590
++TIOCGSOFTCAR = amd64:21529
++TIOCSLCKTRMIOS = amd64:21591
++TIOCSSOFTCAR = amd64:21530
++__NR_ioctl = amd64:16
+diff --git a/sys/linux/gemini-3-flash-preview#ppp_sync_ldisc#drivers_net_ppp_ppp_synctty.c:356.txt.const b/sys/linux/gemini-3-flash-preview#ppp_sync_ldisc#drivers_net_ppp_ppp_synctty.c:356.txt.const
+new file mode 100644
+index 000000000..0297f1051
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#ppp_sync_ldisc#drivers_net_ppp_ppp_synctty.c:356.txt.const
+@@ -0,0 +1,2 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
+diff --git a/sys/linux/gemini-3-flash-preview#ptp_clock_ops#drivers_ptp_ptp_clock.c:189.txt b/sys/linux/gemini-3-flash-preview#ptp_clock_ops#drivers_ptp_ptp_clock.c:189.txt
+new file mode 100644
+index 000000000..0a76d5bed
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#ptp_clock_ops#drivers_ptp_ptp_clock.c:189.txt
+@@ -0,0 +1,79 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/ptp_clock.h>
++
++syz_open_dev$KGPT_ptp(dev ptr[in, string["/dev/ptp#"]], id proc[0, 1], flags flags[open_flags]) fd_ptp
++
++ioctl$KGPT_PTP_MASK_CLEAR_ALL(fd fd_ptp, cmd const[PTP_MASK_CLEAR_ALL], arg ptr[in, array[int8]])
++ioctl$KGPT_PTP_CLOCK_GETCAPS(fd fd_ptp, cmd const[PTP_CLOCK_GETCAPS], arg ptr[out, ptp_clock_caps])
++ioctl$KGPT_PTP_CLOCK_GETCAPS2(fd fd_ptp, cmd const[PTP_CLOCK_GETCAPS2], arg ptr[out, ptp_clock_caps])
++ioctl$KGPT_PTP_EXTTS_REQUEST(fd fd_ptp, cmd const[PTP_EXTTS_REQUEST], arg ptr[in, ptp_extts_request])
++ioctl$KGPT_PTP_EXTTS_REQUEST2(fd fd_ptp, cmd const[PTP_EXTTS_REQUEST2], arg ptr[in, ptp_extts_request])
++ioctl$KGPT_PTP_PEROUT_REQUEST(fd fd_ptp, cmd const[PTP_PEROUT_REQUEST], arg ptr[in, ptp_perout_request])
++ioctl$KGPT_PTP_PEROUT_REQUEST2(fd fd_ptp, cmd const[PTP_PEROUT_REQUEST2], arg ptr[in, ptp_perout_request])
++ioctl$KGPT_PTP_ENABLE_PPS(fd fd_ptp, cmd const[PTP_ENABLE_PPS], arg intptr)
++ioctl$KGPT_PTP_ENABLE_PPS2(fd fd_ptp, cmd const[PTP_ENABLE_PPS2], arg intptr)
++ioctl$KGPT_PTP_SYS_OFFSET_PRECISE(fd fd_ptp, cmd const[PTP_SYS_OFFSET_PRECISE], arg ptr[out, ptp_sys_offset_precise])
++ioctl$KGPT_PTP_SYS_OFFSET_PRECISE2(fd fd_ptp, cmd const[PTP_SYS_OFFSET_PRECISE2], arg ptr[out, ptp_sys_offset_precise])
++ioctl$KGPT_PTP_SYS_OFFSET_EXTENDED(fd fd_ptp, cmd const[PTP_SYS_OFFSET_EXTENDED], arg ptr[inout, ptp_sys_offset_extended])
++ioctl$KGPT_PTP_SYS_OFFSET_EXTENDED2(fd fd_ptp, cmd const[PTP_SYS_OFFSET_EXTENDED2], arg ptr[inout, ptp_sys_offset_extended])
++ioctl$KGPT_PTP_SYS_OFFSET(fd fd_ptp, cmd const[PTP_SYS_OFFSET], arg ptr[inout, ptp_sys_offset])
++ioctl$KGPT_PTP_SYS_OFFSET2(fd fd_ptp, cmd const[PTP_SYS_OFFSET2], arg ptr[inout, ptp_sys_offset])
++ioctl$KGPT_PTP_PIN_GETFUNC(fd fd_ptp, cmd const[PTP_PIN_GETFUNC], arg ptr[inout, ptp_pin_desc])
++ioctl$KGPT_PTP_PIN_GETFUNC2(fd fd_ptp, cmd const[PTP_PIN_GETFUNC2], arg ptr[inout, ptp_pin_desc])
++ioctl$KGPT_PTP_PIN_SETFUNC(fd fd_ptp, cmd const[PTP_PIN_SETFUNC], arg ptr[in, ptp_pin_desc])
++ioctl$KGPT_PTP_PIN_SETFUNC2(fd fd_ptp, cmd const[PTP_PIN_SETFUNC2], arg ptr[in, ptp_pin_desc])
++ioctl$KGPT_PTP_MASK_EN_SINGLE(fd fd_ptp, cmd const[PTP_MASK_EN_SINGLE], arg ptr[in, int32])
++ioctl$KGPT_PTP_SYS_OFFSET_PRECISE_CYCLES(fd fd_ptp, cmd const[PTP_SYS_OFFSET_PRECISE_CYCLES], arg ptr[out, ptp_sys_offset_precise])
++ioctl$KGPT_PTP_SYS_OFFSET_EXTENDED_CYCLES(fd fd_ptp, cmd const[PTP_SYS_OFFSET_EXTENDED_CYCLES], arg ptr[inout, ptp_sys_offset_extended])
++
++ptp_clock_caps {
++	max_adj			int32
++	n_alarm			int32
++	n_ext_ts		int32
++	n_per_out		int32
++	pps			int32
++	n_pins			int32
++	cross_timestamping	int32
++	adjust_phase		int32
++	max_phase_adj		int32
++	rsv			array[int32, 11]
++}
++
++ptp_sys_offset_precise {
++	device		ptp_clock_time
++	sys_realtime	ptp_clock_time
++	sys_monoraw	ptp_clock_time
++	rsv		array[int32, 4]
++}
+diff --git a/sys/linux/gemini-3-flash-preview#ptp_clock_ops#drivers_ptp_ptp_clock.c:189.txt.const b/sys/linux/gemini-3-flash-preview#ptp_clock_ops#drivers_ptp_ptp_clock.c:189.txt.const
+new file mode 100644
+index 000000000..3751d26fc
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#ptp_clock_ops#drivers_ptp_ptp_clock.c:189.txt.const
+@@ -0,0 +1,25 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++PTP_CLOCK_GETCAPS = amd64:2152742145
++PTP_CLOCK_GETCAPS2 = amd64:2152742154
++PTP_ENABLE_PPS = amd64:1074019588
++PTP_ENABLE_PPS2 = amd64:1074019597
++PTP_EXTTS_REQUEST = amd64:1074806018
++PTP_EXTTS_REQUEST2 = amd64:1074806027
++PTP_MASK_CLEAR_ALL = amd64:15635
++PTP_MASK_EN_SINGLE = amd64:1074019604
++PTP_PEROUT_REQUEST = amd64:1077427459
++PTP_PEROUT_REQUEST2 = amd64:1077427468
++PTP_PIN_GETFUNC = amd64:3227532550
++PTP_PIN_GETFUNC2 = amd64:3227532559
++PTP_PIN_SETFUNC = amd64:1080048903
++PTP_PIN_SETFUNC2 = amd64:1080048912
++PTP_SYS_OFFSET = amd64:1128283397
++PTP_SYS_OFFSET2 = amd64:1128283406
++PTP_SYS_OFFSET_EXTENDED = amd64:3300932873
++PTP_SYS_OFFSET_EXTENDED2 = amd64:3300932882
++PTP_SYS_OFFSET_EXTENDED_CYCLES = amd64:3300932886
++PTP_SYS_OFFSET_PRECISE = amd64:3225435400
++PTP_SYS_OFFSET_PRECISE2 = amd64:3225435409
++PTP_SYS_OFFSET_PRECISE_CYCLES = amd64:3225435413
++__NR_ioctl = amd64:16
+diff --git a/sys/linux/gemini-3-flash-preview#raw_ops#net_can_raw.c:1052.txt b/sys/linux/gemini-3-flash-preview#raw_ops#net_can_raw.c:1052.txt
+new file mode 100644
+index 000000000..7ff3e7ad2
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#raw_ops#net_can_raw.c:1052.txt
+@@ -0,0 +1,61 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/can/raw.h>
++include <uapi/linux/can.h>
++
++socket$KGPT_can_raw(domain const[AF_CAN], type const[SOCK_RAW], proto const[CAN_RAW]) sock_can_raw
++
++bind$KGPT_raw_ops(fd sock_can_raw, addr ptr[in, sockaddr_can], addrlen len[addr])
++connect$KGPT_raw_ops(fd sock_can_raw, addr ptr[in, sockaddr_can], addrlen len[addr])
++accept4$KGPT_raw_ops(fd sock_can_raw, peer ptr[out, sockaddr_can, opt], peerlen ptr[inout, len[peer, int32]], flags flags[accept_flags]) sock_can_raw
++sendto$KGPT_raw_ops(fd sock_can_raw, buf ptr[in, array[int8]], len len[buf], f flags[send_flags], addr ptr[in, sockaddr_can, opt], addrlen len[addr])
++recvfrom$KGPT_raw_ops(fd sock_can_raw, buf ptr[out, array[int8]], len len[buf], f flags[recv_flags], addr ptr[in, sockaddr_can, opt], addrlen len[addr])
++getsockopt$KGPT_CAN_RAW_FILTER(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_FILTER], val ptr[out, array[can_filter]], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_CAN_RAW_ERR_FILTER(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_ERR_FILTER], val ptr[out, array[int8]], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_CAN_RAW_LOOPBACK(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_LOOPBACK], val ptr[out, int32], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_CAN_RAW_RECV_OWN_MSGS(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_RECV_OWN_MSGS], val ptr[out, int32], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_CAN_RAW_FD_FRAMES(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_FD_FRAMES], val ptr[out, int32], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_CAN_RAW_XL_FRAMES(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_XL_FRAMES], val ptr[out, int32], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_CAN_RAW_XL_VCID_OPTS(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_XL_VCID_OPTS], val ptr[out, array[int8]], len ptr[inout, bytesize[val, int32]])
++getsockopt$KGPT_CAN_RAW_JOIN_FILTERS(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_JOIN_FILTERS], val ptr[out, int32], len ptr[inout, bytesize[val, int32]])
++setsockopt$KGPT_CAN_RAW_FILTER(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_FILTER], val ptr[in, array[can_filter]], len bytesize[val])
++setsockopt$KGPT_CAN_RAW_ERR_FILTER(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_ERR_FILTER], val ptr[in, array[int8]], len bytesize[val])
++setsockopt$KGPT_CAN_RAW_LOOPBACK(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_LOOPBACK], val ptr[in, int32], len bytesize[val])
++setsockopt$KGPT_CAN_RAW_RECV_OWN_MSGS(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_RECV_OWN_MSGS], val ptr[in, int32], len bytesize[val])
++setsockopt$KGPT_CAN_RAW_FD_FRAMES(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_FD_FRAMES], val ptr[in, int32], len bytesize[val])
++setsockopt$KGPT_CAN_RAW_XL_FRAMES(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_XL_FRAMES], val ptr[in, int32], len bytesize[val])
++setsockopt$KGPT_CAN_RAW_XL_VCID_OPTS(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_XL_VCID_OPTS], val ptr[in, array[int8]], len bytesize[val])
++setsockopt$KGPT_CAN_RAW_JOIN_FILTERS(fd sock_can_raw, level const[SOL_CAN_RAW], opt const[CAN_RAW_JOIN_FILTERS], val ptr[in, int32], len bytesize[val])
++
++define CAN_RAW	1
+diff --git a/sys/linux/gemini-3-flash-preview#raw_ops#net_can_raw.c:1052.txt.const b/sys/linux/gemini-3-flash-preview#raw_ops#net_can_raw.c:1052.txt.const
+new file mode 100644
+index 000000000..8f6b92962
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#raw_ops#net_can_raw.c:1052.txt.const
+@@ -0,0 +1,22 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AF_CAN = amd64:29
++CAN_RAW = amd64:1
++CAN_RAW_ERR_FILTER = amd64:2
++CAN_RAW_FD_FRAMES = amd64:5
++CAN_RAW_FILTER = amd64:1
++CAN_RAW_JOIN_FILTERS = amd64:6
++CAN_RAW_LOOPBACK = amd64:3
++CAN_RAW_RECV_OWN_MSGS = amd64:4
++CAN_RAW_XL_FRAMES = amd64:7
++CAN_RAW_XL_VCID_OPTS = amd64:8
++SOCK_RAW = amd64:3
++SOL_CAN_RAW = amd64:101
++__NR_accept4 = amd64:288
++__NR_bind = amd64:49
++__NR_connect = amd64:42
++__NR_getsockopt = amd64:55
++__NR_recvfrom = amd64:45
++__NR_sendto = amd64:44
++__NR_setsockopt = amd64:54
++__NR_socket = amd64:41
+diff --git a/sys/linux/gemini-3-flash-preview#seq_oss_f_ops#sound_core_seq_oss_seq_oss.c:209.txt b/sys/linux/gemini-3-flash-preview#seq_oss_f_ops#sound_core_seq_oss_seq_oss.c:209.txt
+new file mode 100644
+index 000000000..eadef1530
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#seq_oss_f_ops#sound_core_seq_oss_seq_oss.c:209.txt
+@@ -0,0 +1,68 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/soundcard.h>
++include <uapi/linux/fcntl.h>
++
++resource fd_seq_oss[fd]
++
++openat$KGPT_sequencer(fd const[AT_FDCWD], file ptr[in, string["/dev/sequencer"]], flags flags[open_flags], mode const[0]) fd_seq_oss
++openat$music(fd const[AT_FDCWD], file ptr[in, string["/dev/music"]], flags flags[open_flags], mode const[0]) fd_seq_oss
++
++ioctl$KGPT_SNDCTL_SEQ_PANIC(fd fd_seq_oss, cmd const[SNDCTL_SEQ_PANIC], arg ptr[in, array[int8]])
++ioctl$KGPT_SNDCTL_SEQ_RESET(fd fd_seq_oss, cmd const[SNDCTL_SEQ_RESET], arg ptr[in, array[int8]])
++ioctl$KGPT_SNDCTL_SEQ_SYNC(fd fd_seq_oss, cmd const[SNDCTL_SEQ_SYNC], arg intptr)
++ioctl$KGPT_SNDCTL_TMR_TIMEBASE(fd fd_seq_oss, cmd const[SNDCTL_TMR_TIMEBASE], arg ptr[in, int32])
++ioctl$KGPT_SNDCTL_TMR_TEMPO(fd fd_seq_oss, cmd const[SNDCTL_TMR_TEMPO], arg ptr[in, int32])
++ioctl$KGPT_SNDCTL_TMR_START(fd fd_seq_oss, cmd const[SNDCTL_TMR_START], arg ptr[in, array[int8]])
++ioctl$KGPT_SNDCTL_TMR_STOP(fd fd_seq_oss, cmd const[SNDCTL_TMR_STOP], arg intptr)
++ioctl$KGPT_SNDCTL_TMR_CONTINUE(fd fd_seq_oss, cmd const[SNDCTL_TMR_CONTINUE], arg ptr[in, array[int8]])
++ioctl$KGPT_SNDCTL_TMR_METRONOME(fd fd_seq_oss, cmd const[SNDCTL_TMR_METRONOME], arg intptr)
++ioctl$KGPT_SNDCTL_TMR_SOURCE(fd fd_seq_oss, cmd const[SNDCTL_TMR_SOURCE], arg ptr[in, int32])
++ioctl$KGPT_SNDCTL_TMR_SELECT(fd fd_seq_oss, cmd const[SNDCTL_TMR_SELECT], arg ptr[in, int32])
++ioctl$KGPT_SNDCTL_SEQ_CTRLRATE(fd fd_seq_oss, cmd const[SNDCTL_SEQ_CTRLRATE], arg ptr[inout, int32])
++ioctl$KGPT_SNDCTL_SEQ_TESTMIDI(fd fd_seq_oss, cmd const[SNDCTL_SEQ_TESTMIDI], arg ptr[in, int32])
++ioctl$KGPT_SNDCTL_SEQ_GETINCOUNT(fd fd_seq_oss, cmd const[SNDCTL_SEQ_GETINCOUNT], arg ptr[out, int32])
++ioctl$KGPT_SNDCTL_SEQ_GETOUTCOUNT(fd fd_seq_oss, cmd const[SNDCTL_SEQ_GETOUTCOUNT], arg ptr[out, int32])
++ioctl$KGPT_SNDCTL_SEQ_GETTIME(fd fd_seq_oss, cmd const[SNDCTL_SEQ_GETTIME], arg ptr[out, int32])
++ioctl$KGPT_SNDCTL_SEQ_RESETSAMPLES(fd fd_seq_oss, cmd const[SNDCTL_SEQ_RESETSAMPLES], arg ptr[in, int32])
++ioctl$KGPT_SNDCTL_SEQ_NRSYNTHS(fd fd_seq_oss, cmd const[SNDCTL_SEQ_NRSYNTHS], arg ptr[out, int32])
++ioctl$KGPT_SNDCTL_SEQ_NRMIDIS(fd fd_seq_oss, cmd const[SNDCTL_SEQ_NRMIDIS], arg ptr[out, int32])
++ioctl$KGPT_SNDCTL_SYNTH_MEMAVL(fd fd_seq_oss, cmd const[SNDCTL_SYNTH_MEMAVL], arg ptr[inout, int32])
++ioctl$KGPT_SNDCTL_FM_4OP_ENABLE(fd fd_seq_oss, cmd const[SNDCTL_FM_4OP_ENABLE], arg ptr[in, int32])
++ioctl$KGPT_SNDCTL_SYNTH_INFO(fd fd_seq_oss, cmd const[SNDCTL_SYNTH_INFO], arg ptr[inout, synth_info])
++ioctl$KGPT_SNDCTL_SYNTH_ID(fd fd_seq_oss, cmd const[SNDCTL_SYNTH_ID], arg ptr[inout, synth_info])
++ioctl$KGPT_SNDCTL_SEQ_OUTOFBAND(fd fd_seq_oss, cmd const[SNDCTL_SEQ_OUTOFBAND], arg ptr[in, array[int8, 8]])
++ioctl$KGPT_SNDCTL_MIDI_INFO(fd fd_seq_oss, cmd const[SNDCTL_MIDI_INFO], arg ptr[inout, midi_info])
++ioctl$KGPT_SNDCTL_SEQ_THRESHOLD(fd fd_seq_oss, cmd const[SNDCTL_SEQ_THRESHOLD], arg ptr[in, int32])
++ioctl$KGPT_SNDCTL_MIDI_PRETIME(fd fd_seq_oss, cmd const[SNDCTL_MIDI_PRETIME], arg ptr[inout, int32])
+diff --git a/sys/linux/gemini-3-flash-preview#seq_oss_f_ops#sound_core_seq_oss_seq_oss.c:209.txt.const b/sys/linux/gemini-3-flash-preview#seq_oss_f_ops#sound_core_seq_oss_seq_oss.c:209.txt.const
+new file mode 100644
+index 000000000..c0d256cc5
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#seq_oss_f_ops#sound_core_seq_oss_seq_oss.c:209.txt.const
+@@ -0,0 +1,32 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++SNDCTL_FM_4OP_ENABLE = amd64:1074024719
++SNDCTL_MIDI_INFO = amd64:3228848396
++SNDCTL_MIDI_PRETIME = amd64:3221515520
++SNDCTL_SEQ_CTRLRATE = amd64:3221508355
++SNDCTL_SEQ_GETINCOUNT = amd64:2147766533
++SNDCTL_SEQ_GETOUTCOUNT = amd64:2147766532
++SNDCTL_SEQ_GETTIME = amd64:2147766547
++SNDCTL_SEQ_NRMIDIS = amd64:2147766539
++SNDCTL_SEQ_NRSYNTHS = amd64:2147766538
++SNDCTL_SEQ_OUTOFBAND = amd64:1074286866
++SNDCTL_SEQ_PANIC = amd64:20753
++SNDCTL_SEQ_RESET = amd64:20736
++SNDCTL_SEQ_RESETSAMPLES = amd64:1074024713
++SNDCTL_SEQ_SYNC = amd64:20737
++SNDCTL_SEQ_TESTMIDI = amd64:1074024712
++SNDCTL_SEQ_THRESHOLD = amd64:1074024717
++SNDCTL_SYNTH_ID = amd64:3230421268
++SNDCTL_SYNTH_INFO = amd64:3230421250
++SNDCTL_SYNTH_MEMAVL = amd64:3221508366
++SNDCTL_TMR_CONTINUE = amd64:21508
++SNDCTL_TMR_METRONOME = amd64:1074025479
++SNDCTL_TMR_SELECT = amd64:1074025480
++SNDCTL_TMR_SOURCE = amd64:3221509126
++SNDCTL_TMR_START = amd64:21506
++SNDCTL_TMR_STOP = amd64:21507
++SNDCTL_TMR_TEMPO = amd64:3221509125
++SNDCTL_TMR_TIMEBASE = amd64:3221509121
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
+diff --git a/sys/linux/gemini-3-flash-preview#serport_ldisc#drivers_input_serio_serport.c:262.txt b/sys/linux/gemini-3-flash-preview#serport_ldisc#drivers_input_serio_serport.c:262.txt
+new file mode 100644
+index 000000000..80e3714a3
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#serport_ldisc#drivers_input_serio_serport.c:262.txt
+@@ -0,0 +1,40 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/serio.h>
++
++resource fd_serport[fd]
++
++syz_open_dev$KGPT_serport(dev ptr[in, string["/dev/ttyS#"]], id proc[0, 1], flags flags[open_flags]) fd_serport
++
++ioctl$KGPT_SPIOCSTYPE(fd fd_serport, cmd const[SPIOCSTYPE], arg ptr[in, intptr])
+diff --git a/sys/linux/gemini-3-flash-preview#serport_ldisc#drivers_input_serio_serport.c:262.txt.const b/sys/linux/gemini-3-flash-preview#serport_ldisc#drivers_input_serio_serport.c:262.txt.const
+new file mode 100644
+index 000000000..0f5380dbc
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#serport_ldisc#drivers_input_serio_serport.c:262.txt.const
+@@ -0,0 +1,4 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++SPIOCSTYPE = amd64:1074295041
++__NR_ioctl = amd64:16
+diff --git a/sys/linux/gemini-3-flash-preview#sg_fops#drivers_scsi_sg.c:1408.txt.txt b/sys/linux/gemini-3-flash-preview#sg_fops#drivers_scsi_sg.c:1408.txt.txt
+new file mode 100644
+index 000000000..781a051db
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#sg_fops#drivers_scsi_sg.c:1408.txt.txt
+@@ -0,0 +1,61 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <scsi/sg.h>
++include <scsi/scsi.h>
++include <scsi/scsi_ioctl.h>
++include <uapi/linux/cdrom.h>
++
++syz_open_dev$KGPT_sg(dev ptr[in, string["/dev/sg#"]], id proc[0, 1], flags flags[open_flags]) fd_sg
++
++ioctl$KGPT_SG_GET_TIMEOUT(fd fd_sg, cmd const[SG_GET_TIMEOUT], arg ptr[in, array[int8]])
++ioctl$KGPT_CDROMCLOSETRAY(fd fd_sg, cmd const[CDROMCLOSETRAY], arg ptr[in, array[int8]])
++ioctl$KGPT_CDROMEJECT(fd fd_sg, cmd const[CDROMEJECT], arg ptr[in, array[int8]])
++ioctl$KGPT_SCSI_IOCTL_DOORLOCK(fd fd_sg, cmd const[SCSI_IOCTL_DOORLOCK], arg ptr[in, array[int8]])
++ioctl$KGPT_SCSI_IOCTL_DOORUNLOCK(fd fd_sg, cmd const[SCSI_IOCTL_DOORUNLOCK], arg ptr[in, array[int8]])
++ioctl$KGPT_SCSI_IOCTL_TEST_UNIT_READY(fd fd_sg, cmd const[SCSI_IOCTL_TEST_UNIT_READY], arg ptr[in, array[int8]])
++ioctl$KGPT_SCSI_IOCTL_START_UNIT(fd fd_sg, cmd const[SCSI_IOCTL_START_UNIT], arg ptr[in, array[int8]])
++ioctl$KGPT_SCSI_IOCTL_STOP_UNIT(fd fd_sg, cmd const[SCSI_IOCTL_STOP_UNIT], arg ptr[in, array[int8]])
++ioctl$KGPT_SG_GET_VERSION_NUM(fd fd_sg, cmd const[SG_GET_VERSION_NUM], arg ptr[out, int32])
++ioctl$KGPT_SG_SET_TIMEOUT(fd fd_sg, cmd const[SG_SET_TIMEOUT], arg ptr[in, int32])
++ioctl$KGPT_SG_GET_RESERVED_SIZE(fd fd_sg, cmd const[SG_GET_RESERVED_SIZE], arg ptr[out, int32])
++ioctl$KGPT_SG_SET_RESERVED_SIZE(fd fd_sg, cmd const[SG_SET_RESERVED_SIZE], arg ptr[in, int32])
++ioctl$KGPT_SG_EMULATED_HOST(fd fd_sg, cmd const[SG_EMULATED_HOST], arg ptr[out, int32])
++ioctl$KGPT_SG_IO(fd fd_sg, cmd const[SG_IO], arg ptr[inout, sg_io_hdr])
++ioctl$KGPT_SCSI_IOCTL_SEND_COMMAND(fd fd_sg, cmd const[SCSI_IOCTL_SEND_COMMAND], arg ptr[inout, scsi_ioctl_command])
++ioctl$KGPT_CDROM_SEND_PACKET(fd fd_sg, cmd const[CDROM_SEND_PACKET], arg ptr[inout, cdrom_generic_command])
++ioctl$KGPT_SCSI_IOCTL_GET_IDLUN(fd fd_sg, cmd const[SCSI_IOCTL_GET_IDLUN], arg ptr[out, scsi_idlun])
++ioctl$KGPT_SCSI_IOCTL_GET_BUS_NUMBER(fd fd_sg, cmd const[SCSI_IOCTL_GET_BUS_NUMBER], arg ptr[out, int32])
++ioctl$KGPT_SCSI_IOCTL_PROBE_HOST(fd fd_sg, cmd const[SCSI_IOCTL_PROBE_HOST], arg ptr[inout, array[int8]])
++ioctl$KGPT_SCSI_IOCTL_GET_PCI(fd fd_sg, cmd const[SCSI_IOCTL_GET_PCI], arg ptr[out, array[int8, 20]])
++ioctl$KGPT_SG_SCSI_RESET(fd fd_sg, cmd const[SG_SCSI_RESET], arg ptr[in, int32])
+diff --git a/sys/linux/gemini-3-flash-preview#sg_fops#drivers_scsi_sg.c:1408.txt.txt.const b/sys/linux/gemini-3-flash-preview#sg_fops#drivers_scsi_sg.c:1408.txt.txt.const
+new file mode 100644
+index 000000000..7fda93294
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#sg_fops#drivers_scsi_sg.c:1408.txt.txt.const
+@@ -0,0 +1,24 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++CDROMCLOSETRAY = amd64:21273
++CDROMEJECT = amd64:21257
++CDROM_SEND_PACKET = amd64:21395
++SCSI_IOCTL_DOORLOCK = amd64:21376
++SCSI_IOCTL_DOORUNLOCK = amd64:21377
++SCSI_IOCTL_GET_BUS_NUMBER = amd64:21382
++SCSI_IOCTL_GET_IDLUN = amd64:21378
++SCSI_IOCTL_GET_PCI = amd64:21383
++SCSI_IOCTL_PROBE_HOST = amd64:21381
++SCSI_IOCTL_SEND_COMMAND = amd64:1
++SCSI_IOCTL_START_UNIT = amd64:5
++SCSI_IOCTL_STOP_UNIT = amd64:6
++SCSI_IOCTL_TEST_UNIT_READY = amd64:2
++SG_EMULATED_HOST = amd64:8707
++SG_GET_RESERVED_SIZE = amd64:8818
++SG_GET_TIMEOUT = amd64:8706
++SG_GET_VERSION_NUM = amd64:8834
++SG_IO = amd64:8837
++SG_SCSI_RESET = amd64:8836
++SG_SET_RESERVED_SIZE = amd64:8821
++SG_SET_TIMEOUT = amd64:8705
++__NR_ioctl = amd64:16
+diff --git a/sys/linux/gemini-3-flash-preview#slcan_ldisc#drivers_net_can_slcan_slcan-core.c:920.txt b/sys/linux/gemini-3-flash-preview#slcan_ldisc#drivers_net_can_slcan_slcan-core.c:920.txt
+new file mode 100644
+index 000000000..248b3c4cf
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#slcan_ldisc#drivers_net_can_slcan_slcan-core.c:920.txt
+@@ -0,0 +1,42 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/sockios.h>
++include <uapi/asm-generic/ioctls.h>
++include <arch/powerpc/include/uapi/asm/ioctls.h>
++
++resource fd_slcan[fd]
++
++syz_open_dev$KGPT_slcan(dev ptr[in, string["/dev/tty#"]], id proc[0, 1], flags flags[open_flags]) fd_slcan
++
++ioctl$KGPT_SIOCSIFHWADDR(fd fd_slcan, cmd const[SIOCSIFHWADDR], arg ptr[in, array[int8]])
+diff --git a/sys/linux/gemini-3-flash-preview#slcan_ldisc#drivers_net_can_slcan_slcan-core.c:920.txt.const b/sys/linux/gemini-3-flash-preview#slcan_ldisc#drivers_net_can_slcan_slcan-core.c:920.txt.const
+new file mode 100644
+index 000000000..ec4a6bf7f
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#slcan_ldisc#drivers_net_can_slcan_slcan-core.c:920.txt.const
+@@ -0,0 +1,4 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++SIOCSIFHWADDR = amd64:35108
++__NR_ioctl = amd64:16
+diff --git a/sys/linux/gemini-3-flash-preview#snd_seq_f_ops#sound_core_seq_seq_clientmgr.c:2637.txt b/sys/linux/gemini-3-flash-preview#snd_seq_f_ops#sound_core_seq_seq_clientmgr.c:2637.txt
+new file mode 100644
+index 000000000..318b6b6b8
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#snd_seq_f_ops#sound_core_seq_seq_clientmgr.c:2637.txt
+@@ -0,0 +1,50 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/fcntl.h>
++include <uapi/sound/asequencer.h>
++
++resource fd_snd_seq[fd]
++
++openat$KGPT_sndseq(fd const[AT_FDCWD], file ptr[in, string["/dev/snd/seq"]], flags flags[open_flags], mode const[0]) fd_snd_seq
++
++ioctl$KGPT_SNDRV_SEQ_IOCTL_GET_CLIENT_UMP_INFO(fd fd_snd_seq, cmd const[SNDRV_SEQ_IOCTL_GET_CLIENT_UMP_INFO], arg ptr[inout, snd_seq_client_ump_info])
++ioctl$KGPT_SNDRV_SEQ_IOCTL_SET_CLIENT_UMP_INFO(fd fd_snd_seq, cmd const[SNDRV_SEQ_IOCTL_SET_CLIENT_UMP_INFO], arg ptr[in, snd_seq_client_ump_info])
++ioctl$KGPT_SNDRV_SEQ_IOCTL_SET_QUEUE_CLIENT(fd fd_snd_seq, cmd const[SNDRV_SEQ_IOCTL_SET_QUEUE_CLIENT], arg ptr[inout, snd_seq_queue_client])
++ioctl$KGPT_SNDRV_SEQ_IOCTL_SET_CLIENT_POOL(fd fd_snd_seq, cmd const[SNDRV_SEQ_IOCTL_SET_CLIENT_POOL], arg ptr[inout, snd_seq_client_pool])
++
++snd_seq_client_ump_info {
++	client	int32
++	type	int32
++	info	array[int8, 512]
++}
+diff --git a/sys/linux/gemini-3-flash-preview#snd_seq_f_ops#sound_core_seq_seq_clientmgr.c:2637.txt.const b/sys/linux/gemini-3-flash-preview#snd_seq_f_ops#sound_core_seq_seq_clientmgr.c:2637.txt.const
+new file mode 100644
+index 000000000..6f144c43c
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#snd_seq_f_ops#sound_core_seq_seq_clientmgr.c:2637.txt.const
+@@ -0,0 +1,9 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++SNDRV_SEQ_IOCTL_GET_CLIENT_UMP_INFO = amd64:3255325458
++SNDRV_SEQ_IOCTL_SET_CLIENT_POOL = amd64:1079530316
++SNDRV_SEQ_IOCTL_SET_CLIENT_UMP_INFO = amd64:3255325459
++SNDRV_SEQ_IOCTL_SET_QUEUE_CLIENT = amd64:1078743882
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
+diff --git a/sys/linux/gemini-3-flash-preview#sur40_video_fops#drivers_input_touchscreen_sur40.c:1128.txt b/sys/linux/gemini-3-flash-preview#sur40_video_fops#drivers_input_touchscreen_sur40.c:1128.txt
+new file mode 100644
+index 000000000..119ca33c9
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#sur40_video_fops#drivers_input_touchscreen_sur40.c:1128.txt
+@@ -0,0 +1,62 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/v4l2-subdev.h>
++
++resource fd_sur40[fd]
++
++syz_open_dev$KGPT_sur40(dev ptr[in, string["/dev/video#"]], id proc[0, 1], flags flags[open_flags]) fd_sur40
++
++ioctl$KGPT_VIDIOC_DQBUF(fd fd_sur40, cmd const[VIDIOC_DQBUF], arg ptr[inout, array[int8]])
++ioctl$KGPT_VIDIOC_QBUF(fd fd_sur40, cmd const[VIDIOC_QBUF], arg ptr[inout, array[int8]])
++ioctl$KGPT_VIDIOC_STREAMON(fd fd_sur40, cmd const[VIDIOC_STREAMON], arg ptr[in, flags[v4l2_buf_type, int32]])
++ioctl$KGPT_VIDIOC_STREAMOFF(fd fd_sur40, cmd const[VIDIOC_STREAMOFF], arg ptr[in, flags[v4l2_buf_type, int32]])
++ioctl$KGPT_VIDIOC_SUBDEV_G_ROUTING(fd fd_sur40, cmd const[VIDIOC_SUBDEV_G_ROUTING], arg ptr[inout, v4l2_subdev_routing])
++ioctl$KGPT_VIDIOC_SUBDEV_S_ROUTING(fd fd_sur40, cmd const[VIDIOC_SUBDEV_S_ROUTING], arg ptr[inout, v4l2_subdev_routing])
++
++v4l2_subdev_routing {
++	which		int32
++	len_routes	int32
++	routes		ptr[in, array[v4l2_subdev_route]]
++	num_routes	int32
++	reserved	array[int32, 11]
++}
++
++v4l2_subdev_route {
++	sink_pad	int32
++	sink_stream	int32
++	source_pad	int32
++	source_stream	int32
++	flags		int32
++	reserved	array[int32, 5]
++}
+diff --git a/sys/linux/gemini-3-flash-preview#sur40_video_fops#drivers_input_touchscreen_sur40.c:1128.txt.const b/sys/linux/gemini-3-flash-preview#sur40_video_fops#drivers_input_touchscreen_sur40.c:1128.txt.const
+new file mode 100644
+index 000000000..92524b79d
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#sur40_video_fops#drivers_input_touchscreen_sur40.c:1128.txt.const
+@@ -0,0 +1,9 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++VIDIOC_DQBUF = amd64:3227014673
++VIDIOC_QBUF = amd64:3227014671
++VIDIOC_STREAMOFF = amd64:1074026003
++VIDIOC_STREAMON = amd64:1074026002
++VIDIOC_SUBDEV_G_ROUTING = amd64:3225441830
++VIDIOC_SUBDEV_S_ROUTING = amd64:3225441831
++__NR_ioctl = amd64:16
+diff --git a/sys/linux/gemini-3-flash-preview#sync_ops#drivers_net_ppp_ppp_synctty.c:99.txt b/sys/linux/gemini-3-flash-preview#sync_ops#drivers_net_ppp_ppp_synctty.c:99.txt
+new file mode 100644
+index 000000000..dc4929626
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#sync_ops#drivers_net_ppp_ppp_synctty.c:99.txt
+@@ -0,0 +1,36 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/ppp-ioctl.h>
++
++syz_open_dev$KGPT_ppp_sync(dev ptr[in, string["/dev/tty#"]], id proc[0, 1], flags flags[open_flags]) fd_tty_ppp
+diff --git a/sys/linux/gemini-3-flash-preview#sync_ops#drivers_net_ppp_ppp_synctty.c:99.txt.const b/sys/linux/gemini-3-flash-preview#sync_ops#drivers_net_ppp_ppp_synctty.c:99.txt.const
+new file mode 100644
+index 000000000..0297f1051
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#sync_ops#drivers_net_ppp_ppp_synctty.c:99.txt.const
+@@ -0,0 +1,2 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
+diff --git a/sys/linux/gemini-3-flash-preview#uinput_fops#drivers_input_misc_uinput.c:1125.txt b/sys/linux/gemini-3-flash-preview#uinput_fops#drivers_input_misc_uinput.c:1125.txt
+new file mode 100644
+index 000000000..7ef6f3f59
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#uinput_fops#drivers_input_misc_uinput.c:1125.txt
+@@ -0,0 +1,27 @@
++meta arches["amd64"]
++
++include <linux/ioctl.h>
++include <uapi/linux/uinput.h>
++
++openat$KGPT_uinput(fd const[AT_FDCWD], file ptr[in, string["/dev/uinput"]], flags flags[open_flags], mode const[0]) fd_uinput
++
++ioctl$KGPT_UI_DEV_CREATE(fd fd_uinput, cmd const[UI_DEV_CREATE], arg ptr[in, array[int8]])
++ioctl$KGPT_UI_DEV_DESTROY(fd fd_uinput, cmd const[UI_DEV_DESTROY], arg ptr[in, array[int8]])
++ioctl$KGPT_UI_GET_VERSION(fd fd_uinput, cmd const[UI_GET_VERSION], arg ptr[out, int32])
++ioctl$KGPT_UI_DEV_SETUP(fd fd_uinput, cmd const[UI_DEV_SETUP], arg ptr[in, uinput_setup])
++ioctl$KGPT_UI_ABS_SETUP(fd fd_uinput, cmd const[UI_ABS_SETUP], arg ptr[in, uinput_abs_setup])
++ioctl$KGPT_UI_SET_EVBIT(fd fd_uinput, cmd const[UI_SET_EVBIT], arg ptr[in, array[int8]])
++ioctl$KGPT_UI_SET_KEYBIT(fd fd_uinput, cmd const[UI_SET_KEYBIT], arg ptr[in, array[int8]])
++ioctl$KGPT_UI_SET_RELBIT(fd fd_uinput, cmd const[UI_SET_RELBIT], arg ptr[in, array[int8]])
++ioctl$KGPT_UI_SET_ABSBIT(fd fd_uinput, cmd const[UI_SET_ABSBIT], arg ptr[in, array[int8]])
++ioctl$KGPT_UI_SET_MSCBIT(fd fd_uinput, cmd const[UI_SET_MSCBIT], arg ptr[in, array[int8]])
++ioctl$KGPT_UI_SET_LEDBIT(fd fd_uinput, cmd const[UI_SET_LEDBIT], arg ptr[in, array[int8]])
++ioctl$KGPT_UI_SET_SNDBIT(fd fd_uinput, cmd const[UI_SET_SNDBIT], arg ptr[in, array[int8]])
++ioctl$KGPT_UI_SET_FFBIT(fd fd_uinput, cmd const[UI_SET_FFBIT], arg ptr[in, array[int8]])
++ioctl$KGPT_UI_SET_SWBIT(fd fd_uinput, cmd const[UI_SET_SWBIT], arg ptr[in, array[int8]])
++ioctl$KGPT_UI_SET_PROPBIT(fd fd_uinput, cmd const[UI_SET_PROPBIT], arg ptr[in, array[int8]])
++ioctl$KGPT_UI_SET_PHYS(fd fd_uinput, cmd const[UI_SET_PHYS], arg ptr[in, string])
++ioctl$KGPT_UI_BEGIN_FF_UPLOAD(fd fd_uinput, cmd const[UI_BEGIN_FF_UPLOAD], arg ptr[inout, uinput_ff_upload])
++ioctl$KGPT_UI_END_FF_UPLOAD(fd fd_uinput, cmd const[UI_END_FF_UPLOAD], arg ptr[out, uinput_ff_upload])
++ioctl$KGPT_UI_BEGIN_FF_ERASE(fd fd_uinput, cmd const[UI_BEGIN_FF_ERASE], arg ptr[in, uinput_ff_erase])
++ioctl$KGPT_UI_END_FF_ERASE(fd fd_uinput, cmd const[UI_END_FF_ERASE], arg ptr[inout, uinput_ff_erase])
+diff --git a/sys/linux/gemini-3-flash-preview#uinput_fops#drivers_input_misc_uinput.c:1125.txt.const b/sys/linux/gemini-3-flash-preview#uinput_fops#drivers_input_misc_uinput.c:1125.txt.const
+new file mode 100644
+index 000000000..d35f04ca9
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#uinput_fops#drivers_input_misc_uinput.c:1125.txt.const
+@@ -0,0 +1,25 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++UI_ABS_SETUP = amd64:1075598596
++UI_BEGIN_FF_ERASE = amd64:3222033866
++UI_BEGIN_FF_UPLOAD = amd64:3228063176
++UI_DEV_CREATE = amd64:21761
++UI_DEV_DESTROY = amd64:21762
++UI_DEV_SETUP = amd64:1079792899
++UI_END_FF_ERASE = amd64:1074550219
++UI_END_FF_UPLOAD = amd64:1080579529
++UI_GET_VERSION = amd64:2147767597
++UI_SET_ABSBIT = amd64:1074025831
++UI_SET_EVBIT = amd64:1074025828
++UI_SET_FFBIT = amd64:1074025835
++UI_SET_KEYBIT = amd64:1074025829
++UI_SET_LEDBIT = amd64:1074025833
++UI_SET_MSCBIT = amd64:1074025832
++UI_SET_PHYS = amd64:1074287980
++UI_SET_PROPBIT = amd64:1074025838
++UI_SET_RELBIT = amd64:1074025830
++UI_SET_SNDBIT = amd64:1074025834
++UI_SET_SWBIT = amd64:1074025837
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
+diff --git a/sys/linux/gemini-3-flash-preview#vmwgfx_driver_fops#drivers_gpu_drm_vmwgfx_vmwgfx_drv.c:1568.txt b/sys/linux/gemini-3-flash-preview#vmwgfx_driver_fops#drivers_gpu_drm_vmwgfx_vmwgfx_drv.c:1568.txt
+new file mode 100644
+index 000000000..da5b0728b
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#vmwgfx_driver_fops#drivers_gpu_drm_vmwgfx_vmwgfx_drv.c:1568.txt
+@@ -0,0 +1,65 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/drm/vmwgfx_drm.h>
++
++resource fd_vmwgfx[fd]
++
++syz_open_dev$KGPT_vmwgfx(dev ptr[in, string["/dev/dri/card#"]], id proc[0, 1], flags flags[open_flags]) fd_vmwgfx
++
++ioctl$KGPT_DRM_VMW_EXECBUF(fd fd_vmwgfx, cmd const[DRM_VMW_EXECBUF], arg ptr[in, drm_vmw_execbuf_arg])
++ioctl$KGPT_DRM_VMW_UPDATE_LAYOUT(fd fd_vmwgfx, cmd const[DRM_VMW_UPDATE_LAYOUT], arg ptr[in, drm_vmw_update_layout_arg])
++
++drm_vmw_execbuf_arg {
++	commands		int64
++	command_size		int32
++	throttle_us		int32
++	fence_rep		int64
++	version			int32
++	flags			int32
++	context_handle		int32
++	imported_fence_fd	int32
++}
++
++drm_vmw_update_layout_arg {
++	num_outputs	int32
++	pad64		int32
++	rects		ptr[in, array[drm_vmw_rect]]
++}
++
++drm_vmw_rect {
++	x	int32
++	y	int32
++	w	int32
++	h	int32
++}
+diff --git a/sys/linux/gemini-3-flash-preview#vmwgfx_driver_fops#drivers_gpu_drm_vmwgfx_vmwgfx_drv.c:1568.txt.const b/sys/linux/gemini-3-flash-preview#vmwgfx_driver_fops#drivers_gpu_drm_vmwgfx_vmwgfx_drv.c:1568.txt.const
+new file mode 100644
+index 000000000..d2b8d96f9
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#vmwgfx_driver_fops#drivers_gpu_drm_vmwgfx_vmwgfx_drv.c:1568.txt.const
+@@ -0,0 +1,5 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++DRM_VMW_EXECBUF = amd64:12
++DRM_VMW_UPDATE_LAYOUT = amd64:20
++__NR_ioctl = amd64:16
+diff --git a/sys/linux/gemini-3-flash-preview#x25_proto_ops#net_x25_af_x25.c:1738.txt b/sys/linux/gemini-3-flash-preview#x25_proto_ops#net_x25_af_x25.c:1738.txt
+new file mode 100644
+index 000000000..31ea82d4c
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#x25_proto_ops#net_x25_af_x25.c:1738.txt
+@@ -0,0 +1,73 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/x25.h>
++include <uapi/linux/sockios.h>
++include <uapi/asm-generic/ioctls.h>
++
++syz_init_net_socket$KGPT_x25(domain const[AF_X25], type const[SOCK_SEQPACKET], proto const[0]) sock_x25
++
++bind$KGPT_x25_proto_ops(fd sock_x25, addr ptr[in, sockaddr_x25], addrlen len[addr])
++connect$KGPT_x25_proto_ops(fd sock_x25, addr ptr[in, sockaddr_x25], addrlen len[addr])
++accept4$KGPT_x25_proto_ops(fd sock_x25, peer ptr[out, sockaddr_x25, opt], peerlen ptr[inout, len[peer, int32]], flags flags[accept_flags]) sock_x25
++sendto$KGPT_x25_proto_ops(fd sock_x25, buf ptr[in, array[int8]], len len[buf], f flags[send_flags], addr ptr[in, sockaddr_x25, opt], addrlen len[addr])
++recvfrom$KGPT_x25_proto_ops(fd sock_x25, buf ptr[out, array[int8]], len len[buf], f flags[recv_flags], addr ptr[in, sockaddr_x25, opt], addrlen len[addr])
++ioctl$KGPT_SIOCGIFADDR(fd sock_x25, cmd const[SIOCGIFADDR], arg ptr[in, array[int8]])
++ioctl$KGPT_SIOCSIFADDR(fd sock_x25, cmd const[SIOCSIFADDR], arg ptr[in, array[int8]])
++ioctl$KGPT_SIOCGIFDSTADDR(fd sock_x25, cmd const[SIOCGIFDSTADDR], arg ptr[in, array[int8]])
++ioctl$KGPT_SIOCSIFDSTADDR(fd sock_x25, cmd const[SIOCSIFDSTADDR], arg ptr[in, array[int8]])
++ioctl$KGPT_SIOCGIFBRDADDR(fd sock_x25, cmd const[SIOCGIFBRDADDR], arg ptr[in, array[int8]])
++ioctl$KGPT_SIOCSIFBRDADDR(fd sock_x25, cmd const[SIOCSIFBRDADDR], arg ptr[in, array[int8]])
++ioctl$KGPT_SIOCGIFNETMASK(fd sock_x25, cmd const[SIOCGIFNETMASK], arg ptr[in, array[int8]])
++ioctl$KGPT_SIOCSIFNETMASK(fd sock_x25, cmd const[SIOCSIFNETMASK], arg ptr[in, array[int8]])
++ioctl$KGPT_SIOCGIFMETRIC(fd sock_x25, cmd const[SIOCGIFMETRIC], arg ptr[in, array[int8]])
++ioctl$KGPT_SIOCSIFMETRIC(fd sock_x25, cmd const[SIOCSIFMETRIC], arg ptr[in, array[int8]])
++ioctl$KGPT_SIOCX25CALLACCPTAPPRV(fd sock_x25, cmd const[SIOCX25CALLACCPTAPPRV], arg ptr[in, array[int8]])
++ioctl$KGPT_SIOCX25SENDCALLACCPT(fd sock_x25, cmd const[SIOCX25SENDCALLACCPT], arg ptr[in, array[int8]])
++ioctl$KGPT_TIOCOUTQ(fd sock_x25, cmd const[TIOCOUTQ], arg ptr[out, int32])
++ioctl$KGPT_TIOCINQ(fd sock_x25, cmd const[TIOCINQ], arg ptr[out, int32])
++ioctl$KGPT_SIOCADDRT(fd sock_x25, cmd const[SIOCADDRT], arg ptr[in, x25_route_struct])
++ioctl$KGPT_SIOCDELRT(fd sock_x25, cmd const[SIOCDELRT], arg ptr[in, x25_route_struct])
++ioctl$KGPT_SIOCX25GSUBSCRIP(fd sock_x25, cmd const[SIOCX25GSUBSCRIP], arg ptr[inout, x25_subscrip_struct])
++ioctl$KGPT_SIOCX25SSUBSCRIP(fd sock_x25, cmd const[SIOCX25SSUBSCRIP], arg ptr[in, x25_subscrip_struct])
++ioctl$KGPT_SIOCX25GFACILITIES(fd sock_x25, cmd const[SIOCX25GFACILITIES], arg ptr[out, x25_facilities])
++ioctl$KGPT_SIOCX25SFACILITIES(fd sock_x25, cmd const[SIOCX25SFACILITIES], arg ptr[in, x25_facilities])
++ioctl$KGPT_SIOCX25GDTEFACILITIES(fd sock_x25, cmd const[SIOCX25GDTEFACILITIES], arg ptr[out, x25_dte_facilities])
++ioctl$KGPT_SIOCX25SDTEFACILITIES(fd sock_x25, cmd const[SIOCX25SDTEFACILITIES], arg ptr[in, x25_dte_facilities])
++ioctl$KGPT_SIOCX25GCALLUSERDATA(fd sock_x25, cmd const[SIOCX25GCALLUSERDATA], arg ptr[out, x25_calluserdata])
++ioctl$KGPT_SIOCX25SCALLUSERDATA(fd sock_x25, cmd const[SIOCX25SCALLUSERDATA], arg ptr[in, x25_calluserdata])
++ioctl$KGPT_SIOCX25GCAUSEDIAG(fd sock_x25, cmd const[SIOCX25GCAUSEDIAG], arg ptr[out, x25_causediag])
++ioctl$KGPT_SIOCX25SCAUSEDIAG(fd sock_x25, cmd const[SIOCX25SCAUSEDIAG], arg ptr[in, x25_causediag])
++ioctl$KGPT_SIOCX25SCUDMATCHLEN(fd sock_x25, cmd const[SIOCX25SCUDMATCHLEN], arg ptr[in, x25_subaddr])
++getsockopt$KGPT_X25_QBITINCL(fd sock_x25, level const[SOL_X25], opt const[X25_QBITINCL], val ptr[out, int32], len ptr[inout, bytesize[val, int32]])
++setsockopt$KGPT_X25_QBITINCL(fd sock_x25, level const[SOL_X25], opt const[X25_QBITINCL], val ptr[in, int32], len bytesize[val])
+diff --git a/sys/linux/gemini-3-flash-preview#x25_proto_ops#net_x25_af_x25.c:1738.txt.const b/sys/linux/gemini-3-flash-preview#x25_proto_ops#net_x25_af_x25.c:1738.txt.const
+new file mode 100644
+index 000000000..a824a93e8
+--- /dev/null
++++ b/sys/linux/gemini-3-flash-preview#x25_proto_ops#net_x25_af_x25.c:1738.txt.const
+@@ -0,0 +1,41 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AF_X25 = amd64:9
++SIOCADDRT = amd64:35083
++SIOCDELRT = amd64:35084
++SIOCGIFADDR = amd64:35093
++SIOCGIFBRDADDR = amd64:35097
++SIOCGIFDSTADDR = amd64:35095
++SIOCGIFMETRIC = amd64:35101
++SIOCGIFNETMASK = amd64:35099
++SIOCSIFADDR = amd64:35094
++SIOCSIFBRDADDR = amd64:35098
++SIOCSIFDSTADDR = amd64:35096
++SIOCSIFMETRIC = amd64:35102
++SIOCSIFNETMASK = amd64:35100
++SIOCX25CALLACCPTAPPRV = amd64:35304
++SIOCX25GCALLUSERDATA = amd64:35300
++SIOCX25GCAUSEDIAG = amd64:35302
++SIOCX25GDTEFACILITIES = amd64:35306
++SIOCX25GFACILITIES = amd64:35298
++SIOCX25GSUBSCRIP = amd64:35296
++SIOCX25SCALLUSERDATA = amd64:35301
++SIOCX25SCAUSEDIAG = amd64:35308
++SIOCX25SCUDMATCHLEN = amd64:35303
++SIOCX25SDTEFACILITIES = amd64:35307
++SIOCX25SENDCALLACCPT = amd64:35305
++SIOCX25SFACILITIES = amd64:35299
++SIOCX25SSUBSCRIP = amd64:35297
++SOCK_SEQPACKET = amd64:5
++SOL_X25 = amd64:262
++TIOCINQ = amd64:21531
++TIOCOUTQ = amd64:21521
++X25_QBITINCL = amd64:1
++__NR_accept4 = amd64:288
++__NR_bind = amd64:49
++__NR_connect = amd64:42
++__NR_getsockopt = amd64:55
++__NR_ioctl = amd64:16
++__NR_recvfrom = amd64:45
++__NR_sendto = amd64:44
++__NR_setsockopt = amd64:54

@@ -25,47 +25,28 @@ setup KernelGPT.
 git clone https://github.com/KernelGPT/KernelGPT.git
 cd KernelGPT
 git checkout e3464d23b8d59ffffb1bd5b2f7100c102c48bb3d
-git apply $CLOUD/experiment/KernelGPT/repo.patch
-git submodule update --init --recursive
+git apply -3 $CLOUD/experiment/KernelGPT/repo.patch
+git submodule update --init --recursive --pdeth 1 --progress
 pip install -r requirements.txt
 ```
 
-build linux v6.18.
+setup .env file under `$KernelGEM/spec-gen`:
 ```bash
-cd $KERNELGPT
-cp $CLOUD/configs/kernel/syzbot.config linux/.config
-bear -- make CC=clang HOSTCC=clang olddefconfig all -j16
+cd $KernelGEM/spec-gen
+touch .env
+echo "OPENAI_BASE_URL=YOUR_BASE_URL" >> .env
+echo "OPENAI_API_KEY=YOUR_API_KEY" >> .env
+echo "OPENAI_MODEL=YOUR_FAVORITE_LLM" >> .env
 ```
-
-build and run analysis tool.
-```bash
-cd $KERNELGPT/spec-gen/analyzer
-make all
-
-./analyze -p ./analyze -p $KERNELGPT/linux/compile_commands.json
-python3 process_output.py --linux-path $KERNELGPT/linux
-./usage -p $KERNELGPT/linux/compile_commands.json
-python3 process_output.py --linux-path $KERNELGPT/linux --usage
-```
-
-setup .env file under `$KERNELGPT/spec-gen` and run syscall description generation.
-```bash
-cd $KERNELGPT/spec-gen
-echo "OPENAI_BASE_URL=YOUR_BASE_URL" > .env
-echo "OPENAI_API_KEY=YOUR_API_KEY" > .env
-echo "OPENAI_MODEL=YOUR_FAVORITE_LLM" > .env
-
-# for debugging
-python3 gen_spec.py -d analyzer/processed_handlers.json -o spec-output -n 1
-# for generating complete specifications, watch out your wallet
-# python3 gen_spec.py -d analyzer/processed_handlers.json -o spec-output -n 1000
-```
-
-integrate generated specifications into syzkaller and feel free to perform fuzzing.
 
 If you want to re-extract const for KernelGPT's specs:
 ```bash
-cd $KERNLGPT/syzkaller
+cd $KERNELGPT/spec-gen
+python3 eval_spec.py -u -s ../generated-specs/specs-6.7/correct-driver-spec --output-name debug -o eval-output --merge
+python3 eval_spec.py -u -s ../generated-specs/specs-6.7/correct-socket-spec --output-name debug -o eval-output --merge
+cp ../spec-eval/debug/*.txt syzkaller/sys/linux
+
+cd ../syzkaller
 make bin/syz-extract
 ls sys/linux/gpt4*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$KERNSRC -os=linux -arch=amd64
 ```
