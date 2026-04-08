@@ -925,10 +925,686 @@ index 0000000..ad1066c
 +
 +echo "all tasks run in background, you can check the output in $OUTDIR"
 \ No newline at end of file
-diff --git a/syzkaller b/syzkaller
-new file mode 160000
-index 0000000..ac3c71e
+diff --git a/scripts/genspec_subsystems.sh b/scripts/genspec_subsystems.sh
+new file mode 100755
+index 0000000..f84280b
 --- /dev/null
-+++ b/syzkaller
-@@ -0,0 +1 @@
-+Subproject commit ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
++++ b/scripts/genspec_subsystems.sh
+@@ -0,0 +1,677 @@
++#!/bin/bash
++
++# Generate syzlang specifications for 20 Linux kernel subsystems using SyzSpec.
++#
++# Usage:
++#   ./scripts/genspec_subsystems.sh -syzspec path -kernsrc path -outdir path -subsystem name[,name...]|all
++#
++# Options:
++#   -syzspec   Path to the SyzSpec root directory (contains build/bin/klee)
++#   -kernsrc   Path to the kernel source tree (compiled with LLVM bitcode)
++#   -outdir    Output directory for generated specifications
++#   -subsystem Required subsystem name, comma-separated list, or all
++#
++# Each selected subsystem runs sequentially with a 24-hour timeout.
++
++set -e
++
++SYZSPEC=""
++KERNSRC=""
++OUTDIR=""
++ALL_SUBSYSTEMS="autofs ax25 btrfs can comedi dri f2fs fuse i2c input kvm nilfs2 ocfs2 phonet ppp ptp rdma_cm sequencer sg x25"
++SELECTED_SUBSYSTEMS=""
++LAUNCHED_SUBSYSTEMS=""
++
++resolve_path() {
++    local path="$1"
++    local create_missing="$2"
++    local dir_path
++    local base_name
++
++    if [ -z "$path" ]; then
++        return 1
++    fi
++
++    if [ "$create_missing" = "create" ]; then
++        dir_path="$(dirname "$path")"
++        base_name="$(basename "$path")"
++        mkdir -p "$dir_path"
++        (
++            cd "$dir_path"
++            printf '%s/%s\n' "$(pwd -P)" "$base_name"
++        )
++        return 0
++    fi
++
++    (
++        cd "$path"
++        pwd -P
++    )
++}
++
++resolve_llvm_link() {
++    local candidate
++
++    if [ -n "$LLVM_LINK" ]; then
++        printf '%s\n' "$LLVM_LINK"
++        return 0
++    fi
++
++    for candidate in \
++        "$(command -v llvm-link-15 2>/dev/null || true)" \
++        /tmp/llvm-150-install_O_D_A/bin/llvm-link \
++        "$(command -v llvm-link 2>/dev/null || true)"
++    do
++        if [ -n "$candidate" ] && [ -x "$candidate" ] && \
++           "$candidate" --version 2>/dev/null | grep -q 'LLVM version 15'; then
++            printf '%s\n' "$candidate"
++            return 0
++        fi
++    done
++
++    return 1
++}
++
++usage() {
++    echo "Usage: $0 -syzspec path -kernsrc path -outdir path -subsystem name[,name...]|all"
++    echo ""
++    echo "  -syzspec   - Path to SyzSpec root (e.g., /vol/fuzzer/SyzSpec)"
++    echo "  -kernsrc   - Path to kernel source compiled with LLVM bitcode"
++    echo "  -outdir    - Output directory for generated specs"
++    echo "  -subsystem - Required subsystem name, comma-separated list, or all"
++    echo ""
++    echo "Available subsystems:"
++    echo "  all $ALL_SUBSYSTEMS"
++}
++
++has_word() {
++    case " $1 " in
++        *" $2 "*) return 0 ;;
++        *) return 1 ;;
++    esac
++}
++
++should_run_subsystem() {
++    has_word "$SELECTED_SUBSYSTEMS" "$1"
++}
++
++mark_launched() {
++    if ! has_word "$LAUNCHED_SUBSYSTEMS" "$1"; then
++        LAUNCHED_SUBSYSTEMS="$LAUNCHED_SUBSYSTEMS $1"
++    fi
++}
++
++while [ $# -gt 0 ]; do
++    case "$1" in
++        -syzspec)
++            if [ -z "$2" ]; then
++                echo "Error: -syzspec requires an argument"
++                usage
++                exit 1
++            fi
++            SYZSPEC="$2"
++            shift 2
++            ;;
++        -kernsrc)
++            if [ -z "$2" ]; then
++                echo "Error: -kernsrc requires an argument"
++                usage
++                exit 1
++            fi
++            KERNSRC="$2"
++            shift 2
++            ;;
++        -outdir)
++            if [ -z "$2" ]; then
++                echo "Error: -outdir requires an argument"
++                usage
++                exit 1
++            fi
++            OUTDIR="$2"
++            shift 2
++            ;;
++        -subsystem)
++            if [ -z "$2" ]; then
++                echo "Error: -subsystem requires an argument"
++                usage
++                exit 1
++            fi
++            SELECTED_SUBSYSTEMS="${2//,/ }"
++            shift 2
++            ;;
++        -h|--help)
++            usage
++            exit 0
++            ;;
++        *)
++            echo "Error: unknown argument: $1"
++            usage
++            exit 1
++            ;;
++    esac
++done
++
++if [ -z "$SELECTED_SUBSYSTEMS" ]; then
++    echo "Error: -subsystem is required"
++    usage
++    exit 1
++fi
++
++if has_word "$SELECTED_SUBSYSTEMS" "all"; then
++    SELECTED_SUBSYSTEMS="$ALL_SUBSYSTEMS"
++else
++    for subsystem in $SELECTED_SUBSYSTEMS; do
++        if ! has_word "$ALL_SUBSYSTEMS" "$subsystem"; then
++            echo "Error: unknown subsystem: $subsystem"
++            usage
++            exit 1
++        fi
++    done
++fi
++
++if [ -z "$SYZSPEC" ] || [ -z "$KERNSRC" ] || [ -z "$OUTDIR" ]; then
++    usage
++    exit 1
++fi
++
++SYZSPEC="$(resolve_path "$SYZSPEC")"
++KERNSRC="$(resolve_path "$KERNSRC")"
++OUTDIR="$(resolve_path "$OUTDIR" create)"
++
++KLEE="$SYZSPEC/build/bin/klee"
++LLVM_LINK="$(resolve_llvm_link || true)"
++
++if [ ! -x "$KLEE" ]; then
++    echo "Error: klee binary not found at $KLEE"
++    exit 1
++fi
++
++mkdir -p "$OUTDIR" && cd "$OUTDIR"
++
++###############################################################################
++# autofs - autofs device ioctl (fs/autofs/dev-ioctl.c)
++# Note: Prefer the dev-ioctl translation unit when available to keep the
++# analysis focused on the ioctl entry path and avoid opaque-struct crashes
++# seen with the full built-in.bc on newer kernels.
++###############################################################################
++if should_run_subsystem autofs; then
++mkdir -p autofs && cd autofs
++AUTOFS_BC="$KERNSRC/fs/autofs/dev-ioctl.bc"
++if [ ! -f "$AUTOFS_BC" ]; then
++    AUTOFS_BC="$KERNSRC/fs/autofs/built-in.bc"
++fi
++"$KLEE" \
++    --entry-point=autofs_dev_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_autofs" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="autofs" \
++    "$AUTOFS_BC"
++cd ..
++mark_launched autofs
++fi
++
++###############################################################################
++# ax25 - AX.25 amateur radio socket ioctl (net/ax25/af_ax25.c)
++###############################################################################
++if should_run_subsystem ax25; then
++mkdir -p ax25 && cd ax25
++"$KLEE" \
++    --entry-point=ax25_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_ax25" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="ax25" \
++    "$KERNSRC"/net/ax25/built-in.bc
++cd ..
++mark_launched ax25
++fi
++
++###############################################################################
++# btrfs - btrfs filesystem ioctl (fs/btrfs/ioctl.c)
++# Note: btrfs ioctl pulls in VFS idmap, namespace-tree, sysctl, and xattr
++# globals whose real definitions live outside ioctl.bc. Linking this targeted
++# set avoids the opaque-struct crash seen with plain ioctl.bc/built-in.bc.
++###############################################################################
++if should_run_subsystem btrfs; then
++mkdir -p btrfs && cd btrfs
++BTRFS_BC="$(pwd)/btrfs_ioctl_bundle.bc"
++if [ -z "$LLVM_LINK" ]; then
++    echo "Error: btrfs generation requires llvm-link compatible with LLVM 15 bitcode"
++    echo "Set LLVM_LINK to an llvm-link 15 binary and rerun the script."
++    exit 1
++fi
++
++BTRFS_LINK_INPUTS=(
++    "$KERNSRC/fs/btrfs/ioctl.bc"
++    "$KERNSRC/fs/btrfs/file.bc"
++    "$KERNSRC/fs/btrfs/inode.bc"
++    "$KERNSRC/fs/btrfs/super.bc"
++    "$KERNSRC/fs/btrfs/xattr.bc"
++    "$KERNSRC/fs/mnt_idmapping.bc"
++    "$KERNSRC/fs/namespace.bc"
++    "$KERNSRC/fs/namei.bc"
++    "$KERNSRC/fs/open.bc"
++    "$KERNSRC/fs/ioctl.bc"
++    "$KERNSRC/fs/read_write.bc"
++    "$KERNSRC/kernel/nstree.bc"
++    "$KERNSRC/kernel/nscommon.bc"
++    "$KERNSRC/kernel/sysctl.bc"
++)
++
++for btrfs_input in "${BTRFS_LINK_INPUTS[@]}"; do
++    if [ ! -f "$btrfs_input" ]; then
++        echo "Error: missing required btrfs link input: $btrfs_input"
++        exit 1
++    fi
++done
++
++echo "btrfs: linking targeted bitcode bundle for ioctl analysis..."
++"$LLVM_LINK" -o "$BTRFS_BC" "${BTRFS_LINK_INPUTS[@]}"
++
++"$KLEE" \
++    --entry-point=btrfs_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_btrfs" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="btrfs" \
++    "$BTRFS_BC"
++cd ..
++mark_launched btrfs
++fi
++
++###############################################################################
++# can - CAN BCM sendmsg (net/can/bcm.c)
++# Note: CAN sockets do not implement a custom ioctl handler. The BCM
++# (Broadcast Manager) sendmsg interface is the primary command entry point.
++# Prefer bcm.bc when available so KLEE only sees the relevant entry module.
++###############################################################################
++if should_run_subsystem can; then
++mkdir -p can && cd can
++CAN_BC="$KERNSRC/net/can/bcm.bc"
++if [ ! -f "$CAN_BC" ]; then
++    CAN_BC="$KERNSRC/net/can/built-in.bc"
++fi
++"$KLEE" \
++    --entry-point=bcm_sendmsg \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=sendmsg \
++    --spec-prefix="fd fd_syzspec_can_bcm" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="can" \
++    "$CAN_BC"
++cd ..
++mark_launched can
++fi
++
++###############################################################################
++# comedi - Comedi data acquisition ioctl (drivers/comedi/comedi_fops.c)
++###############################################################################
++if should_run_subsystem comedi; then
++mkdir -p comedi && cd comedi
++"$KLEE" \
++    --entry-point=comedi_unlocked_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_comedi" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="comedi" \
++    "$KERNSRC"/drivers/comedi/built-in.bc
++cd ..
++mark_launched comedi
++fi
++
++###############################################################################
++# dri - DRM/DRI ioctl (drivers/gpu/drm/drm_ioctl.c)
++# Note: Prefer drm_ioctl.bc to avoid pulling the entire DRM core into the
++# initial module when the ioctl entry point lives in a single translation unit.
++###############################################################################
++if should_run_subsystem dri; then
++mkdir -p dri && cd dri
++DRI_BC="$KERNSRC/drivers/gpu/drm/drm_ioctl.bc"
++if [ ! -f "$DRI_BC" ]; then
++    DRI_BC="$KERNSRC/drivers/gpu/drm/built-in.bc"
++fi
++"$KLEE" \
++    --entry-point=drm_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_dri" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="dri" \
++    "$DRI_BC"
++cd ..
++mark_launched dri
++fi
++
++###############################################################################
++# f2fs - F2FS filesystem ioctl (fs/f2fs/file.c)
++# Note: Prefer file.bc because f2fs_ioctl is implemented in file.c.
++###############################################################################
++if should_run_subsystem f2fs; then
++mkdir -p f2fs && cd f2fs
++F2FS_BC="$KERNSRC/fs/f2fs/file.bc"
++if [ ! -f "$F2FS_BC" ]; then
++    F2FS_BC="$KERNSRC/fs/f2fs/built-in.bc"
++fi
++"$KLEE" \
++    --entry-point=f2fs_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_f2fs" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="f2fs" \
++    "$F2FS_BC"
++cd ..
++mark_launched f2fs
++fi
++
++###############################################################################
++# fuse - FUSE device ioctl (fs/fuse/dev.c)
++# Note: Prefer dev.bc because fuse_dev_ioctl is implemented in dev.c.
++###############################################################################
++if should_run_subsystem fuse; then
++mkdir -p fuse && cd fuse
++FUSE_BC="$KERNSRC/fs/fuse/dev.bc"
++if [ ! -f "$FUSE_BC" ]; then
++    FUSE_BC="$KERNSRC/fs/fuse/built-in.bc"
++fi
++"$KLEE" \
++    --entry-point=fuse_dev_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_fuse" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="fuse" \
++    "$FUSE_BC"
++cd ..
++mark_launched fuse
++fi
++
++###############################################################################
++# i2c - I2C device ioctl (drivers/i2c/i2c-dev.c)
++###############################################################################
++if should_run_subsystem i2c; then
++mkdir -p i2c && cd i2c
++"$KLEE" \
++    --entry-point=i2cdev_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_i2c" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="i2c" \
++    "$KERNSRC"/drivers/i2c/built-in.bc
++cd ..
++mark_launched i2c
++fi
++
++###############################################################################
++# input - evdev input device ioctl (drivers/input/evdev.c)
++###############################################################################
++if should_run_subsystem input; then
++mkdir -p input && cd input
++"$KLEE" \
++    --entry-point=evdev_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_evdev" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="input" \
++    "$KERNSRC"/drivers/input/built-in.bc
++cd ..
++mark_launched input
++fi
++
++###############################################################################
++# kvm - KVM device ioctl (virt/kvm/kvm_main.c)
++# Note: Prefer kvm_main.bc because kvm_dev_ioctl is implemented there. Fall
++# back to built-in.bc or a temporary link if the build layout differs.
++###############################################################################
++if should_run_subsystem kvm; then
++mkdir -p kvm && cd kvm
++KVM_BC="$KERNSRC/virt/kvm/kvm_main.bc"
++if [ ! -f "$KVM_BC" ]; then
++    KVM_BC="$KERNSRC/virt/kvm/built-in.bc"
++fi
++if [ ! -f "$KVM_BC" ]; then
++    echo "kvm: kvm_main.bc and built-in.bc not found, linking from individual .bc files..."
++    KVM_BC="$(pwd)/kvm_built-in.bc"
++    "$LLVM_LINK" -o "$KVM_BC" "$KERNSRC"/virt/kvm/*.bc
++fi
++"$KLEE" \
++    --entry-point=kvm_dev_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_kvm" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="kvm" \
++    "$KVM_BC"
++cd ..
++mark_launched kvm
++fi
++
++###############################################################################
++# nilfs2 - NILFS2 filesystem ioctl (fs/nilfs2/ioctl.c)
++# Note: Prefer ioctl.bc because nilfs_ioctl is implemented in ioctl.c.
++###############################################################################
++if should_run_subsystem nilfs2; then
++mkdir -p nilfs2 && cd nilfs2
++NILFS2_BC="$KERNSRC/fs/nilfs2/ioctl.bc"
++if [ ! -f "$NILFS2_BC" ]; then
++    NILFS2_BC="$KERNSRC/fs/nilfs2/built-in.bc"
++fi
++"$KLEE" \
++    --entry-point=nilfs_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_nilfs2" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="nilfs2" \
++    "$NILFS2_BC"
++cd ..
++mark_launched nilfs2
++fi
++
++###############################################################################
++# ocfs2 - OCFS2 filesystem ioctl (fs/ocfs2/ioctl.c)
++# Note: Prefer ioctl.bc because ocfs2_ioctl is implemented in ioctl.c.
++###############################################################################
++if should_run_subsystem ocfs2; then
++mkdir -p ocfs2 && cd ocfs2
++OCFS2_BC="$KERNSRC/fs/ocfs2/ioctl.bc"
++if [ ! -f "$OCFS2_BC" ]; then
++    OCFS2_BC="$KERNSRC/fs/ocfs2/built-in.bc"
++fi
++"$KLEE" \
++    --entry-point=ocfs2_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_ocfs2" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="ocfs2" \
++    "$OCFS2_BC"
++cd ..
++mark_launched ocfs2
++fi
++
++###############################################################################
++# phonet - Phonet socket ioctl (net/phonet/socket.c)
++# Note: Prefer socket.bc because pn_socket_ioctl is implemented in socket.c.
++###############################################################################
++if should_run_subsystem phonet; then
++mkdir -p phonet && cd phonet
++PHONET_BC="$KERNSRC/net/phonet/socket.bc"
++if [ ! -f "$PHONET_BC" ]; then
++    PHONET_BC="$KERNSRC/net/phonet/built-in.bc"
++fi
++"$KLEE" \
++    --entry-point=pn_socket_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_phonet" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="phonet" \
++    "$PHONET_BC"
++cd ..
++mark_launched phonet
++fi
++
++###############################################################################
++# ppp - PPP device ioctl (drivers/net/ppp/ppp_generic.c)
++###############################################################################
++if should_run_subsystem ppp; then
++mkdir -p ppp && cd ppp
++"$KLEE" \
++    --entry-point=ppp_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_ppp" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="ppp" \
++    "$KERNSRC"/drivers/net/ppp/built-in.bc
++cd ..
++mark_launched ppp
++fi
++
++###############################################################################
++# ptp - PTP clock device ioctl (drivers/ptp/ptp_chardev.c)
++###############################################################################
++if should_run_subsystem ptp; then
++mkdir -p ptp && cd ptp
++"$KLEE" \
++    --entry-point=ptp_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_ptp" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="ptp" \
++    "$KERNSRC"/drivers/ptp/built-in.bc
++cd ..
++mark_launched ptp
++fi
++
++###############################################################################
++# rdma_cm - RDMA CM write-based interface (drivers/infiniband/core/ucma.c)
++###############################################################################
++if should_run_subsystem rdma_cm; then
++mkdir -p rdma_cm && cd rdma_cm
++"$KLEE" \
++    --entry-point=ucma_write \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=write \
++    --spec-prefix="fd fd_syzspec_rdma_cm" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="rdma_cm" \
++    "$KERNSRC"/drivers/infiniband/core/built-in.bc
++cd ..
++mark_launched rdma_cm
++fi
++
++###############################################################################
++# sequencer - ALSA sequencer ioctl (sound/core/seq/seq_clientmgr.c)
++###############################################################################
++if should_run_subsystem sequencer; then
++mkdir -p sequencer && cd sequencer
++"$KLEE" \
++    --entry-point=snd_seq_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_snd_seq" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="sequencer" \
++    "$KERNSRC"/sound/core/seq/built-in.bc
++cd ..
++mark_launched sequencer
++fi
++
++###############################################################################
++# sg - SCSI generic device ioctl (drivers/scsi/sg.c)
++###############################################################################
++if should_run_subsystem sg; then
++mkdir -p sg && cd sg
++"$KLEE" \
++    --entry-point=sg_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_sg" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="sg" \
++    "$KERNSRC"/drivers/scsi/built-in.bc
++cd ..
++mark_launched sg
++fi
++
++###############################################################################
++# x25 - X.25 socket ioctl (net/x25/af_x25.c)
++###############################################################################
++if should_run_subsystem x25; then
++mkdir -p x25 && cd x25
++"$KLEE" \
++    --entry-point=x25_ioctl \
++    --spec-arguments-index=1 \
++    --spec-arguments-num=2 \
++    --spec-interface-name=ioctl \
++    --spec-prefix="fd fd_syzspec_x25" \
++    --spec-suffix="" \
++    --max-time=24h \
++    --spec-output="x25" \
++    "$KERNSRC"/net/x25/built-in.bc
++cd ..
++mark_launched x25
++fi
++
++echo "============================================"
++if [ "$SELECTED_SUBSYSTEMS" = "$ALL_SUBSYSTEMS" ]; then
++    echo "All 20 subsystem tasks completed."
++else
++    echo "Selected subsystem tasks completed."
++fi
++echo "Output directory: $OUTDIR"
++echo ""
++echo "Launched subsystems:"
++echo "  ${LAUNCHED_SUBSYSTEMS# }"
++echo ""
++echo "Tasks ran in the foreground, sequentially."
++echo "Each task has a 24-hour timeout."
++echo "============================================"
