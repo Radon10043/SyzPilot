@@ -1067,12 +1067,13 @@ make target TARGETOS=netbsd SOURCEDIR=$EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5 CC
 
 (host) directly use generated specs:
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/KernelGPT
+cd $EXPERIMENT_ROOT/fuzzer
+git clone https://github.com/ise-uiuc/KernelGPT
+cd KernelGPT && git checkout e3464d23b8d59ffffb1bd5b2f7100c102c48bb3d
 git apply -3 $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGPT/repo.patch
-git submodule update --init syzkaller-KernelGPT syzkaller-KernelGEM
-git -C syzkaller-KernelGPT apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGPT/specs#linux-v6.7#gpt-4.patch
-git -C syzkaller-KernelGEM apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGPT/specs#linux-v6.18#gemini-3-flash-preview.patch
-make -C syzkaller-KernelGPT all && make -C syzkaller-KernelGEM all
+git submodule update --init --depth 1 --progress syzkaller
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGPT/specs#linux-v6.7#gpt-4.patch
+make -C syzkaller all
 ```
 
 [docs for generating specs via KernelGPT](./KernelGPT/README.md)
@@ -1081,11 +1082,13 @@ make -C syzkaller-KernelGPT all && make -C syzkaller-KernelGEM all
 
 (host) directly use generated specs:
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/KernelGPT
-git apply -3 $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGPT/repo.patch
-git submodule update --init syzkaller-KernelGEM
-git -C syzkaller-KernelGEM apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGPT/specs#linux-v6.18#gemini-3-flash-preview.patch
-make -C syzkaller-KernelGEM all
+cd $EXPERIMENT_ROOT/fuzzer
+git clone https://github.com/ise-uiuc/KernelGPT KernelGEM
+cd KernelGEM && git checkout e3464d23b8d59ffffb1bd5b2f7100c102c48bb3d
+git apply -3 $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGEM/repo.patch
+git submodule update --init --depth 1 --progress sytzkaller
+git -C sytzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGEM/specs/linux-v6.18-kernel#gemini-3-flash-preview.patch
+make -C sytzkaller all
 ```
 
 [docs for generating specs via KernelGEM](./KernelGPT/README.md)
