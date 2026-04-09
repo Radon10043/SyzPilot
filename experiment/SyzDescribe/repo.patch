@@ -1396,6 +1396,194 @@ index 0000000..55e254b
 +    fi
 +    cd - > /dev/null
 +done
+diff --git a/script/genspec_subsystems.sh b/script/genspec_subsystems.sh
+new file mode 100755
+index 0000000..bfa481e
+--- /dev/null
++++ b/script/genspec_subsystems.sh
+@@ -0,0 +1,182 @@
++#!/bin/bash
++# Run SyzDescribe for specific subsystems (with parallel execution).
++#
++# Usage:
++#   bash ./script/genspec_subsystems.sh -o <OUTDIR> [-j <JOBS>]
++#
++# Target subsystems: autofs, comedi, dri, fuse, i2c, input,
++#                    kvm, ppp, ptp, rdma_cm, sequencer, sg
++
++set -euo pipefail
++
++KERNEL_DIR="/vol/linux/v6.18/build4SyzDescribe"
++REPO_DIR=$(realpath "$(dirname "$0")/..")
++SYZDESCRIBE_BIN="$REPO_DIR/build/tools/SyzDescribe/SyzDescribe"
++KNOWLEDGE="$REPO_DIR/config/knowledge.json"
++VERSION="v6.18"
++TIMEOUT_DURATION="60m"
++MAX_JOBS=$(nproc)
++OUTDIR=""
++
++print_help() {
++    echo "usage: $0 [ARGS]"
++    echo "  -o, --outdir <PATH>       Output directory (required)"
++    echo "  -j, --jobs <N>            Max parallel jobs (default: nproc=$(nproc))"
++    echo "  -t, --timeout <DURATION>  Timeout per subsystem (default: 60m)"
++    echo "  -h, --help                Show this help"
++}
++
++while [[ $# -gt 0 ]]; do
++    case "$1" in
++        -o|--outdir) OUTDIR="$2"; shift 2 ;;
++        -j|--jobs) MAX_JOBS="$2"; shift 2 ;;
++        -t|--timeout) TIMEOUT_DURATION="$2"; shift 2 ;;
++        -h|--help) print_help; exit 0 ;;
++        *) echo "Unknown argument: $1"; print_help; exit 1 ;;
++    esac
++done
++
++if [[ -z "$OUTDIR" ]]; then
++    echo "Error: Output directory is required."
++    print_help
++    exit 1
++fi
++
++# Map subsystem names -> bitcode paths
++declare -A SUBSYSTEMS=(
++    ["autofs"]="$KERNEL_DIR/fs/autofs/built-in.bc"
++    ["comedi"]="$KERNEL_DIR/drivers/comedi/built-in.bc"
++    ["dri"]="$KERNEL_DIR/drivers/gpu/drm/built-in.bc"
++    ["fuse"]="$KERNEL_DIR/fs/fuse/built-in.bc"
++    ["i2c"]="$KERNEL_DIR/drivers/i2c/built-in.bc"
++    ["input"]="$KERNEL_DIR/drivers/input/built-in.bc"
++    ["kvm"]="__kvm_linked__"
++    ["ppp"]="$KERNEL_DIR/drivers/net/ppp/built-in.bc"
++    ["ptp"]="$KERNEL_DIR/drivers/ptp/built-in.bc"
++    ["rdma_cm"]="$KERNEL_DIR/drivers/infiniband/core/built-in.bc"
++    ["sequencer"]="$KERNEL_DIR/sound/core/seq/built-in.bc"
++    ["sg"]="$KERNEL_DIR/drivers/scsi/sg.bc"
++)
++
++# Wait until the number of running background jobs drops below MAX_JOBS.
++wait_for_slot() {
++    while [[ $(jobs -rp | wc -l) -ge $MAX_JOBS ]]; do
++        wait -n 2>/dev/null || true
++    done
++}
++
++run_syzdescribe() {
++    local name="$1"
++    local bc_path="$2"
++    local workdir="$OUTDIR/$name"
++    local logfile="$workdir/run.log"
++
++    if [[ -d "$workdir" ]]; then
++        echo "[$name] skip (already exists: $workdir)"
++        return
++    fi
++
++    if [[ ! -f "$bc_path" ]]; then
++        echo "[$name] ERROR: bitcode not found: $bc_path"
++        return
++    fi
++
++    mkdir -p "$workdir"
++    cat <<EOF > "$workdir/config.json"
++{
++    "bitcode": "$bc_path",
++    "knowledge": "$KNOWLEDGE",
++    "version": "$VERSION"
++}
++EOF
++
++    echo "[$name] Started  ($bc_path)"
++    (
++        cd "$workdir"
++        if timeout "$TIMEOUT_DURATION" "$SYZDESCRIBE_BIN" --config=config.json >run.log 2>&1; then
++            echo "[$name] Done: success"
++        else
++            local exit_code=$?
++            if [[ $exit_code -eq 124 ]]; then
++                echo "[$name] Done: timeout"
++            else
++                echo "[$name] Done: failed (exit code: $exit_code)"
++            fi
++        fi
++    ) &
++}
++
++mkdir -p "$OUTDIR"
++OUTDIR=$(realpath "$OUTDIR")
++echo "Running with up to $MAX_JOBS parallel jobs (timeout: $TIMEOUT_DURATION)"
++
++# --- Build linked KVM bitcode -----------------------------------------------------------
++# KVM's driver registration (misc_register) lives in virt/kvm/kvm_main.c, while the
++# module_init entry points are in arch/x86/kvm/x86.c (kvm_x86_init) and the vendor
++# modules (vmx/main.bc → vt_init, svm/svm.bc → svm_init).  Analysing individual .bc
++# files fails because the call chain crosses compilation-unit boundaries.  We use
++# llvm-link to merge the essential files into one bitcode so SyzDescribe can follow
++# the init → registration path.
++#
++# NOTE: We intentionally exclude the large implementation files (vmx/vmx.bc,
++# vmx/nested.bc, svm/nested.bc, etc.) because linking them creates a call graph
++# too complex for SyzDescribe's DFS traversal, causing it to miss the
++# misc_register chain.  The minimal set below (virt/kvm core + module entry
++# points + arch/x86/kvm glue) is sufficient.
++KVM_LINKED_BC="$OUTDIR/kvm_linked.bc"
++if [[ ! -f "$KVM_LINKED_BC" ]]; then
++    kvm_bc_files=()
++
++    # Core KVM files (includes kvm_main.bc with the misc_register call)
++    for f in "$KERNEL_DIR"/virt/kvm/*.bc; do
++        [[ -f "$f" ]] && kvm_bc_files+=("$f")
++    done
++
++    # Arch-level KVM files (x86.bc has kvm_x86_init)
++    for f in "$KERNEL_DIR"/arch/x86/kvm/*.bc; do
++        [[ -f "$f" ]] && kvm_bc_files+=("$f")
++    done
++
++    # Only the module entry points from vmx/svm (NOT the large impl files)
++    for f in "$KERNEL_DIR"/arch/x86/kvm/vmx/main.bc \
++             "$KERNEL_DIR"/arch/x86/kvm/svm/svm.bc; do
++        [[ -f "$f" ]] && kvm_bc_files+=("$f")
++    done
++
++    if [[ ${#kvm_bc_files[@]} -gt 0 ]]; then
++        echo "[kvm] Linking ${#kvm_bc_files[@]} bitcode files with llvm-link ..."
++        if llvm-link --suppress-warnings "${kvm_bc_files[@]}" -o "$KVM_LINKED_BC" 2>&1; then
++            echo "[kvm] Linked bitcode: $KVM_LINKED_BC ($(du -h "$KVM_LINKED_BC" | cut -f1))"
++        else
++            echo "[kvm] ERROR: llvm-link failed"
++            rm -f "$KVM_LINKED_BC"
++        fi
++    else
++        echo "[kvm] ERROR: no .bc files found under KVM directories"
++    fi
++fi
++
++# --- Launch analysis jobs ----------------------------------------------------------------
++for name in autofs comedi dri fuse i2c input kvm ppp ptp rdma_cm sequencer sg; do
++    bc_entry="${SUBSYSTEMS[$name]}"
++
++    if [[ "$name" == "kvm" ]]; then
++        # Analyse the linked KVM bitcode as a single unit.
++        if [[ -f "$KVM_LINKED_BC" ]]; then
++            wait_for_slot
++            run_syzdescribe "kvm" "$KVM_LINKED_BC"
++        else
++            echo "[kvm] skip: linked bitcode not available"
++        fi
++    else
++        wait_for_slot
++        run_syzdescribe "$name" "$bc_entry"
++    fi
++done
++
++# Wait for all remaining background jobs to finish.
++wait
++
++echo ""
++echo "=== All jobs finished. Generated syscall descriptions ==="
++find "$OUTDIR" -name "syz_describe_*.txt" -exec echo "  {}" \;
 diff --git a/script/syzlang_run.py b/script/syzlang_run.py
 index 9034da1..c27568a 100644
 --- a/script/syzlang_run.py
