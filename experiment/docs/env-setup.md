@@ -1076,7 +1076,7 @@ git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGPT/specs#
 make -C syzkaller all
 ```
 
-[docs for generating specs via KernelGPT](./KernelGPT/README.md)
+[docs for generating specs via KernelGPT](../KernelGPT/README.md)
 
 ### setup fuzzer/KernelGEM
 
@@ -1091,7 +1091,7 @@ git -C sytzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGEM/specs
 make -C sytzkaller all
 ```
 
-[docs for generating specs via KernelGEM](./KernelGPT/README.md)
+[docs for generating specs via KernelGEM](../KernelGPT/README.md)
 
 ### setup fuzzer/SyzDescribe
 
@@ -1104,7 +1104,7 @@ git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzDescribe/spec
 make -C syzkaller all
 ```
 
-[docs for generating specs via SyzDescribe](./SyzDescribe/README.md)
+[docs for generating specs via SyzDescribe](../SyzDescribe/README.md)
 
 ### setup fuzzer/SyzGenPlusPlus
 
@@ -1117,7 +1117,7 @@ git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzGenPlusPlus/s
 make -C syzkaller all
 ```
 
-[docs for generating specs via SyzGenPlusPlus](./SyzGenPlusPlus/README.md)
+[docs for generating specs via SyzGenPlusPlus](../SyzGenPlusPlus/README.md)
 
 ### setup fuzzer/SyzSpec
 
@@ -1130,7 +1130,7 @@ git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzSpec/specs#li
 make -C syzkaller all
 ```
 
-[docs for generating specs via SyzSpec](./SyzSpec/README.md)
+[docs for generating specs via SyzSpec](../SyzSpec/README.md)
 
 ### update docker-compose files
 
