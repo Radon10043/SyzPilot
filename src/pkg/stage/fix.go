@@ -67,10 +67,15 @@ func ExecFixStep(kAgent *agent.Agent, sysPrompt string, logger *log.Logger, sh *
 	bfPool.Merge(sh.Spool)
 	bfSpec = bfPool.Syzlang()
 	if afSpec, valid, err = fixSpec(kAgent, sysPrompt, bfSpec, logger, sh); err != nil {
-		return err
+		logger.Printf("failed to fix spec, reuse the old one: %v\n", err)
 	}
-	if err = sh.SaveQueryMessages(kAgent, "fix-"); err != nil {
-		return err
+
+	// the first message is system prompt, the second is human message, we only
+	// save messages if llm has response
+	if len(kAgent.Messages) > 2 {
+		if err = sh.SaveQueryMessages(kAgent, "fix-"); err != nil {
+			return err
+		}
 	}
 
 	// if new spec is valid, assigned it to sh.Spool
