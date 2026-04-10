@@ -1,0 +1,2266 @@
+diff --git a/sys/linux/syz_spec_autofs.txt b/sys/linux/syz_spec_autofs.txt
+new file mode 100644
+index 000000000..d147da0d5
+--- /dev/null
++++ b/sys/linux/syz_spec_autofs.txt
+@@ -0,0 +1,43 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_18446744072022016452_1(fd fd_autofs, arg0 const[1819044972], arg1 const[0])
++ioctl$syz_spec_18446744072022016452_2(fd fd_autofs, arg0 const[4294939647], arg1 const[0])
++ioctl$syz_spec_18446744072022016452_8(fd fd_autofs, arg0 const[1903268721], arg1 ptr[in, struct_autofs_dev_ioctl_9438370935523388214_18446744072022016452])
++ioctl$syz_spec_18446744072022016452_9(fd fd_autofs, arg0 const[1903268721], arg1 ptr[out, struct_5861081775771295140_18446744072022016452])
++ioctl$syz_spec_18446744072022016452_4183(fd fd_autofs, arg0 const[2122224510], arg1 ptr[in, struct_autofs_dev_ioctl_9438370935523388214_18446744072022016452])
++ioctl$syz_spec_18446744072022016452_4184(fd fd_autofs, arg0 const[2122224510], arg1 ptr[in, struct_5861081775771295140_18446744072022016452])
++ioctl$syz_spec_18446744072022016452_4243(fd fd_autofs, arg0 const[2021167992], arg1 const[0])
++ioctl$syz_spec_18446744072022016452_4247(fd fd_autofs, arg0 const[1920111474], arg1 ptr[in, struct_autofs_dev_ioctl_9438370935523388214_18446744072022016452])
++ioctl$syz_spec_18446744072022016452_4248(fd fd_autofs, arg0 const[1920111474], arg1 ptr[in, struct_5861081775771295140_18446744072022016452])
++ioctl$syz_spec_18446744072022016452_4255(fd fd_autofs, arg0 const[2054853498], arg1 ptr[out, struct_5861081775771295140_18446744072022016452])
++
++union_anon_123_14794005318363664933_18446744072022016452 {
++    field_0    struct_args_timeout_606207565407687920_18446744072022016452
++} [packed]
++
++struct_5861081775771295140_18446744072022016452 {
++    field_0    struct_autofs_dev_ioctl_17074956259781083336_18446744072022016452
++    field_1    array[int8, 1:4096]
++} [packed]
++
++struct_autofs_dev_ioctl_17074956259781083336_18446744072022016452 {
++    field_0    int32[0:32]
++    field_1    int32
++    field_2    int32[25:4120]
++    field_3    int32[0:32]
++    field_4    union_anon_123_14794005318363664933_18446744072022016452
++    field_5    array[int8[0:8], 0]
++} [packed]
++
++struct_args_timeout_606207565407687920_18446744072022016452 {
++    field_0    int64[0:18446744073709551615]
++} [packed]
++
++struct_autofs_dev_ioctl_9438370935523388214_18446744072022016452 {
++    field_0    int32[0:32]
++    field_1    int32[0:32]
++    field_2    int32
++    field_3    int32[0:32]
++    field_4    union_anon_123_14794005318363664933_18446744072022016452
++} [packed]
++
+diff --git a/sys/linux/syz_spec_ax25.txt b/sys/linux/syz_spec_ax25.txt
+new file mode 100644
+index 000000000..ccd20b66a
+--- /dev/null
++++ b/sys/linux/syz_spec_ax25.txt
+@@ -0,0 +1,403 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_18446744073463301528_1(fd sock_ax25, arg0 const[21521], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744073463301528_7(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_9(fd sock_ax25, arg0 const[35093], arg1 const[0])
++ioctl$syz_spec_18446744073463301528_10(fd sock_ax25, arg0 const[30257], arg1 const[0])
++ioctl$syz_spec_18446744073463301528_11(fd sock_ax25, arg0 const[35306], arg1 const[0])
++ioctl$syz_spec_18446744073463301528_12(fd sock_ax25, arg0 const[35307], arg1 ptr[in, struct_ax25_fwd_struct_16315833611688218134_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_13(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_15(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_16(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_17(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_18(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_19(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_20(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_21(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_22(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_23(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_24(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_25(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_26(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_27(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_28(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_29(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_30(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_31(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_32(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_33(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_34(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_35(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_36(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_37(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_38(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_40(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_41(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_42(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_45(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_46(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_47(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_48(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_49(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_50(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_51(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_52(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_53(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_54(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_55(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_56(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_57(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_58(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_59(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_60(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_61(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_62(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_63(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_64(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_65(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_66(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_67(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_68(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_69(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_70(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_71(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_72(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_73(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_74(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_75(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_76(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_77(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_78(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_79(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_80(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_81(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_82(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_83(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_84(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_85(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_86(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_87(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_88(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_89(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_90(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_91(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_92(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_93(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_94(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_96(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_97(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_98(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_99(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_100(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_101(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_102(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_103(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_104(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_105(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_106(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_107(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_108(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_109(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_110(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_111(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_112(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_113(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_114(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_115(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_116(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_117(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_118(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_119(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_120(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_121(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_122(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_123(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_124(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_125(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_126(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_127(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_128(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_129(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_130(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_131(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_132(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_133(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_134(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_135(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_136(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_137(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_138(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_139(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_140(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_141(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_142(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_143(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_144(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_145(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_146(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_147(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_148(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_149(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_150(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_151(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_152(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_153(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_154(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_155(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_156(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_157(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_158(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_159(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_160(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_161(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_162(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_163(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_164(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_165(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_166(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_167(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_168(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_169(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_170(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_171(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_172(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_173(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_174(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_175(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_176(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_177(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_178(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_179(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_180(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_181(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_182(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_183(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_184(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_185(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_186(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_187(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_188(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_189(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_190(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_191(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_192(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_193(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_194(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_195(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_196(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_197(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_198(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_199(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_200(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_201(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_202(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_203(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_204(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_205(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_206(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_207(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_208(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_209(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_210(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_211(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_212(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_213(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_214(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_215(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_216(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_217(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_218(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_219(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_220(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_221(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_222(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_223(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_224(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_225(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_226(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_227(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_228(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_229(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_230(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_231(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_232(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_233(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_234(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_235(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_236(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_237(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_238(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_239(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_240(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_241(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_242(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_243(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_244(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_245(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_246(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_247(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_248(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_249(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_250(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_251(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_252(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_253(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_254(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_255(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_256(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_257(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_259(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_260(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_261(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_262(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_263(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_264(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_265(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_266(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_267(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_268(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_269(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_270(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_271(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_272(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_273(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_274(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_275(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_276(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_277(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_278(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_279(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_280(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_281(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_282(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_283(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_284(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_285(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_286(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_287(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_288(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_289(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_290(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_291(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_292(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_293(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_294(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_295(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_296(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_297(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_298(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_299(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_300(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_301(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_302(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_303(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_304(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_305(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_306(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_307(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_308(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_309(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_310(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_311(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_312(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_313(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_314(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_315(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_316(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_317(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_318(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_319(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_320(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_321(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_322(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_323(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_324(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_325(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_326(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_327(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_328(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_329(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_330(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_331(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_332(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_333(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_334(fd sock_ax25, arg0 const[35309], arg1 ptr[out, struct_ax25_info_struct_6889082180690371945_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_335(fd sock_ax25, arg0 const[35305], arg1 ptr[out, array[int8, 52]])
++ioctl$syz_spec_18446744073463301528_336(fd sock_ax25, arg0 const[35304], arg1 const[0])
++ioctl$syz_spec_18446744073463301528_339(fd sock_ax25, arg0 const[35304], arg1 ptr[in, struct_ax25_ctl_struct_9932648524281343442_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_344(fd sock_ax25, arg0 const[35303], arg1 const[0])
++ioctl$syz_spec_18446744073463301528_347(fd sock_ax25, arg0 const[35084], arg1 ptr[in, struct_ax25_routes_struct_5850737964303426289_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_349(fd sock_ax25, arg0 const[35083], arg1 ptr[in, struct_ax25_routes_struct_5850737964303426289_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_351(fd sock_ax25, arg0 const[35303], arg1 ptr[in, struct_ax25_route_opt_struct_3987254901840460659_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_352(fd sock_ax25, arg0 const[35299], arg1 const[0])
++ioctl$syz_spec_18446744073463301528_354(fd sock_ax25, arg0 const[35299], arg1 ptr[in, int64])
++ioctl$syz_spec_18446744073463301528_358(fd sock_ax25, arg0 const[35298], arg1 ptr[in, struct_sockaddr_ax25_5483420959736493808_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_382(fd sock_ax25, arg0 const[35297], arg1 ptr[in, struct_sockaddr_ax25_5483420959736493808_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_416(fd sock_ax25, arg0 const[35296], arg1 ptr[in, struct_sockaddr_ax25_5483420959736493808_18446744073463301528])
++ioctl$syz_spec_18446744073463301528_436(fd sock_ax25, arg0 const[21531], arg1 ptr[out, int32])
++
++struct_ax25_address_4648590935996752575_18446744073463301528 {
++    field_0    array[int8[0:8], 7]
++} [packed]
++
++struct_ax25_info_struct_6889082180690371945_18446744073463301528 {
++    field_0    int32[0:8]
++    field_1    int32[0:8]
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    int32[0:32]
++    field_5    int32[0:32]
++    field_6    int32[0:32]
++    field_7    int32[0:32]
++    field_8    int32[0:32]
++    field_9    int32[0:32]
++    field_10    int32[0:8]
++    field_11    int32[0:32]
++    field_12    int32[0:32]
++    field_13    int32[0:16]
++    field_14    int32[0:16]
++    field_15    int32[0:16]
++    field_16    int32[0:16]
++    field_17    int32[0:16]
++    field_18    int32[0:8]
++} [packed]
++
++_18446744073463301528 {
++    field_0    array[int8[0:8], 7]
++} [packed]
++
++struct_ax25_ctl_struct_9932648524281343442_18446744073463301528 {
++    field_0    struct_ax25_address_4648590935996752575_18446744073463301528
++    field_1    struct_ax25_address_4648590935996752575_18446744073463301528
++    field_2    struct_ax25_address_4648590935996752575_18446744073463301528
++    field_3    int32[0:1677721599]
++    field_4    int64[0:18446744073692774400]
++    field_5    int8[0:8]
++    field_6    array[_18446744073463301528, 8]
++} [packed]
++
++struct_ax25_fwd_struct_16315833611688218134_18446744073463301528 {
++    field_0    struct_ax25_address_4648590935996752575_18446744073463301528
++    field_1    struct_ax25_address_4648590935996752575_18446744073463301528
++} [packed]
++
++struct_sockaddr_ax25_5483420959736493808_18446744073463301528 {
++    field_0    int16[0:16]
++    field_1    struct_ax25_address_4648590935996752575_18446744073463301528
++    field_2    int32[0:32]
++} [packed]
++
++struct_ax25_routes_struct_5850737964303426289_18446744073463301528 {
++    field_0    struct_ax25_address_4648590935996752575_18446744073463301528
++    field_1    struct_ax25_address_4648590935996752575_18446744073463301528
++    field_2    int8
++    field_3    array[_18446744073463301528, 8]
++} [packed]
++
++struct_ax25_route_opt_struct_3987254901840460659_18446744073463301528 {
++    field_0    struct_ax25_address_4648590935996752575_18446744073463301528
++    field_1    struct_ax25_address_4648590935996752575_18446744073463301528
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++} [packed]
++
+diff --git a/sys/linux/syz_spec_btrfs.txt b/sys/linux/syz_spec_btrfs.txt
+new file mode 100644
+index 000000000..f257a49ba
+--- /dev/null
++++ b/sys/linux/syz_spec_btrfs.txt
+@@ -0,0 +1,78 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_18446744073672024102_1(fd fd, arg0 const[37934], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_2(fd fd, arg0 const[37896], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_3(fd fd, arg0 const[37916], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_4(fd fd, arg0 const[1074041889], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_5(fd fd, arg0 const[1074304019], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_6(fd fd, arg0 const[1074304022], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_7(fd fd, arg0 const[1074304026], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_8(fd fd, arg0 const[1074828353], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_9(fd fd, arg0 const[1074828330], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_10(fd fd, arg0 const[1075352617], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_11(fd fd, arg0 const[1076925497], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_12(fd fd, arg0 const[1076925456], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_13(fd fd, arg0 const[1077974060], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_14(fd fd, arg0 const[1078236198], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_15(fd fd, arg0 const[1078498342], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_16(fd fd, arg0 const[1081644096], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_17(fd fd, arg0 const[1082156677], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_18(fd fd, arg0 const[1082168384], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_19(fd fd, arg0 const[1090556978], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_20(fd fd, arg0 const[1342215226], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_21(fd fd, arg0 const[1342215231], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_22(fd fd, arg0 const[1342215169], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_23(fd fd, arg0 const[1342215170], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_24(fd fd, arg0 const[1342215171], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_25(fd fd, arg0 const[1342215178], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_26(fd fd, arg0 const[1342215179], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_27(fd fd, arg0 const[1342215182], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_28(fd fd, arg0 const[1342215183], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_29(fd fd, arg0 const[1342215191], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_30(fd fd, arg0 const[1342215192], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_31(fd fd, arg0 const[2148038145], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_32(fd fd, arg0 const[2148045848], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_33(fd fd, arg0 const[2148045849], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_34(fd fd, arg0 const[2149094457], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_35(fd fd, arg0 const[2150667307], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_36(fd fd, arg0 const[2151715885], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_37(fd fd, arg0 const[2152240185], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_38(fd fd, arg0 const[2155385920], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_39(fd fd, arg0 const[2155910208], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_40(fd fd, arg0 const[2164298801], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_41(fd fd, arg0 const[2180551740], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_42(fd fd, arg0 const[2214630434], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_43(fd fd, arg0 const[2214630431], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_44(fd fd, arg0 const[3221513862], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_45(fd fd, arg0 const[3222311976], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_46(fd fd, arg0 const[3222311956], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_47(fd fd, arg0 const[3222820985], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_48(fd fd, arg0 const[3223873159], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_49(fd fd, arg0 const[3224933411], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_50(fd fd, arg0 const[3224933412], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_51(fd fd, arg0 const[3224933435], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_52(fd fd, arg0 const[3228603409], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_53(fd fd, arg0 const[3233846309], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_54(fd fd, arg0 const[3234370597], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_55(fd fd, arg0 const[3288372256], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_56(fd fd, arg0 const[3288372251], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_57(fd fd, arg0 const[3288372253], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_58(fd fd, arg0 const[3288896564], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_59(fd fd, arg0 const[3391657013], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_60(fd fd, arg0 const[3489698877], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_61(fd fd, arg0 const[3489698878], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_62(fd fd, arg0 const[3489698833], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_63(fd fd, arg0 const[3489698834], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_65(fd fd, arg0 const[537040174], arg1 const[0])
++ioctl$syz_spec_18446744073672024102_69(fd fd, arg0 const[3489698846], arg1 ptr[out, struct_btrfs_ioctl_dev_info_args_4071266693065462687_18446744073672024102])
++
++struct_btrfs_ioctl_dev_info_args_4071266693065462687_18446744073672024102 {
++    field_0    int64[0:64]
++    field_1    array[int8[0:8], 16]
++    field_2    int64[0:64]
++    field_3    int64[0:64]
++    field_4    array[int8[0:8], 16]
++    field_5    array[int64[0:64], 377]
++    field_6    array[int8[0:8], 1024]
++} [packed]
++
+diff --git a/sys/linux/syz_spec_can.txt b/sys/linux/syz_spec_can.txt
+new file mode 100644
+index 000000000..90fe9b81b
+--- /dev/null
++++ b/sys/linux/syz_spec_can.txt
+@@ -0,0 +1,79 @@
++meta arches["amd64"]
++
++sendmsg$syz_spec_18446744072707065692_1(fd sock_can_bcm, arg0 const[0], arg1 const[55])
++sendmsg$syz_spec_18446744072707065692_2(fd sock_can_bcm, arg0 const[0], arg1 const[0])
++sendmsg$syz_spec_18446744072707065692_5(fd sock_can_bcm, arg0 const[0], arg1 int64)
++sendmsg$syz_spec_18446744072707065692_6(fd sock_can_bcm, arg0 const[0], arg1 const[56])
++sendmsg$syz_spec_18446744072707065692_8(fd sock_can_bcm, arg0 ptr[in, struct_msghdr_13230957512840555515_18446744072707065692], arg1 const[56])
++sendmsg$syz_spec_18446744072707065692_11(fd sock_can_bcm, arg0 ptr[in, struct_msghdr_5478250488781320940_18446744072707065692], arg1 const[56])
++
++union_anon_5_17197850281381924723_18446744072707065692 {
++    field_0    struct_iovec_14407030617104035601_18446744072707065692
++} [packed]
++
++union_anon_16_606207565407687920_18446744072707065692 {
++    field_0    int64[0:64]
++} [packed]
++
++struct_msghdr_13230957512840555515_18446744072707065692 {
++    field_0    int64
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    struct_iov_iter_8072464719988010544_18446744072707065692
++    field_4    union_anon_64_606207565407687920_18446744072707065692
++    field_5    int8[0:8]
++    field_6    int32[0:32]
++    field_7    int64[0:64]
++    field_8    int64[0:64]
++    field_9    int64[0:64]
++    field_10    int64[0:64]
++} [packed]
++
++struct_iovec_14407030617104035601_18446744072707065692 {
++    field_0    int64[0:64]
++    field_1    int64[0:64]
++} [packed]
++
++struct_iov_iter_8072464719988010544_18446744072707065692 {
++    field_0    int8[0:8]
++    field_1    int8[0:8]
++    field_2    int8[0:8]
++    field_3    int64[0:64]
++    field_4    union_anon_5_17197850281381924723_18446744072707065692
++    field_5    union_anon_16_606207565407687920_18446744072707065692
++} [packed]
++
++struct_msghdr_5478250488781320940_18446744072707065692 {
++    field_0    ptr[in, struct_sockaddr_can_6729401484075694869_18446744072707065692]
++    field_1    int32
++    field_2    int32[0:32]
++    field_3    struct_iov_iter_8072464719988010544_18446744072707065692
++    field_4    union_anon_64_606207565407687920_18446744072707065692
++    field_5    int8[0:8]
++    field_6    int32[0:32]
++    field_7    int64[0:64]
++    field_8    int64[0:64]
++    field_9    int64[0:64]
++    field_10    int64[0:64]
++} [packed]
++
++union_anon_64_606207565407687920_18446744072707065692 {
++    field_0    int64[0:64]
++} [packed]
++
++struct_anon_320_16946835759349413412_18446744072707065692 {
++    field_0    int64[0:18446744073709486080]
++    field_1    int32[0:32]
++    field_2    int8[0:8]
++} [packed]
++
++struct_sockaddr_can_6729401484075694869_18446744072707065692 {
++    field_0    int16[0:29]
++    field_1    int32[0:32]
++    field_2    union_anon_318_480215045529214000_18446744072707065692
++} [packed]
++
++union_anon_318_480215045529214000_18446744072707065692 {
++    field_0    struct_anon_320_16946835759349413412_18446744072707065692
++} [packed]
++
+diff --git a/sys/linux/syz_spec_comedi.txt b/sys/linux/syz_spec_comedi.txt
+new file mode 100644
+index 000000000..392fc45b6
+--- /dev/null
++++ b/sys/linux/syz_spec_comedi.txt
+@@ -0,0 +1,131 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_18446744072689950100_1(fd fd_comedi, arg0 const[1083466752], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_2(fd fd_comedi, arg0 const[25605], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_4(fd fd_comedi, arg0 const[1083480832], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_5(fd fd_comedi, arg0 const[25606], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_6(fd fd_comedi, arg0 const[25607], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_7(fd fd_comedi, arg0 const[25615], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_8(fd fd_comedi, arg0 const[25616], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_9(fd fd_comedi, arg0 const[25617], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_10(fd fd_comedi, arg0 const[2148557832], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_11(fd fd_comedi, arg0 const[2148557835], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_12(fd fd_comedi, arg0 const[2149606413], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_13(fd fd_comedi, arg0 const[2150130700], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_14(fd fd_comedi, arg0 const[2150654979], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_15(fd fd_comedi, arg0 const[2152227842], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_16(fd fd_comedi, arg0 const[2152752137], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_24(fd fd_comedi, arg0 const[3224134670], arg1 ptr[out, struct_comedi_bufinfo_9972893147078386990_18446744072689950100])
++ioctl$syz_spec_18446744072689950100_278(fd fd_comedi, arg0 const[2159043585], arg1 ptr[out, struct_comedi_devinfo_11066301092095964598_18446744072689950100])
++ioctl$syz_spec_18446744072689950100_279(fd fd_comedi, arg0 const[2159043585], arg1 ptr[out, struct_comedi_devinfo_11066301092095964598_18446744072689950100])
++ioctl$syz_spec_18446744072689950100_280(fd fd_comedi, arg0 const[2159043585], arg1 ptr[out, struct_comedi_devinfo_11066301092095964598_18446744072689950100])
++ioctl$syz_spec_18446744072689950100_281(fd fd_comedi, arg0 const[2159043585], arg1 ptr[out, struct_comedi_devinfo_11066301092095964598_18446744072689950100])
++ioctl$syz_spec_18446744072689950100_283(fd fd_comedi, arg0 const[2159043585], arg1 ptr[out, struct_comedi_devinfo_11066301092095964598_18446744072689950100])
++ioctl$syz_spec_18446744072689950100_284(fd fd_comedi, arg0 const[2159043585], arg1 ptr[out, struct_comedi_devinfo_11066301092095964598_18446744072689950100])
++ioctl$syz_spec_18446744072689950100_286(fd fd_comedi, arg0 const[2159043585], arg1 ptr[out, struct_comedi_devinfo_11066301092095964598_18446744072689950100])
++ioctl$syz_spec_18446744072689950100_287(fd fd_comedi, arg0 const[2159043585], arg1 ptr[out, struct_comedi_devinfo_11066301092095964598_18446744072689950100])
++ioctl$syz_spec_18446744072689950100_288(fd fd_comedi, arg0 const[2159043585], arg1 ptr[out, struct_comedi_devinfo_11066301092095964598_18446744072689950100])
++ioctl$syz_spec_18446744072689950100_291(fd fd_comedi, arg0 const[2159043585], arg1 ptr[out, struct_comedi_devinfo_11066301092095964598_18446744072689950100])
++ioctl$syz_spec_18446744072689950100_294(fd fd_comedi, arg0 const[2159043585], arg1 const[0])
++ioctl$syz_spec_18446744072689950100_353(fd fd_comedi, arg0 const[2152752138], arg1 ptr[out, struct_comedi_cmd_8038832535555495386_18446744072689950100])
++ioctl$syz_spec_18446744072689950100_4484(fd fd_comedi, arg0 const[2152752138], arg1 ptr[in, struct_comedi_cmd_10077598021773736735_18446744072689950100])
++ioctl$syz_spec_18446744072689950100_4485(fd fd_comedi, arg0 const[2152752138], arg1 ptr[in, struct_comedi_cmd_975261437234138294_18446744072689950100])
++ioctl$syz_spec_18446744072689950100_4486(fd fd_comedi, arg0 const[2152752138], arg1 ptr[in, struct_comedi_cmd_1423618422733486286_18446744072689950100])
++
++struct_comedi_cmd_1423618422733486286_18446744072689950100 {
++    field_0    int32[0:4294967294]
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    int32[0:32]
++    field_5    int32[0:32]
++    field_6    int32[0:32]
++    field_7    int32[0:32]
++    field_8    int32[0:32]
++    field_9    int32[0:32]
++    field_10    int32[0:32]
++    field_11    int32[0:32]
++    field_12    ptr[in, array[int8, 12:3553]]
++    field_13    int32
++    field_14    int64[0:64]
++    field_15    int32[0:32]
++} [packed]
++
++struct_comedi_cmd_975261437234138294_18446744072689950100 {
++    field_0    int32[0:4294967294]
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    int32[0:32]
++    field_5    int32[0:32]
++    field_6    int32[0:32]
++    field_7    int32[0:32]
++    field_8    int32[0:32]
++    field_9    int32[0:32]
++    field_10    int32[0:32]
++    field_11    int32[0:32]
++    field_12    ptr[in, int64[0:64]]
++    field_13    const[2, int32]
++    field_14    int64[0:64]
++    field_15    int32[0:32]
++} [packed]
++
++struct_comedi_devinfo_11066301092095964598_18446744072689950100 {
++    field_0    const[1868, int32]
++    field_1    int32[0:32]
++    field_2    array[const[0, int8], 20]
++    field_3    array[const[0, int8], 20]
++    field_4    int32[0:4294967295]
++    field_5    int32[0:4294967295]
++    field_6    array[const[0, int32], 30]
++} [packed]
++
++struct_comedi_cmd_8038832535555495386_18446744072689950100 {
++    field_0    int32[0:4294967294]
++    field_1    int32[0:4294901759]
++    field_2    int32
++    field_3    int32
++    field_4    int32
++    field_5    int32
++    field_6    int32
++    field_7    int32
++    field_8    int32
++    field_9    int32
++    field_10    int32
++    field_11    int32
++    field_12    int64
++    field_13    int32
++    field_14    int64[0:64]
++    field_15    int32[0:32]
++} [packed]
++
++struct_comedi_cmd_10077598021773736735_18446744072689950100 {
++    field_0    int32[0:4294967294]
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    int32[0:32]
++    field_5    int32[0:32]
++    field_6    int32[0:32]
++    field_7    int32[0:32]
++    field_8    int32[0:32]
++    field_9    int32[0:32]
++    field_10    int32[0:32]
++    field_11    int32[0:32]
++    field_12    ptr[in, int32[0:32]]
++    field_13    const[1, int32]
++    field_14    int64[0:64]
++    field_15    int32[0:32]
++} [packed]
++
++struct_comedi_bufinfo_9972893147078386990_18446744072689950100 {
++    field_0    int32[0:4294967294]
++    field_1    int32
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    int32[0:32]
++    field_5    int32[0:32]
++    field_6    int32
++    field_7    array[int32[0:32], 4]
++} [packed]
++
+diff --git a/sys/linux/syz_spec_dri.txt b/sys/linux/syz_spec_dri.txt
+new file mode 100644
+index 000000000..9e6ada5f7
+--- /dev/null
++++ b/sys/linux/syz_spec_dri.txt
+@@ -0,0 +1,117 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_262910257_2(fd fd_dri, arg0 const[0], arg1 const[0])
++ioctl$syz_spec_262910257_3(fd fd_dri, arg0 const[1077961792], arg1 const[0])
++ioctl$syz_spec_262910257_4(fd fd_dri, arg0 const[4280247327], arg1 const[0])
++ioctl$syz_spec_262910257_9(fd fd_dri, arg0 const[3225445420], arg1 ptr[in, struct_drm_version_1709031232130937822_262910257])
++ioctl$syz_spec_262910257_10(fd fd_dri, arg0 const[3221251077], arg1 const[0])
++ioctl$syz_spec_262910257_11(fd fd_dri, arg0 const[3221316666], arg1 ptr[in, int8[0:8]])
++ioctl$syz_spec_262910257_12(fd fd_dri, arg0 const[3221382156], arg1 ptr[in, int16[0:16]])
++ioctl$syz_spec_262910257_13(fd fd_dri, arg0 const[3221447692], arg1 ptr[in, array[int8, 3]])
++ioctl$syz_spec_262910257_14(fd fd_dri, arg0 const[3221513276], arg1 ptr[in, int32[0:32]])
++ioctl$syz_spec_262910257_15(fd fd_dri, arg0 const[3221578811], arg1 ptr[in, array[int8, 5]])
++ioctl$syz_spec_262910257_16(fd fd_dri, arg0 const[3221644302], arg1 ptr[in, array[int8, 6]])
++ioctl$syz_spec_262910257_17(fd fd_dri, arg0 const[3221709884], arg1 ptr[in, array[int8, 7]])
++ioctl$syz_spec_262910257_18(fd fd_dri, arg0 const[3221775367], arg1 ptr[out, int64])
++ioctl$syz_spec_262910257_19(fd fd_dri, arg0 const[3221840959], arg1 ptr[in, array[int8, 9]])
++ioctl$syz_spec_262910257_20(fd fd_dri, arg0 const[3221906479], arg1 ptr[in, array[int8, 10]])
++ioctl$syz_spec_262910257_21(fd fd_dri, arg0 const[3221972014], arg1 ptr[in, array[int8, 11]])
++ioctl$syz_spec_262910257_22(fd fd_dri, arg0 const[3222037515], arg1 ptr[in, array[int8, 12]])
++ioctl$syz_spec_262910257_23(fd fd_dri, arg0 const[3222103061], arg1 ptr[in, array[int8, 13]])
++ioctl$syz_spec_262910257_24(fd fd_dri, arg0 const[3222168591], arg1 ptr[in, array[int8, 14]])
++ioctl$syz_spec_262910257_25(fd fd_dri, arg0 const[3222234112], arg1 ptr[in, array[int8, 15]])
++ioctl$syz_spec_262910257_26(fd fd_dri, arg0 const[3222299708], arg1 ptr[in, array[int8, 16]])
++ioctl$syz_spec_262910257_27(fd fd_dri, arg0 const[3222365197], arg1 ptr[in, array[int8, 17]])
++ioctl$syz_spec_262910257_28(fd fd_dri, arg0 const[3222430778], arg1 ptr[in, array[int8, 18]])
++ioctl$syz_spec_262910257_29(fd fd_dri, arg0 const[3222496314], arg1 ptr[out, array[int8, 19]])
++ioctl$syz_spec_262910257_30(fd fd_dri, arg0 const[3222561797], arg1 ptr[in, array[int8, 20]])
++ioctl$syz_spec_262910257_31(fd fd_dri, arg0 const[3222627333], arg1 ptr[in, array[int8, 21]])
++ioctl$syz_spec_262910257_32(fd fd_dri, arg0 const[3222692892], arg1 ptr[in, array[int8, 22]])
++ioctl$syz_spec_262910257_33(fd fd_dri, arg0 const[3222758460], arg1 ptr[in, array[int8, 23]])
++ioctl$syz_spec_262910257_34(fd fd_dri, arg0 const[3222823998], arg1 ptr[in, array[int8, 24]])
++ioctl$syz_spec_262910257_35(fd fd_dri, arg0 const[3222889477], arg1 ptr[in, array[int8, 25]])
++ioctl$syz_spec_262910257_36(fd fd_dri, arg0 const[3222955029], arg1 ptr[in, array[int8, 26]])
++ioctl$syz_spec_262910257_37(fd fd_dri, arg0 const[3223020549], arg1 ptr[in, array[int8, 27]])
++ioctl$syz_spec_262910257_38(fd fd_dri, arg0 const[3223086081], arg1 ptr[in, array[int8, 28]])
++ioctl$syz_spec_262910257_39(fd fd_dri, arg0 const[3223151621], arg1 ptr[in, array[int8, 29]])
++ioctl$syz_spec_262910257_40(fd fd_dri, arg0 const[3223217152], arg1 ptr[in, array[int8, 30]])
++ioctl$syz_spec_262910257_41(fd fd_dri, arg0 const[3223282721], arg1 ptr[in, array[int8, 31]])
++ioctl$syz_spec_262910257_42(fd fd_dri, arg0 const[3223348229], arg1 ptr[in, array[int8, 32]])
++ioctl$syz_spec_262910257_43(fd fd_dri, arg0 const[3223413763], arg1 ptr[in, array[int8, 33]])
++ioctl$syz_spec_262910257_44(fd fd_dri, arg0 const[3223479301], arg1 ptr[in, array[int8, 34]])
++ioctl$syz_spec_262910257_45(fd fd_dri, arg0 const[3223544839], arg1 ptr[in, array[int8, 35]])
++ioctl$syz_spec_262910257_46(fd fd_dri, arg0 const[3223610373], arg1 ptr[in, array[int8, 36]])
++ioctl$syz_spec_262910257_47(fd fd_dri, arg0 const[3223675909], arg1 ptr[in, array[int8, 37]])
++ioctl$syz_spec_262910257_48(fd fd_dri, arg0 const[3223741440], arg1 ptr[in, array[int8, 38]])
++ioctl$syz_spec_262910257_49(fd fd_dri, arg0 const[3223806981], arg1 ptr[in, array[int8, 39]])
++ioctl$syz_spec_262910257_50(fd fd_dri, arg0 const[3223872513], arg1 ptr[in, array[int8, 40]])
++ioctl$syz_spec_262910257_51(fd fd_dri, arg0 const[3223938056], arg1 ptr[in, array[int8, 41]])
++ioctl$syz_spec_262910257_52(fd fd_dri, arg0 const[3224003617], arg1 ptr[in, array[int8, 42]])
++ioctl$syz_spec_262910257_53(fd fd_dri, arg0 const[3224069171], arg1 ptr[in, array[int8, 43]])
++ioctl$syz_spec_262910257_54(fd fd_dri, arg0 const[3224134660], arg1 ptr[in, array[int8, 44]])
++ioctl$syz_spec_262910257_55(fd fd_dri, arg0 const[3224200209], arg1 ptr[in, array[int8, 45]])
++ioctl$syz_spec_262910257_56(fd fd_dri, arg0 const[3224265758], arg1 ptr[in, array[int8, 46]])
++ioctl$syz_spec_262910257_57(fd fd_dri, arg0 const[3224331268], arg1 ptr[in, array[int8, 47]])
++ioctl$syz_spec_262910257_58(fd fd_dri, arg0 const[3224396801], arg1 ptr[in, array[int8, 48]])
++ioctl$syz_spec_262910257_59(fd fd_dri, arg0 const[3224462336], arg1 ptr[in, array[int8, 49]])
++ioctl$syz_spec_262910257_60(fd fd_dri, arg0 const[3224527874], arg1 ptr[in, array[int8, 50]])
++ioctl$syz_spec_262910257_61(fd fd_dri, arg0 const[3224593434], arg1 ptr[in, array[int8, 51]])
++ioctl$syz_spec_262910257_62(fd fd_dri, arg0 const[3224658944], arg1 ptr[in, array[int8, 52]])
++ioctl$syz_spec_262910257_63(fd fd_dri, arg0 const[3224724512], arg1 ptr[in, array[int8, 53]])
++ioctl$syz_spec_262910257_64(fd fd_dri, arg0 const[3224790024], arg1 ptr[in, array[int8, 54]])
++ioctl$syz_spec_262910257_65(fd fd_dri, arg0 const[3224855556], arg1 ptr[in, array[int8, 55]])
++ioctl$syz_spec_262910257_66(fd fd_dri, arg0 const[3224921092], arg1 ptr[in, array[int8, 56]])
++ioctl$syz_spec_262910257_67(fd fd_dri, arg0 const[3224986624], arg1 ptr[in, array[int8, 57]])
++ioctl$syz_spec_262910257_68(fd fd_dri, arg0 const[3225052186], arg1 ptr[in, array[int8, 58]])
++ioctl$syz_spec_262910257_69(fd fd_dri, arg0 const[3225117712], arg1 ptr[in, array[int8, 59]])
++ioctl$syz_spec_262910257_70(fd fd_dri, arg0 const[3225183232], arg1 ptr[in, array[int8, 60]])
++ioctl$syz_spec_262910257_71(fd fd_dri, arg0 const[3225248771], arg1 ptr[in, array[int8, 61]])
++ioctl$syz_spec_262910257_72(fd fd_dri, arg0 const[3225314308], arg1 ptr[in, array[int8, 62]])
++ioctl$syz_spec_262910257_73(fd fd_dri, arg0 const[3225379854], arg1 ptr[in, array[int8, 63]])
++ioctl$syz_spec_262910257_75(fd fd_dri, arg0 const[3225445378], arg1 ptr[out, array[int8, 64]])
++ioctl$syz_spec_262910257_87(fd fd_dri, arg0 const[3221775370], arg1 ptr[out, int64])
++ioctl$syz_spec_262910257_121(fd fd_dri, arg0 const[3288359981], arg1 const[0])
++ioctl$syz_spec_262910257_123(fd fd_dri, arg0 const[3229705256], arg1 ptr[in, array[int8, 129]])
++ioctl$syz_spec_262910257_124(fd fd_dri, arg0 const[3229770759], arg1 ptr[in, array[int8, 130]])
++ioctl$syz_spec_262910257_125(fd fd_dri, arg0 const[3229836348], arg1 ptr[in, array[int8, 131]])
++ioctl$syz_spec_262910257_126(fd fd_dri, arg0 const[3229901836], arg1 ptr[in, array[int8, 132]])
++ioctl$syz_spec_262910257_127(fd fd_dri, arg0 const[3229967371], arg1 ptr[in, array[int8, 133]])
++ioctl$syz_spec_262910257_128(fd fd_dri, arg0 const[3230032907], arg1 ptr[in, array[int8, 134]])
++ioctl$syz_spec_262910257_129(fd fd_dri, arg0 const[3230098439], arg1 ptr[in, array[int8, 135]])
++ioctl$syz_spec_262910257_130(fd fd_dri, arg0 const[3230163991], arg1 ptr[in, array[int8, 136]])
++ioctl$syz_spec_262910257_131(fd fd_dri, arg0 const[3230229565], arg1 ptr[in, array[int8, 137]])
++ioctl$syz_spec_262910257_132(fd fd_dri, arg0 const[3230295098], arg1 ptr[in, array[int8, 138]])
++ioctl$syz_spec_262910257_135(fd fd_dri, arg0 const[3230360638], arg1 ptr[out, array[int8, 139]])
++ioctl$syz_spec_262910257_142(fd fd_dri, arg0 const[3230360635], arg1 ptr[in, array[int8, 139]])
++ioctl$syz_spec_262910257_144(fd fd_dri, arg0 const[3230360577], arg1 ptr[out, array[int8, 139]])
++ioctl$syz_spec_262910257_155(fd fd_dri, arg0 const[3230360581], arg1 ptr[out, array[int8, 139]])
++ioctl$syz_spec_262910257_159(fd fd_dri, arg0 const[3230360621], arg1 ptr[in, array[int8, 139]])
++ioctl$syz_spec_262910257_163(fd fd_dri, arg0 const[3230360588], arg1 ptr[out, array[int8, 139]])
++ioctl$syz_spec_262910257_169(fd fd_dri, arg0 const[3230360583], arg1 ptr[out, array[int8, 139]])
++ioctl$syz_spec_262910257_176(fd fd_dri, arg0 const[3230360587], arg1 ptr[out, array[int8, 139]])
++ioctl$syz_spec_262910257_183(fd fd_dri, arg0 const[3230360595], arg1 ptr[out, array[int8, 139]])
++ioctl$syz_spec_262910257_193(fd fd_dri, arg0 const[3221578792], arg1 ptr[out, array[int8, 5]])
++ioctl$syz_spec_262910257_209(fd fd_dri, arg0 const[1073767441], arg1 const[0])
++ioctl$syz_spec_262910257_213(fd fd_dri, arg0 const[1073833004], arg1 ptr[in, int8[0:8]])
++ioctl$syz_spec_262910257_214(fd fd_dri, arg0 const[1073898559], arg1 ptr[in, int16[0:16]])
++ioctl$syz_spec_262910257_217(fd fd_dri, arg0 const[1073964049], arg1 ptr[in, array[int8, 3]])
++ioctl$syz_spec_262910257_222(fd fd_dri, arg0 const[2147574803], arg1 const[0])
++ioctl$syz_spec_262910257_224(fd fd_dri, arg0 const[2148099101], arg1 const[0])
++ioctl$syz_spec_262910257_225(fd fd_dri, arg0 const[2147509248], arg1 const[0])
++ioctl$syz_spec_262910257_229(fd fd_dri, arg0 const[2147574794], arg1 const[0])
++ioctl$syz_spec_262910257_230(fd fd_dri, arg0 const[2148033546], arg1 ptr[out, int8])
++ioctl$syz_spec_262910257_231(fd fd_dri, arg0 const[2147509258], arg1 const[0])
++ioctl$syz_spec_262910257_232(fd fd_dri, arg0 const[2147574795], arg1 ptr[out, int8])
++
++struct_drm_version_1709031232130937822_262910257 {
++    field_0    int32[0:32]
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    int64[0:64]
++    field_4    int64[0:64]
++    field_5    int64[0:64]
++    field_6    int64[0:64]
++    field_7    int64[0:64]
++    field_8    int64[0:64]
++} [packed]
++
+diff --git a/sys/linux/syz_spec_f2fs.txt b/sys/linux/syz_spec_f2fs.txt
+new file mode 100644
+index 000000000..79700a0b7
+--- /dev/null
++++ b/sys/linux/syz_spec_f2fs.txt
+@@ -0,0 +1,55 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_18446744073592940330_9(fd fd, arg0 const[0], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_15(fd fd, arg0 const[62721], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_17(fd fd, arg0 const[62722], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_18(fd fd, arg0 const[62724], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_19(fd fd, arg0 const[62725], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_20(fd fd, arg0 const[62727], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_21(fd fd, arg0 const[62735], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_22(fd fd, arg0 const[62743], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_23(fd fd, arg0 const[62744], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_24(fd fd, arg0 const[62745], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_25(fd fd, arg0 const[1073935638], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_26(fd fd, arg0 const[1074066694], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_27(fd fd, arg0 const[1074066701], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_28(fd fd, arg0 const[1074066715], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_29(fd fd, arg0 const[1074328842], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_30(fd fd, arg0 const[1074328848], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_31(fd fd, arg0 const[1074554389], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_32(fd fd, arg0 const[1074816532], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_33(fd fd, arg0 const[1075377419], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_34(fd fd, arg0 const[1075377428], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_35(fd fd, arg0 const[1082156677], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_36(fd fd, arg0 const[1090556978], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_37(fd fd, arg0 const[2147677461], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_38(fd fd, arg0 const[2147768445], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_39(fd fd, arg0 const[2147808524], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_40(fd fd, arg0 const[2147808526], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_41(fd fd, arg0 const[2147808538], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_42(fd fd, arg0 const[2148038145], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_43(fd fd, arg0 const[2148070673], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_44(fd fd, arg0 const[2148070674], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_45(fd fd, arg0 const[2148070675], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_46(fd fd, arg0 const[2148296211], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_47(fd fd, arg0 const[2148558363], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_48(fd fd, arg0 const[2164298801], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_49(fd fd, arg0 const[3221513862], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_50(fd fd, arg0 const[3221841430], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_51(fd fd, arg0 const[3222336776], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_52(fd fd, arg0 const[3222820985], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_53(fd fd, arg0 const[3223385353], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_60(fd fd, arg0 const[3229640218], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_61(fd fd, arg0 const[3226494487], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_62(fd fd, arg0 const[3225445913], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_63(fd fd, arg0 const[3225445912], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_64(fd fd, arg0 const[3223873159], arg1 const[0])
++ioctl$syz_spec_18446744073592940330_66(fd fd, arg0 const[3223385353], arg1 ptr[in, struct_f2fs_move_range_962567122132454877_18446744073592940330])
++
++struct_f2fs_move_range_962567122132454877_18446744073592940330 {
++    field_0    int32[0:32]
++    field_1    int64
++    field_2    int64
++    field_3    int64
++} [packed]
++
+diff --git a/sys/linux/syz_spec_i2c.txt b/sys/linux/syz_spec_i2c.txt
+new file mode 100644
+index 000000000..adc37f6dc
+--- /dev/null
++++ b/sys/linux/syz_spec_i2c.txt
+@@ -0,0 +1,52 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_1802954339_2(fd fd_i2c, arg0 const[1824], arg1 const[0])
++ioctl$syz_spec_1802954339_3(fd fd_i2c, arg0 const[1793], arg1 int64)
++ioctl$syz_spec_1802954339_4(fd fd_i2c, arg0 const[1794], arg1 int64)
++ioctl$syz_spec_1802954339_6(fd fd_i2c, arg0 const[1796], arg1 int64)
++ioctl$syz_spec_1802954339_9(fd fd_i2c, arg0 const[1800], arg1 int64)
++ioctl$syz_spec_1802954339_10(fd fd_i2c, arg0 const[2032], arg1 const[0])
++ioctl$syz_spec_1802954339_11(fd fd_i2c, arg0 const[1800], arg1 const[0])
++ioctl$syz_spec_1802954339_13(fd fd_i2c, arg0 const[1799], arg1 ptr[in, struct_i2c_rdwr_ioctl_data_11832989368776437532_1802954339])
++ioctl$syz_spec_1802954339_16(fd fd_i2c, arg0 const[1799], arg1 ptr[in, struct_i2c_rdwr_ioctl_data_17393980927474527156_1802954339])
++ioctl$syz_spec_1802954339_127(fd fd_i2c, arg0 const[1799], arg1 ptr[in, struct_i2c_rdwr_ioctl_data_12880554539356653256_1802954339])
++ioctl$syz_spec_1802954339_162(fd fd_i2c, arg0 const[1797], arg1 const[0])
++ioctl$syz_spec_1802954339_163(fd fd_i2c, arg0 const[1797], arg1 ptr[out, int64])
++ioctl$syz_spec_1802954339_174(fd fd_i2c, arg0 const[1796], arg1 const[0])
++ioctl$syz_spec_1802954339_175(fd fd_i2c, arg0 const[1798], arg1 int64)
++ioctl$syz_spec_1802954339_177(fd fd_i2c, arg0 const[1798], arg1 const[0])
++ioctl$syz_spec_1802954339_179(fd fd_i2c, arg0 const[1795], arg1 const[0])
++ioctl$syz_spec_1802954339_193(fd fd_i2c, arg0 const[1798], arg1 const[0])
++ioctl$syz_spec_1802954339_194(fd fd_i2c, arg0 const[1794], arg1 const[0])
++ioctl$syz_spec_1802954339_195(fd fd_i2c, arg0 const[1793], arg1 const[0])
++ioctl$syz_spec_1802954339_203(fd fd_i2c, arg0 const[1824], arg1 ptr[in, struct_i2c_smbus_ioctl_data_10986924055367392398_1802954339])
++
++struct_i2c_rdwr_ioctl_data_11832989368776437532_1802954339 {
++    field_0    int64
++    field_1    int32
++} [packed]
++
++struct_i2c_rdwr_ioctl_data_17393980927474527156_1802954339 {
++    field_0    ptr[in, array[int8, 16:672]]
++    field_1    int32[1:42]
++} [packed]
++
++struct_i2c_rdwr_ioctl_data_12880554539356653256_1802954339 {
++    field_0    ptr[in, struct_i2c_msg_12037161263357950755_1802954339]
++    field_1    const[1, int32]
++} [packed]
++
++struct_i2c_smbus_ioctl_data_10986924055367392398_1802954339 {
++    field_0    int8[0:8]
++    field_1    int8[0:8]
++    field_2    int32
++    field_3    int64[0:18446744073709486080]
++} [packed]
++
++struct_i2c_msg_12037161263357950755_1802954339 {
++    field_0    int16[0:16]
++    field_1    int16[0:16]
++    field_2    int16[0:16]
++    field_3    int64[0:64]
++} [packed]
++
+diff --git a/sys/linux/syz_spec_input.txt b/sys/linux/syz_spec_input.txt
+new file mode 100644
+index 000000000..69f261b6d
+--- /dev/null
++++ b/sys/linux/syz_spec_input.txt
+@@ -0,0 +1,225 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_18446744071820932856_3(fd fd_evdev, arg0 const[0], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_13(fd fd_evdev, arg0 const[2147763457], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_15(fd fd_evdev, arg0 const[2148025603], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_24(fd fd_evdev, arg0 const[2281981194], arg1 ptr[out, array[int8, 12]])
++ioctl$syz_spec_18446744071820932856_32(fd fd_evdev, arg0 const[4291249640], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_33(fd fd_evdev, arg0 const[2143765920], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_34(fd fd_evdev, arg0 const[1073759680], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_36(fd fd_evdev, arg0 const[1075332591], arg1 ptr[in, struct_input_absinfo_9934707313056149645_18446744071820932856])
++ioctl$syz_spec_18446744071820932856_37(fd fd_evdev, arg0 const[1075332544], arg1 ptr[in, struct_input_absinfo_9934707313056149645_18446744071820932856])
++ioctl$syz_spec_18446744071820932856_39(fd fd_evdev, arg0 const[1075267055], arg1 ptr[in, array[int8, 23]])
++ioctl$syz_spec_18446744071820932856_40(fd fd_evdev, arg0 const[1073759680], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_41(fd fd_evdev, arg0 const[1073825216], arg1 ptr[in, int8[0:8]])
++ioctl$syz_spec_18446744071820932856_42(fd fd_evdev, arg0 const[1073890752], arg1 ptr[in, int16[0:16]])
++ioctl$syz_spec_18446744071820932856_43(fd fd_evdev, arg0 const[1073956288], arg1 ptr[in, array[int8, 3]])
++ioctl$syz_spec_18446744071820932856_44(fd fd_evdev, arg0 const[1074021824], arg1 ptr[in, int32[0:32]])
++ioctl$syz_spec_18446744071820932856_45(fd fd_evdev, arg0 const[1074087360], arg1 ptr[in, array[int8, 5]])
++ioctl$syz_spec_18446744071820932856_46(fd fd_evdev, arg0 const[1074152896], arg1 ptr[in, array[int8, 6]])
++ioctl$syz_spec_18446744071820932856_47(fd fd_evdev, arg0 const[1074218432], arg1 ptr[in, array[int8, 7]])
++ioctl$syz_spec_18446744071820932856_48(fd fd_evdev, arg0 const[1074283968], arg1 ptr[in, int64[0:64]])
++ioctl$syz_spec_18446744071820932856_49(fd fd_evdev, arg0 const[1074349504], arg1 ptr[in, array[int8, 9]])
++ioctl$syz_spec_18446744071820932856_50(fd fd_evdev, arg0 const[1074415040], arg1 ptr[in, array[int8, 10]])
++ioctl$syz_spec_18446744071820932856_51(fd fd_evdev, arg0 const[1074480576], arg1 ptr[in, array[int8, 11]])
++ioctl$syz_spec_18446744071820932856_52(fd fd_evdev, arg0 const[1074546112], arg1 ptr[in, array[int8, 12]])
++ioctl$syz_spec_18446744071820932856_53(fd fd_evdev, arg0 const[1074611648], arg1 ptr[in, array[int8, 13]])
++ioctl$syz_spec_18446744071820932856_54(fd fd_evdev, arg0 const[1074677184], arg1 ptr[in, array[int8, 14]])
++ioctl$syz_spec_18446744071820932856_55(fd fd_evdev, arg0 const[1074742720], arg1 ptr[in, array[int8, 15]])
++ioctl$syz_spec_18446744071820932856_56(fd fd_evdev, arg0 const[1074808256], arg1 ptr[in, array[int8, 16]])
++ioctl$syz_spec_18446744071820932856_57(fd fd_evdev, arg0 const[1074873792], arg1 ptr[in, array[int8, 17]])
++ioctl$syz_spec_18446744071820932856_58(fd fd_evdev, arg0 const[1074939328], arg1 ptr[in, array[int8, 18]])
++ioctl$syz_spec_18446744071820932856_59(fd fd_evdev, arg0 const[1075004864], arg1 ptr[in, array[int8, 19]])
++ioctl$syz_spec_18446744071820932856_60(fd fd_evdev, arg0 const[1075070400], arg1 ptr[in, array[int8, 20]])
++ioctl$syz_spec_18446744071820932856_61(fd fd_evdev, arg0 const[1075135936], arg1 ptr[in, array[int8, 21]])
++ioctl$syz_spec_18446744071820932856_62(fd fd_evdev, arg0 const[1075201472], arg1 ptr[in, array[int8, 22]])
++ioctl$syz_spec_18446744071820932856_63(fd fd_evdev, arg0 const[1075267008], arg1 ptr[in, array[int8, 23]])
++ioctl$syz_spec_18446744071820932856_81(fd fd_evdev, arg0 const[1074873839], arg1 ptr[in, array[int8, 17]])
++ioctl$syz_spec_18446744071820932856_84(fd fd_evdev, arg0 const[3217507716], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_85(fd fd_evdev, arg0 const[2147501376], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_87(fd fd_evdev, arg0 const[2149074240], arg1 ptr[out, struct_input_absinfo_9934707313056149645_18446744071820932856])
++ioctl$syz_spec_18446744071820932856_88(fd fd_evdev, arg0 const[2147501376], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_89(fd fd_evdev, arg0 const[2147501376], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_90(fd fd_evdev, arg0 const[2147566912], arg1 ptr[out, int8])
++ioctl$syz_spec_18446744071820932856_91(fd fd_evdev, arg0 const[2147632448], arg1 ptr[out, int16])
++ioctl$syz_spec_18446744071820932856_95(fd fd_evdev, arg0 const[2147697984], arg1 ptr[out, array[int8, 3]])
++ioctl$syz_spec_18446744071820932856_104(fd fd_evdev, arg0 const[2147501352], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_106(fd fd_evdev, arg0 const[2149598517], arg1 ptr[out, array[int8, 16]])
++ioctl$syz_spec_18446744071820932856_107(fd fd_evdev, arg0 const[2147501365], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_108(fd fd_evdev, arg0 const[2147501365], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_109(fd fd_evdev, arg0 const[2147566901], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_110(fd fd_evdev, arg0 const[2147632437], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_111(fd fd_evdev, arg0 const[2147697973], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_112(fd fd_evdev, arg0 const[2151695666], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_113(fd fd_evdev, arg0 const[2149598514], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_114(fd fd_evdev, arg0 const[2147501362], arg1 ptr[out, array[int8, 7]])
++ioctl$syz_spec_18446744071820932856_115(fd fd_evdev, arg0 const[2147501362], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_116(fd fd_evdev, arg0 const[2147566898], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_117(fd fd_evdev, arg0 const[2147632434], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_118(fd fd_evdev, arg0 const[2147697970], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_119(fd fd_evdev, arg0 const[2147763506], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_120(fd fd_evdev, arg0 const[2147829042], arg1 ptr[out, array[int8, 5]])
++ioctl$syz_spec_18446744071820932856_121(fd fd_evdev, arg0 const[2147894578], arg1 ptr[out, array[int8, 6]])
++ioctl$syz_spec_18446744071820932856_123(fd fd_evdev, arg0 const[2181055793], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_124(fd fd_evdev, arg0 const[2147501361], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_125(fd fd_evdev, arg0 const[2147501361], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_127(fd fd_evdev, arg0 const[2415936805], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_128(fd fd_evdev, arg0 const[2147501349], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_129(fd fd_evdev, arg0 const[2147501349], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_130(fd fd_evdev, arg0 const[2155889956], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_131(fd fd_evdev, arg0 const[2164278564], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_132(fd fd_evdev, arg0 const[2147501348], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_133(fd fd_evdev, arg0 const[2147501348], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_135(fd fd_evdev, arg0 const[2148025635], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_136(fd fd_evdev, arg0 const[2147501347], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_137(fd fd_evdev, arg0 const[2147501347], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_138(fd fd_evdev, arg0 const[2147566883], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_139(fd fd_evdev, arg0 const[2147632419], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_142(fd fd_evdev, arg0 const[2415936802], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_143(fd fd_evdev, arg0 const[2147501346], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_144(fd fd_evdev, arg0 const[2147501346], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_145(fd fd_evdev, arg0 const[2147566882], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_146(fd fd_evdev, arg0 const[2153792801], arg1 ptr[out, array[int8, 96]])
++ioctl$syz_spec_18446744071820932856_147(fd fd_evdev, arg0 const[2153792801], arg1 ptr[out, array[int8, 96]])
++ioctl$syz_spec_18446744071820932856_148(fd fd_evdev, arg0 const[2147501345], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_149(fd fd_evdev, arg0 const[2147501345], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_151(fd fd_evdev, arg0 const[2148025632], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_152(fd fd_evdev, arg0 const[2147501344], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_153(fd fd_evdev, arg0 const[2147501344], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_154(fd fd_evdev, arg0 const[2155889947], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_157(fd fd_evdev, arg0 const[2151695643], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_158(fd fd_evdev, arg0 const[2147501339], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_159(fd fd_evdev, arg0 const[2147501339], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_160(fd fd_evdev, arg0 const[2147566875], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_165(fd fd_evdev, arg0 const[2181055771], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_171(fd fd_evdev, arg0 const[2147632411], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_172(fd fd_evdev, arg0 const[2147697947], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_177(fd fd_evdev, arg0 const[2155889947], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_186(fd fd_evdev, arg0 const[2684372251], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_194(fd fd_evdev, arg0 const[2214610203], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_199(fd fd_evdev, arg0 const[2684372251], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_207(fd fd_evdev, arg0 const[2148549915], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_208(fd fd_evdev, arg0 const[2155889946], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_209(fd fd_evdev, arg0 const[2155889945], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_210(fd fd_evdev, arg0 const[2155889944], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_211(fd fd_evdev, arg0 const[2155889930], arg1 ptr[in, int32])
++ioctl$syz_spec_18446744071820932856_215(fd fd_evdev, arg0 const[2147501322], arg1 ptr[in, int32[48:61]])
++ioctl$syz_spec_18446744071820932856_216(fd fd_evdev, arg0 const[2218542346], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_217(fd fd_evdev, arg0 const[2148025610], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_220(fd fd_evdev, arg0 const[2149598473], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_221(fd fd_evdev, arg0 const[2155889928], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_224(fd fd_evdev, arg0 const[2415936776], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_225(fd fd_evdev, arg0 const[2147501320], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_228(fd fd_evdev, arg0 const[2149598472], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_229(fd fd_evdev, arg0 const[2147501320], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_232(fd fd_evdev, arg0 const[2155889927], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_234(fd fd_evdev, arg0 const[2155889927], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_235(fd fd_evdev, arg0 const[2684372231], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_236(fd fd_evdev, arg0 const[2147501319], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_237(fd fd_evdev, arg0 const[2155889926], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_238(fd fd_evdev, arg0 const[2133869952], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_241(fd fd_evdev, arg0 const[1076905344], arg1 ptr[out, struct_ff_effect_17035641307710937375_18446744071820932856])
++ioctl$syz_spec_18446744071820932856_1203(fd fd_evdev, arg0 const[1076643200], arg1 ptr[in, array[int8, 44]])
++ioctl$syz_spec_18446744071820932856_1210(fd fd_evdev, arg0 const[2150122756], arg1 ptr[out, struct_input_keymap_entry_10399642274365675027_18446744071820932856])
++ioctl$syz_spec_18446744071820932856_1375(fd fd_evdev, arg0 const[2148550034], arg1 ptr[in, struct_jump_entry_9992136487474526133_18446744071820932856])
++ioctl$syz_spec_18446744071820932856_1385(fd fd_evdev, arg0 const[2148550034], arg1 ptr[in, struct_jump_entry_10283131584506793379_18446744071820932856])
++ioctl$syz_spec_18446744071820932856_1387(fd fd_evdev, arg0 const[2148550034], arg1 ptr[in, struct_jump_entry_12181717319760959449_18446744071820932856])
++ioctl$syz_spec_18446744071820932856_1394(fd fd_evdev, arg0 const[2148550034], arg1 ptr[in, struct_jump_entry_11195531993789872509_18446744071820932856])
++ioctl$syz_spec_18446744071820932856_1395(fd fd_evdev, arg0 const[2148550034], arg1 ptr[in, struct_jump_entry_9241373363300740586_18446744071820932856])
++ioctl$syz_spec_18446744071820932856_1397(fd fd_evdev, arg0 const[2148550034], arg1 ptr[in, struct_jump_entry_6043875209064252149_18446744071820932856])
++ioctl$syz_spec_18446744071820932856_1413(fd fd_evdev, arg0 const[2148025604], arg1 ptr[in, int32])
++ioctl$syz_spec_18446744071820932856_1414(fd fd_evdev, arg0 const[2148025604], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_1425(fd fd_evdev, arg0 const[2148025603], arg1 const[0])
++ioctl$syz_spec_18446744071820932856_1426(fd fd_evdev, arg0 const[2148025602], arg1 ptr[out, int64])
++ioctl$syz_spec_18446744071820932856_1427(fd fd_evdev, arg0 const[2147763588], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744071820932856_1433(fd fd_evdev, arg0 const[1076380932], arg1 ptr[in, struct_input_keymap_entry_10399642274365675027_18446744071820932856])
++
++struct_input_keymap_entry_10399642274365675027_18446744071820932856 {
++    field_0    int8
++    field_1    int8[0:32]
++    field_2    int16
++    field_3    int32[0:767]
++    field_4    array[int8[0:8], 32]
++} [packed]
++
++struct_jump_entry_6043875209064252149_18446744071820932856 {
++    field_0    int32[0:21]
++    field_1    const[4, int32]
++    field_2    ptr[out, int32]
++} [packed]
++
++union_anon_11380089191757664802_18446744071820932856 {
++    field_0    struct_ff_periodic_effect_6050786972305125907_18446744071820932856
++} [packed]
++
++struct_input_absinfo_9934707313056149645_18446744071820932856 {
++    field_0    int32[0:32]
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    int32[0:32]
++    field_5    int32[0:32]
++} [packed]
++
++struct_ff_effect_17035641307710937375_18446744071820932856 {
++    field_0    int16
++    field_1    int16
++    field_2    int16[0:16]
++    field_3    struct_ff_trigger_15513586345615367705_18446744071820932856
++    field_4    struct_ff_trigger_15513586345615367705_18446744071820932856
++    field_5    union_anon_11380089191757664802_18446744071820932856
++} [packed]
++
++struct_jump_entry_9241373363300740586_18446744071820932856 {
++    field_0    int32[0:21]
++    field_1    const[2, int32]
++    field_2    ptr[out, int16]
++} [packed]
++
++struct_ff_periodic_effect_6050786972305125907_18446744071820932856 {
++    field_0    int16[0:16]
++    field_1    int16
++    field_2    int16[0:16]
++    field_3    int16[0:16]
++    field_4    int16[0:16]
++    field_5    struct_input_id_17435524011136983906_18446744071820932856
++    field_6    int32[0:32]
++    field_7    int64[0:64]
++} [packed]
++
++struct_jump_entry_10283131584506793379_18446744071820932856 {
++    field_0    int32[0:21]
++    field_1    len[field_2, int32]
++    field_2    ptr[out, array[int8]]
++} [packed]
++
++struct_input_id_17435524011136983906_18446744071820932856 {
++    field_0    int16[0:16]
++    field_1    int16[0:16]
++    field_2    int16[0:16]
++    field_3    int16[0:16]
++} [packed]
++
++struct_jump_entry_9992136487474526133_18446744071820932856 {
++    field_0    int32
++    field_1    int32
++    field_2    int64
++} [packed]
++
++struct_ff_trigger_15513586345615367705_18446744071820932856 {
++    field_0    int16[0:16]
++    field_1    int16[0:16]
++} [packed]
++
++struct_jump_entry_12181717319760959449_18446744071820932856 {
++    field_0    int32[0:18]
++    field_1    int32
++    field_2    ptr[out, int64]
++} [packed]
++
++struct_jump_entry_11195531993789872509_18446744071820932856 {
++    field_0    int32[0:21]
++    field_1    const[1, int32]
++    field_2    ptr[out, int8]
++} [packed]
++
+diff --git a/sys/linux/syz_spec_kvm.txt b/sys/linux/syz_spec_kvm.txt
+new file mode 100644
+index 000000000..a5ccb578b
+--- /dev/null
++++ b/sys/linux/syz_spec_kvm.txt
+@@ -0,0 +1,22 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_822278213_1(fd fd_kvm, arg0 const[44544], arg1 int64)
++ioctl$syz_spec_822278213_3(fd fd_kvm, arg0 const[44547], arg1 const[192])
++ioctl$syz_spec_822278213_4(fd fd_kvm, arg0 const[44548], arg1 int64)
++ioctl$syz_spec_822278213_5(fd fd_kvm, arg0 const[44728], arg1 const[0])
++ioctl$syz_spec_822278213_6(fd fd_kvm, arg0 const[44548], arg1 const[0])
++ioctl$syz_spec_822278213_7(fd fd_kvm, arg0 const[44547], arg1 const[215])
++ioctl$syz_spec_822278213_8(fd fd_kvm, arg0 const[44547], arg1 const[223])
++ioctl$syz_spec_822278213_9(fd fd_kvm, arg0 const[44547], arg1 const[122])
++ioctl$syz_spec_822278213_10(fd fd_kvm, arg0 const[44547], arg1 const[233])
++ioctl$syz_spec_822278213_11(fd fd_kvm, arg0 const[44547], arg1 const[234])
++ioctl$syz_spec_822278213_12(fd fd_kvm, arg0 const[44547], arg1 const[244])
++ioctl$syz_spec_822278213_13(fd fd_kvm, arg0 const[44547], arg1 const[162])
++ioctl$syz_spec_822278213_14(fd fd_kvm, arg0 const[44547], arg1 const[168])
++ioctl$syz_spec_822278213_15(fd fd_kvm, arg0 const[44547], arg1 const[10])
++ioctl$syz_spec_822278213_16(fd fd_kvm, arg0 const[44547], arg1 const[15])
++ioctl$syz_spec_822278213_17(fd fd_kvm, arg0 const[44547], arg1 const[25])
++ioctl$syz_spec_822278213_18(fd fd_kvm, arg0 const[44547], arg1 const[224])
++ioctl$syz_spec_822278213_20(fd fd_kvm, arg0 const[44545], arg1 const[0])
++ioctl$syz_spec_822278213_131(fd fd_kvm, arg0 const[44544], arg1 const[0])
++
+diff --git a/sys/linux/syz_spec_nilfs2.txt b/sys/linux/syz_spec_nilfs2.txt
+new file mode 100644
+index 000000000..679b788c2
+--- /dev/null
++++ b/sys/linux/syz_spec_nilfs2.txt
+@@ -0,0 +1,21 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_18446744072414006175_1(fd fd, arg0 const[1074294401], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_2(fd fd, arg0 const[1074294411], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_3(fd fd, arg0 const[1074818688], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_4(fd fd, arg0 const[1074818700], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_5(fd fd, arg0 const[1075342989], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_6(fd fd, arg0 const[1081634440], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_7(fd fd, arg0 const[1090556978], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_8(fd fd, arg0 const[2148036234], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_9(fd fd, arg0 const[2148038145], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_10(fd fd, arg0 const[2149084802], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_11(fd fd, arg0 const[2149084803], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_12(fd fd, arg0 const[2149084804], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_13(fd fd, arg0 const[2150657669], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_14(fd fd, arg0 const[2164298801], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_15(fd fd, arg0 const[3222820985], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_16(fd fd, arg0 const[3222826630], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_17(fd fd, arg0 const[3222826631], arg1 const[0])
++ioctl$syz_spec_18446744072414006175_18(fd fd, arg0 const[2123328897], arg1 const[0])
++
+diff --git a/sys/linux/syz_spec_ocfs2.txt b/sys/linux/syz_spec_ocfs2.txt
+new file mode 100644
+index 000000000..1ca0f0063
+--- /dev/null
++++ b/sys/linux/syz_spec_ocfs2.txt
+@@ -0,0 +1,65 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_18446744072361409276_5(fd fd, arg0 const[1077964550], arg1 const[0])
++ioctl$syz_spec_18446744072361409276_8(fd fd, arg0 const[2139596673], arg1 const[0])
++ioctl$syz_spec_18446744072361409276_9(fd fd, arg0 const[3222820985], arg1 const[0])
++ioctl$syz_spec_18446744072361409276_14(fd fd, arg0 const[3222820985], arg1 ptr[out, struct_fstrim_range_6440590283257303864_18446744072361409276])
++ioctl$syz_spec_18446744072361409276_24(fd fd, arg0 const[2148560645], arg1 ptr[in, struct_ocfs2_info_2587208738303345146_18446744072361409276])
++ioctl$syz_spec_18446744072361409276_27(fd fd, arg0 const[2148560645], arg1 ptr[in, struct_ocfs2_info_17344488938649919966_18446744072361409276])
++ioctl$syz_spec_18446744072361409276_43(fd fd, arg0 const[2148560645], arg1 ptr[in, struct_ocfs2_info_3794147138783453063_18446744072361409276])
++ioctl$syz_spec_18446744072361409276_226(fd fd, arg0 const[1076910120], arg1 ptr[in, struct_ocfs2_space_resv_10841529490979734612_18446744072361409276])
++ioctl$syz_spec_18446744072361409276_227(fd fd, arg0 const[1075343108], arg1 ptr[in, struct_reflink_arguments_6440590283257303864_18446744072361409276])
++ioctl$syz_spec_18446744072361409276_228(fd fd, arg0 const[1075343106], arg1 const[0])
++ioctl$syz_spec_18446744072361409276_230(fd fd, arg0 const[1075343106], arg1 ptr[in, struct_ocfs2_new_group_input_16202600468533471027_18446744072361409276])
++ioctl$syz_spec_18446744072361409276_231(fd fd, arg0 const[1074032385], arg1 const[0])
++ioctl$syz_spec_18446744072361409276_232(fd fd, arg0 const[1074032385], arg1 ptr[in, int32[0:32]])
++
++struct_ocfs2_info_3794147138783453063_18446744072361409276 {
++    field_0    ptr[in, array[int8, 16:24]]
++    field_1    int32[2:50]
++    field_2    int32[0:32]
++} [packed]
++
++struct_ocfs2_new_group_input_16202600468533471027_18446744072361409276 {
++    field_0    int64[0:64]
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    int16[0:16]
++    field_4    int16[0:16]
++    field_5    int32[0:32]
++} [packed]
++
++struct_ocfs2_space_resv_10841529490979734612_18446744072361409276 {
++    field_0    int16[0:16]
++    field_1    int16[0:16]
++    field_2    int64[0:64]
++    field_3    int64[0:64]
++    field_4    int32[0:32]
++    field_5    int32[0:32]
++    field_6    array[int32[0:32], 4]
++} [packed]
++
++struct_ocfs2_info_17344488938649919966_18446744072361409276 {
++    field_0    ptr[in, int64[0:106651631325184]]
++    field_1    int32[1:50]
++    field_2    int32[0:32]
++} [packed]
++
++struct_reflink_arguments_6440590283257303864_18446744072361409276 {
++    field_0    int64[0:64]
++    field_1    int64[0:64]
++    field_2    int64[0:64]
++} [packed]
++
++struct_ocfs2_info_2587208738303345146_18446744072361409276 {
++    field_0    int64
++    field_1    int32
++    field_2    int32[0:32]
++} [packed]
++
++struct_fstrim_range_6440590283257303864_18446744072361409276 {
++    field_0    int64[0:64]
++    field_1    int64[0:64]
++    field_2    int64
++} [packed]
++
+diff --git a/sys/linux/syz_spec_phonet.txt b/sys/linux/syz_spec_phonet.txt
+new file mode 100644
+index 000000000..27db6eaec
+--- /dev/null
++++ b/sys/linux/syz_spec_phonet.txt
+@@ -0,0 +1,5 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_18446744073248009667_2(fd sock_phonet_dgram, arg0 const[35103], arg1 const[0])
++ioctl$syz_spec_18446744073248009667_4(fd sock_phonet_dgram, arg0 const[35296], arg1 ptr[out, int16])
++
+diff --git a/sys/linux/syz_spec_ppp.txt b/sys/linux/syz_spec_ppp.txt
+new file mode 100644
+index 000000000..150cd70c1
+--- /dev/null
++++ b/sys/linux/syz_spec_ppp.txt
+@@ -0,0 +1,90 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_2074345393_1(fd fd_ppp, arg0 const[1074033724], arg1 const[0])
++ioctl$syz_spec_2074345393_5(fd fd_ppp, arg0 const[1057256640], arg1 const[0])
++ioctl$syz_spec_2074345393_6(fd fd_ppp, arg0 const[3221517374], arg1 ptr[out, int32])
++ioctl$syz_spec_2074345393_46(fd fd_ppp, arg0 const[1074033725], arg1 ptr[in, int32[0:32]])
++ioctl$syz_spec_2074345393_52(fd fd_ppp, arg0 const[1074033720], arg1 ptr[in, int32[0:32]])
++ioctl$syz_spec_2074345393_80(fd fd_ppp, arg0 const[1074033728], arg1 ptr[in, int32[0:32]])
++ioctl$syz_spec_2074345393_82(fd fd_ppp, arg0 const[1074033746], arg1 ptr[in, int32])
++ioctl$syz_spec_2074345393_84(fd fd_ppp, arg0 const[1074033723], arg1 ptr[in, int32[0:32]])
++ioctl$syz_spec_2074345393_88(fd fd_ppp, arg0 const[2147775553], arg1 ptr[out, int32])
++ioctl$syz_spec_2074345393_89(fd fd_ppp, arg0 const[2147775574], arg1 ptr[out, int32])
++ioctl$syz_spec_2074345393_90(fd fd_ppp, arg0 const[2147775578], arg1 ptr[out, int32])
++ioctl$syz_spec_2074345393_91(fd fd_ppp, arg0 const[2148037695], arg1 ptr[out, struct_anon_159_2911109890780151192_2074345393])
++ioctl$syz_spec_2074345393_92(fd fd_ppp, arg0 const[2148561983], arg1 ptr[out, struct_anon_18_14407030617104035601_2074345393])
++ioctl$syz_spec_2074345393_94(fd fd_ppp, arg0 const[2148561983], arg1 ptr[out, struct_anon_18_14407030617104035601_2074345393])
++ioctl$syz_spec_2074345393_95(fd fd_ppp, arg0 const[2148037695], arg1 ptr[out, struct_anon_159_2911109890780151192_2074345393])
++ioctl$syz_spec_2074345393_99(fd fd_ppp, arg0 const[1074820173], arg1 ptr[in, struct_ppp_option_data_2587208738303345146_2074345393])
++ioctl$syz_spec_2074345393_100(fd fd_ppp, arg0 const[1074820173], arg1 ptr[in, struct_ppp_option_data_3363715392134054621_2074345393])
++ioctl$syz_spec_2074345393_101(fd fd_ppp, arg0 const[1074820173], arg1 ptr[in, struct_ppp_option_data_6005910599354205779_2074345393])
++ioctl$syz_spec_2074345393_102(fd fd_ppp, arg0 const[1074820173], arg1 ptr[in, struct_ppp_option_data_3794147138783453063_2074345393])
++ioctl$syz_spec_2074345393_103(fd fd_ppp, arg0 const[1074820173], arg1 ptr[in, struct_ppp_option_data_10627278570961650421_2074345393])
++ioctl$syz_spec_2074345393_116(fd fd_ppp, arg0 const[1074820166], arg1 ptr[in, struct_sock_fprog_kern_8636764917408677778_2074345393])
++ioctl$syz_spec_2074345393_117(fd fd_ppp, arg0 const[1074820167], arg1 ptr[in, struct_sock_fprog_kern_8636764917408677778_2074345393])
++ioctl$syz_spec_2074345393_118(fd fd_ppp, arg0 const[1074820166], arg1 ptr[in, struct_sock_fprog_kern_8636764917408677778_2074345393])
++ioctl$syz_spec_2074345393_146(fd fd_ppp, arg0 const[1074295883], arg1 ptr[in, struct_anon_159_2911109890780151192_2074345393])
++ioctl$syz_spec_2074345393_148(fd fd_ppp, arg0 const[1074295883], arg1 ptr[in, struct_anon_159_2911109890780151192_2074345393])
++ioctl$syz_spec_2074345393_149(fd fd_ppp, arg0 const[3221779532], arg1 ptr[out, struct_anon_159_2911109890780151192_2074345393])
++ioctl$syz_spec_2074345393_167(fd fd_ppp, arg0 const[1074033753], arg1 ptr[in, int32])
++ioctl$syz_spec_2074345393_189(fd fd_ppp, arg0 const[1074033745], arg1 ptr[in, int32])
++ioctl$syz_spec_2074345393_203(fd fd_ppp, arg0 const[1074033748], arg1 ptr[in, int32[0:32]])
++ioctl$syz_spec_2074345393_204(fd fd_ppp, arg0 const[1074033751], arg1 ptr[in, int32[0:32]])
++ioctl$syz_spec_2074345393_207(fd fd_ppp, arg0 const[2147775571], arg1 ptr[out, int32])
++ioctl$syz_spec_2074345393_208(fd fd_ppp, arg0 const[2147775573], arg1 ptr[out, int32])
++ioctl$syz_spec_2074345393_209(fd fd_ppp, arg0 const[2147775576], arg1 ptr[out, int32])
++ioctl$syz_spec_2074345393_211(fd fd_ppp, arg0 const[2149610576], arg1 ptr[out, array[int8, 32]])
++ioctl$syz_spec_2074345393_213(fd fd_ppp, arg0 const[2149610576], arg1 ptr[out, array[int8, 32]])
++ioctl$syz_spec_2074345393_214(fd fd_ppp, arg0 const[1075868751], arg1 ptr[in, array[int32[0:32], 8]])
++ioctl$syz_spec_2074345393_224(fd fd_ppp, arg0 const[2149610576], arg1 ptr[out, array[int8, 32]])
++ioctl$syz_spec_2074345393_226(fd fd_ppp, arg0 const[2149610576], arg1 ptr[out, array[int8, 32]])
++ioctl$syz_spec_2074345393_230(fd fd_ppp, arg0 const[1074033722], arg1 ptr[in, int32[0:32]])
++ioctl$syz_spec_2074345393_288(fd fd_ppp, arg0 const[1074033717], arg1 ptr[in, int32[0:32]])
++ioctl$syz_spec_2074345393_290(fd fd_ppp, arg0 const[29753], arg1 const[0])
++ioctl$syz_spec_2074345393_309(fd fd_ppp, arg0 const[29748], arg1 const[0])
++
++struct_ppp_option_data_3794147138783453063_2074345393 {
++    field_0    ptr[in, array[int8]]
++    field_1    len[field_0, int32]
++    field_2    int32[0:32]
++} [packed]
++
++struct_sock_fprog_kern_8636764917408677778_2074345393 {
++    field_0    int16[0:1]
++    field_1    int64[0:8417509178532167679]
++} [packed]
++
++struct_ppp_option_data_3363715392134054621_2074345393 {
++    field_0    ptr[in, int8[0:8]]
++    field_1    const[1, int32]
++    field_2    int32[0:32]
++} [packed]
++
++struct_ppp_option_data_2587208738303345146_2074345393 {
++    field_0    int64[0:64]
++    field_1    int32
++    field_2    int32[0:32]
++} [packed]
++
++struct_anon_159_2911109890780151192_2074345393 {
++    field_0    int32[0:643]
++    field_1    int32[0:32]
++} [packed]
++
++struct_anon_18_14407030617104035601_2074345393 {
++    field_0    int64[0:184467440737095516]
++    field_1    int64[0:184467440737095516]
++} [packed]
++
++struct_ppp_option_data_6005910599354205779_2074345393 {
++    field_0    ptr[in, int16[0:16]]
++    field_1    const[2, int32]
++    field_2    int32[0:32]
++} [packed]
++
++struct_ppp_option_data_10627278570961650421_2074345393 {
++    field_0    ptr[in, int32[0:32]]
++    field_1    const[4, int32]
++    field_2    int32[0:32]
++} [packed]
++
+diff --git a/sys/linux/syz_spec_ptp.txt b/sys/linux/syz_spec_ptp.txt
+new file mode 100644
+index 000000000..1e81bffaa
+--- /dev/null
++++ b/sys/linux/syz_spec_ptp.txt
+@@ -0,0 +1,86 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_18446744072282852745_2(fd fd_ptp, arg0 const[15635], arg1 const[0])
++ioctl$syz_spec_18446744072282852745_5(fd fd_ptp, arg0 const[1074806018], arg1 const[0])
++ioctl$syz_spec_18446744072282852745_6(fd fd_ptp, arg0 const[1077427468], arg1 const[0])
++ioctl$syz_spec_18446744072282852745_7(fd fd_ptp, arg0 const[1080048912], arg1 const[0])
++ioctl$syz_spec_18446744072282852745_9(fd fd_ptp, arg0 const[2152742154], arg1 const[0])
++ioctl$syz_spec_18446744072282852745_15(fd fd_ptp, arg0 const[939736563], arg1 const[0])
++ioctl$syz_spec_18446744072282852745_16(fd fd_ptp, arg0 const[3300932886], arg1 const[0])
++ioctl$syz_spec_18446744072282852745_21(fd fd_ptp, arg0 const[3300932886], arg1 ptr[out, struct_ptp_sys_offset_extended_14889491643809615300_18446744072282852745])
++ioctl$syz_spec_18446744072282852745_73(fd fd_ptp, arg0 const[3300932882], arg1 const[0])
++ioctl$syz_spec_18446744072282852745_79(fd fd_ptp, arg0 const[3227532550], arg1 ptr[out, struct_ptp_pin_desc_14942809178764512893_18446744072282852745])
++ioctl$syz_spec_18446744072282852745_81(fd fd_ptp, arg0 const[3227532559], arg1 ptr[out, struct_ptp_pin_desc_14942809178764512893_18446744072282852745])
++ioctl$syz_spec_18446744072282852745_99(fd fd_ptp, arg0 const[3225435413], arg1 const[0])
++ioctl$syz_spec_18446744072282852745_106(fd fd_ptp, arg0 const[3225435413], arg1 ptr[out, struct_ptp_sys_offset_precise_17949018365201876032_18446744072282852745])
++ioctl$syz_spec_18446744072282852745_118(fd fd_ptp, arg0 const[3225435409], arg1 const[0])
++ioctl$syz_spec_18446744072282852745_120(fd fd_ptp, arg0 const[2152742154], arg1 ptr[out, struct_ptp_clock_caps_10735656432823227494_18446744072282852745])
++ioctl$syz_spec_18446744072282852745_122(fd fd_ptp, arg0 const[2152742154], arg1 ptr[out, struct_ptp_clock_caps_10735656432823227494_18446744072282852745])
++ioctl$syz_spec_18446744072282852745_125(fd fd_ptp, arg0 const[1128283406], arg1 ptr[out, struct_ptp_sys_offset_3633822066559202686_18446744072282852745])
++ioctl$syz_spec_18446744072282852745_163(fd fd_ptp, arg0 const[1080048903], arg1 ptr[in, struct_ptp_pin_desc_14942809178764512893_18446744072282852745])
++ioctl$syz_spec_18446744072282852745_214(fd fd_ptp, arg0 const[1080048912], arg1 ptr[in, struct_ptp_pin_desc_14942809178764512893_18446744072282852745])
++ioctl$syz_spec_18446744072282852745_220(fd fd_ptp, arg0 const[1077427459], arg1 ptr[in, array[int8, 56]])
++ioctl$syz_spec_18446744072282852745_224(fd fd_ptp, arg0 const[1077427468], arg1 ptr[in, array[int8, 56]])
++ioctl$syz_spec_18446744072282852745_277(fd fd_ptp, arg0 const[1074806018], arg1 ptr[in, array[int8, 16]])
++ioctl$syz_spec_18446744072282852745_289(fd fd_ptp, arg0 const[1074806027], arg1 ptr[in, array[int8, 16]])
++ioctl$syz_spec_18446744072282852745_306(fd fd_ptp, arg0 const[1074019604], arg1 ptr[in, int32])
++ioctl$syz_spec_18446744072282852745_308(fd fd_ptp, arg0 const[1074019588], arg1 const[0])
++ioctl$syz_spec_18446744072282852745_316(fd fd_ptp, arg0 const[1074019588], arg1 const[0])
++ioctl$syz_spec_18446744072282852745_324(fd fd_ptp, arg0 const[1074019597], arg1 const[0])
++ioctl$syz_spec_18446744072282852745_334(fd fd_ptp, arg0 const[1128283397], arg1 const[0])
++ioctl$syz_spec_18446744072282852745_344(fd fd_ptp, arg0 const[3227532559], arg1 const[0])
++ioctl$syz_spec_18446744072282852745_355(fd fd_ptp, arg0 const[1074019604], arg1 const[0])
++
++struct_ptp_sys_offset_extended_14889491643809615300_18446744072282852745 {
++    field_0    int32
++    field_1    int32
++    field_2    array[const[0, int32], 2]
++    field_3    array[array[_18446744072282852745, 3], 25]
++} [packed]
++
++struct_ptp_sys_offset_3633822066559202686_18446744072282852745 {
++    field_0    int32
++    field_1    array[int32[0:32], 3]
++    field_2    array[_18446744072282852745, 51]
++} [packed]
++
++struct_ptp_clock_caps_10735656432823227494_18446744072282852745 {
++    field_0    int32[0:32]
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    int32[0:32]
++    field_5    int32[0:32]
++    field_6    int32[0:1]
++    field_7    const[0, int32]
++    field_8    const[0, int32]
++    field_9    array[const[0, int32], 11]
++} [packed]
++
++struct_ptp_pin_desc_14942809178764512893_18446744072282852745 {
++    field_0    array[int8[0:8], 64]
++    field_1    int32[0:4294967294]
++    field_2    int32
++    field_3    int32
++    field_4    array[int32[0:32], 5]
++} [packed]
++
++_18446744072282852745 {
++    field_0    int64[0:64]
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++} [packed]
++
++struct_ptp_sys_offset_precise_17949018365201876032_18446744072282852745 {
++    field_0    struct_mm_cid_2587208738303345146_18446744072282852745
++    field_1    struct_mm_cid_2587208738303345146_18446744072282852745
++    field_2    struct_mm_cid_2587208738303345146_18446744072282852745
++    field_3    array[const[0, int32], 4]
++} [packed]
++
++struct_mm_cid_2587208738303345146_18446744072282852745 {
++    field_0    int64[0:64]
++    field_1    int32[0:32]
++    field_2    const[0, int32]
++} [packed]
++
+diff --git a/sys/linux/syz_spec_rdma_cm.txt b/sys/linux/syz_spec_rdma_cm.txt
+new file mode 100644
+index 000000000..58f3c7443
+--- /dev/null
++++ b/sys/linux/syz_spec_rdma_cm.txt
+@@ -0,0 +1,293 @@
++meta arches["amd64"]
++
++write$syz_spec_18446744072950575947_2(fd fd_rdma_cm, arg0 const[0], arg1 const[0])
++write$syz_spec_18446744072950575947_7(fd fd_rdma_cm, arg0 ptr[in, struct_anon_325_973004685421186111_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_33(fd fd_rdma_cm, arg0 ptr[in, struct_6426864154811822576_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_633(fd fd_rdma_cm, arg0 ptr[in, struct_2541636112584731781_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_640(fd fd_rdma_cm, arg0 ptr[in, struct_11767716289773304337_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_645(fd fd_rdma_cm, arg0 ptr[in, struct_7600439568659795090_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_656(fd fd_rdma_cm, arg0 ptr[in, struct_13322904973361292244_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_670(fd fd_rdma_cm, arg0 ptr[in, struct_3710311078146968980_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_674(fd fd_rdma_cm, arg0 ptr[in, struct_13464646010664790651_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_680(fd fd_rdma_cm, arg0 ptr[in, struct_7641617878635973604_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_717(fd fd_rdma_cm, arg0 ptr[in, struct_17118201749516815564_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_718(fd fd_rdma_cm, arg0 ptr[in, struct_12385135529652485849_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_721(fd fd_rdma_cm, arg0 ptr[in, struct_12385135529652485849_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_759(fd fd_rdma_cm, arg0 ptr[in, struct_11308059129859755918_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_762(fd fd_rdma_cm, arg0 ptr[in, struct_10129898561716048962_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_771(fd fd_rdma_cm, arg0 ptr[in, struct_16589485468591091072_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_818(fd fd_rdma_cm, arg0 ptr[in, struct_17500197580549893410_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_849(fd fd_rdma_cm, arg0 ptr[in, struct_17760831874763182835_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_855(fd fd_rdma_cm, arg0 ptr[in, array[int8, 288:296]], arg1 int64)
++write$syz_spec_18446744072950575947_861(fd fd_rdma_cm, arg0 ptr[in, struct_14748560941805831134_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_876(fd fd_rdma_cm, arg0 ptr[in, struct_2382842260961933387_18446744072950575947], arg1 int64)
++write$syz_spec_18446744072950575947_884(fd fd_rdma_cm, arg0 ptr[in, struct_7079706152966090697_18446744072950575947], arg1 int64)
++
++struct_anon_325_973004685421186111_18446744072950575947 {
++    field_0    int32
++    field_1    int16
++    field_2    int16
++} [packed]
++
++struct_rdma_ucm_resolve_addr_14445729131681717153_18446744072950575947 {
++    field_0    int32[0:32]
++    field_1    int32[0:32]
++    field_2    int16
++    field_3    int16
++    field_4    int32
++    field_5    struct___kernel_sockaddr_storage_6802076689055465785_18446744072950575947
++    field_6    struct___kernel_sockaddr_storage_6802076689055465785_18446744072950575947
++} [packed]
++
++struct_rdma_ucm_resolve_ib_service_891648550081378027_18446744072950575947 {
++    field_0    int32[0:32]
++    field_1    struct_rdma_ucm_ib_service_2796279764486195956_18446744072950575947
++} [packed]
++
++struct_10129898561716048962_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_rdma_ucm_set_option_17144998039458166774_18446744072950575947
++} [packed]
++
++struct_13464646010664790651_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_ib_unpacked_deth_2911109890780151192_18446744072950575947
++} [packed]
++
++struct_2382842260961933387_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_rdma_ucm_accept_13501559036695706963_18446744072950575947
++} [packed]
++
++struct_rdma_ucm_ib_service_2796279764486195956_18446744072950575947 {
++    field_0    int64[0:64]
++    field_1    array[int8[0:8], 64]
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++} [packed]
++
++union_anon_370_51932_6347139822388243999_18446744072950575947 {
++    field_0    int64[0:64]
++    field_1    array[int8[0:8], 296]
++} [packed]
++
++struct_17118201749516815564_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    union_anon_32_606207565407687920_18446744072950575947
++} [packed]
++
++struct_rdma_ucm_resolve_ip_15411624592933529424_18446744072950575947 {
++    field_0    struct_sockaddr_in6_15464189669239099715_18446744072950575947
++    field_1    struct_sockaddr_in6_15464189669239099715_18446744072950575947
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++} [packed]
++
++union_anon_369_16831405829270347761_18446744072950575947 {
++    field_0    int64[0:18446744073709486107]
++    field_1    array[int8[0:8], 120]
++} [packed]
++
++struct_11308059129859755918_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_rdma_ucm_resolve_ib_service_891648550081378027_18446744072950575947
++} [packed]
++
++struct___kernel_sockaddr_storage_6802076689055465785_18446744072950575947 {
++    field_0    union_anon_369_16831405829270347761_18446744072950575947
++} [packed]
++
++struct_7641617878635973604_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_rdma_ucm_resolve_ip_15411624592933529424_18446744072950575947
++} [packed]
++
++struct_sockaddr_in6_15464189669239099715_18446744072950575947 {
++    field_0    int16
++    field_1    int16[0:16]
++    field_2    int32[0:32]
++    field_3    struct_in6_addr_4498177330812546531_18446744072950575947
++    field_4    int32[0:32]
++} [packed]
++
++struct_7600439568659795090_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_rdma_ucm_bind_ip_9896079954444002837_18446744072950575947
++} [packed]
++
++struct_13322904973361292244_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_rdma_ucm_join_ip_mcast_7558094048978792139_18446744072950575947
++} [packed]
++
++struct_atomic_t_17726941224854552701_18446744072950575947 {
++    field_0    int32[0:32]
++} [packed]
++
++struct_11767716289773304337_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_atomic_t_17726941224854552701_18446744072950575947
++} [packed]
++
++struct_in6_addr_4498177330812546531_18446744072950575947 {
++    field_0    union_anon_92_829912988135980467_18446744072950575947
++} [packed]
++
++struct_rdma_ucm_connect_11756931619479856511_18446744072950575947 {
++    field_0    struct_rdma_ucm_conn_param_11647248311040298728_18446744072950575947
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    struct_ib_unpacked_deth_2911109890780151192_18446744072950575947
++} [packed]
++
++union_anon_92_829912988135980467_18446744072950575947 {
++    field_0    array[int32[0:32], 4]
++} [packed]
++
++struct_ib_unpacked_deth_2911109890780151192_18446744072950575947 {
++    field_0    int32[0:32]
++    field_1    int32[0:32]
++} [packed]
++
++struct_rdma_ucm_reject_12515083904329356076_18446744072950575947 {
++    field_0    int32[0:32]
++    field_1    int8
++    field_2    int8
++    field_3    array[int8[0:8], 2]
++    field_4    array[int8[0:8], 256]
++} [packed]
++
++struct_mm_cid_2587208738303345146_18446744072950575947 {
++    field_0    int64[0:64]
++    field_1    int32[0:32]
++    field_2    int32
++} [packed]
++
++struct_6426864154811822576_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_rdma_ucm_reject_12515083904329356076_18446744072950575947
++} [packed]
++
++struct_rdma_ucm_conn_param_11647248311040298728_18446744072950575947 {
++    field_0    int32[0:32]
++    field_1    int32[0:32]
++    field_2    array[int8[0:8], 256]
++    field_3    int8[0:8]
++    field_4    int8[0:8]
++    field_5    int8[0:8]
++    field_6    int8[0:8]
++    field_7    int8[0:8]
++    field_8    int8[0:8]
++    field_9    int8[0:8]
++    field_10    int8
++} [packed]
++
++struct_3710311078146968980_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_rdma_ucm_write_cm_event_16771367821549617682_18446744072950575947
++} [packed]
++
++struct_14748560941805831134_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_rdma_ucm_bind_17303066449488724402_18446744072950575947
++} [packed]
++
++struct_rdma_ucm_create_id_1002980344739386615_18446744072950575947 {
++    field_0    int64[0:64]
++    field_1    int64[0:64]
++    field_2    int16[0:262]
++    field_3    int8[0:8]
++    field_4    array[int8[0:8], 5]
++} [packed]
++
++struct_rdma_ucm_accept_13501559036695706963_18446744072950575947 {
++    field_0    int64[0:64]
++    field_1    struct_rdma_ucm_conn_param_11647248311040298728_18446744072950575947
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    struct_ib_unpacked_deth_2911109890780151192_18446744072950575947
++} [packed]
++
++struct_17760831874763182835_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_rdma_ucm_connect_11756931619479856511_18446744072950575947
++} [packed]
++
++struct_rdma_ucm_set_option_17144998039458166774_18446744072950575947 {
++    field_0    int64[0:64]
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    int32
++} [packed]
++
++struct_16589485468591091072_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_rdma_ucm_join_mcast_11275114289243340137_18446744072950575947
++} [packed]
++
++struct_7079706152966090697_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_rdma_ucm_create_id_1002980344739386615_18446744072950575947
++} [packed]
++
++struct_2541636112584731781_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_mm_cid_2587208738303345146_18446744072950575947
++} [packed]
++
++struct_rdma_ucm_join_mcast_11275114289243340137_18446744072950575947 {
++    field_0    int64[0:64]
++    field_1    int64[0:64]
++    field_2    int32[0:32]
++    field_3    int16[0:48]
++    field_4    int16
++    field_5    struct___kernel_sockaddr_storage_6802076689055465785_18446744072950575947
++} [packed]
++
++struct_17500197580549893410_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    struct_rdma_ucm_resolve_addr_14445729131681717153_18446744072950575947
++} [packed]
++
++union_anon_32_606207565407687920_18446744072950575947 {
++    field_0    int64[0:64]
++} [packed]
++
++struct_rdma_ucm_bind_17303066449488724402_18446744072950575947 {
++    field_0    int32[0:32]
++    field_1    int16
++    field_2    int16
++    field_3    struct___kernel_sockaddr_storage_6802076689055465785_18446744072950575947
++} [packed]
++
++struct_rdma_ucm_join_ip_mcast_7558094048978792139_18446744072950575947 {
++    field_0    int64[0:64]
++    field_1    int64[0:64]
++    field_2    struct_sockaddr_in6_15464189669239099715_18446744072950575947
++    field_3    int32[0:32]
++} [packed]
++
++struct_rdma_ucm_bind_ip_9896079954444002837_18446744072950575947 {
++    field_0    int64[0:64]
++    field_1    struct_sockaddr_in6_15464189669239099715_18446744072950575947
++    field_2    int32[0:32]
++} [packed]
++
++union_anon_32_17520978907034455816_18446744072950575947 {
++    field_0    ptr[out, array[int8, 324:336]]
++} [packed]
++
++struct_12385135529652485849_18446744072950575947 {
++    field_0    struct_anon_325_973004685421186111_18446744072950575947
++    field_1    union_anon_32_17520978907034455816_18446744072950575947
++} [packed]
++
++struct_rdma_ucm_write_cm_event_16771367821549617682_18446744072950575947 {
++    field_0    int32[0:32]
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    union_anon_370_51932_6347139822388243999_18446744072950575947
++} [packed]
++
+diff --git a/sys/linux/syz_spec_sequencer.txt b/sys/linux/syz_spec_sequencer.txt
+new file mode 100644
+index 000000000..ca0a234a4
+--- /dev/null
++++ b/sys/linux/syz_spec_sequencer.txt
+@@ -0,0 +1,204 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_18446744072280220996_34(fd fd_seq, arg0 const[3204928384], arg1 const[0])
++ioctl$syz_spec_18446744072280220996_37(fd fd_seq, arg0 const[3227013967], arg1 ptr[in, struct_snd_seq_query_subs_1253433360270232578_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_54(fd fd_seq, arg0 const[1077957454], arg1 ptr[in, struct_snd_seq_remove_events_4065567994479628952_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_657(fd fd_seq, arg0 const[3232256850], arg1 ptr[in, struct_snd_seq_port_info_5777525098548520216_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_660(fd fd_seq, arg0 const[3233567569], arg1 ptr[out, struct_snd_seq_client_info_8575037163199799555_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1477(fd fd_seq, arg0 const[3226489680], arg1 ptr[in, struct_snd_seq_port_subscribe_2153846201669530023_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1485(fd fd_seq, arg0 const[1079530316], arg1 ptr[in, struct_snd_seq_client_pool_11681894780820534483_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1606(fd fd_seq, arg0 const[3227013963], arg1 ptr[in, struct_snd_seq_client_pool_11681894780820534483_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1612(fd fd_seq, arg0 const[1078743882], arg1 ptr[in, struct_snd_seq_queue_client_18249792645516918093_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1621(fd fd_seq, arg0 const[3226227529], arg1 ptr[in, struct_snd_seq_queue_client_18249792645516918093_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1627(fd fd_seq, arg0 const[1080054598], arg1 ptr[in, struct_snd_seq_queue_timer_1402583517306269589_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1634(fd fd_seq, arg0 const[3227538245], arg1 ptr[in, struct_snd_seq_queue_timer_1402583517306269589_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1642(fd fd_seq, arg0 const[1076646722], arg1 ptr[in, struct_snd_seq_queue_tempo_2925755458365262361_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1651(fd fd_seq, arg0 const[3224130369], arg1 ptr[in, struct_snd_seq_queue_tempo_2925755458365262361_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1659(fd fd_seq, arg0 const[3227276096], arg1 ptr[in, struct_snd_seq_queue_status_15797981348771425584_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1696(fd fd_seq, arg0 const[3230421814], arg1 ptr[in, struct_snd_seq_queue_info_931649395111561572_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1702(fd fd_seq, arg0 const[3230421813], arg1 ptr[in, struct_snd_seq_queue_info_931649395111561572_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1708(fd fd_seq, arg0 const[3230421812], arg1 ptr[in, struct_snd_seq_queue_info_931649395111561572_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1714(fd fd_seq, arg0 const[1082938163], arg1 ptr[in, struct_snd_seq_queue_info_931649395111561572_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1717(fd fd_seq, arg0 const[3230421810], arg1 ptr[in, struct_snd_seq_queue_info_931649395111561572_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1750(fd fd_seq, arg0 const[1079006001], arg1 ptr[in, struct_snd_seq_port_subscribe_2153846201669530023_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1753(fd fd_seq, arg0 const[1079006000], arg1 ptr[in, struct_snd_seq_port_subscribe_2153846201669530023_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1757(fd fd_seq, arg0 const[1084773155], arg1 ptr[in, struct_snd_seq_port_info_5777525098548520216_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1801(fd fd_seq, arg0 const[3232256802], arg1 ptr[in, struct_snd_seq_port_info_5777525098548520216_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1805(fd fd_seq, arg0 const[1084773153], arg1 ptr[in, struct_snd_seq_port_info_5777525098548520216_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1822(fd fd_seq, arg0 const[3232256800], arg1 ptr[out, struct_snd_seq_port_info_5777525098548520216_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1977(fd fd_seq, arg0 const[1086083857], arg1 ptr[in, struct_snd_seq_client_info_8575037163199799555_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1986(fd fd_seq, arg0 const[3233567504], arg1 ptr[in, struct_snd_seq_client_info_8575037163199799555_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1993(fd fd_seq, arg0 const[3222295299], arg1 ptr[in, struct_snd_seq_running_info_7315693142037748363_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_1999(fd fd_seq, arg0 const[3224392450], arg1 ptr[out, struct_snd_seq_system_info_9692817955212856461_18446744072280220996])
++ioctl$syz_spec_18446744072280220996_2001(fd fd_seq, arg0 const[2147767041], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744072280220996_2003(fd fd_seq, arg0 const[1074025220], arg1 ptr[in, int32[0:32]])
++ioctl$syz_spec_18446744072280220996_2006(fd fd_seq, arg0 const[2147767040], arg1 ptr[out, int32])
++
++struct_snd_seq_queue_tempo_2925755458365262361_18446744072280220996 {
++    field_0    int32
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    int32[0:32]
++    field_5    int16[0:16]
++    field_6    array[int8[0:8], 22]
++} [packed]
++
++struct_snd_seq_port_subscribe_2153846201669530023_18446744072280220996 {
++    field_0    struct_snd_seq_addr_5744456441278020467_18446744072280220996
++    field_1    struct_snd_seq_addr_5744456441278020467_18446744072280220996
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    int8[0:8]
++    field_5    array[int8[0:8], 3]
++    field_6    array[int8[0:8], 64]
++} [packed]
++
++struct_snd_seq_queue_info_931649395111561572_18446744072280220996 {
++    field_0    int32
++    field_1    int32[0:32]
++    field_2    int8[0:8]
++    field_3    array[int8[0:8], 64]
++    field_4    int32[0:32]
++    field_5    array[int8[0:8], 60]
++} [packed]
++
++struct_snd_timer_id_5701756478882416185_18446744072280220996 {
++    field_0    int32[0:32]
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    int32[0:32]
++} [packed]
++
++struct_snd_seq_port_info_5777525098548520216_18446744072280220996 {
++    field_0    struct_snd_seq_addr_5744456441278020467_18446744072280220996
++    field_1    array[int8[0:8], 64]
++    field_2    int32
++    field_3    int32[0:32]
++    field_4    int32[0:32]
++    field_5    int32[0:32]
++    field_6    int32[0:32]
++    field_7    int32[0:32]
++    field_8    int32[0:32]
++    field_9    int64[0:7150672353722171391]
++    field_10    int32
++    field_11    int8[0:8]
++    field_12    int8[0:8]
++    field_13    int8[0:8]
++    field_14    array[int8[0:8], 57]
++} [packed]
++
++struct_snd_seq_queue_client_18249792645516918093_18446744072280220996 {
++    field_0    int32
++    field_1    int32[0:32]
++    field_2    int32
++    field_3    array[int8[0:8], 64]
++} [packed]
++
++struct_snd_seq_queue_status_15797981348771425584_18446744072280220996 {
++    field_0    int32
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    struct_static_call_site_2911109890780151192_18446744072280220996
++    field_4    int32[0:32]
++    field_5    int32[0:32]
++    field_6    array[int8[0:8], 64]
++} [packed]
++
++struct_anon_111_12329294629914856263_18446744072280220996 {
++    field_0    struct_snd_timer_id_5701756478882416185_18446744072280220996
++    field_1    int32[0:32]
++} [packed]
++
++struct_static_call_site_2911109890780151192_18446744072280220996 {
++    field_0    int32
++    field_1    int32
++} [packed]
++
++struct_snd_seq_queue_timer_1402583517306269589_18446744072280220996 {
++    field_0    int32
++    field_1    int32
++    field_2    union_anon_110_17943274396882561604_18446744072280220996
++    field_3    array[int8[0:8], 64]
++} [packed]
++
++struct_snd_seq_addr_5744456441278020467_18446744072280220996 {
++    field_0    int8
++    field_1    int8
++} [packed]
++
++struct_snd_seq_query_subs_1253433360270232578_18446744072280220996 {
++    field_0    struct_snd_seq_addr_5744456441278020467_18446744072280220996
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    struct_snd_seq_addr_5744456441278020467_18446744072280220996
++    field_5    int8[0:8]
++    field_6    int32[0:32]
++    field_7    array[int8[0:8], 64]
++} [packed]
++
++struct_snd_seq_remove_events_4065567994479628952_18446744072280220996 {
++    field_0    int32
++    field_1    union_snd_seq_timestamp_5276818015377217399_18446744072280220996
++    field_2    int8[0:8]
++    field_3    struct_snd_seq_addr_5744456441278020467_18446744072280220996
++    field_4    int8[0:8]
++    field_5    int32[0:32]
++    field_6    int8[0:8]
++    field_7    array[int32[0:32], 10]
++} [packed]
++
++union_snd_seq_timestamp_5276818015377217399_18446744072280220996 {
++    field_0    struct_static_call_site_2911109890780151192_18446744072280220996
++} [packed]
++
++union_anon_110_17943274396882561604_18446744072280220996 {
++    field_0    struct_anon_111_12329294629914856263_18446744072280220996
++} [packed]
++
++struct_snd_seq_client_pool_11681894780820534483_18446744072280220996 {
++    field_0    int32
++    field_1    int32
++    field_2    int32
++    field_3    int32
++    field_4    int32[0:32]
++    field_5    int32[0:32]
++    field_6    array[int8[0:8], 64]
++} [packed]
++
++struct_snd_seq_system_info_9692817955212856461_18446744072280220996 {
++    field_0    int32[0:32]
++    field_1    int32[0:192]
++    field_2    int32[0:254]
++    field_3    int32[0:256]
++    field_4    int32[0:32]
++    field_5    int32[0:32]
++    field_6    array[int8[0:8], 24]
++} [packed]
++
++struct_snd_seq_running_info_7315693142037748363_18446744072280220996 {
++    field_0    int8
++    field_1    int8[0:8]
++    field_2    int8[0:8]
++    field_3    int8[0:8]
++    field_4    array[int8[0:8], 12]
++} [packed]
++
++struct_snd_seq_client_info_8575037163199799555_18446744072280220996 {
++    field_0    int32
++    field_1    int32[0:32]
++    field_2    array[int8[0:8], 64]
++    field_3    int32[0:32]
++    field_4    array[int8[0:8], 8]
++    field_5    array[int8[0:8], 32]
++    field_6    int32[0:32]
++    field_7    int32[0:32]
++    field_8    int32[0:4294967295]
++    field_9    int32[0:4294967295]
++    field_10    int32
++    field_11    int32[0:32]
++    field_12    array[int8[0:8], 48]
++} [packed]
++
+diff --git a/sys/linux/syz_spec_sg.txt b/sys/linux/syz_spec_sg.txt
+new file mode 100644
+index 000000000..294dc77a1
+--- /dev/null
++++ b/sys/linux/syz_spec_sg.txt
+@@ -0,0 +1,106 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_1085928769_2(fd fd_sg, arg0 const[0], arg1 const[0])
++ioctl$syz_spec_1085928769_13(fd fd_sg, arg0 const[8839], arg1 ptr[in, int32[0:32]])
++ioctl$syz_spec_1085928769_14(fd fd_sg, arg0 const[8840], arg1 ptr[out, int32])
++ioctl$syz_spec_1085928769_15(fd fd_sg, arg0 const[8841], arg1 ptr[out, int32])
++ioctl$syz_spec_1085928769_16(fd fd_sg, arg0 const[8816], arg1 ptr[out, int32])
++ioctl$syz_spec_1085928769_17(fd fd_sg, arg0 const[8817], arg1 ptr[in, int32[0:32]])
++ioctl$syz_spec_1085928769_20(fd fd_sg, arg0 const[8822], arg1 const[0])
++ioctl$syz_spec_1085928769_21(fd fd_sg, arg0 const[8825], arg1 const[0])
++ioctl$syz_spec_1085928769_22(fd fd_sg, arg0 const[8826], arg1 ptr[out, int32])
++ioctl$syz_spec_1085928769_23(fd fd_sg, arg0 const[8827], arg1 ptr[in, int32[0:32]])
++ioctl$syz_spec_1085928769_26(fd fd_sg, arg0 const[8830], arg1 ptr[in, int32[0:32]])
++ioctl$syz_spec_1085928769_27(fd fd_sg, arg0 const[8831], arg1 ptr[out, int32])
++ioctl$syz_spec_1085928769_30(fd fd_sg, arg0 const[8707], arg1 const[0])
++ioctl$syz_spec_1085928769_51(fd fd_sg, arg0 const[21273], arg1 const[0])
++ioctl$syz_spec_1085928769_52(fd fd_sg, arg0 const[21257], arg1 const[0])
++ioctl$syz_spec_1085928769_58(fd fd_sg, arg0 const[21395], arg1 ptr[out, struct_cdrom_generic_command_2326079776079619193_1085928769])
++ioctl$syz_spec_1085928769_143(fd fd_sg, arg0 const[21395], arg1 ptr[in, struct_compat_cdrom_generic_command_18324284563205650984_1085928769])
++ioctl$syz_spec_1085928769_147(fd fd_sg, arg0 const[21395], arg1 ptr[out, struct_cdrom_generic_command_18070817171267910350_1085928769])
++ioctl$syz_spec_1085928769_163(fd fd_sg, arg0 const[21383], arg1 const[0])
++ioctl$syz_spec_1085928769_168(fd fd_sg, arg0 const[21383], arg1 ptr[out, int32])
++ioctl$syz_spec_1085928769_175(fd fd_sg, arg0 const[21377], arg1 const[0])
++ioctl$syz_spec_1085928769_178(fd fd_sg, arg0 const[21376], arg1 const[0])
++ioctl$syz_spec_1085928769_185(fd fd_sg, arg0 const[3], arg1 const[0])
++ioctl$syz_spec_1085928769_187(fd fd_sg, arg0 const[6], arg1 const[0])
++ioctl$syz_spec_1085928769_188(fd fd_sg, arg0 const[5], arg1 const[0])
++ioctl$syz_spec_1085928769_189(fd fd_sg, arg0 const[2], arg1 const[0])
++ioctl$syz_spec_1085928769_192(fd fd_sg, arg0 const[3225948787], arg1 const[0])
++ioctl$syz_spec_1085928769_193(fd fd_sg, arg0 const[8707], arg1 ptr[out, int32])
++ioctl$syz_spec_1085928769_194(fd fd_sg, arg0 const[8706], arg1 const[0])
++ioctl$syz_spec_1085928769_196(fd fd_sg, arg0 const[8705], arg1 ptr[in, int32])
++ioctl$syz_spec_1085928769_197(fd fd_sg, arg0 const[8829], arg1 ptr[out, int32])
++ioctl$syz_spec_1085928769_200(fd fd_sg, arg0 const[8829], arg1 const[0])
++ioctl$syz_spec_1085928769_208(fd fd_sg, arg0 const[8828], arg1 ptr[out, int32])
++ioctl$syz_spec_1085928769_211(fd fd_sg, arg0 const[8828], arg1 const[0])
++ioctl$syz_spec_1085928769_217(fd fd_sg, arg0 const[8822], arg1 ptr[out, struct_sg_scsi_id_12441860495385526911_1085928769])
++ioctl$syz_spec_1085928769_218(fd fd_sg, arg0 const[8822], arg1 ptr[out, struct_sg_scsi_id_12441860495385526911_1085928769])
++ioctl$syz_spec_1085928769_222(fd fd_sg, arg0 const[8821], arg1 ptr[in, int32])
++ioctl$syz_spec_1085928769_1522(fd fd_sg, arg0 const[8818], arg1 ptr[out, int32])
++ioctl$syz_spec_1085928769_1523(fd fd_sg, arg0 const[8838], arg1 const[0])
++ioctl$syz_spec_1085928769_1526(fd fd_sg, arg0 const[8838], arg1 ptr[out, array[int8, 40:384]])
++ioctl$syz_spec_1085928769_1528(fd fd_sg, arg0 const[8838], arg1 ptr[out, struct_compat_sg_req_info_995724401520373353_1085928769])
++
++struct_sg_scsi_id_12441860495385526911_1085928769 {
++    field_0    int32[0:32]
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    int32[0:8]
++    field_5    int16[0:16]
++    field_6    int16[0:16]
++    field_7    array[const[0, int32], 2]
++} [packed]
++
++struct_cdrom_generic_command_18070817171267910350_1085928769 {
++    field_0    array[int8[0:8], 12]
++    field_1    int64[0:32]
++    field_2    int32
++    field_3    const[0, int32]
++    field_4    int64[0:18446744073709551363]
++    field_5    int8[0:8]
++    field_6    int32[0:32]
++    field_7    int32[2801795072:2818572287]
++} [packed]
++
++struct_compat_cdrom_generic_command_18324284563205650984_1085928769 {
++    field_0    array[int8[0:8], 12]
++    field_1    int32[0:32]
++    field_2    int32[0:32]
++    field_3    int32[0:32]
++    field_4    int32[0:32]
++    field_5    int8
++    field_6    array[int8[0:8], 3]
++    field_7    int32[0:32]
++    field_8    int32[0:32]
++    field_9    int32[0:32]
++} [packed]
++
++struct_compat_sg_req_info_995724401520373353_1085928769 {
++    field_0    int8[0:8]
++    field_1    int8[0:8]
++    field_2    int8[0:8]
++    field_3    int8[0:8]
++    field_4    int32[0:32]
++    field_5    int32[0:32]
++    field_6    int32[0:32]
++    field_7    int32[0:32]
++} [packed]
++
++union_anon_117_864_17407625024000610651_1085928769 {
++    field_0    array[int64[0:64], 1]
++} [packed]
++
++struct_cdrom_generic_command_2326079776079619193_1085928769 {
++    field_0    array[int8[0:8], 12]
++    field_1    int64[0:64]
++    field_2    int32
++    field_3    int32
++    field_4    int64
++    field_5    int8[0:8]
++    field_6    int32
++    field_7    int32[0:32]
++    field_8    union_anon_117_864_17407625024000610651_1085928769
++} [packed]
++
+diff --git a/sys/linux/syz_spec_x25.txt b/sys/linux/syz_spec_x25.txt
+new file mode 100644
+index 000000000..adf775db4
+--- /dev/null
++++ b/sys/linux/syz_spec_x25.txt
+@@ -0,0 +1,77 @@
++meta arches["amd64"]
++
++ioctl$syz_spec_18446744072120344875_1(fd sock_x25, arg0 const[21521], arg1 ptr[out, int32])
++ioctl$syz_spec_18446744072120344875_10(fd sock_x25, arg0 const[35303], arg1 const[0])
++ioctl$syz_spec_18446744072120344875_13(fd sock_x25, arg0 const[35306], arg1 ptr[out, array[int8, 50]])
++ioctl$syz_spec_18446744072120344875_17(fd sock_x25, arg0 const[35102], arg1 const[0])
++ioctl$syz_spec_18446744072120344875_18(fd sock_x25, arg0 const[30353], arg1 const[0])
++ioctl$syz_spec_18446744072120344875_19(fd sock_x25, arg0 const[35083], arg1 const[0])
++ioctl$syz_spec_18446744072120344875_23(fd sock_x25, arg0 const[35083], arg1 ptr[in, struct_x25_route_struct_13673411596303674701_18446744072120344875])
++ioctl$syz_spec_18446744072120344875_39(fd sock_x25, arg0 const[35084], arg1 ptr[in, struct_x25_route_struct_13673411596303674701_18446744072120344875])
++ioctl$syz_spec_18446744072120344875_42(fd sock_x25, arg0 const[35308], arg1 ptr[in, struct_dcb_peer_app_info_5744456441278020467_18446744072120344875])
++ioctl$syz_spec_18446744072120344875_46(fd sock_x25, arg0 const[35307], arg1 ptr[in, struct_x25_dte_facilities_1926922443176074508_18446744072120344875])
++ioctl$syz_spec_18446744072120344875_56(fd sock_x25, arg0 const[35306], arg1 ptr[out, array[int8, 50]])
++ioctl$syz_spec_18446744072120344875_65(fd sock_x25, arg0 const[35305], arg1 const[0])
++ioctl$syz_spec_18446744072120344875_313(fd sock_x25, arg0 const[35304], arg1 const[0])
++ioctl$syz_spec_18446744072120344875_316(fd sock_x25, arg0 const[35303], arg1 ptr[in, struct_atomic_t_17726941224854552701_18446744072120344875])
++ioctl$syz_spec_18446744072120344875_318(fd sock_x25, arg0 const[35302], arg1 ptr[out, int16])
++ioctl$syz_spec_18446744072120344875_320(fd sock_x25, arg0 const[35301], arg1 ptr[in, struct_x25_calluserdata_16181283605158008089_18446744072120344875])
++ioctl$syz_spec_18446744072120344875_321(fd sock_x25, arg0 const[35300], arg1 ptr[out, array[int8, 132]])
++ioctl$syz_spec_18446744072120344875_331(fd sock_x25, arg0 const[35299], arg1 ptr[in, struct_x25_facilities_9934707313056149645_18446744072120344875])
++ioctl$syz_spec_18446744072120344875_360(fd sock_x25, arg0 const[35298], arg1 ptr[out, array[int8, 24]])
++ioctl$syz_spec_18446744072120344875_361(fd sock_x25, arg0 const[35297], arg1 const[0])
++ioctl$syz_spec_18446744072120344875_363(fd sock_x25, arg0 const[35297], arg1 ptr[in, struct_x25_subscrip_struct_17257621040373444110_18446744072120344875])
++ioctl$syz_spec_18446744072120344875_366(fd sock_x25, arg0 const[35296], arg1 ptr[in, struct_x25_subscrip_struct_17257621040373444110_18446744072120344875])
++ioctl$syz_spec_18446744072120344875_368(fd sock_x25, arg0 const[21531], arg1 ptr[out, int32])
++
++struct_x25_dte_facilities_1926922443176074508_18446744072120344875 {
++    field_0    int16[0:16]
++    field_1    int16[0:16]
++    field_2    int16[0:16]
++    field_3    int8[0:8]
++    field_4    int8[0:8]
++    field_5    int8
++    field_6    int8
++    field_7    array[int8[0:8], 20]
++    field_8    array[int8[0:8], 20]
++} [packed]
++
++struct_x25_facilities_9934707313056149645_18446744072120344875 {
++    field_0    int32
++    field_1    int32[0:32]
++    field_2    int32
++    field_3    int32
++    field_4    int32
++    field_5    int32
++} [packed]
++
++struct_x25_subscrip_struct_17257621040373444110_18446744072120344875 {
++    field_0    array[int8[0:8], 192]
++    field_1    int64[0:64]
++    field_2    int32[0:32]
++} [packed]
++
++struct_dcb_peer_app_info_5744456441278020467_18446744072120344875 {
++    field_0    int8[0:8]
++    field_1    int8[0:8]
++} [packed]
++
++struct_atomic_t_17726941224854552701_18446744072120344875 {
++    field_0    int32
++} [packed]
++
++struct_x25_calluserdata_16181283605158008089_18446744072120344875 {
++    field_0    int32
++    field_1    array[int8[0:8], 128]
++} [packed]
++
++union_anon_83_8564385418506347452_18446744072120344875 {
++    field_0    array[int8[0:8], 16]
++} [packed]
++
++struct_x25_route_struct_13673411596303674701_18446744072120344875 {
++    field_0    union_anon_83_8564385418506347452_18446744072120344875
++    field_1    int32
++    field_2    array[int8[0:8], 200]
++} [packed]
++
