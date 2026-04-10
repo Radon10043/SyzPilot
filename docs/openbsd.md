@@ -92,7 +92,7 @@ run following commands for basic package installation:
 echo "https://mirrors.aliyun.com/openbsd/" > /etc/installurl
 # vim: vim-9.1.1706-no_x11
 # llvm: llvm-19.1.7p9
-pkg_add wget bash curl git vim fastfetch llvm go gmake
+pkg_add wget bash curl git vim fastfetch llvm go gmake gcc
 pkg_add ccache sqlite3 bear python py3-pip gdb cmake
 pip3 install compiledb --break-system-packages
 
