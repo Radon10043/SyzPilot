@@ -1,10 +1,9 @@
 diff --git a/sys/linux/card0_gen.txt b/sys/linux/card0_gen.txt
 new file mode 100644
-index 000000000..cce1f803c
+index 000000000..636a74e98
 --- /dev/null
 +++ b/sys/linux/card0_gen.txt
-@@ -0,0 +1,10 @@
-+meta automatic
+@@ -0,0 +1,9 @@
 +meta arches["amd64"]
 +
 +include <linux/fcntl.h>
@@ -28,11 +27,10 @@ index 000000000..0197e9f79
 +__NR_read = amd64:0
 diff --git a/sys/linux/comedi0_gen.txt b/sys/linux/comedi0_gen.txt
 new file mode 100644
-index 000000000..564e47be0
+index 000000000..bf0049d51
 --- /dev/null
 +++ b/sys/linux/comedi0_gen.txt
-@@ -0,0 +1,11 @@
-+meta automatic
+@@ -0,0 +1,10 @@
 +meta arches["amd64"]
 +
 +include <linux/fcntl.h>
@@ -58,11 +56,10 @@ index 000000000..a7d2b605a
 +__NR_write = amd64:1
 diff --git a/sys/linux/event0_gen.txt b/sys/linux/event0_gen.txt
 new file mode 100644
-index 000000000..9caa28060
+index 000000000..8c9d5fb55
 --- /dev/null
 +++ b/sys/linux/event0_gen.txt
-@@ -0,0 +1,11 @@
-+meta automatic
+@@ -0,0 +1,10 @@
 +meta arches["amd64"]
 +
 +include <linux/fcntl.h>
@@ -88,11 +85,10 @@ index 000000000..a7d2b605a
 +__NR_write = amd64:1
 diff --git a/sys/linux/fuse_gen.txt b/sys/linux/fuse_gen.txt
 new file mode 100644
-index 000000000..562a74601
+index 000000000..2ca4c317a
 --- /dev/null
 +++ b/sys/linux/fuse_gen.txt
-@@ -0,0 +1,12 @@
-+meta automatic
+@@ -0,0 +1,11 @@
 +meta arches["amd64"]
 +
 +include <linux/fcntl.h>
@@ -117,11 +113,10 @@ index 000000000..6d3c35bea
 +__NR_openat = amd64:257
 diff --git a/sys/linux/i2c_0_gen.txt b/sys/linux/i2c_0_gen.txt
 new file mode 100644
-index 000000000..27ca789c3
+index 000000000..2c15ab5b3
 --- /dev/null
 +++ b/sys/linux/i2c_0_gen.txt
-@@ -0,0 +1,11 @@
-+meta automatic
+@@ -0,0 +1,10 @@
 +meta arches["amd64"]
 +
 +include <linux/fcntl.h>
@@ -147,11 +142,10 @@ index 000000000..a7d2b605a
 +__NR_write = amd64:1
 diff --git a/sys/linux/kvm_gen.txt b/sys/linux/kvm_gen.txt
 new file mode 100644
-index 000000000..20622ff68
+index 000000000..9b11e9dc4
 --- /dev/null
 +++ b/sys/linux/kvm_gen.txt
-@@ -0,0 +1,9 @@
-+meta automatic
+@@ -0,0 +1,8 @@
 +meta arches["amd64"]
 +
 +include <linux/fcntl.h>
@@ -173,11 +167,10 @@ index 000000000..6d3c35bea
 +__NR_openat = amd64:257
 diff --git a/sys/linux/ppp_gen.txt b/sys/linux/ppp_gen.txt
 new file mode 100644
-index 000000000..92785e53b
+index 000000000..0dd47e6b5
 --- /dev/null
 +++ b/sys/linux/ppp_gen.txt
-@@ -0,0 +1,11 @@
-+meta automatic
+@@ -0,0 +1,10 @@
 +meta arches["amd64"]
 +
 +include <linux/fcntl.h>
@@ -203,11 +196,10 @@ index 000000000..a7d2b605a
 +__NR_write = amd64:1
 diff --git a/sys/linux/ptp0_gen.txt b/sys/linux/ptp0_gen.txt
 new file mode 100644
-index 000000000..bca9ebac6
+index 000000000..f9f950fce
 --- /dev/null
 +++ b/sys/linux/ptp0_gen.txt
-@@ -0,0 +1,10 @@
-+meta automatic
+@@ -0,0 +1,9 @@
 +meta arches["amd64"]
 +
 +include <linux/fcntl.h>
@@ -231,11 +223,10 @@ index 000000000..0197e9f79
 +__NR_read = amd64:0
 diff --git a/sys/linux/rdma_cm_gen.txt b/sys/linux/rdma_cm_gen.txt
 new file mode 100644
-index 000000000..47609e39c
+index 000000000..3e03b99af
 --- /dev/null
 +++ b/sys/linux/rdma_cm_gen.txt
-@@ -0,0 +1,9 @@
-+meta automatic
+@@ -0,0 +1,8 @@
 +meta arches["amd64"]
 +
 +include <linux/fcntl.h>
@@ -257,11 +248,10 @@ index 000000000..5c10e5351
 +__NR_write = amd64:1
 diff --git a/sys/linux/renderD128_gen.txt b/sys/linux/renderD128_gen.txt
 new file mode 100644
-index 000000000..5a9920fba
+index 000000000..07bff18e4
 --- /dev/null
 +++ b/sys/linux/renderD128_gen.txt
-@@ -0,0 +1,10 @@
-+meta automatic
+@@ -0,0 +1,9 @@
 +meta arches["amd64"]
 +
 +include <linux/fcntl.h>
@@ -285,11 +275,10 @@ index 000000000..0197e9f79
 +__NR_read = amd64:0
 diff --git a/sys/linux/sequencer_gen.txt b/sys/linux/sequencer_gen.txt
 new file mode 100644
-index 000000000..6dd0488bd
+index 000000000..8990c4c5d
 --- /dev/null
 +++ b/sys/linux/sequencer_gen.txt
-@@ -0,0 +1,12 @@
-+meta automatic
+@@ -0,0 +1,11 @@
 +meta arches["amd64"]
 +
 +include <linux/fcntl.h>
@@ -316,11 +305,10 @@ index 000000000..a7d2b605a
 +__NR_write = amd64:1
 diff --git a/sys/linux/sg0_gen.txt b/sys/linux/sg0_gen.txt
 new file mode 100644
-index 000000000..580c5d5f6
+index 000000000..3ba557550
 --- /dev/null
 +++ b/sys/linux/sg0_gen.txt
-@@ -0,0 +1,11 @@
-+meta automatic
+@@ -0,0 +1,10 @@
 +meta arches["amd64"]
 +
 +include <linux/fcntl.h>
@@ -346,11 +334,10 @@ index 000000000..a7d2b605a
 +__NR_write = amd64:1
 diff --git a/sys/linux/uinput_gen.txt b/sys/linux/uinput_gen.txt
 new file mode 100644
-index 000000000..8d3ac74f1
+index 000000000..c4c269f02
 --- /dev/null
 +++ b/sys/linux/uinput_gen.txt
-@@ -0,0 +1,11 @@
-+meta automatic
+@@ -0,0 +1,10 @@
 +meta arches["amd64"]
 +
 +include <linux/fcntl.h>
