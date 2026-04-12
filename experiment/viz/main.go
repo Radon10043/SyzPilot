@@ -18,6 +18,7 @@ import (
 var (
 	flagExpdir string
 	flagMaster string
+	flagStrict bool
 )
 
 type Kernel struct {
@@ -61,6 +62,7 @@ type Expinfo struct {
 func main() {
 	flag.StringVar(&flagExpdir, "expdir", "", "path to the experiment directory")
 	flag.StringVar(&flagMaster, "master", "", "master fuzzer")
+	flag.BoolVar(&flagStrict, "strict", false, "strict mode")
 	flag.Parse()
 
 	if err := checkExpdir(flagExpdir); err != nil {
@@ -171,7 +173,8 @@ func toFloat64Slice(intSlice []int) []float64 {
 func utest(v1 []float64, v2 []float64) float64 {
 	res, err := stats.MannWhitneyUTest(v1, v2, stats.LocationDiffers)
 	if err != nil {
-		panic(err)
+		fmt.Printf("perform mann-whitney u test failed: %v\n", err)
+		return -1
 	}
 	return res.P
 }
@@ -180,7 +183,8 @@ func utest(v1 []float64, v2 []float64) float64 {
 func a12(v1 []float64, v2 []float64) float64 {
 	res, err := stats.MannWhitneyUTest(v1, v2, stats.LocationDiffers)
 	if err != nil {
-		panic(err)
+		fmt.Printf("calculate a12 failed: %v\n", err)
+		return -1
 	}
 	return res.U / float64(res.N1*res.N2)
 }
@@ -188,8 +192,16 @@ func a12(v1 []float64, v2 []float64) float64 {
 // printTable prints the experiment info in a table format
 func printTable(eiSlice []Expinfo) {
 	slices.SortFunc(eiSlice, func(a, b Expinfo) int {
-		aFullInfo := fmt.Sprintf("%s-%s-%s-%s", a.Kernel.Name, a.Kernel.Version, a.Kernel.Subsystem, a.Fuzzer.Name)
-		bFullInfo := fmt.Sprintf("%s-%s-%s-%s", b.Kernel.Name, b.Kernel.Version, b.Kernel.Subsystem, b.Fuzzer.Name)
+		aIsKernel := a.Kernel.Subsystem == "kernel"
+		bIsKernel := b.Kernel.Subsystem == "kernel"
+		if aIsKernel && !bIsKernel {
+			return -1
+		}
+		if !aIsKernel && bIsKernel {
+			return 1
+		}
+		aFullInfo := fmt.Sprintf("%s-%s-%s-%s", a.Kernel.Subsystem, a.Kernel.Name, a.Kernel.Version, a.Fuzzer.Name)
+		bFullInfo := fmt.Sprintf("%s-%s-%s-%s", b.Kernel.Subsystem, b.Kernel.Name, b.Kernel.Version, b.Fuzzer.Name)
 		return cmp.Compare(aFullInfo, bFullInfo)
 	})
 	t := table.NewWriter()
@@ -234,6 +246,11 @@ func checkExpdir(expdir string) error {
 		return fmt.Errorf("experiment directory does not exist: %s", expdir)
 	}
 
+	if !flagStrict {
+		return nil
+	}
+
+	// follwoing are strict checks
 	// check repeat times consistency
 	entries, err := os.ReadDir(expdir)
 	if err != nil {
