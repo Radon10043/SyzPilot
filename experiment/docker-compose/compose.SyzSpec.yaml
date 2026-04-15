@@ -7,14 +7,14 @@ x-base: &base
   cpus: ${EXPERIMENT_CPUS}
   environment: &env
     VMCOUNT: ${EXPERIMENT_VMCOUNT}
-    SYZSPEC: ${EXPERIMENT_ROOT}/fuzzer/SyzSpec
-    SYZKALLER: ${EXPERIMENT_ROOT}/fuzzer/SyzSpec/syzkaller
-    CLOUD: ${EXPERIMENT_ROOT}/fuzzer/cloud
-    OUTROOT: ${EXPERIMENT_ROOT}/experiment/SyzSpec
+    SYZSPEC: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/SyzSpec
+    SYZKALLER: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/SyzSpec/syzkaller
+    CLOUD: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/cloud
+    OUTROOT: ${EXPERIMENT_ROOT_CONTAINER}/experiment/SyzSpec
   volumes:
     - /etc/timezone:/etc/timezone:ro
     - /etc/localtime:/etc/localtime:ro
-    - ${MOUNT:?MOUNT is required}
+    - ${EXPERIMENT_ROOT_HOST:?EXPERIMENT_ROOT_HOST is required}:${EXPERIMENT_ROOT_CONTAINER:?EXPERIMENT_ROOT_CONTAINER is required}
 
 ####################
 ### Project name ###
@@ -26,8 +26,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      KERNEL: ${EXPERIMENT_ROOT}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT}/images/Debian/bullseye
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: kernel
@@ -45,8 +45,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      KERNEL: ${EXPERIMENT_ROOT}/kernel/linux/v6.17.13
-      IMAGE: ${EXPERIMENT_ROOT}/images/Debian/bullseye
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.17.13
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.17.13"
       SUBSYSTEM: kernel
@@ -64,8 +64,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      KERNEL: ${EXPERIMENT_ROOT}/kernel/linux/v6.12.63
-      IMAGE: ${EXPERIMENT_ROOT}/images/Debian/bullseye
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.12.63
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.12.63"
       SUBSYSTEM: kernel
@@ -83,8 +83,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      KERNEL: ${EXPERIMENT_ROOT}/kernel/linux/v6.6.119
-      IMAGE: ${EXPERIMENT_ROOT}/images/Debian/bullseye
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.6.119
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.6.119"
       SUBSYSTEM: kernel
@@ -102,8 +102,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      KERNEL: ${EXPERIMENT_ROOT}/kernel/linux/v6.1.159
-      IMAGE: ${EXPERIMENT_ROOT}/images/Debian/bullseye
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.1.159
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.1.159"
       SUBSYSTEM: kernel
@@ -121,8 +121,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      KERNEL: ${EXPERIMENT_ROOT}/kernel/linux/v5.15.197
-      IMAGE: ${EXPERIMENT_ROOT}/images/Debian/bullseye
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v5.15.197
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v5.15.197"
       SUBSYSTEM: kernel
@@ -135,3 +135,387 @@ services:
         mkdir -p "$$WORKDIR"
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg" > "$$WORKDIR/fuzz.cfg"
         timeout -s KILL 24h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+##################
+### Subsystems ###
+##################
+
+  linux-v6.18-autofs:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: autofs
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-ax25:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: ax25
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-btrfs:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: btrfs
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-can:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: can
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-comedi:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: comedi
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-dri:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: dri
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-f2fs:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: f2fs
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-i2c:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: i2c
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-input:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: input
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-kvm:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: kvm
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-nilfs2:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: nilfs2
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-ocfs2:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: ocfs2
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-phonet:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: phonet
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-ppp:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: ppp
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-ptp:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: ptp
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-rdma_cm:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: rdma_cm
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-sequencer:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: sequencer
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-sg:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: sg
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+
+  linux-v6.18-x25:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      KERNEL_NAME: linux
+      KERNEL_VERSION: "v6.18"
+      SUBSYSTEM: x25
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p "$$WORKDIR"
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
+        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/SyzSpec/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
