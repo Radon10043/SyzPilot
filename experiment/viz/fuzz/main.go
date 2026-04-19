@@ -18,6 +18,7 @@ import (
 var (
 	flagExpdir string
 	flagMaster string
+	flagFormat string
 	flagStrict bool
 )
 
@@ -45,7 +46,7 @@ type Result struct {
 	// number of unique crashes triggered by Fuzzer
 	Crashes []int
 	// average number of unique crashes found by Fuzzer
-	AvgCra int
+	AvgCra float64
 	// A12 value compare with master, i.e. what the probability
 	// that master has more crashes than current fuzzer
 	CraA12 float64
@@ -62,6 +63,7 @@ type Expinfo struct {
 func main() {
 	flag.StringVar(&flagExpdir, "expdir", "", "path to the experiment directory")
 	flag.StringVar(&flagMaster, "master", "", "master fuzzer")
+	flag.StringVar(&flagFormat, "format", "text", "output format, support text, csv, tsv, markdown, and html")
 	flag.BoolVar(&flagStrict, "strict", false, "strict mode")
 	flag.Parse()
 
@@ -123,7 +125,7 @@ func statTest(eis *[]Expinfo) {
 
 	// if no master fuzzer, statistical test is meaningless
 	if master == nil {
-		fmt.Println("no master fuzzer found, skip statistical test")
+		fmt.Fprintln(os.Stderr, "no master fuzzer found, skip statistical test")
 		return
 	}
 
@@ -173,7 +175,7 @@ func toFloat64Slice(intSlice []int) []float64 {
 func utest(v1 []float64, v2 []float64) float64 {
 	res, err := stats.MannWhitneyUTest(v1, v2, stats.LocationDiffers)
 	if err != nil {
-		fmt.Printf("perform mann-whitney u test failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "perform mann-whitney u test failed: %v\n", err)
 		return -1
 	}
 	return res.P
@@ -183,7 +185,7 @@ func utest(v1 []float64, v2 []float64) float64 {
 func a12(v1 []float64, v2 []float64) float64 {
 	res, err := stats.MannWhitneyUTest(v1, v2, stats.LocationDiffers)
 	if err != nil {
-		fmt.Printf("calculate a12 failed: %v\n", err)
+		fmt.Fprintf(os.Stderr, "calculate a12 failed: %v\n", err)
 		return -1
 	}
 	return res.U / float64(res.N1*res.N2)
@@ -200,8 +202,8 @@ func printTable(eiSlice []Expinfo) {
 		if !aIsKernel && bIsKernel {
 			return 1
 		}
-		aFullInfo := fmt.Sprintf("%s-%s-%s-%s", a.Kernel.Subsystem, a.Kernel.Name, a.Kernel.Version, a.Fuzzer.Name)
-		bFullInfo := fmt.Sprintf("%s-%s-%s-%s", b.Kernel.Subsystem, b.Kernel.Name, b.Kernel.Version, b.Fuzzer.Name)
+		aFullInfo := fmt.Sprintf("%s-%s-%s-%s", a.Kernel.Name, a.Kernel.Subsystem, a.Kernel.Version, a.Fuzzer.Name)
+		bFullInfo := fmt.Sprintf("%s-%s-%s-%s", b.Kernel.Name, b.Kernel.Subsystem, b.Kernel.Version, b.Fuzzer.Name)
 		return cmp.Compare(aFullInfo, bFullInfo)
 	})
 	t := table.NewWriter()
@@ -218,14 +220,28 @@ func printTable(eiSlice []Expinfo) {
 			ei.Kernel.Subsystem,
 			ei.Fuzzer.Name,
 			ei.Result.AvgCov,
-			ei.Result.CovA12,
+			fmt.Sprintf("%.4f", ei.Result.CovA12),
 			fmt.Sprintf("%.4f", ei.Result.CovPV),
 			ei.Result.AvgCra,
-			ei.Result.CraA12,
+			fmt.Sprintf("%.4f", ei.Result.CraA12),
 			fmt.Sprintf("%.4f", ei.Result.CraPV),
 		})
 	}
-	t.Render()
+
+	switch flagFormat {
+	case "text":
+		t.Render()
+	case "csv":
+		t.RenderCSV()
+	case "markdown":
+		t.RenderMarkdown()
+	case "html":
+		t.RenderHTML()
+	case "tsv":
+		t.RenderTSV()
+	default:
+		panic(fmt.Sprintf("Unsupported format: %s", flagFormat))
+	}
 }
 
 // checkExpdir checks the validity of the experiment directory, includes:
@@ -387,7 +403,7 @@ func parseFuzzingResult(expdir string, fuzzer Fuzzer, kernel Kernel) (*Result, e
 		CovA12:   -1,
 		CovPV:    -1,
 		Crashes:  crashes,
-		AvgCra:   totalCra / repeat,
+		AvgCra:   float64(totalCra) / float64(repeat),
 		CraA12:   -1,
 		CraPV:    -1,
 	}, nil
