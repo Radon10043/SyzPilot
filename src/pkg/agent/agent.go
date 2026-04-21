@@ -246,3 +246,20 @@ func NewAgent(db *database.Database, llm *openai.LLM) *Agent {
 		ToolHelper:  toolHelper,
 	}
 }
+
+// TODO: let's refactor these NewAgent funcs to NewAgent(opts...)
+// NewAgentWithTools creates a new agent with the given database and customized tool map
+func NewAgentWithTools(db *database.Database, llm *openai.LLM, toolMap map[string]myTools.ToolExec) *Agent {
+	toolHelper := &myTools.ToolHelper{
+		Db: db,
+	}
+	return &Agent{
+		Ctx:         context.Background(),
+		Model:       llm,
+		Messages:    []llms.MessageContent{},
+		Temperature: 0.2,
+		MaxTokens:   128 << 10, // 128k
+		ToolMap:     toolMap,
+		ToolHelper:  toolHelper,
+	}
+}

@@ -282,7 +282,7 @@ func setConfigs() *ProgConfig {
 		&cfg.FixSysPrompt,
 		"fix-system-prompt",
 		"./data/prompts/fix/instruction.md,"+
-			"./data/prompts/fix/example_v4l2.md,",
+			"./data/prompts/fix/example_v4l2.md",
 		"Path to the fix system prompt file(s), use comma to separate multiple files",
 	)
 	flag.Parse()
