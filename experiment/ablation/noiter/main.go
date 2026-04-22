@@ -26,6 +26,7 @@ import (
 	"github.com/Radon10043/cloud/src/pkg/database"
 	"github.com/Radon10043/cloud/src/pkg/pool"
 	"github.com/Radon10043/cloud/src/pkg/stage"
+	"github.com/Radon10043/cloud/src/pkg/utils"
 	"github.com/joho/godotenv"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"
@@ -419,7 +420,7 @@ func execWriteStep(
 	db *database.Database, llm *openai.LLM, entry database.Entry, sh *stage.StageHelper,
 ) (string, error) {
 	// retrieve all related elements first, then prompt LLM to generate specs based on these elements
-	logger := log.New(os.Stdout, sh.LogPrefix+"["+entry.GetName()+"]["+sh.Next+"] ", log.LstdFlags|log.Lmsgprefix)
+	logger := log.New(os.Stdout, sh.LogPrefix+"["+entry.GetName()+"]", log.LstdFlags|log.Lmsgprefix)
 
 	// we dont exit program if retrieve failed, instead, we check agent's message to extract related elements
 	logger.Printf("Retrieving related elements ...\n")
@@ -433,7 +434,7 @@ func execWriteStep(
 		if msg.Role != "tool" {
 			continue
 		}
-		relaElems.WriteString("```c\n" + msg.Parts[0].(llms.ToolCallResponse).Content + "\n```\n")
+		relaElems.WriteString(msg.Parts[0].(llms.ToolCallResponse).Content + "\n\n")
 	}
 	if err = sh.SaveQueryMessages(kAgent, "retrieve-"); err != nil {
 		return "", fmt.Errorf("failed to save query messages after retrieving related elements: %v", err)
@@ -443,7 +444,8 @@ func execWriteStep(
 	// prompt LLM to generate spec based on retrieved elements
 	logger.Printf("Generating spec based on retrieved related elements ...\n")
 	kAgent = agent.NewAgentWithTools(nil, llm, nil)
-	kAgent.AddHumanMessage("Please generate syzlang spec based on following related elements:\n" + relaElems.String())
+	prompt := fmt.Sprintf("Please generate syzlang spec based on following related elements. The specification should be enclosed in code fences and the language should be syzlang.:\n```c\n%s\n\n%s\n```\n", entry.GetCode(), relaElems.String())
+	kAgent.AddHumanMessage(prompt)
 	resp, err := kAgent.Query()
 	if err != nil {
 		return "", fmt.Errorf("failed to query agent for spec generation: %v", err)
@@ -454,7 +456,12 @@ func execWriteStep(
 	}
 	kAgent.Purge()
 
-	return resp.Choices[0].Content, nil
+	spec, found := utils.ExtractFirstCodeBlock(resp.Choices[0].Content, "syzlang")
+	if !found {
+		return "", fmt.Errorf("failed to extract spec from agent response")
+	}
+
+	return spec, nil
 }
 
 func retrieveRelaElems(kAgent *agent.Agent, entry database.Entry, logger *log.Logger) error {
