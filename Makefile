@@ -67,6 +67,6 @@ refactor: prepare
 	$(GO) build $(GOFLAGS) -o bin/refactor github.com/Radon10043/cloud/src/refactor/
 
 ablation: prepare
-	$(GO) build $(GOFLAGS) -o bin/generator-nodb github.com/Radon10043/cloud/experiment/ablation/nodb/
-	$(GO) build $(GOFLAGS) -o bin/generator-noiter github.com/Radon10043/cloud/experiment/ablation/noiter/
-	$(GO) build $(GOFLAGS) -o bin/generator-trimtool github.com/Radon10043/cloud/experiment/ablation/trimtool/
+	$(GO) build $(GOFLAGS) -o bin/generator-nodb github.com/Radon10043/cloud/experiment/cloud-nodb/
+	$(GO) build $(GOFLAGS) -o bin/generator-noiter github.com/Radon10043/cloud/experiment/cloud-noiter/
+	$(GO) build $(GOFLAGS) -o bin/generator-trimtool github.com/Radon10043/cloud/experiment/cloud-trimtool/
