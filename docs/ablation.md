@@ -24,7 +24,6 @@ generator-noiter: disable iteration, directly let LLM to generate syscall specs.
 ```bash
 ./bin/generator-noiter \
     -db=./data/database/linux.db \
-    -kernel=$KERNSRC \
     -model=gemini-3-flash-preview \
     -outdir=./workdir/ablation/noiter \
     -ref=./workdir/ablation/ref.txt \
