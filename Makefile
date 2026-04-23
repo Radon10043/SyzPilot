@@ -31,7 +31,7 @@ endif
 
 .PHONY: all clean
 
-all: analyzer generator minitask syz-check syz-extract
+all: analyzer generator minitask syz-check syz-extract pool2syz refactor rmunused
 
 clean:
 	rm -rf bin
@@ -65,6 +65,9 @@ pool2syz: prepare
 
 refactor: prepare
 	$(GO) build $(GOFLAGS) -o bin/refactor github.com/Radon10043/cloud/src/refactor/
+
+rmunused: prepare
+	$(GO) build $(GOFLAGS) -o bin/rmunused github.com/Radon10043/cloud/src/rmunused/
 
 ablation: prepare
 	$(GO) build $(GOFLAGS) -o bin/generator-nodb github.com/Radon10043/cloud/experiment/cloud-nodb/
