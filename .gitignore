@@ -56,7 +56,7 @@ go.work
 # End of https://www.toptal.com/developers/gitignore/api/c++,go
 
 ### Custom ignores ###
-bin/
+bin*
 workdir/
 *.log
 *.db*
