@@ -248,7 +248,7 @@ func createQueue(db *database.Database, refEntries []RefEntry) ([]database.Entry
 func setConfigs() *ProgConfig {
 	// command-line flags
 	var cfg ProgConfig
-	flag.StringVar(&cfg.Model, "model", "gemini-2.5-flash", "The model to use")
+	flag.StringVar(&cfg.Model, "model", "", "The model to use")
 	flag.StringVar(&cfg.Env, "env", ".env", "Path to .env file")
 	flag.StringVar(&cfg.Db, "db", "", "Path to the database file")
 	flag.StringVar(&cfg.Os, "os", "", "Target OS type")
