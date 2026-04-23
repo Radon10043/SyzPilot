@@ -88,6 +88,23 @@ cp $CLOUD/configs/kernel/netbsd.config sys/arch/amd64/conf/CLOUD
 ./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=CLOUD
 ```
 
+tprof is not enabled in syzbot's config, prepare one so that we can perform targeted fuzzing to it:
+```bash
+cd $EXPERIMENT_ROOT/kernel/netbsd
+mkdir -p 15e7fbc5-tprof/src
+
+cd 15e7fbc5-tprof/src
+git init .
+git remote add origin https://github.com/NetBSD/src
+git fetch --depth 1 origin 15e7fbc53d77cd7cc1d62511982b8972c4c0c421
+git checkout 15e7fbc5
+
+cp $CLOUD/configs/kernel/netbsd.extend.config sys/arch/amd64/conf/CLOUD
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools tools
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools -D ../dest distribution
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=CLOUD
+```
+
 ### setup image/linux
 
 ```bash
@@ -631,21 +648,21 @@ cd $EXPERIMENT_ROOT/images/netbsd
 ssh-keygen -t rsa -f netbsd.id_rsa -N ""
 ```
 
-#### 2026-15e7fbc5
+#### 2026.1-15e7fbc5
 
 (host) download iso file and setup vm:
 ```bash
 cd $EXPERIMENT/images/netbsd
 wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.1/images/NetBSD-10.1-amd64.iso
-qemu-img create -f qcow2 2026-15e7fbc5.qcow2 100G
-qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2026-15e7fbc5.qcow2 -cdrom NetBSD-10.1-amd64.iso -boot d -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -display curses
+qemu-img create -f qcow2 2026.1-15e7fbc5.qcow2 100G
+qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2026.1-15e7fbc5.qcow2 -cdrom NetBSD-10.1-amd64.iso -boot d -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -display curses
 ```
 
 (vm) during installation, select `use serial port com0` when prompt to select bootblocks.
 
 (host) after installation complete, start vm.
 ```bash
-qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2026-15e7fbc5.qcow2 -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -device virtio-rng-pci -nographic
+qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2026.1-15e7fbc5.qcow2 -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -device virtio-rng-pci -nographic
 ```
 
 (vm) setup environment of netbsd:
@@ -810,6 +827,68 @@ reboot
 
 # output of uname command should like:
 #   NetBSD  10.99.10 NetBSD 10.99.10 (CLOUD) #0: Sat Mar 28 21:44:46 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/3c0f56ea...
+uname -a
+
+cd /dev
+sh MAKEDEV kcov
+poweroff
+```
+
+#### 2026.1-15e7fbc5-tprof
+
+(host) download iso file and setup vm:
+```bash
+cd $EXPERIMENT/images/netbsd
+wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.1/images/NetBSD-10.1-amd64.iso
+qemu-img create -f qcow2 2026.1-15e7fbc5-tprof.qcow2 100G
+qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2026.1-15e7fbc5-tprof.qcow2 -cdrom NetBSD-10.1-amd64.iso -boot d -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -display curses
+```
+
+(vm) during installation, select `use serial port com0` when prompt to select bootblocks.
+
+(host) after installation complete, start vm.
+```bash
+qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2026.1-15e7fbc5-tprof.qcow2 -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -device virtio-rng-pci -nographic
+```
+
+(vm) setup environment of netbsd:
+```bash
+sed -i 's/timeout=5/timeout=1/' /boot.cfg
+
+cat <<__EOF__ >> /etc/rc.conf
+
+sshd=YES
+dhcpcd=YES
+__EOF__
+
+cat <<__EOF__ >> /etc/ssh/sshd_config
+
+Port 22
+ListenAddress 0.0.0.0
+PermitRootLogin yes
+PermitRootLogin without-password
+__EOF__
+
+reboot
+```
+
+(host) copy sshkey and built kernel to vm:
+```bash
+cd $EXPERIMENT/images/netbsd
+ssh-copy-id -i ./netbsd.id_rsa.pub -p 6382 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
+scp -P 6382 \
+    -i ./netbsd.id_rsa \
+    -o UserKnownHostsFile=/dev/null \
+    -o StrictHostKeyChecking=no \
+    $EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5-tprof/src/sys/arch/amd64/compile/obj/CLOUD/netbsd root@localhost:/netbsd
+```
+
+(vm) reboot, verify kernel version, load kcov module and poweroff vm:
+```sh
+reboot
+
+# output of uname command should like:
+#   NetBSD  10.1_STABLE NetBSD 10.1_STABLE (CLOUD) #1: Sat Mar 28 20:59:39 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/15e7fbc5...
 uname -a
 
 cd /dev
