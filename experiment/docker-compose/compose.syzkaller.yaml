@@ -875,7 +875,7 @@ services:
         jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/syzkaller/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  opnebsd-23290a22-bpf:
+  openbsd-23290a22-bpf:
     <<: *base
     environment:
       <<: *env
@@ -895,7 +895,7 @@ services:
         jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/syzkaller/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  opnebsd-23290a22-inet:
+  openbsd-23290a22-inet:
     <<: *base
     environment:
       <<: *env
@@ -915,7 +915,7 @@ services:
         jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/syzkaller/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  opnebsd-23290a22-inet6:
+  openbsd-23290a22-inet6:
     <<: *base
     environment:
       <<: *env
@@ -935,7 +935,7 @@ services:
         jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/syzkaller/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  opnebsd-23290a22-pci:
+  openbsd-23290a22-pci:
     <<: *base
     environment:
       <<: *env
@@ -955,7 +955,7 @@ services:
         jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/syzkaller/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  opnebsd-23290a22-speaker:
+  openbsd-23290a22-speaker:
     <<: *base
     environment:
       <<: *env
@@ -975,7 +975,7 @@ services:
         jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/syzkaller/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  opnebsd-23290a22-unix:
+  openbsd-23290a22-unix:
     <<: *base
     environment:
       <<: *env
@@ -995,7 +995,7 @@ services:
         jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/syzkaller/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  opnebsd-23290a22-vmm:
+  openbsd-23290a22-vmm:
     <<: *base
     environment:
       <<: *env
@@ -1015,7 +1015,7 @@ services:
         jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/syzkaller/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
 
-  opnebsd-23290a22-vnd:
+  openbsd-23290a22-vnd:
     <<: *base
     environment:
       <<: *env
@@ -1099,7 +1099,7 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/2026.1-15e7fbc5.qcow2
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/2026.1-15e7fbc5-tprof.qcow2
       SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/netbsd.id_rsa
       KERNEL_NAME: netbsd
       KERNEL_VERSION: "15e7fbc5"
