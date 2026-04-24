@@ -36,10 +36,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-ax25:
     <<: *base
@@ -56,10 +58,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-btrfs:
     <<: *base
@@ -76,10 +80,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-can:
     <<: *base
@@ -96,10 +102,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-comedi:
     <<: *base
@@ -116,10 +124,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-dri:
     <<: *base
@@ -136,10 +146,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-f2fs:
     <<: *base
@@ -156,10 +168,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-fuse:
     <<: *base
@@ -176,10 +190,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-i2c:
     <<: *base
@@ -196,10 +212,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-input:
     <<: *base
@@ -216,10 +234,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-kvm:
     <<: *base
@@ -236,10 +256,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-nilfs2:
     <<: *base
@@ -256,10 +278,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-ocfs2:
     <<: *base
@@ -276,10 +300,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-phonet:
     <<: *base
@@ -296,10 +322,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-ppp:
     <<: *base
@@ -316,10 +344,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-ptp:
     <<: *base
@@ -336,10 +366,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-rdma_cm:
     <<: *base
@@ -356,10 +388,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-sequencer:
     <<: *base
@@ -376,10 +410,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-sg:
     <<: *base
@@ -396,10 +432,12 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-x25:
     <<: *base
@@ -416,7 +454,9 @@ services:
       - |
         export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
         export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
-        mkdir -p "$$WORKDIR"
-        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > "/tmp/fuzz.cfg"
-        jq -s 'add' /tmp/fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
-        timeout -s KILL 6h "$$SYZKALLER/bin/syz-manager" -config "$$WORKDIR/fuzz.cfg" > "$$WORKDIR/fuzz.log" 2>&1
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-nodb/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-nodb /syzkaller/bin
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
