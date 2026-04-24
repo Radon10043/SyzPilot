@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Radon10043/cloud/src/pkg/ast"
+	"github.com/Radon10043/cloud/src/pkg/pool"
 )
 
 var (
@@ -58,6 +59,17 @@ func main() {
 		}
 		vname, mname := seq[0], seq[1]
 
+		poolFile := filepath.Join(filepath.Dir(file), ".pool")
+		poolByte, err := os.ReadFile(poolFile)
+		dotpool, err := pool.NewSpecPoolFromJson(string(poolByte))
+		if err != nil {
+			panic(err)
+		}
+		if len(*dotpool) == 0 {
+			fmt.Printf("[%s] corresponding .pool is empty, skip refactoring.\n", vname)
+			continue
+		}
+
 		// read the input syzlang spec file
 		b, err := os.ReadFile(file)
 		if err != nil {
@@ -68,7 +80,7 @@ func main() {
 		// add suffix to defined names in the syzlang spec
 		nsyzl, err := ast.AddSuffix(syzl, vname)
 		if err != nil {
-			fmt.Printf("refactor %s failed, reuse old one.\n", file)
+			fmt.Printf("[%s] refactor failed, reuse old one.\n", vname)
 			nsyzl = syzl
 		}
 

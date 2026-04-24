@@ -86,35 +86,55 @@ func updateNode(node ast.Node, refs map[string]string) {
 
 	switch o := node.(type) {
 	case *ast.Resource:
-		rename(&o.Name.Name)
+		renameResourceNode(o, refs)
 	case *ast.IntFlags:
 		rename(&o.Name.Name)
 	case *ast.StrFlags:
 		rename(&o.Name.Name)
 	case *ast.TypeDef:
 		rename(&o.Name.Name)
-		updateType(o.Type, refs)
+		renameType(o.Type, refs)
 	case *ast.Call:
 		rename(&o.Name.Name)
 		if o.Ret != nil {
 			rename(&o.Ret.Ident)
 		}
-		updateFields(o.Args, refs)
+		renameFields(o.Args, refs)
 	case *ast.Struct:
-		rename(&o.Name.Name)
-		updateFields(o.Fields, refs)
+		renameStructNode(o, refs)
 	}
 }
 
-// updateFields updates the types of fields
-func updateFields(fields []*ast.Field, refs map[string]string) {
+// renameStructNode renames the struct node with new name if it is defined in refs
+func renameStructNode(node *ast.Struct, refs map[string]string) {
+	if val, ok := refs[node.Name.Name]; ok {
+		node.Name.Name = val
+	}
+	renameFields(node.Fields, refs)
+}
+
+// renameResourceNode renames the resource node with new name if it is defined in refs
+func renameResourceNode(node *ast.Resource, refs map[string]string) {
+	if val, ok := refs[node.Name.Name]; ok {
+		node.Name.Name = val
+	}
+	if val, ok := refs[node.Base.Ident]; ok {
+		node.Base.Ident = val
+	}
+}
+
+// renameFields updates the types and attributes of fields
+func renameFields(fields []*ast.Field, refs map[string]string) {
 	for _, f := range fields {
-		updateType(f.Type, refs)
+		renameType(f.Type, refs)
+		for _, attr := range f.Attrs {
+			renameType(attr, refs)
+		}
 	}
 }
 
-// updateType updates the type of a field in recursive manner
-func updateType(t *ast.Type, refs map[string]string) {
+// renameType updates the type of a field in recursive manner
+func renameType(t *ast.Type, refs map[string]string) {
 	if t == nil {
 		return
 	}
@@ -122,7 +142,11 @@ func updateType(t *ast.Type, refs map[string]string) {
 		t.Ident = val
 	}
 	for _, arg := range t.Args {
-		updateType(arg, refs)
+		renameType(arg, refs)
+	}
+	if t.Expression != nil {
+		renameType(t.Expression.Left, refs)
+		renameType(t.Expression.Right, refs)
 	}
 }
 
