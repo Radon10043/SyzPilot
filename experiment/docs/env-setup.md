@@ -1,10 +1,13 @@
-# some notes for experiment
+# experiment environment setup
+
+> [!NOTE]
+> the document currently contains many redundant steps and verbose statements and needs to be refactored.
 
 Please replace the following variables according to the actual situation:
 - `$EXPERIMENT_ROOT`: directory for saving experiment artifacts.
 - `$JOBS`: number of parallel jobs.
 
-## setup experiment environment
+### preparation
 
 prepare ~1T free space, start up a container based on cloud image. In container, run:
 ```bash
@@ -898,7 +901,9 @@ poweroff
 
 ### setup fuzzer/cloud
 
-#### linux binaries
+#### setup binaries for full kernel fuzzing
+
+##### linux binaries
 
 (host) build cloud/syzkaller for linux:
 ```bash
@@ -920,7 +925,7 @@ git apply \
 make all -j16
 ```
 
-#### freebsd binaries
+##### freebsd binaries
 
 (host) start a freebsd vm, let's add `-snapshot` so that we can do whatever we want on vm:
 ```bash
@@ -954,7 +959,7 @@ scp -P 3733 \
     root@localhost:/root/cloud/syzkaller/bin/freebsd_amd64 $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller/bin
 ```
 
-#### openbsd binaries
+##### openbsd binaries
 
 (host) setup a new vm for compiling:
 ```bash
@@ -1056,12 +1061,104 @@ scp -P 6736 \
 shutdown -p now
 ```
 
-#### netbsd binaries
+##### netbsd binaries
 
 (host):
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
 make target TARGETOS=netbsd SOURCEDIR=$EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5 CCFLAGS="-static-libstdc++" CXXFLAGS="-static-libstdc++"
+```
+
+##### fuzzer/cloud/bin-kern
+
+(host) move full kernel fuzzing binaries to cloud/:
+```bash
+cd $EXPERIMENT_ROOT/fuzzer/cloud
+mv syzkaller/bin bin-kern
+```
+
+#### setup binaries for subsystem fuzzing
+
+##### linux binaries
+
+(host) build cloud/syzkaller for linux subsystems:
+```bash
+cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+git checkout . && git clean -fdx
+git apply ../patch/syzkaller/*
+git apply ../patch/specs-subsys/*
+make all -j16
+```
+
+##### freebsd binaries
+
+(host) start a freebsd vm, let's add `-snapshot` so that we can do whatever we want on vm:
+```bash
+qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/images/freebsd/15.0.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host -snapshot
+```
+
+(vm) build needed binaries for cloud on freebsd vm:
+```sh
+cd /root/cloud
+git submodule update --init --recursive
+cd syzkaller
+git apply ../patch/syzkaller/*
+git apply ../patch/specs-subsys/*
+gmake target
+```
+
+(host) copy needed binaries to the host:
+```bash
+scp -P 3733 \
+    -o UserKnownHostsFile=/dev/null \
+    -o StrictHostKeyChecking=no \
+    -r \
+    root@localhost:/root/cloud/syzkaller/bin/freebsd_amd64 $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller/bin
+```
+
+##### openbsd binaries
+
+(host) start up vm, use `-snapshot` to avoid break the vm:
+```bash
+qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./dev.qcow2,format=qcow2 -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic -snapshot
+```
+
+(vm) build needed binaries for cloud on freebsd vm:
+```sh
+cd /root/cloud/syzkaller
+git apply ../patch/syzkaller/*
+git apply ../patch/specs-subsys/*
+gmake target
+```
+
+(host) copy needed binaries to the host:
+```bash
+scp -P 6736 \
+    -o UserKnownHostsFile=/dev/null \
+    -o StrictHostKeyChecking=no \
+    -r \
+    root@localhost:/root/cloud/syzkaller/bin/openbsd_amd64 $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller/bin
+```
+
+(vm) close vm:
+```sh
+shutdown -p now
+```
+
+##### netbsd binaries
+
+(host):
+```bash
+cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+make target TARGETOS=netbsd SOURCEDIR=$EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5-tprof CCFLAGS="-static-libstdc++" CXXFLAGS="-static-libstdc++"
+```
+
+##### fuzzer/cloud/bin-subsys
+
+(host) move full kernel fuzzing binaries to cloud/:
+```bash
+cd $EXPERIMENT_ROOT/fuzzer/cloud
+mv syzkaller/bin bin-subsys
 ```
 
 ### setup fuzzer/syzkaller
@@ -1151,8 +1248,9 @@ git clone https://github.com/ise-uiuc/KernelGPT
 cd KernelGPT && git checkout e3464d23b8d59ffffb1bd5b2f7100c102c48bb3d
 git apply -3 $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGPT/repo.patch
 git submodule update --init --depth 1 --progress syzkaller
-git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGPT/specs#linux-v6.7#gpt-4.patch
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGPT/specs/linux-v6.7-kernel-gpt-4.patch
 make -C syzkaller all
+mv syzkaller/bin bin-kern && cp -r bin-kern bin-subsys
 ```
 
 [docs for generating specs via KernelGPT](../KernelGPT/README.md)
@@ -1166,8 +1264,18 @@ git clone https://github.com/ise-uiuc/KernelGPT KernelGEM
 cd KernelGEM && git checkout e3464d23b8d59ffffb1bd5b2f7100c102c48bb3d
 git apply -3 $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGEM/repo.patch
 git submodule update --init --depth 1 --progress syzkaller
-git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGEM/specs/linux-v6.18-kernel#gemini-3-flash-preview.patch
+
+# bin-kern
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGEM/specs/linux-v6.18-kernel-gemini-3-flash-preview.patch
 make -C syzkaller all
+mv syzkaller/bin bin-kern
+
+# bin-subsys
+git -C syzkaller checkout .
+git -C syzkaller clean -fdx
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGEM/specs/linux-v6.18-subsystems-gemini-3-flash-preview.patch
+make -C syzkaller all
+mv syzkaller/bin bin-subsys
 ```
 
 [docs for generating specs via KernelGEM](../KernelGPT/README.md)
@@ -1179,8 +1287,18 @@ make -C syzkaller all
 cd $EXPERIMENT_ROOT/fuzzer/SyzDescribe
 git apply -3 $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzDescribe/repo.patch
 git submodule update --init --recursive
-git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzDescribe/specs#linux-v6.18.patch
+
+# bin-kern
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzDescribe/specs/linux-v6.18-kernel.patch
 make -C syzkaller all
+mv syzkaller/bin bin-kern
+
+# bin-subsys
+git -C syzkaller checkout .
+git -C syzkaller clean -fdx
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzDescribe/specs/linux-v6.18-subsystems.patch
+make -C syzkaller all
+mv syzkaller/bin bin-subsys
 ```
 
 [docs for generating specs via SyzDescribe](../SyzDescribe/README.md)
@@ -1192,8 +1310,18 @@ make -C syzkaller all
 cd $EXPERIMENT_ROOT/fuzzer/SyzGenPlusPlus
 git apply -3 $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzGenPlusPlus/repo.patch
 git submodule update --init --recursive
-git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzGenPlusPlus/specs#linux-v6.18.patch
+
+# bin-kern
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzGenPlusPlus/specs/linux-v6.18-kernel.patch
 make -C syzkaller all
+mv syzkaller/bin bin-kern
+
+# bin-subsys
+git -C syzkaller checkout .
+git -C syzkaller clean -fdx
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzGenPlusPlus/specs/linux-v6.18-subsystems.patch
+make -C syzkaller all
+mv syzkaller/bin bin-subsys
 ```
 
 [docs for generating specs via SyzGenPlusPlus](../SyzGenPlusPlus/README.md)
@@ -1205,12 +1333,36 @@ make -C syzkaller all
 cd $EXPERIMENT_ROOT/fuzzer/SyzSpec
 git apply -3 $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzSpec/repo.patch
 git submodule update --init --recursive
-git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzSpec/specs#linux-v6.18.patch
+
+# bin-kern
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzSpec/specs/linux-v6.18-kernel.patch
 make -C syzkaller all
+mv syzkaller/bin bin-kern
+
+# bin-subsys
+git -C syzkaller checkout .
+git -C syzkaller clean -fdx
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzSpec/specs/linux-v6.18-kernel.patch
+make -C syzkaller all
+mv syzkaller/bin bin-subsys
 ```
 
 [docs for generating specs via SyzSpec](../SyzSpec/README.md)
 
-### update docker-compose files
+### setup environment file
 
-Finally, you can update docker-compose files :)
+> [!WARNING]
+> Please ensure that the mount point of the experiment directory in the container is consistent with the previous setup, otherwise it will cause kernel coverage filtering and issue report symbolization failure.
+
+(host) setup an environment file:
+```bash
+echo "EXPERIMENT_CPUS=[NUMBER_OF_CPU_FOR_EACH_CONTAINER]" > compose.env
+echo "EXPERIMENT_VMCOUNT=[NUMBER_OF_VM_FOR_FUZZING]" >> compose.env
+echo "EXPERIMENT_ROOT_HOST=[PATH_TO_ENVIRONMENT_ON_HOST]" >> compose.env
+echo "EXPERIMENT_ROOT_CONTAINER=[MOUNT_POINT_IN_CONTAINER]" >> compose.env
+```
+
+(host) Finally, we can perfom fuzzing, for example:
+```bash
+docker compose --env-file ./compose.env -f $EXPERIMENT_ROOT/fuzzer/cloud/experiment/docker-compose/compose.cloud.yaml up linux-v6.18-kernel --scale linux-v6.18-kernel=5 -d
+```
