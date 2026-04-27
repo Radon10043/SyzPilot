@@ -1,4 +1,4 @@
-// remove unused elements under a specific directory
+// remove unused elements under a specific directory inplace
 
 package main
 
@@ -17,20 +17,12 @@ import (
 )
 
 var (
-	flagIndir   string
-	flagOutdir  string
-	flagInplace bool
+	flagIndir string
 )
 
 func main() {
 	flag.StringVar(&flagIndir, "indir", "", "directory containing syzlang specs to remove unused elements.")
-	flag.StringVar(&flagOutdir, "outdir", "", "directory to write the cleaned syzlang specs.")
-	flag.BoolVar(&flagInplace, "inplace", false, "whether to overwrite the input files with the cleaned specs.")
 	flag.Parse()
-
-	if flagInplace && flagOutdir != "" {
-		panic("cannot specify both -inplace and -outdir")
-	}
 
 	indir, err := filepath.Abs(flagIndir)
 	if err != nil {
