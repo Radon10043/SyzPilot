@@ -1,3 +1,173 @@
+diff --git a/sys/linux/gpt-5.2#KernelGPT#_dev_ioctl_fops.txt b/sys/linux/gpt-5.2#KernelGPT#_dev_ioctl_fops.txt
+new file mode 100644
+index 000000000..649b973d0
+--- /dev/null
++++ b/sys/linux/gpt-5.2#KernelGPT#_dev_ioctl_fops.txt
+@@ -0,0 +1,138 @@
++meta arches["amd64"]
++
++include <asm/fcntl.h>
++include <asm/ioctl.h>
++include <asm/ioctls.h>
++include <linux/elf.h>
++include <linux/errno.h>
++include <linux/eventfd.h>
++include <linux/eventpoll.h>
++include <linux/fcntl.h>
++include <linux/filelock.h>
++include <linux/fs.h>
++include <linux/futex.h>
++include <linux/ioctl.h>
++include <linux/loop.h>
++include <linux/mount.h>
++include <linux/mutex.h>
++include <linux/net.h>
++include <linux/socket.h>
++include <linux/stat.h>
++include <linux/time.h>
++include <linux/types.h>
++include <linux/user.h>
++include <linux/uuid.h>
++include <uapi/asm/ioctl.h>
++include <uapi/asm/ioctls.h>
++include <uapi/linux/elf.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/if_ether.h>
++include <uapi/linux/ioctl.h>
++include <uapi/linux/module.h>
++include <uapi/linux/mount.h>
++include <uapi/linux/videodev2.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/auto_dev-ioctl.h>
++include <uapi/asm-generic/fcntl.h>
++
++resource fd_autofs_dev_ioctl[fd]
++
++openat$KGPT_autofs_dev_ioctl__dev_ioctl_fops(fd const[AT_FDCWD], file ptr[in, string["/dev/autofs"]], flags const[O_RDWR], mode const[0]) fd_autofs_dev_ioctl
++
++ioctl$KGPT_AUTOFS_DEV_IOCTL_VERSION_CMD__dev_ioctl_fops(fd fd_autofs_dev_ioctl, cmd const[AUTOFS_DEV_IOCTL_VERSION_CMD], arg ptr[in, autofs_dev_ioctl$_dev_ioctl_fops])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_PROTOVER_CMD__dev_ioctl_fops(fd fd_autofs_dev_ioctl, cmd const[AUTOFS_DEV_IOCTL_PROTOVER_CMD], arg ptr[inout, autofs_dev_ioctl$_dev_ioctl_fops])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_PROTOSUBVER_CMD__dev_ioctl_fops(fd fd_autofs_dev_ioctl, cmd const[AUTOFS_DEV_IOCTL_PROTOSUBVER_CMD], arg ptr[inout, autofs_dev_ioctl$_dev_ioctl_fops])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_OPENMOUNT_CMD__dev_ioctl_fops(fd fd_autofs_dev_ioctl, cmd const[AUTOFS_DEV_IOCTL_OPENMOUNT_CMD], arg ptr[inout, array[int8]])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_CLOSEMOUNT_CMD__dev_ioctl_fops(fd fd_autofs_dev_ioctl, cmd const[AUTOFS_DEV_IOCTL_CLOSEMOUNT_CMD], arg ptr[in, autofs_dev_ioctl$_dev_ioctl_fops])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_READY_CMD__dev_ioctl_fops(fd fd_autofs_dev_ioctl, cmd const[AUTOFS_DEV_IOCTL_READY_CMD], arg ptr[in, autofs_dev_ioctl$_dev_ioctl_fops])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_FAIL_CMD__dev_ioctl_fops(fd fd_autofs_dev_ioctl, cmd const[AUTOFS_DEV_IOCTL_FAIL_CMD], arg ptr[in, autofs_dev_ioctl$_dev_ioctl_fops])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_SETPIPEFD_CMD__dev_ioctl_fops(fd fd_autofs_dev_ioctl, cmd const[AUTOFS_DEV_IOCTL_SETPIPEFD_CMD], arg ptr[in, autofs_dev_ioctl$_dev_ioctl_fops])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_CATATONIC_CMD__dev_ioctl_fops(fd fd_autofs_dev_ioctl, cmd const[AUTOFS_DEV_IOCTL_CATATONIC_CMD], arg ptr[in, autofs_dev_ioctl$_dev_ioctl_fops])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_TIMEOUT_CMD__dev_ioctl_fops(fd fd_autofs_dev_ioctl, cmd const[AUTOFS_DEV_IOCTL_TIMEOUT_CMD], arg ptr[inout, autofs_dev_ioctl$_dev_ioctl_fops])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_REQUESTER_CMD__dev_ioctl_fops(fd fd_autofs_dev_ioctl, cmd const[AUTOFS_DEV_IOCTL_REQUESTER_CMD], arg ptr[inout, array[int8]])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_EXPIRE_CMD__dev_ioctl_fops(fd fd_autofs_dev_ioctl, cmd const[AUTOFS_DEV_IOCTL_EXPIRE_CMD], arg ptr[in, autofs_dev_ioctl$_dev_ioctl_fops])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_ASKUMOUNT_CMD__dev_ioctl_fops(fd fd_autofs_dev_ioctl, cmd const[AUTOFS_DEV_IOCTL_ASKUMOUNT_CMD], arg ptr[in, array[int8]])
++ioctl$KGPT_AUTOFS_DEV_IOCTL_ISMOUNTPOINT_CMD__dev_ioctl_fops(fd fd_autofs_dev_ioctl, cmd const[AUTOFS_DEV_IOCTL_ISMOUNTPOINT_CMD], arg ptr[inout, autofs_dev_ioctl$_dev_ioctl_fops])
++
++autofs_dev_ioctl$_dev_ioctl_fops {
++	ver_major	int32
++	ver_minor	int32
++	size		int32
++	ioctlfd		int32
++	args		autofs_dev_ioctl_args_union$_dev_ioctl_fops
++	path		array[int8]
++}
++
++autofs_dev_ioctl_args_union$_dev_ioctl_fops [
++	protover	args_protover$_dev_ioctl_fops
++	protosubver	args_protosubver$_dev_ioctl_fops
++	openmount	args_openmount$_dev_ioctl_fops
++	ready		args_ready$_dev_ioctl_fops
++	fail		args_fail$_dev_ioctl_fops
++	setpipefd	args_setpipefd$_dev_ioctl_fops
++	timeout		args_timeout$_dev_ioctl_fops
++	requester	args_requester$_dev_ioctl_fops
++	expire		args_expire$_dev_ioctl_fops
++	askumount	args_askumount$_dev_ioctl_fops
++	ismountpoint	args_ismountpoint$_dev_ioctl_fops
++]
++
++args_protover$_dev_ioctl_fops {
++	version	int32
++}
++
++args_protosubver$_dev_ioctl_fops {
++	sub_version	int32
++}
++
++args_openmount$_dev_ioctl_fops {
++	devid	int32
++}
++
++args_ready$_dev_ioctl_fops {
++	token	int32
++}
++
++args_fail$_dev_ioctl_fops {
++	token	int32
++	status	int32
++}
++
++args_setpipefd$_dev_ioctl_fops {
++	pipefd	int32
++}
++
++args_timeout$_dev_ioctl_fops {
++	timeout	int64
++}
++
++args_requester$_dev_ioctl_fops {
++	uid	int32
++	gid	int32
++}
++
++args_expire$_dev_ioctl_fops {
++	how	int32
++}
++
++args_askumount$_dev_ioctl_fops {
++	may_umount	int32
++}
++
++args_ismountpoint$_dev_ioctl_fops {
++	u	args_ismountpoint_union$_dev_ioctl_fops
++}
++
++args_ismountpoint_union$_dev_ioctl_fops [
++	in	args_ismountpoint_in$_dev_ioctl_fops
++	out	args_ismountpoint_out$_dev_ioctl_fops
++]
++
++args_ismountpoint_in$_dev_ioctl_fops {
++	type	int32
++}
++
++args_ismountpoint_out$_dev_ioctl_fops {
++	devid	int32
++	magic	int32
++}
+diff --git a/sys/linux/gpt-5.2#KernelGPT#_dev_ioctl_fops.txt.const b/sys/linux/gpt-5.2#KernelGPT#_dev_ioctl_fops.txt.const
+new file mode 100644
+index 000000000..f55e652c1
+--- /dev/null
++++ b/sys/linux/gpt-5.2#KernelGPT#_dev_ioctl_fops.txt.const
+@@ -0,0 +1,20 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++AUTOFS_DEV_IOCTL_ASKUMOUNT_CMD = amd64:125
++AUTOFS_DEV_IOCTL_CATATONIC_CMD = amd64:121
++AUTOFS_DEV_IOCTL_CLOSEMOUNT_CMD = amd64:117
++AUTOFS_DEV_IOCTL_EXPIRE_CMD = amd64:124
++AUTOFS_DEV_IOCTL_FAIL_CMD = amd64:119
++AUTOFS_DEV_IOCTL_ISMOUNTPOINT_CMD = amd64:126
++AUTOFS_DEV_IOCTL_OPENMOUNT_CMD = amd64:116
++AUTOFS_DEV_IOCTL_PROTOSUBVER_CMD = amd64:115
++AUTOFS_DEV_IOCTL_PROTOVER_CMD = amd64:114
++AUTOFS_DEV_IOCTL_READY_CMD = amd64:118
++AUTOFS_DEV_IOCTL_REQUESTER_CMD = amd64:123
++AUTOFS_DEV_IOCTL_SETPIPEFD_CMD = amd64:120
++AUTOFS_DEV_IOCTL_TIMEOUT_CMD = amd64:122
++AUTOFS_DEV_IOCTL_VERSION_CMD = amd64:113
++O_RDWR = amd64:2
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
 diff --git a/sys/linux/gpt-5.2#KernelGPT#async_ops.txt b/sys/linux/gpt-5.2#KernelGPT#async_ops.txt
 new file mode 100755
 index 000000000..d2b415ece
