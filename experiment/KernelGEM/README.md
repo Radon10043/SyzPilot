@@ -22,7 +22,7 @@ docker exec -it kernelgem-exp bash
 
 setup KernelGEM.
 ```bash
-git clone https://github.com/KernelGPT/KernelGPT.git KernelGEM
+git clone https://github.com/ise-uiuc/KernelGPT.git KernelGEM
 cd KernelGEM
 git checkout e3464d23b8d59ffffb1bd5b2f7100c102c48bb3d
 git apply -3 $CLOUD/experiment/KernelGEM/repo.patch
@@ -42,7 +42,7 @@ build and run analysis tool.
 cd $KernelGEM/spec-gen/analyzer
 make all
 
-./analyze -p ./analyze -p $KernelGEM/linux/compile_commands.json
+./analyze -p $KernelGEM/linux/compile_commands.json
 python3 process_output.py --linux-path $KernelGEM/linux
 ./usage -p $KernelGEM/linux/compile_commands.json
 python3 process_output.py --linux-path $KernelGEM/linux --usage
