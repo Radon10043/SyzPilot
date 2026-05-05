@@ -5,7 +5,11 @@ x-base: &base
   image: github.com/radon10043/kernelgem:latest
   privileged: true
   cpus: ${EXPERIMENT_CPUS}
+  tmpfs:
+    - /tmp
+    - /var/tmp
   environment: &env
+    TMPDIR: /tmp
     VMCOUNT: ${EXPERIMENT_VMCOUNT}
     KERNELGEM: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/KernelGEM
     SYZKALLER: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/KernelGEM/syzkaller
@@ -41,7 +45,7 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-kern /syzkaller/bin
-        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.17.13-kernel:
     <<: *base
@@ -62,7 +66,7 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-kern /syzkaller/bin
-        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.12.63-kernel:
     <<: *base
@@ -83,7 +87,7 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-kern /syzkaller/bin
-        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.6.119-kernel:
     <<: *base
@@ -104,7 +108,7 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-kern /syzkaller/bin
-        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.1.159-kernel:
     <<: *base
@@ -125,7 +129,7 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-kern /syzkaller/bin
-        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v5.15.197-kernel:
     <<: *base
@@ -146,7 +150,7 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-kern /syzkaller/bin
-        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
 ##################
 ### Subsystems ###
@@ -172,7 +176,7 @@ services:
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
         jq -s 'add' /fuzz.cfg $$CLOUD/experiment/KernelGEM/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-subsys /syzkaller/bin
-        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-ax25:
     <<: *base
@@ -194,7 +198,7 @@ services:
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
         jq -s 'add' /fuzz.cfg $$CLOUD/experiment/KernelGEM/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-subsys /syzkaller/bin
-        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-can:
     <<: *base
@@ -216,7 +220,7 @@ services:
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
         jq -s 'add' /fuzz.cfg $$CLOUD/experiment/KernelGEM/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-subsys /syzkaller/bin
-        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-dri:
     <<: *base
@@ -238,7 +242,7 @@ services:
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
         jq -s 'add' /fuzz.cfg $$CLOUD/experiment/KernelGEM/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-subsys /syzkaller/bin
-        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-fuse:
     <<: *base
@@ -260,7 +264,7 @@ services:
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
         jq -s 'add' /fuzz.cfg $$CLOUD/experiment/KernelGEM/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-subsys /syzkaller/bin
-        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-i2c:
     <<: *base
@@ -282,7 +286,7 @@ services:
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
         jq -s 'add' /fuzz.cfg $$CLOUD/experiment/KernelGEM/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-subsys /syzkaller/bin
-        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-input:
     <<: *base
@@ -304,7 +308,7 @@ services:
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
         jq -s 'add' /fuzz.cfg $$CLOUD/experiment/KernelGEM/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-subsys /syzkaller/bin
-        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-kvm:
     <<: *base
@@ -326,7 +330,7 @@ services:
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
         jq -s 'add' /fuzz.cfg $$CLOUD/experiment/KernelGEM/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-subsys /syzkaller/bin
-        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-phonet:
     <<: *base
@@ -348,7 +352,7 @@ services:
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
         jq -s 'add' /fuzz.cfg $$CLOUD/experiment/KernelGEM/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-subsys /syzkaller/bin
-        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-ppp:
     <<: *base
@@ -370,7 +374,7 @@ services:
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
         jq -s 'add' /fuzz.cfg $$CLOUD/experiment/KernelGEM/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-subsys /syzkaller/bin
-        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-ptp:
     <<: *base
@@ -392,7 +396,7 @@ services:
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
         jq -s 'add' /fuzz.cfg $$CLOUD/experiment/KernelGEM/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-subsys /syzkaller/bin
-        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-sequencer:
     <<: *base
@@ -414,7 +418,7 @@ services:
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
         jq -s 'add' /fuzz.cfg $$CLOUD/experiment/KernelGEM/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-subsys /syzkaller/bin
-        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-sg:
     <<: *base
@@ -436,7 +440,7 @@ services:
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
         jq -s 'add' /fuzz.cfg $$CLOUD/experiment/KernelGEM/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-subsys /syzkaller/bin
-        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
   linux-v6.18-x25:
     <<: *base
@@ -458,4 +462,4 @@ services:
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
         jq -s 'add' /fuzz.cfg $$CLOUD/experiment/KernelGEM/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$KERNELGEM/bin-subsys /syzkaller/bin
-        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg > $$WORKDIR/fuzz.log 2>&1
+        timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
