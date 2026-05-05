@@ -71,3 +71,10 @@ python3 gen_spec.py \
   -n 50 \
   --subsystems can autofs phonet comedi dri fuse i2c input kvm ax25 ptp ppp rdma_cm sequencer sg x25
 ```
+
+extract consts for synthesized specifications:
+```bash
+cd $KERNELGPT/syzkaller
+make bin/syz-extract
+ls sys/linux/gpt*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$KERNSRC -os=linux -arch=amd64
+```
