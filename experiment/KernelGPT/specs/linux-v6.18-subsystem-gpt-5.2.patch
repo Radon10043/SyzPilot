@@ -1,6 +1,6 @@
 diff --git a/sys/linux/gpt-5.2#KernelGPT#_dev_ioctl_fops.txt b/sys/linux/gpt-5.2#KernelGPT#_dev_ioctl_fops.txt
 new file mode 100644
-index 000000000..649b973d0
+index 0000000..649b973
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#_dev_ioctl_fops.txt
 @@ -0,0 +1,138 @@
@@ -144,7 +144,7 @@ index 000000000..649b973d0
 +}
 diff --git a/sys/linux/gpt-5.2#KernelGPT#_dev_ioctl_fops.txt.const b/sys/linux/gpt-5.2#KernelGPT#_dev_ioctl_fops.txt.const
 new file mode 100644
-index 000000000..f55e652c1
+index 0000000..f55e652
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#_dev_ioctl_fops.txt.const
 @@ -0,0 +1,20 @@
@@ -170,7 +170,7 @@ index 000000000..f55e652c1
 +__NR_openat = amd64:257
 diff --git a/sys/linux/gpt-5.2#KernelGPT#async_ops.txt b/sys/linux/gpt-5.2#KernelGPT#async_ops.txt
 new file mode 100755
-index 000000000..d2b415ece
+index 0000000..d2b415e
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#async_ops.txt
 @@ -0,0 +1,52 @@
@@ -228,7 +228,7 @@ index 000000000..d2b415ece
 +type ppp_asyncmap8$async_ops ptr[in, array[int8]]
 diff --git a/sys/linux/gpt-5.2#KernelGPT#async_ops.txt.const b/sys/linux/gpt-5.2#KernelGPT#async_ops.txt.const
 new file mode 100644
-index 000000000..8d557ba5c
+index 0000000..8d557ba
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#async_ops.txt.const
 @@ -0,0 +1,15 @@
@@ -249,7 +249,7 @@ index 000000000..8d557ba5c
 +__NR_openat = amd64:257
 diff --git a/sys/linux/gpt-5.2#KernelGPT#ax25_proto_ops.txt b/sys/linux/gpt-5.2#KernelGPT#ax25_proto_ops.txt
 new file mode 100755
-index 000000000..1d97eb25f
+index 0000000..1d97eb2
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#ax25_proto_ops.txt
 @@ -0,0 +1,184 @@
@@ -439,7 +439,7 @@ index 000000000..1d97eb25f
 +}
 diff --git a/sys/linux/gpt-5.2#KernelGPT#ax25_proto_ops.txt.const b/sys/linux/gpt-5.2#KernelGPT#ax25_proto_ops.txt.const
 new file mode 100644
-index 000000000..e997208a9
+index 0000000..e997208
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#ax25_proto_ops.txt.const
 @@ -0,0 +1,55 @@
@@ -500,7 +500,7 @@ index 000000000..e997208a9
 +__NR_setsockopt = amd64:54
 diff --git a/sys/linux/gpt-5.2#KernelGPT#bcm_ops.txt b/sys/linux/gpt-5.2#KernelGPT#bcm_ops.txt
 new file mode 100755
-index 000000000..4716696e8
+index 0000000..4716696
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#bcm_ops.txt
 @@ -0,0 +1,47 @@
@@ -553,7 +553,7 @@ index 000000000..4716696e8
 +}
 diff --git a/sys/linux/gpt-5.2#KernelGPT#bcm_ops.txt.const b/sys/linux/gpt-5.2#KernelGPT#bcm_ops.txt.const
 new file mode 100644
-index 000000000..20736b9ac
+index 0000000..20736b9
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#bcm_ops.txt.const
 @@ -0,0 +1,11 @@
@@ -570,7 +570,7 @@ index 000000000..20736b9ac
 +__NR_socket = amd64:41
 diff --git a/sys/linux/gpt-5.2#KernelGPT#eval.txt.txt b/sys/linux/gpt-5.2#KernelGPT#eval.txt.txt
 new file mode 100755
-index 000000000..71099eee6
+index 0000000..71099ee
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#eval.txt.txt
 @@ -0,0 +1,30 @@
@@ -606,7 +606,7 @@ index 000000000..71099eee6
 +type tcflsh_arg$eval ptr[in, array[int8]]
 diff --git a/sys/linux/gpt-5.2#KernelGPT#eval.txt.txt.const b/sys/linux/gpt-5.2#KernelGPT#eval.txt.txt.const
 new file mode 100644
-index 000000000..da2981e5b
+index 0000000..da2981e
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#eval.txt.txt.const
 @@ -0,0 +1,27 @@
@@ -639,7 +639,7 @@ index 000000000..da2981e5b
 +__NR_ioctl = amd64:16
 diff --git a/sys/linux/gpt-5.2#KernelGPT#evdev_fops.txt b/sys/linux/gpt-5.2#KernelGPT#evdev_fops.txt
 new file mode 100755
-index 000000000..a2bb5df72
+index 0000000..a2bb5df
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#evdev_fops.txt
 @@ -0,0 +1,75 @@
@@ -720,7 +720,7 @@ index 000000000..a2bb5df72
 +input_keymap_entry_flags_evdev_fops = INPUT_KEYMAP_BY_INDEX
 diff --git a/sys/linux/gpt-5.2#KernelGPT#evdev_fops.txt.const b/sys/linux/gpt-5.2#KernelGPT#evdev_fops.txt.const
 new file mode 100644
-index 000000000..ae78b2d68
+index 0000000..ae78b2d
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#evdev_fops.txt.const
 @@ -0,0 +1,19 @@
@@ -745,7 +745,7 @@ index 000000000..ae78b2d68
 +__NR_ioctl = amd64:16
 diff --git a/sys/linux/gpt-5.2#KernelGPT#fuse_dev_operations.txt b/sys/linux/gpt-5.2#KernelGPT#fuse_dev_operations.txt
 new file mode 100755
-index 000000000..49a1c57c6
+index 0000000..49a1c57
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#fuse_dev_operations.txt
 @@ -0,0 +1,49 @@
@@ -800,7 +800,7 @@ index 000000000..49a1c57c6
 +}
 diff --git a/sys/linux/gpt-5.2#KernelGPT#fuse_dev_operations.txt.const b/sys/linux/gpt-5.2#KernelGPT#fuse_dev_operations.txt.const
 new file mode 100644
-index 000000000..13cd1c737
+index 0000000..13cd1c7
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#fuse_dev_operations.txt.const
 @@ -0,0 +1,10 @@
@@ -816,7 +816,7 @@ index 000000000..13cd1c737
 +__NR_openat = amd64:257
 diff --git a/sys/linux/gpt-5.2#KernelGPT#fuse_dir_operations.txt b/sys/linux/gpt-5.2#KernelGPT#fuse_dir_operations.txt
 new file mode 100755
-index 000000000..b56d44ec5
+index 0000000..b56d44e
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#fuse_dir_operations.txt
 @@ -0,0 +1,59 @@
@@ -881,7 +881,7 @@ index 000000000..b56d44ec5
 +}
 diff --git a/sys/linux/gpt-5.2#KernelGPT#fuse_dir_operations.txt.const b/sys/linux/gpt-5.2#KernelGPT#fuse_dir_operations.txt.const
 new file mode 100644
-index 000000000..cedb33dc4
+index 0000000..cedb33d
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#fuse_dir_operations.txt.const
 @@ -0,0 +1,8 @@
@@ -895,7 +895,7 @@ index 000000000..cedb33dc4
 +__NR_openat = amd64:257
 diff --git a/sys/linux/gpt-5.2#KernelGPT#fuse_file_operations.txt b/sys/linux/gpt-5.2#KernelGPT#fuse_file_operations.txt
 new file mode 100755
-index 000000000..105358e60
+index 0000000..105358e
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#fuse_file_operations.txt
 @@ -0,0 +1,40 @@
@@ -941,7 +941,7 @@ index 000000000..105358e60
 +ioctl$KGPT_FS_IOC_ENABLE_VERITY_0_fuse_file_operations(fd fd_fuse, cmd const[FS_IOC_ENABLE_VERITY], arg ptr[in, fsverity_enable_arg])
 diff --git a/sys/linux/gpt-5.2#KernelGPT#fuse_file_operations.txt.const b/sys/linux/gpt-5.2#KernelGPT#fuse_file_operations.txt.const
 new file mode 100644
-index 000000000..3ff28e96b
+index 0000000..3ff28e9
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#fuse_file_operations.txt.const
 @@ -0,0 +1,7 @@
@@ -954,7 +954,7 @@ index 000000000..3ff28e96b
 +__NR_openat = amd64:257
 diff --git a/sys/linux/gpt-5.2#KernelGPT#i2cdev_fops.txt b/sys/linux/gpt-5.2#KernelGPT#i2cdev_fops.txt
 new file mode 100755
-index 000000000..f6978b10d
+index 0000000..f6978b1
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#i2cdev_fops.txt
 @@ -0,0 +1,79 @@
@@ -1039,7 +1039,7 @@ index 000000000..f6978b10d
 +]
 diff --git a/sys/linux/gpt-5.2#KernelGPT#i2cdev_fops.txt.const b/sys/linux/gpt-5.2#KernelGPT#i2cdev_fops.txt.const
 new file mode 100644
-index 000000000..ea5684eb6
+index 0000000..ea5684e
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#i2cdev_fops.txt.const
 @@ -0,0 +1,22 @@
@@ -1067,7 +1067,7 @@ index 000000000..ea5684eb6
 +__NR_ioctl = amd64:16
 diff --git a/sys/linux/gpt-5.2#KernelGPT#isotp_ops.txt b/sys/linux/gpt-5.2#KernelGPT#isotp_ops.txt
 new file mode 100755
-index 000000000..2d5a6dac1
+index 0000000..2d5a6da
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#isotp_ops.txt
 @@ -0,0 +1,78 @@
@@ -1151,7 +1151,7 @@ index 000000000..2d5a6dac1
 +}
 diff --git a/sys/linux/gpt-5.2#KernelGPT#isotp_ops.txt.const b/sys/linux/gpt-5.2#KernelGPT#isotp_ops.txt.const
 new file mode 100644
-index 000000000..2f90b90f7
+index 0000000..2f90b90
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#isotp_ops.txt.const
 @@ -0,0 +1,19 @@
@@ -1176,7 +1176,7 @@ index 000000000..2f90b90f7
 +__NR_socket = amd64:41
 diff --git a/sys/linux/gpt-5.2#KernelGPT#j1939_ops.txt b/sys/linux/gpt-5.2#KernelGPT#j1939_ops.txt
 new file mode 100755
-index 000000000..eb35853ce
+index 0000000..eb35853
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#j1939_ops.txt
 @@ -0,0 +1,64 @@
@@ -1246,7 +1246,7 @@ index 000000000..eb35853ce
 +type pgn_t$j1939_ops ptr[in, array[int8]]
 diff --git a/sys/linux/gpt-5.2#KernelGPT#j1939_ops.txt.const b/sys/linux/gpt-5.2#KernelGPT#j1939_ops.txt.const
 new file mode 100644
-index 000000000..e4d579390
+index 0000000..e4d5793
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#j1939_ops.txt.const
 @@ -0,0 +1,18 @@
@@ -1270,7 +1270,7 @@ index 000000000..e4d579390
 +__NR_socket = amd64:41
 diff --git a/sys/linux/gpt-5.2#KernelGPT#kvm_chardev_ops.txt b/sys/linux/gpt-5.2#KernelGPT#kvm_chardev_ops.txt
 new file mode 100755
-index 000000000..c78b9fdf1
+index 0000000..c78b9fd
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#kvm_chardev_ops.txt
 @@ -0,0 +1,86 @@
@@ -1362,7 +1362,7 @@ index 000000000..c78b9fdf1
 +}
 diff --git a/sys/linux/gpt-5.2#KernelGPT#kvm_chardev_ops.txt.const b/sys/linux/gpt-5.2#KernelGPT#kvm_chardev_ops.txt.const
 new file mode 100644
-index 000000000..ecd47ef6e
+index 0000000..ecd47ef
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#kvm_chardev_ops.txt.const
 @@ -0,0 +1,19 @@
@@ -1387,7 +1387,7 @@ index 000000000..ecd47ef6e
 +__NR_openat = amd64:257
 diff --git a/sys/linux/gpt-5.2#KernelGPT#kvm_device_fops.txt b/sys/linux/gpt-5.2#KernelGPT#kvm_device_fops.txt
 new file mode 100755
-index 000000000..d7ef3f1b0
+index 0000000..d7ef3f1
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#kvm_device_fops.txt
 @@ -0,0 +1,49 @@
@@ -1442,7 +1442,7 @@ index 000000000..d7ef3f1b0
 +}
 diff --git a/sys/linux/gpt-5.2#KernelGPT#kvm_device_fops.txt.const b/sys/linux/gpt-5.2#KernelGPT#kvm_device_fops.txt.const
 new file mode 100644
-index 000000000..9cf59c981
+index 0000000..9cf59c9
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#kvm_device_fops.txt.const
 @@ -0,0 +1,9 @@
@@ -1457,7 +1457,7 @@ index 000000000..9cf59c981
 +__NR_openat = amd64:257
 diff --git a/sys/linux/gpt-5.2#KernelGPT#kvm_vm_fops.txt b/sys/linux/gpt-5.2#KernelGPT#kvm_vm_fops.txt
 new file mode 100755
-index 000000000..32ff37189
+index 0000000..32ff371
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#kvm_vm_fops.txt
 @@ -0,0 +1,444 @@
@@ -1907,7 +1907,7 @@ index 000000000..32ff37189
 +}
 diff --git a/sys/linux/gpt-5.2#KernelGPT#kvm_vm_fops.txt.const b/sys/linux/gpt-5.2#KernelGPT#kvm_vm_fops.txt.const
 new file mode 100644
-index 000000000..53e9a46a5
+index 0000000..53e9a46
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#kvm_vm_fops.txt.const
 @@ -0,0 +1,63 @@
@@ -1976,7 +1976,7 @@ index 000000000..53e9a46a5
 +__NR_openat = amd64:257
 diff --git a/sys/linux/gpt-5.2#KernelGPT#pep_proto.txt b/sys/linux/gpt-5.2#KernelGPT#pep_proto.txt
 new file mode 100755
-index 000000000..f8cad5903
+index 0000000..f8cad59
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#pep_proto.txt
 @@ -0,0 +1,56 @@
@@ -2038,7 +2038,7 @@ index 000000000..f8cad5903
 +type sockaddr_phonet$pep_proto ptr[in, array[int8]]
 diff --git a/sys/linux/gpt-5.2#KernelGPT#pep_proto.txt.const b/sys/linux/gpt-5.2#KernelGPT#pep_proto.txt.const
 new file mode 100644
-index 000000000..3fa013e27
+index 0000000..3fa013e
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#pep_proto.txt.const
 @@ -0,0 +1,19 @@
@@ -2063,7 +2063,7 @@ index 000000000..3fa013e27
 +__NR_setsockopt = amd64:54
 diff --git a/sys/linux/gpt-5.2#KernelGPT#phonet_dgram_ops.txt b/sys/linux/gpt-5.2#KernelGPT#phonet_dgram_ops.txt
 new file mode 100755
-index 000000000..7363852b7
+index 0000000..7363852
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#phonet_dgram_ops.txt
 @@ -0,0 +1,51 @@
@@ -2120,7 +2120,7 @@ index 000000000..7363852b7
 +ioctl$KGPT_SIOCPNDELRESOURCE_0_phonet_dgram_ops(fd sock_phonet, cmd const[SIOCPNDELRESOURCE], arg ptr[in, int32])
 diff --git a/sys/linux/gpt-5.2#KernelGPT#phonet_dgram_ops.txt.const b/sys/linux/gpt-5.2#KernelGPT#phonet_dgram_ops.txt.const
 new file mode 100644
-index 000000000..de662e60d
+index 0000000..de662e6
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#phonet_dgram_ops.txt.const
 @@ -0,0 +1,17 @@
@@ -2143,7 +2143,7 @@ index 000000000..de662e60d
 +__NR_sendto = amd64:44
 diff --git a/sys/linux/gpt-5.2#KernelGPT#phonet_stream_ops.txt b/sys/linux/gpt-5.2#KernelGPT#phonet_stream_ops.txt
 new file mode 100755
-index 000000000..f0d8ec222
+index 0000000..f0d8ec2
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#phonet_stream_ops.txt
 @@ -0,0 +1,120 @@
@@ -2269,7 +2269,7 @@ index 000000000..f0d8ec222
 +]
 diff --git a/sys/linux/gpt-5.2#KernelGPT#phonet_stream_ops.txt.const b/sys/linux/gpt-5.2#KernelGPT#phonet_stream_ops.txt.const
 new file mode 100644
-index 000000000..cbef1e5eb
+index 0000000..cbef1e5
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#phonet_stream_ops.txt.const
 @@ -0,0 +1,19 @@
@@ -2294,7 +2294,7 @@ index 000000000..cbef1e5eb
 +__NR_sendto = amd64:44
 diff --git a/sys/linux/gpt-5.2#KernelGPT#ppp_device_fops.txt b/sys/linux/gpt-5.2#KernelGPT#ppp_device_fops.txt
 new file mode 100755
-index 000000000..291b4b691
+index 0000000..291b4b6
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#ppp_device_fops.txt
 @@ -0,0 +1,97 @@
@@ -2397,7 +2397,7 @@ index 000000000..291b4b691
 +}
 diff --git a/sys/linux/gpt-5.2#KernelGPT#ppp_device_fops.txt.const b/sys/linux/gpt-5.2#KernelGPT#ppp_device_fops.txt.const
 new file mode 100644
-index 000000000..8075a6e79
+index 0000000..8075a6e
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#ppp_device_fops.txt.const
 @@ -0,0 +1,32 @@
@@ -2435,7 +2435,7 @@ index 000000000..8075a6e79
 +__NR_openat = amd64:257
 diff --git a/sys/linux/gpt-5.2#KernelGPT#ppp_ldisc.txt b/sys/linux/gpt-5.2#KernelGPT#ppp_ldisc.txt
 new file mode 100755
-index 000000000..2334fdd54
+index 0000000..2334fdd
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#ppp_ldisc.txt
 @@ -0,0 +1,63 @@
@@ -2504,7 +2504,7 @@ index 000000000..2334fdd54
 +type cc_t$ppp_ldisc ptr[in, array[int8]]
 diff --git a/sys/linux/gpt-5.2#KernelGPT#ppp_ldisc.txt.const b/sys/linux/gpt-5.2#KernelGPT#ppp_ldisc.txt.const
 new file mode 100644
-index 000000000..a120457ca
+index 0000000..a120457
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#ppp_ldisc.txt.const
 @@ -0,0 +1,31 @@
@@ -2541,7 +2541,7 @@ index 000000000..a120457ca
 +__NR_openat = amd64:257
 diff --git a/sys/linux/gpt-5.2#KernelGPT#ppp_sync_ldisc.txt b/sys/linux/gpt-5.2#KernelGPT#ppp_sync_ldisc.txt
 new file mode 100755
-index 000000000..0465be440
+index 0000000..0465be4
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#ppp_sync_ldisc.txt
 @@ -0,0 +1,27 @@
@@ -2574,7 +2574,7 @@ index 000000000..0465be440
 +ioctl$KGPT_TIOCSSOFTCAR_1_ppp_sync_ldisc(fd fd_tty, cmd const[TIOCSSOFTCAR], arg ptr[in, int32])
 diff --git a/sys/linux/gpt-5.2#KernelGPT#ppp_sync_ldisc.txt.const b/sys/linux/gpt-5.2#KernelGPT#ppp_sync_ldisc.txt.const
 new file mode 100644
-index 000000000..eb073d312
+index 0000000..eb073d3
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#ppp_sync_ldisc.txt.const
 @@ -0,0 +1,26 @@
@@ -2606,7 +2606,7 @@ index 000000000..eb073d312
 +__NR_ioctl = amd64:16
 diff --git a/sys/linux/gpt-5.2#KernelGPT#ptp_clock_ops.txt b/sys/linux/gpt-5.2#KernelGPT#ptp_clock_ops.txt
 new file mode 100755
-index 000000000..037ce6874
+index 0000000..037ce68
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#ptp_clock_ops.txt
 @@ -0,0 +1,130 @@
@@ -2742,7 +2742,7 @@ index 000000000..037ce6874
 +}
 diff --git a/sys/linux/gpt-5.2#KernelGPT#ptp_clock_ops.txt.const b/sys/linux/gpt-5.2#KernelGPT#ptp_clock_ops.txt.const
 new file mode 100644
-index 000000000..b7e17c7a7
+index 0000000..b7e17c7
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#ptp_clock_ops.txt.const
 @@ -0,0 +1,26 @@
@@ -2774,7 +2774,7 @@ index 000000000..b7e17c7a7
 +__NR_ioctl = amd64:16
 diff --git a/sys/linux/gpt-5.2#KernelGPT#raw_ops.txt b/sys/linux/gpt-5.2#KernelGPT#raw_ops.txt
 new file mode 100755
-index 000000000..c4a4c3abb
+index 0000000..c4a4c3a
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#raw_ops.txt
 @@ -0,0 +1,99 @@
@@ -2879,7 +2879,7 @@ index 000000000..c4a4c3abb
 +type canid_t$raw_ops ptr[in, array[int8]]
 diff --git a/sys/linux/gpt-5.2#KernelGPT#raw_ops.txt.const b/sys/linux/gpt-5.2#KernelGPT#raw_ops.txt.const
 new file mode 100644
-index 000000000..8f6b92962
+index 0000000..8f6b929
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#raw_ops.txt.const
 @@ -0,0 +1,22 @@
@@ -2907,7 +2907,7 @@ index 000000000..8f6b92962
 +__NR_socket = amd64:41
 diff --git a/sys/linux/gpt-5.2#KernelGPT#seq_oss_f_ops.txt b/sys/linux/gpt-5.2#KernelGPT#seq_oss_f_ops.txt
 new file mode 100755
-index 000000000..57f557041
+index 0000000..57f5570
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#seq_oss_f_ops.txt
 @@ -0,0 +1,89 @@
@@ -3002,7 +3002,7 @@ index 000000000..57f557041
 +synth_capabilities_seq_oss_f_ops = SYNTH_CAP_PERCMODE, SYNTH_CAP_OPL3, SYNTH_CAP_INPUT
 diff --git a/sys/linux/gpt-5.2#KernelGPT#seq_oss_f_ops.txt.const b/sys/linux/gpt-5.2#KernelGPT#seq_oss_f_ops.txt.const
 new file mode 100644
-index 000000000..7f991531f
+index 0000000..7f99153
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#seq_oss_f_ops.txt.const
 @@ -0,0 +1,34 @@
@@ -3042,7 +3042,7 @@ index 000000000..7f991531f
 +__NR_openat = amd64:257
 diff --git a/sys/linux/gpt-5.2#KernelGPT#serport_ldisc.txt b/sys/linux/gpt-5.2#KernelGPT#serport_ldisc.txt
 new file mode 100755
-index 000000000..e247ea9fc
+index 0000000..e247ea9
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#serport_ldisc.txt
 @@ -0,0 +1,40 @@
@@ -3088,7 +3088,7 @@ index 000000000..e247ea9fc
 +ioctl$KGPT_SPIOCSTYPE_serport_ldisc(fd fd_serport_tty_serport_ldisc, cmd const[SPIOCSTYPE], arg ptr[in, intptr])
 diff --git a/sys/linux/gpt-5.2#KernelGPT#serport_ldisc.txt.const b/sys/linux/gpt-5.2#KernelGPT#serport_ldisc.txt.const
 new file mode 100644
-index 000000000..0f5380dbc
+index 0000000..0f5380d
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#serport_ldisc.txt.const
 @@ -0,0 +1,4 @@
@@ -3098,7 +3098,7 @@ index 000000000..0f5380dbc
 +__NR_ioctl = amd64:16
 diff --git a/sys/linux/gpt-5.2#KernelGPT#sg_fops.txt b/sys/linux/gpt-5.2#KernelGPT#sg_fops.txt
 new file mode 100755
-index 000000000..fa18cf21b
+index 0000000..2fd175d
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#sg_fops.txt
 @@ -0,0 +1,187 @@
@@ -3141,7 +3141,7 @@ index 000000000..fa18cf21b
 +include <scsi/scsi.h>
 +include <uapi/linux/cdrom.h>
 +
-+syz_open_dev$KGPT_sg_sg_fops(dev ptr[in, string["/dev/sg#"]], id proc[0, 1], flags flags[open_flags]) fd_sg
++syz_open_dev$KGPT_sg_sg_fops(dev ptr[in, string["/dev/sg#"]], id intptr, flags flags[open_flags]) fd_sg
 +
 +ioctl$KGPT_SG_GET_TIMEOUT_sg_fops(fd fd_sg, cmd const[SG_GET_TIMEOUT], arg ptr[in, array[int8]])
 +ioctl$KGPT_SG_SET_FORCE_LOW_DMA_sg_fops(fd fd_sg, cmd const[SG_SET_FORCE_LOW_DMA], arg ptr[in, array[int8]])
@@ -3291,7 +3291,7 @@ index 000000000..fa18cf21b
 +}
 diff --git a/sys/linux/gpt-5.2#KernelGPT#sg_fops.txt.const b/sys/linux/gpt-5.2#KernelGPT#sg_fops.txt.const
 new file mode 100644
-index 000000000..48c393fc4
+index 0000000..48c393f
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#sg_fops.txt.const
 @@ -0,0 +1,46 @@
@@ -3343,7 +3343,7 @@ index 000000000..48c393fc4
 +__NR_ioctl = amd64:16
 diff --git a/sys/linux/gpt-5.2#KernelGPT#slcan_ldisc.txt b/sys/linux/gpt-5.2#KernelGPT#slcan_ldisc.txt
 new file mode 100755
-index 000000000..dadd7de07
+index 0000000..dadd7de
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#slcan_ldisc.txt
 @@ -0,0 +1,28 @@
@@ -3377,7 +3377,7 @@ index 000000000..dadd7de07
 +ioctl$KGPT_TIOCSSOFTCAR_0_slcan_ldisc(fd fd_tty, cmd const[TIOCSSOFTCAR], arg ptr[in, int32])
 diff --git a/sys/linux/gpt-5.2#KernelGPT#slcan_ldisc.txt.const b/sys/linux/gpt-5.2#KernelGPT#slcan_ldisc.txt.const
 new file mode 100644
-index 000000000..7a3416330
+index 0000000..7a34163
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#slcan_ldisc.txt.const
 @@ -0,0 +1,25 @@
@@ -3408,7 +3408,7 @@ index 000000000..7a3416330
 +__NR_ioctl = amd64:16
 diff --git a/sys/linux/gpt-5.2#KernelGPT#sync_ops.txt b/sys/linux/gpt-5.2#KernelGPT#sync_ops.txt
 new file mode 100755
-index 000000000..2cbb81bf5
+index 0000000..2cbb81b
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#sync_ops.txt
 @@ -0,0 +1,52 @@
@@ -3466,7 +3466,7 @@ index 000000000..2cbb81bf5
 +type ppp_xasyncmap$sync_ops ptr[in, array[int8]]
 diff --git a/sys/linux/gpt-5.2#KernelGPT#sync_ops.txt.const b/sys/linux/gpt-5.2#KernelGPT#sync_ops.txt.const
 new file mode 100644
-index 000000000..8d557ba5c
+index 0000000..8d557ba
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#sync_ops.txt.const
 @@ -0,0 +1,15 @@
@@ -3487,7 +3487,7 @@ index 000000000..8d557ba5c
 +__NR_openat = amd64:257
 diff --git a/sys/linux/gpt-5.2#KernelGPT#uinput_fops.txt b/sys/linux/gpt-5.2#KernelGPT#uinput_fops.txt
 new file mode 100755
-index 000000000..fc420797f
+index 0000000..fc42079
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#uinput_fops.txt
 @@ -0,0 +1,76 @@
@@ -3569,7 +3569,7 @@ index 000000000..fc420797f
 +}
 diff --git a/sys/linux/gpt-5.2#KernelGPT#uinput_fops.txt.const b/sys/linux/gpt-5.2#KernelGPT#uinput_fops.txt.const
 new file mode 100644
-index 000000000..9f7d27e4b
+index 0000000..9f7d27e
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#uinput_fops.txt.const
 @@ -0,0 +1,25 @@
@@ -3600,7 +3600,7 @@ index 000000000..9f7d27e4b
 +__NR_openat = amd64:257
 diff --git a/sys/linux/gpt-5.2#KernelGPT#x25_proto_ops.txt b/sys/linux/gpt-5.2#KernelGPT#x25_proto_ops.txt
 new file mode 100755
-index 000000000..29b2f13a0
+index 0000000..29b2f13
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#x25_proto_ops.txt
 @@ -0,0 +1,129 @@
@@ -3735,7 +3735,7 @@ index 000000000..29b2f13a0
 +}
 diff --git a/sys/linux/gpt-5.2#KernelGPT#x25_proto_ops.txt.const b/sys/linux/gpt-5.2#KernelGPT#x25_proto_ops.txt.const
 new file mode 100644
-index 000000000..a824a93e8
+index 0000000..a824a93
 --- /dev/null
 +++ b/sys/linux/gpt-5.2#KernelGPT#x25_proto_ops.txt.const
 @@ -0,0 +1,41 @@
