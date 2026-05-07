@@ -1,0 +1,1662 @@
+diff --git a/sys/openbsd/cloud#bpfioctl#gemini-3-flash-preview.txt b/sys/openbsd/cloud#bpfioctl#gemini-3-flash-preview.txt
+new file mode 100755
+index 000000000..d0325c4a7
+--- /dev/null
++++ b/sys/openbsd/cloud#bpfioctl#gemini-3-flash-preview.txt
+@@ -0,0 +1,109 @@
++meta arches["amd64"]
++
++include <sys/types.h>
++include <sys/fcntl.h>
++include <sys/ioctl.h>
++include <sys/socket.h>
++include <sys/time.h>
++include <net/bpf.h>
++include <net/if.h>
++
++resource fd_bpf_bpfioctl[fd]
++
++define IFNAMSIZ	16
++
++openat$bpf_bpfioctl(fd const[AT_FDCWD], file ptr[in, string["/dev/bpf"]], flags flags[open_flags], mode const[0]) fd_bpf_bpfioctl
++openat$bpf0_bpfioctl(fd const[AT_FDCWD], file ptr[in, string["/dev/bpf0"]], flags flags[open_flags], mode const[0]) fd_bpf_bpfioctl
++
++ioctl$BIOCDWTIMEOUT_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCDWTIMEOUT], arg const[0])
++ioctl$TIOCGPGRP_bpfioctl(fd fd_bpf_bpfioctl, cmd const[TIOCGPGRP], arg ptr[out, int32])
++ioctl$BIOCSETFNR_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCSETFNR], arg ptr[in, bpf_program$bpfioctl])
++ioctl$BIOCGDIRFILT_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCGDIRFILT], arg ptr[out, flags[bpf_direction_flags_bpfioctl, int32]])
++ioctl$BIOCGWTIMEOUT_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCGWTIMEOUT], arg ptr[out, timeval$bpfioctl])
++ioctl$BIOCGBLEN_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCGBLEN], arg ptr[out, int32])
++ioctl$BIOCLOCK_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCLOCK], arg intptr)
++ioctl$BIOCSBLEN_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCSBLEN], arg ptr[inout, int32])
++ioctl$BIOCPROMISC_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCPROMISC])
++ioctl$BIOCSETF_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCSETF], arg ptr[in, bpf_program$bpfioctl])
++ioctl$BIOCSETWF_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCSETWF], arg ptr[in, bpf_program$bpfioctl])
++ioctl$BIOCSRSIG_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCSRSIG], arg ptr[in, int32])
++ioctl$BIOCVERSION_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCVERSION], arg ptr[out, bpf_version$bpfioctl])
++ioctl$BIOCSDIRFILT_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCSDIRFILT], arg ptr[in, flags[bpf_direction_flags_bpfioctl, int32]])
++ioctl$BIOCGRSIG_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCGRSIG], arg ptr[out, int32])
++ioctl$BIOCGDLTLIST_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCGDLTLIST], arg ptr[inout, bpf_dltlist$bpfioctl])
++ioctl$BIOCSETIF_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCSETIF], arg ptr[in, ifreq$bpfioctl])
++ioctl$BIOCGHDRCMPLT_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCGHDRCMPLT], arg ptr[out, int32])
++ioctl$BIOCGFILDROP_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCGFILDROP], arg ptr[out, int32])
++ioctl$BIOCGETIF_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCGETIF], arg ptr[out, ifreq$bpfioctl])
++ioctl$BIOCSRTIMEOUT_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCSRTIMEOUT], arg ptr[in, timeval$bpfioctl])
++ioctl$BIOCGDLT_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCGDLT], arg ptr[out, int32])
++ioctl$BIOCSFILDROP_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCSFILDROP], arg ptr[in, flags[bpf_fildrop_bpfioctl, int32]])
++ioctl$BIOCIMMEDIATE_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCIMMEDIATE], arg ptr[in, int32])
++ioctl$BIOCSHDRCMPLT_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCSHDRCMPLT], arg ptr[in, int32])
++ioctl$BIOCGRTIMEOUT_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCGRTIMEOUT], arg ptr[out, timeval$bpfioctl])
++ioctl$BIOCSWTIMEOUT_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCSWTIMEOUT], arg ptr[in, timeval$bpfioctl])
++ioctl$BIOCGSTATS_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCGSTATS], arg ptr[out, bpf_stat$bpfioctl])
++ioctl$BIOCSDLT_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCSDLT], arg ptr[in, flags[bpf_dlt_bpfioctl, int32]])
++ioctl$BIOCFLUSH_bpfioctl(fd fd_bpf_bpfioctl, cmd const[BIOCFLUSH], arg const[0])
++
++bpf_fildrop_bpfioctl = BPF_FILDROP_PASS, BPF_FILDROP_CAPTURE, BPF_FILDROP_DROP
++bpf_code_bpfioctl = BPF_LD, BPF_LDX, BPF_ST, BPF_STX, BPF_ALU, BPF_JMP, BPF_RET, BPF_MISC, BPF_W, BPF_H, BPF_B, BPF_IMM, BPF_ABS, BPF_IND, BPF_MEM, BPF_LEN, BPF_MSH, BPF_ADD, BPF_SUB, BPF_MUL, BPF_DIV, BPF_OR, BPF_AND, BPF_LSH, BPF_RSH, BPF_NEG, BPF_JA, BPF_JEQ, BPF_JGT, BPF_JGE, BPF_JSET, BPF_K, BPF_X, BPF_A
++bpf_direction_flags_bpfioctl = BPF_DIRECTION_IN, BPF_DIRECTION_OUT
++sock_family_bpfioctl = AF_UNSPEC, AF_UNIX, AF_INET, AF_IMPLINK, AF_PUP, AF_CHAOS, AF_NS, AF_ISO, AF_ECMA, AF_DATAKIT, AF_CCITT, AF_SNA, AF_DECnet, AF_DLI, AF_LAT, AF_HYLINK, AF_APPLETALK, AF_ROUTE, AF_LINK, pseudo_AF_XTP, AF_COIP, AF_CNT, pseudo_AF_RTIP, AF_IPX, AF_INET6, pseudo_AF_PIP, AF_ISDN, AF_NATM, AF_ENCAP, AF_SIP, AF_KEY, pseudo_AF_HDRCMPLT, AF_BLUETOOTH, AF_MPLS
++bpf_dlt_bpfioctl = DLT_NULL, DLT_EN10MB, DLT_IEEE802, DLT_SLIP, DLT_PPP, DLT_LOOP, DLT_ENC, DLT_RAW, DLT_SLIP_BSDOS, DLT_PPP_BSDOS, DLT_PFSYNC, DLT_PPP_ETHER, DLT_OPENFLOW
++
++bpf_stat$bpfioctl {
++	bs_recv	int32
++	bs_drop	int32
++}
++
++bpf_version$bpfioctl {
++	bv_major	int16
++	bv_minor	int16
++}
++
++bpf_dltlist$bpfioctl {
++	bfl_len		len[bfl_list, int32]
++	bfl_list	ptr[out, array[int32]]
++}
++
++ifreq$bpfioctl {
++# Use array[int8, 16] to represent char ifr_name[IFNAMSIZ]
++	ifr_name	array[int8, 16]
++	ifr_ifru	ifreq_ifru$bpfioctl
++}
++
++timeval$bpfioctl {
++	tv_sec	intptr
++	tv_usec	intptr
++}
++
++sockaddr$bpfioctl {
++	sa_len		len[parent, int8]
++	sa_family	flags[sock_family_bpfioctl, int8]
++	sa_data		array[int8, 14]
++}
++
++bpf_program$bpfioctl {
++	bf_len		len[bf_insns, int32]
++	bf_insns	ptr[in, array[bpf_insn$bpfioctl]]
++}
++
++bpf_insn$bpfioctl {
++	code	flags[bpf_code_bpfioctl, int16]
++	jt	int8
++	jf	int8
++	k	int32
++}
++
++ifreq_ifru$bpfioctl [
++	ifr_addr	sockaddr$bpfioctl
++	ifr_dstaddr	sockaddr$bpfioctl
++	ifr_broadaddr	sockaddr$bpfioctl
++	ifr_flags	int16
++	ifr_metric	int32
++	ifr_vnetid	int64
++	ifr_media	int64
++	ifr_data	ptr[inout, array[int8]]
++	ifr_index	int32
++]
+diff --git a/sys/openbsd/cloud#bpfioctl#gemini-3-flash-preview.txt.const b/sys/openbsd/cloud#bpfioctl#gemini-3-flash-preview.txt.const
+new file mode 100644
+index 000000000..821e9db5b
+--- /dev/null
++++ b/sys/openbsd/cloud#bpfioctl#gemini-3-flash-preview.txt.const
+@@ -0,0 +1,120 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AF_APPLETALK = amd64:16
++AF_BLUETOOTH = amd64:32
++AF_CCITT = amd64:10
++AF_CHAOS = amd64:5
++AF_CNT = amd64:21
++AF_COIP = amd64:20
++AF_DATAKIT = amd64:9
++AF_DECnet = amd64:12
++AF_DLI = amd64:13
++AF_ECMA = amd64:8
++AF_ENCAP = amd64:28
++AF_HYLINK = amd64:15
++AF_IMPLINK = amd64:3
++AF_INET = amd64:2
++AF_INET6 = amd64:24
++AF_IPX = amd64:23
++AF_ISDN = amd64:26
++AF_ISO = amd64:7
++AF_KEY = amd64:30
++AF_LAT = amd64:14
++AF_LINK = amd64:18
++AF_MPLS = amd64:33
++AF_NATM = amd64:27
++AF_NS = amd64:6
++AF_PUP = amd64:4
++AF_ROUTE = amd64:17
++AF_SIP = amd64:29
++AF_SNA = amd64:11
++AF_UNIX = amd64:1
++AF_UNSPEC = amd64:0
++AT_FDCWD = amd64:18446744073709551516
++BIOCDWTIMEOUT = amd64:536887934
++BIOCFLUSH = amd64:536887912
++BIOCGBLEN = amd64:1074020966
++BIOCGDIRFILT = amd64:1074020988
++BIOCGDLT = amd64:1074020970
++BIOCGDLTLIST = amd64:3222291067
++BIOCGETIF = amd64:1075855979
++BIOCGFILDROP = amd64:1074020984
++BIOCGHDRCMPLT = amd64:1074020980
++BIOCGRSIG = amd64:1074020979
++BIOCGRTIMEOUT = amd64:1074807406
++BIOCGSTATS = amd64:1074283119
++BIOCGWTIMEOUT = amd64:1074807422
++BIOCIMMEDIATE = amd64:2147762800
++BIOCLOCK = amd64:536887926
++BIOCPROMISC = amd64:536887913
++BIOCSBLEN = amd64:3221504614
++BIOCSDIRFILT = amd64:2147762813
++BIOCSDLT = amd64:2147762810
++BIOCSETF = amd64:2148549223
++BIOCSETFNR = amd64:2148549247
++BIOCSETIF = amd64:2149597804
++BIOCSETWF = amd64:2148549239
++BIOCSFILDROP = amd64:2147762809
++BIOCSHDRCMPLT = amd64:2147762805
++BIOCSRSIG = amd64:2147762802
++BIOCSRTIMEOUT = amd64:2148549229
++BIOCSWTIMEOUT = amd64:2148549246
++BIOCVERSION = amd64:1074020977
++BPF_A = amd64:16
++BPF_ABS = amd64:32
++BPF_ADD = amd64:0
++BPF_ALU = amd64:4
++BPF_AND = amd64:80
++BPF_B = amd64:16
++BPF_DIRECTION_IN = amd64:1
++BPF_DIRECTION_OUT = amd64:2
++BPF_DIV = amd64:48
++BPF_FILDROP_CAPTURE = amd64:1
++BPF_FILDROP_DROP = amd64:2
++BPF_FILDROP_PASS = amd64:0
++BPF_H = amd64:8
++BPF_IMM = amd64:0
++BPF_IND = amd64:64
++BPF_JA = amd64:0
++BPF_JEQ = amd64:16
++BPF_JGE = amd64:48
++BPF_JGT = amd64:32
++BPF_JMP = amd64:5
++BPF_JSET = amd64:64
++BPF_K = amd64:0
++BPF_LD = amd64:0
++BPF_LDX = amd64:1
++BPF_LEN = amd64:128
++BPF_LSH = amd64:96
++BPF_MEM = amd64:96
++BPF_MISC = amd64:7
++BPF_MSH = amd64:160
++BPF_MUL = amd64:32
++BPF_NEG = amd64:128
++BPF_OR = amd64:64
++BPF_RET = amd64:6
++BPF_RSH = amd64:112
++BPF_ST = amd64:2
++BPF_STX = amd64:3
++BPF_SUB = amd64:16
++BPF_W = amd64:0
++BPF_X = amd64:8
++DLT_EN10MB = amd64:1
++DLT_ENC = amd64:13
++DLT_IEEE802 = amd64:6
++DLT_LOOP = amd64:12
++DLT_NULL = amd64:0
++DLT_OPENFLOW = amd64:267
++DLT_PFSYNC = amd64:18
++DLT_PPP = amd64:9
++DLT_PPP_BSDOS = amd64:16
++DLT_PPP_ETHER = amd64:51
++DLT_RAW = amd64:14
++DLT_SLIP = amd64:8
++DLT_SLIP_BSDOS = amd64:15
++IFNAMSIZ = amd64:16
++TIOCGPGRP = amd64:1074033783
++pseudo_AF_HDRCMPLT = amd64:31
++pseudo_AF_PIP = amd64:25
++pseudo_AF_RTIP = amd64:22
++pseudo_AF_XTP = amd64:19
+diff --git a/sys/openbsd/cloud#inet6sw#gemini-3-flash-preview.txt b/sys/openbsd/cloud#inet6sw#gemini-3-flash-preview.txt
+new file mode 100755
+index 000000000..710b1c3da
+--- /dev/null
++++ b/sys/openbsd/cloud#inet6sw#gemini-3-flash-preview.txt
+@@ -0,0 +1,299 @@
++meta arches["amd64"]
++
++include <sys/types.h>
++include <sys/ioccom.h>
++include <sys/sockio.h>
++include <sys/socket.h>
++include <sys/mbuf.h>
++include <sys/time.h>
++include <net/if.h>
++include <net/if_var.h>
++include <netinet/in.h>
++include <netinet/icmp6.h>
++include <netinet/tcp.h>
++include <netinet/ip6.h>
++include <netinet6/nd6.h>
++include <netinet6/ip6_mroute.h>
++include <netinet6/in6_var.h>
++
++resource sock_inet6_inet6sw[sock]
++
++socket$inet6_tcp_inet6sw(domain const[AF_INET6], type const[SOCK_STREAM], proto const[IPPROTO_TCP]) sock_inet6_inet6sw
++socket$inet6_udp_inet6sw(domain const[AF_INET6], type const[SOCK_DGRAM], proto const[IPPROTO_UDP]) sock_inet6_inet6sw
++socket$inet6_icmpv6_inet6sw(domain const[AF_INET6], type const[SOCK_RAW], proto const[IPPROTO_ICMPV6]) sock_inet6_inet6sw
++socket$inet6_raw_inet6sw(domain const[AF_INET6], type const[SOCK_RAW], proto flags[inet6_proto_raw_inet6sw]) sock_inet6_inet6sw
++
++getsockopt$TCP_INFO_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_TCP], optname const[TCP_INFO], optval ptr[out, tcp_info$inet6sw], optlen ptr[inout, len[optval, int32]])
++getsockopt$IPV6_PATHMTU_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_PATHMTU], val ptr[out, ip6_mtuinfo$inet6sw], len ptr[inout, len[val, int32]])
++setsockopt$SO_RTABLE_INET6_inet6sw(fd sock_inet6_inet6sw, level const[SOL_SOCKET], opt const[SO_RTABLE], val ptr[in, int32], len len[val])
++setsockopt$IPV6_UNICAST_HOPS_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[IPV6_UNICAST_HOPS], optval ptr[in, int32[-1:255]], optlen len[optval])
++setsockopt$IPV6_RTHDRDSTOPTS_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_RTHDRDSTOPTS], val ptr[in, ip6_dest$inet6sw], len len[val])
++setsockopt$IPV6_HOPLIMIT_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_HOPLIMIT], val ptr[in, int32], len len[val])
++setsockopt$IPV6_USE_MIN_MTU_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[IPV6_USE_MIN_MTU], optval ptr[in, int32[-1:1]], optlen len[optval])
++setsockopt$IPV6_IPCOMP_LEVEL_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_IPCOMP_LEVEL], val ptr[in, flags[ipsec_level_inet6sw, int32]], len len[val])
++setsockopt$IPV6_MULTICAST_IF_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_MULTICAST_IF], val ptr[in, int32], len len[val])
++setsockopt$IPV6_HOPOPTS_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[IPV6_HOPOPTS], optval ptr[in, ip6_hbh$inet6sw], optlen len[optval])
++setsockopt$MRT6_ADD_MIF_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[MRT6_ADD_MIF], optval ptr[in, mif6ctl$inet6sw], optlen len[optval])
++setsockopt$IPV6_RTHDR_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[IPV6_RTHDR], optval ptr[in, ip6_rthdr0$inet6sw], optlen len[optval])
++setsockopt$MRT6_DEL_MFC_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[MRT6_DEL_MFC], optval ptr[in, mf6cctl$inet6sw], optlen len[optval])
++setsockopt$IPV6_JOIN_GROUP_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_JOIN_GROUP], val ptr[in, ipv6_mreq$inet6sw], len len[val])
++setsockopt$IPV6_RECVPKTINFO_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_RECVPKTINFO], val ptr[in, int32], len len[val])
++setsockopt$MRT6_INIT_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[MRT6_INIT], val ptr[in, int32], len len[val])
++setsockopt$MRT6_DEL_MIF_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[MRT6_DEL_MIF], optval ptr[in, mifi_t$inet6sw], optlen len[optval])
++setsockopt$IPV6_ESP_NETWORK_LEVEL_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_ESP_NETWORK_LEVEL], val ptr[in, int32], len len[val])
++setsockopt$TCP_MD5SIG_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_TCP], opt const[TCP_MD5SIG], val ptr[in, int32], len len[val])
++setsockopt$IPV6_TCLASS_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_TCLASS], val ptr[in, int32[-1:255]], len len[val])
++setsockopt$MRT6_DONE_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[MRT6_DONE], optval ptr[in, int32], optlen len[optval])
++setsockopt$IPV6_RECVDSTPORT_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_RECVDSTPORT], val ptr[in, int32], len len[val])
++setsockopt$IPV6_RECVDSTOPTS_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[IPV6_RECVDSTOPTS], optval ptr[in, int32], optlen len[optval])
++setsockopt$IPV6_ESP_TRANS_LEVEL_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_ESP_TRANS_LEVEL], val ptr[in, int32[ipsec_level_inet6sw]], len len[val])
++setsockopt$ICMP6_FILTER_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_ICMPV6], optname const[ICMP6_FILTER], optval ptr[in, icmp6_filter$inet6sw], optlen len[optval])
++setsockopt$IPV6_PKTINFO_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_PKTINFO], val ptr[in, in6_pktinfo$inet6sw], len len[val])
++setsockopt$IPV6_LEAVE_GROUP_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_LEAVE_GROUP], val ptr[in, ipv6_mreq$inet6sw], len len[val])
++setsockopt$IPV6_V6ONLY_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_V6ONLY], val ptr[in, int32[0:1]], len len[val])
++setsockopt$TCP_MAXSEG_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_TCP], optname const[TCP_MAXSEG], optval ptr[in, int32], optlen len[optval])
++setsockopt$IPV6_RECVPATHMTU_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_RECVPATHMTU], val ptr[in, int32], len len[val])
++setsockopt$IPV6_CHECKSUM_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_CHECKSUM], val ptr[in, int32], len len[val])
++setsockopt$IPV6_AUTH_LEVEL_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_AUTH_LEVEL], val ptr[in, flags[ipsec_level_inet6sw, int32]], len len[val])
++setsockopt$IPV6_RECVHOPOPTS_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[IPV6_RECVHOPOPTS], optval ptr[in, int32[0:1]], optlen len[optval])
++setsockopt$IPV6_MULTICAST_LOOP_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_MULTICAST_LOOP], val ptr[in, int32[0:1]], len len[val])
++setsockopt$IPV6_AUTOFLOWLABEL_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[IPV6_AUTOFLOWLABEL], optval ptr[in, int32], optlen len[optval])
++setsockopt$IPV6_DONTFRAG_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[IPV6_DONTFRAG], optval ptr[in, int32], optlen len[optval])
++setsockopt$IPV6_RECVTCLASS_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[IPV6_RECVTCLASS], optval ptr[in, int32], optlen len[optval])
++setsockopt$IPV6_RECVRTHDR_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_RECVRTHDR], val ptr[in, int32], len len[val])
++setsockopt$IPV6_RECVHOPLIMIT_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[IPV6_RECVHOPLIMIT], optval ptr[in, int32], optlen len[optval])
++setsockopt$MRT6_ADD_MFC_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[MRT6_ADD_MFC], val ptr[in, mf6cctl$inet6sw], len len[val])
++setsockopt$TCP_NOPUSH_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_TCP], opt const[TCP_NOPUSH], val ptr[in, int32], len len[val])
++setsockopt$IPV6_PORTRANGE_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[IPV6_PORTRANGE], optval ptr[in, int32[ipv6_portrange_inet6sw]], optlen len[optval])
++setsockopt$IPV6_PIPEX_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[IPV6_PIPEX], optval ptr[in, int32], optlen len[optval])
++setsockopt$TCP_NODELAY_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_TCP], optname const[TCP_NODELAY], optval ptr[in, int32], optlen len[optval])
++setsockopt$IPV6_MULTICAST_HOPS_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], opt const[IPV6_MULTICAST_HOPS], val ptr[in, int32[-1:255]], len len[val])
++setsockopt$TCP_SACK_ENABLE_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_TCP], opt const[TCP_SACK_ENABLE], val ptr[in, int32], len len[val])
++setsockopt$IPV6_DSTOPTS_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[IPV6_DSTOPTS], optval ptr[in, ipv6_dest_opts$inet6sw, opt], optlen len[optval])
++setsockopt$IPV6_MINHOPCOUNT_inet6sw(fd sock_inet6_inet6sw, level const[IPPROTO_IPV6], optname const[IPV6_MINHOPCOUNT], optval ptr[in, int32[0:255]], optlen len[optval])
++ioctl$SIOCGNBRINFO_IN6_inet6sw(fd sock_inet6_inet6sw, cmd const[SIOCGNBRINFO_IN6], arg ptr[inout, in6_nbrinfo$inet6sw])
++ioctl$SIOCGIFNETMASK_IN6_inet6sw(fd sock_inet6_inet6sw, cmd const[SIOCGIFNETMASK_IN6], arg ptr[inout, in6_ifreq$inet6sw])
++ioctl$SIOCGETSGCNT_IN6_inet6sw(fd sock_inet6_inet6sw, cmd const[SIOCGETSGCNT_IN6], arg ptr[inout, sioc_sg_req6$inet6sw])
++ioctl$SIOCAIFADDR_IN6_inet6sw(fd sock_inet6_inet6sw, cmd const[SIOCAIFADDR_IN6], arg ptr[in, in6_aliasreq$inet6sw])
++ioctl$SIOCGIFINFO_IN6_inet6sw(fd sock_inet6_inet6sw, cmd const[SIOCGIFINFO_IN6], arg ptr[inout, in6_ndireq$inet6sw])
++ioctl$SIOCGIFALIFETIME_IN6_inet6sw(fd sock_inet6_inet6sw, cmd const[SIOCGIFALIFETIME_IN6], arg ptr[inout, in6_ifreq_lifetime$inet6sw])
++ioctl$SIOCGETMIFCNT_IN6_inet6sw(fd sock_inet6_inet6sw, cmd const[SIOCGETMIFCNT_IN6], arg ptr[inout, sioc_mif_req6$inet6sw])
++ioctl$SIOCGIFAFLAG_IN6_inet6sw(fd sock_inet6_inet6sw, cmd const[SIOCGIFAFLAG_IN6], arg ptr[inout, in6_ifreq_flags$inet6sw])
++ioctl$SIOCDIFADDR_IN6_inet6sw(fd sock_inet6_inet6sw, cmd const[SIOCDIFADDR_IN6], arg ptr[in, in6_ifreq$inet6sw])
++ioctl$SIOCGIFDSTADDR_IN6_inet6sw(fd sock_inet6_inet6sw, cmd const[SIOCGIFDSTADDR_IN6], arg ptr[inout, in6_ifreq$inet6sw])
++
++ipv6_portrange_inet6sw = IPV6_PORTRANGE_DEFAULT, IPV6_PORTRANGE_HIGH, IPV6_PORTRANGE_LOW
++mif6_flags_inet6sw = MIFF_REGISTER
++in6_alias_flags_inet6sw = IN6_IFF_ANYCAST, IN6_IFF_TENTATIVE, IN6_IFF_DUPLICATED, IN6_IFF_DETACHED, IN6_IFF_DEPRECATED, IN6_IFF_AUTOCONF, IN6_IFF_TEMPORARY
++if_names_inet6sw = "lo0", "em0", "vio0", "pflog0", "tun0", "gif0", "carp0", "em1", "vio1"
++in6_addr_flags_inet6sw = IN6_IFF_ANYCAST, IN6_IFF_TENTATIVE, IN6_IFF_DUPLICATED, IN6_IFF_DETACHED, IN6_IFF_DEPRECATED, IN6_IFF_AUTOCONF, IN6_IFF_TEMPORARY
++ipsec_level_inet6sw = IPSEC_LEVEL_DEFAULT, IPSEC_LEVEL_USE, IPSEC_LEVEL_REQUIRE, IPSEC_LEVEL_UNIQUE, IPSEC_LEVEL_BYPASS
++inet6_proto_raw_inet6sw = IPPROTO_RAW, IPPROTO_ICMPV6, IPPROTO_DSTOPTS, IPPROTO_ROUTING, IPPROTO_FRAGMENT, IPPROTO_AH, IPPROTO_ESP, IPPROTO_IPCOMP, IPPROTO_IPV4, IPPROTO_IPV6, IPPROTO_MPLS, IPPROTO_CARP, IPPROTO_ETHERIP, IPPROTO_GRE, 0
++
++in6_ifreq$inet6sw {
++	ifr_name	string[if_names_inet6sw, 16]
++	ifr_addr	sockaddr_in6$inet6sw
++} [size[80]]
++
++ipv6_mreq$inet6sw {
++	ipv6mr_multiaddr	in6_addr$inet6sw
++	ipv6mr_interface	int16
++}
++
++in6_addr$inet6sw {
++	s6_addr	array[int8, 16]
++}
++
++ip6_rthdr0$inet6sw {
++	ip6r0_nxt	int8
++	ip6r0_len	int8
++	ip6r0_type	const[0, int8]
++	ip6r0_segleft	int8
++	ip6r0_reserved	const[0, int32]
++	ip6r0_addr	array[in6_addr$inet6sw]
++}
++
++in6_ifreq_lifetime$inet6sw {
++	ifr_name	array[int8, 16]
++	ifru		in6_ifru_lifetime$inet6sw
++}
++
++in6_pktinfo$inet6sw {
++	ipi6_addr	in6_addr$inet6sw
++	ipi6_ifindex	int32
++}
++
++if_set$inet6sw {
++	ifs_bits	array[int32, 8]
++}
++
++in6_aliasreq$inet6sw {
++	ifra_name	array[int8, 16]
++	ifra_addr	sockaddr_in6$inet6sw
++	ifra_dstaddr	sockaddr_in6$inet6sw
++	ifra_prefixmask	sockaddr_in6$inet6sw
++	ifra_flags	flags[in6_alias_flags_inet6sw, int32]
++	ifra_lifetime	in6_addrlifetime$inet6sw
++}
++
++mif6ctl$inet6sw {
++	mif6c_mifi	int16
++	mif6c_flags	flags[mif6_flags_inet6sw, int8]
++	mif6c_pifi	int16
++}
++
++sockaddr_in6$inet6sw {
++	sin6_len	len[parent, int8]
++	sin6_family	const[AF_INET6, int8]
++	sin6_port	in_port_t$inet6sw
++	sin6_flowinfo	int32
++	sin6_addr	in6_addr$inet6sw
++	sin6_scope_id	int32
++}
++
++mf6cctl$inet6sw {
++	mf6cc_origin	sockaddr_in6$inet6sw
++	mf6cc_mcastgrp	sockaddr_in6$inet6sw
++	mf6cc_parent	mifi_t$inet6sw
++	mf6cc_ifset	if_set$inet6sw
++}
++
++in6_addrlifetime$inet6sw {
++	ia6t_expire	int64
++	ia6t_preferred	int64
++	ia6t_vltime	int32
++	ia6t_pltime	int32
++}
++
++icmp6_filter$inet6sw {
++	icmp6_filt	array[int32, 8]
++}
++
++in6_nbrinfo$inet6sw {
++	ifname		array[int8, IFNAMSIZ]
++	addr		in6_addr$inet6sw
++	expire		int64	(out)
++	asked		intptr	(out)
++	isrouter	int32	(out)
++	state		int32	(out)
++}
++
++ip6_opt_generic$inet6sw {
++	type	int8
++	len	len[data, int8]
++	data	array[int8]
++}
++
++ip6_mtuinfo$inet6sw {
++	ip6m_addr	sockaddr_in6$inet6sw
++	ip6m_mtu	int32
++}
++
++in6_ndireq$inet6sw {
++	ifname	array[int8, 16]
++	ndi	in6_ndireq_data$inet6sw
++}
++
++in6_ndireq_data$inet6sw {
++	linkmtu		int32
++	maxmtu		int32
++	basereachable	int32
++	reachable	int32
++	retrans		int32
++	flags		int32
++	recalctimer	int32
++	chlim		int8
++	initialized	int8
++}
++
++ipv6_dest_opts$inet6sw {
++	nxt		int8
++	len		len[extra_data, int8]
++	extra_data	array[int8]
++} [align[8]]
++
++ip6_dest$inet6sw {
++	ip6d_nxt	int8
++	ip6d_len	int8
++	options		array[int8]
++} [packed, align[8]]
++
++sioc_mif_req6$inet6sw {
++	mifi	int16	(in)
++	icount	intptr	(out)
++	ocount	intptr	(out)
++	ibytes	intptr	(out)
++	obytes	intptr	(out)
++}
++
++in6_ifreq_flags$inet6sw {
++	ifr_name	array[int8, 16]
++	ifru		in6_ifru_flags$inet6sw
++}
++
++tcp_info$inet6sw {
++	tcpi_state		int8
++	tcpi_ca_state		int8
++	tcpi_retransmits	int8
++	tcpi_probes		int8
++	tcpi_backoff		int8
++	tcpi_options		int8
++	tcpi_snd_wscale		int8
++	tcpi_rcv_wscale		int8
++	tcpi_rto		int32
++	tcpi_ato		int32
++	tcpi_snd_mss		int32
++	tcpi_rcv_mss		int32
++	tcpi_unacked		int32
++	tcpi_sacked		int32
++	tcpi_lost		int32
++	tcpi_retrans		int32
++	tcpi_fackets		int32
++	tcpi_last_data_sent	int32
++	tcpi_last_ack_sent	int32
++	tcpi_last_data_recv	int32
++	tcpi_last_ack_recv	int32
++	tcpi_pmtu		int32
++	tcpi_rcv_ssthresh	int32
++	tcpi_rtt		int32
++	tcpi_rttvar		int32
++	tcpi_snd_ssthresh	int32
++	tcpi_snd_cwnd		int32
++	tcpi_advmss		int32
++	tcpi_reordering		int32
++	tcpi_rcv_rtt		int32
++	tcpi_rcv_space		int32
++	tcpi_total_retrans	int64
++}
++
++ip6_hbh$inet6sw {
++	ip6h_nxt	int8
++	ip6h_len	int8
++	opts		array[ip6_opt$inet6sw]
++} [align[8]]
++
++sioc_sg_req6$inet6sw {
++	src		sockaddr_in6$inet6sw
++	grp		sockaddr_in6$inet6sw
++	pktcnt		int64	(out)
++	bytecnt		int64	(out)
++	wrong_if	int64	(out)
++}
++
++ip6_opt$inet6sw [
++	pad1	const[0, int8]
++	generic	ip6_opt_generic$inet6sw
++] [varlen]
++
++in6_ifru_flags$inet6sw [
++	addr	sockaddr_in6$inet6sw	(in)
++	flags6	flags[in6_addr_flags_inet6sw, int32]
++]
++
++in6_ifru_lifetime$inet6sw [
++	ifru_addr	sockaddr_in6$inet6sw
++	ifru_lifetime	in6_addrlifetime$inet6sw
++]
++
++type in_port_t$inet6sw int16be
++type mifi_t$inet6sw int16
+diff --git a/sys/openbsd/cloud#inet6sw#gemini-3-flash-preview.txt.const b/sys/openbsd/cloud#inet6sw#gemini-3-flash-preview.txt.const
+new file mode 100644
+index 000000000..a6f1c2e63
+--- /dev/null
++++ b/sys/openbsd/cloud#inet6sw#gemini-3-flash-preview.txt.const
+@@ -0,0 +1,98 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AF_INET6 = amd64:24
++ICMP6_FILTER = amd64:18
++IFNAMSIZ = amd64:16
++IN6_IFF_ANYCAST = amd64:1
++IN6_IFF_AUTOCONF = amd64:64
++IN6_IFF_DEPRECATED = amd64:16
++IN6_IFF_DETACHED = amd64:8
++IN6_IFF_DUPLICATED = amd64:4
++IN6_IFF_TEMPORARY = amd64:128
++IN6_IFF_TENTATIVE = amd64:2
++IPPROTO_AH = amd64:51
++IPPROTO_CARP = amd64:112
++IPPROTO_DSTOPTS = amd64:60
++IPPROTO_ESP = amd64:50
++IPPROTO_ETHERIP = amd64:97
++IPPROTO_FRAGMENT = amd64:44
++IPPROTO_GRE = amd64:47
++IPPROTO_ICMPV6 = amd64:58
++IPPROTO_IPCOMP = amd64:108
++IPPROTO_IPV4 = amd64:4
++IPPROTO_IPV6 = amd64:41
++IPPROTO_MPLS = amd64:137
++IPPROTO_RAW = amd64:255
++IPPROTO_ROUTING = amd64:43
++IPPROTO_TCP = amd64:6
++IPPROTO_UDP = amd64:17
++IPSEC_LEVEL_BYPASS = amd64:0
++IPSEC_LEVEL_DEFAULT = amd64:1
++IPSEC_LEVEL_REQUIRE = amd64:3
++IPSEC_LEVEL_UNIQUE = amd64:4
++IPSEC_LEVEL_USE = amd64:2
++IPV6_AUTH_LEVEL = amd64:53
++IPV6_AUTOFLOWLABEL = amd64:59
++IPV6_CHECKSUM = amd64:26
++IPV6_DONTFRAG = amd64:62
++IPV6_DSTOPTS = amd64:50
++IPV6_ESP_NETWORK_LEVEL = amd64:55
++IPV6_ESP_TRANS_LEVEL = amd64:54
++IPV6_HOPLIMIT = amd64:47
++IPV6_HOPOPTS = amd64:49
++IPV6_IPCOMP_LEVEL = amd64:60
++IPV6_JOIN_GROUP = amd64:12
++IPV6_LEAVE_GROUP = amd64:13
++IPV6_MINHOPCOUNT = amd64:65
++IPV6_MULTICAST_HOPS = amd64:10
++IPV6_MULTICAST_IF = amd64:9
++IPV6_MULTICAST_LOOP = amd64:11
++IPV6_PATHMTU = amd64:44
++IPV6_PIPEX = amd64:63
++IPV6_PKTINFO = amd64:46
++IPV6_PORTRANGE = amd64:14
++IPV6_PORTRANGE_DEFAULT = amd64:0
++IPV6_PORTRANGE_HIGH = amd64:1
++IPV6_PORTRANGE_LOW = amd64:2
++IPV6_RECVDSTOPTS = amd64:40
++IPV6_RECVDSTPORT = amd64:64
++IPV6_RECVHOPLIMIT = amd64:37
++IPV6_RECVHOPOPTS = amd64:39
++IPV6_RECVPATHMTU = amd64:43
++IPV6_RECVPKTINFO = amd64:36
++IPV6_RECVRTHDR = amd64:38
++IPV6_RECVTCLASS = amd64:57
++IPV6_RTHDR = amd64:51
++IPV6_RTHDRDSTOPTS = amd64:35
++IPV6_TCLASS = amd64:61
++IPV6_UNICAST_HOPS = amd64:4
++IPV6_USE_MIN_MTU = amd64:42
++IPV6_V6ONLY = amd64:27
++MIFF_REGISTER = amd64:1
++MRT6_ADD_MFC = amd64:104
++MRT6_ADD_MIF = amd64:102
++MRT6_DEL_MFC = amd64:105
++MRT6_DEL_MIF = amd64:103
++MRT6_DONE = amd64:101
++MRT6_INIT = amd64:108
++SIOCAIFADDR_IN6 = amd64:2155899162
++SIOCDIFADDR_IN6 = amd64:2166384921
++SIOCGETMIFCNT_IN6 = amd64:3223876971
++SIOCGETSGCNT_IN6 = amd64:3226498410
++SIOCGIFAFLAG_IN6 = amd64:3240126793
++SIOCGIFALIFETIME_IN6 = amd64:3240126801
++SIOCGIFDSTADDR_IN6 = amd64:3240126754
++SIOCGIFINFO_IN6 = amd64:3222825324
++SIOCGIFNETMASK_IN6 = amd64:3240126757
++SIOCGNBRINFO_IN6 = amd64:3224922446
++SOCK_DGRAM = amd64:2
++SOCK_RAW = amd64:3
++SOCK_STREAM = amd64:1
++SOL_SOCKET = amd64:65535
++SO_RTABLE = amd64:4129
++TCP_INFO = amd64:9
++TCP_MAXSEG = amd64:2
++TCP_MD5SIG = amd64:4
++TCP_NODELAY = amd64:1
++TCP_NOPUSH = amd64:16
++TCP_SACK_ENABLE = amd64:8
+diff --git a/sys/openbsd/cloud#inetsw#gemini-3-flash-preview.txt b/sys/openbsd/cloud#inetsw#gemini-3-flash-preview.txt
+new file mode 100755
+index 000000000..e07d7c248
+--- /dev/null
++++ b/sys/openbsd/cloud#inetsw#gemini-3-flash-preview.txt
+@@ -0,0 +1,231 @@
++meta arches["amd64"]
++
++include <sys/types.h>
++include <sys/refcnt.h>
++include <sys/param.h>
++include <sys/mutex.h>
++include <sys/percpu.h>
++include <sys/socket.h>
++include <netinet/in.h>
++include <netinet/ip.h>
++include <netinet/tcp.h>
++include <netinet/tcp_fsm.h>
++include <netinet/ip_ipsp.h>
++include <netinet/ip_mroute.h>
++
++resource sock_inet_inetsw[sock]
++
++define IP_RECVOPTS	5
++define IP_DROP_MEMBERSHIP	13
++define MAXVIFS	32
++define IP_TOS	1
++define SOCK_RAW	3
++define IP_IPDEFTTL	37
++define IPPROTO_IP	0
++define SOCK_STREAM	1
++define IP_IPSECFLOWINFO	26
++define IPPROTO_TCP	6
++define MRT_API_FLAGS_BW_REPORT	0x01
++define IP_MULTICAST_IF	9
++define SOCK_DGRAM	2
++define AF_INET	2
++define IP_RETOPTS	8
++define IPPROTO_UDP	17
++define IP_MINTTL	24
++define MRT_API_CONFIG	209
++
++socket$inet_raw_inetsw(domain const[AF_INET], type const[SOCK_RAW], proto flags[inet_raw_proto_inetsw]) sock_inet_inetsw
++socket$inet_mroute_inetsw(domain const[AF_INET], type const[SOCK_RAW], proto const[IPPROTO_IGMP]) sock_inet_inetsw
++socket$inet_udp_inetsw(domain const[AF_INET], type const[SOCK_DGRAM], proto const[IPPROTO_UDP]) sock_inet_inetsw
++socket$inet_inetsw(domain const[AF_INET], type flags[inet_socket_type_inetsw], proto flags[inet_protocols_inetsw]) sock_inet_inetsw
++socket$inet_tcp_inetsw(domain const[AF_INET], type const[SOCK_STREAM], proto const[IPPROTO_TCP]) sock_inet_inetsw
++socket$inet_icmp_inetsw(domain const[AF_INET], type const[SOCK_RAW], proto const[IPPROTO_ICMP]) sock_inet_inetsw
++
++getsockopt$IP_MULTICAST_LOOP_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_MULTICAST_LOOP], optval ptr[out, int8], optlen ptr[inout, len[optval, int32]])
++getsockopt$MRT_VERSION_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[MRT_VERSION], optval ptr[out, int32], optlen ptr[inout, len[optval, int32]])
++setsockopt$IP_TTL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_TTL], val ptr[in, int32[0:255]], len len[val])
++getsockopt$MRT_API_CONFIG_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[MRT_API_CONFIG], val ptr[out, mrtapi_config$inetsw], len ptr[inout, len[val, int32]])
++getsockopt$IP_MULTICAST_TTL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_MULTICAST_TTL], val ptr[out, int8], len ptr[inout, len[val, int32]])
++getsockopt$IP_RECVOPTS_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_RECVOPTS], optval ptr[out, int32], optlen ptr[inout, len[optval, int32]])
++getsockopt$IP_AUTH_LEVEL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_AUTH_LEVEL], optval ptr[out, int32], optlen ptr[inout, len[optval, int32]])
++getsockopt$IP_PORTRANGE_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_PORTRANGE], val ptr[out, flags[ip_portrange_inetsw, int32]], len ptr[inout, len[val, int32]])
++setsockopt$IP_DROP_MEMBERSHIP_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_DROP_MEMBERSHIP], optval ptr[in, ip_mreq$inetsw], optlen len[optval])
++setsockopt$IP_RECVOPTS_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_RECVOPTS], optval ptr[in, int32[0:1]], optlen len[optval])
++getsockopt$IP_IPCOMP_LEVEL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_IPCOMP_LEVEL], val ptr[out, flags[ipsec_level_inetsw, int32]], len ptr[inout, len[val, int32]])
++getsockopt$inet_IP_IPDEFTTL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_IPDEFTTL], optval ptr[out, int32], optlen ptr[inout, len[optval, int32]])
++setsockopt$TCP_SACK_ENABLE_inetsw(fd sock_inet_inetsw, level const[IPPROTO_TCP], opt const[TCP_SACK_ENABLE], val ptr[in, int32], len len[val])
++getsockopt$inet_IP_HDRINCL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_HDRINCL], optval ptr[out, int32], optlen ptr[inout, len[optval, int32]])
++getsockopt$IP_RECVDSTPORT_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_RECVDSTPORT], val ptr[out, int32], len ptr[inout, len[val, int32]])
++getsockopt$IP_MINTTL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_MINTTL], optval ptr[out, int32], optlen ptr[inout, len[optval, int32]])
++getsockopt$IP_MULTICAST_IF_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_MULTICAST_IF], optval ptr[out, in_addr$inetsw], optlen ptr[inout, len[optval, int32]])
++getsockopt$TCP_SACK_ENABLE_inetsw(fd sock_inet_inetsw, level const[IPPROTO_TCP], opt const[TCP_SACK_ENABLE], val ptr[out, int32], len ptr[inout, len[val, int32]])
++setsockopt$MRT_ASSERT_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[MRT_ASSERT], optval ptr[in, int32], optlen len[optval])
++setsockopt$IP_MINTTL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_MINTTL], optval ptr[in, int32[0:255]], optlen len[optval])
++getsockopt$IP_RECVTTL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_RECVTTL], optval ptr[out, int32], optlen ptr[inout, len[optval, int32]])
++setsockopt$MRT_API_CONFIG_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[MRT_API_CONFIG], optval ptr[in, mfc_api_config$inetsw], optlen len[optval])
++getsockopt$IP_RECVIF_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_RECVIF], val ptr[out, int32], len ptr[inout, len[val, int32]])
++setsockopt$TCP_NODELAY_inetsw(fd sock_inet_inetsw, level const[IPPROTO_TCP], optname const[TCP_NODELAY], optval ptr[in, int32], optlen len[optval])
++getsockopt$IP_RECVRETOPTS_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_RECVRETOPTS], optval ptr[out, int32], optlen ptr[inout, len[optval, int32]])
++getsockopt$TCP_MAXSEG_inetsw(fd sock_inet_inetsw, level const[IPPROTO_TCP], opt const[TCP_MAXSEG], val ptr[out, int32], len ptr[inout, len[val, int32]])
++setsockopt$IP_IPCOMP_LEVEL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_IPCOMP_LEVEL], optval ptr[in, flags[ipsec_level_inetsw, int32]], optlen len[optval])
++setsockopt$MRT_DEL_MFC_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[MRT_DEL_MFC], optval ptr[in, mfcctl$inetsw], optlen len[optval])
++setsockopt$IP_TOS_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_TOS], val ptr[in, flags[ip_tos_values_inetsw, int32]], len len[val])
++getsockopt$IP_ESP_NETWORK_LEVEL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_ESP_NETWORK_LEVEL], optval ptr[out, flags[ipsec_level_inetsw, int32]], optlen ptr[inout, len[optval, int32]])
++setsockopt$IP_HDRINCL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_HDRINCL], optval ptr[in, int32], optlen len[optval])
++setsockopt$IP_RECVDSTADDR_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_RECVDSTADDR], optval ptr[in, int32], optlen len[optval])
++getsockopt$TCP_MD5SIG_inetsw(fd sock_inet_inetsw, level const[IPPROTO_TCP], optname const[TCP_MD5SIG], optval ptr[inout, int32], optlen ptr[inout, len[optval, int32]])
++setsockopt$IP_RECVRETOPTS_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_RECVRETOPTS], optval ptr[in, int32], optlen len[optval])
++setsockopt$MRT_ADD_VIF_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[MRT_ADD_VIF], val ptr[in, vifctl$inetsw], len len[val])
++setsockopt$MRT_ADD_MFC_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[MRT_ADD_MFC], val ptr[in, mfcctl$inetsw], len len[val])
++setsockopt$IP_MULTICAST_IF_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_MULTICAST_IF], val ptr[in, in_addr$inetsw], len len[val])
++getsockopt$IP_RETOPTS_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_RETOPTS], val ptr[out, array[int8, 40]], len ptr[inout, len[val, int32]])
++getsockopt$IP_RECVRTABLE_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_RECVRTABLE], optval ptr[out, int32], optlen ptr[inout, len[optval, int32]])
++getsockopt$MRT_API_SUPPORT_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[MRT_API_SUPPORT], val ptr[out, int32], len ptr[inout, len[val, int32]])
++setsockopt$IP_AUTH_LEVEL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_AUTH_LEVEL], val ptr[in, flags[ipsec_levels_inetsw, int32]], len len[val])
++setsockopt$inet_IP_RECVIF_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_RECVIF], optval ptr[in, int32[0:1]], optlen len[optval])
++setsockopt$TCP_MAXSEG_inetsw(fd sock_inet_inetsw, level const[IPPROTO_TCP], optname const[TCP_MAXSEG], optval ptr[in, int32], optlen len[optval])
++setsockopt$inet_IP_ADD_MEMBERSHIP_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_ADD_MEMBERSHIP], val ptr[in, ip_mreq$inetsw], len len[val])
++getsockopt$IP_RECVDSTADDR_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_RECVDSTADDR], optval ptr[out, int32], optlen ptr[inout, len[optval, int32]])
++setsockopt$IP_OPTIONS_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_OPTIONS], val ptr[in, array[int8]], len len[val])
++setsockopt$IP_PORTRANGE_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_PORTRANGE], optval ptr[in, flags[ip_portrange_flags_inetsw, int32]], optlen len[optval])
++setsockopt$MRT_INIT_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[MRT_INIT], optval ptr[in, int32], optlen len[optval])
++getsockopt$TCP_INFO_inetsw(fd sock_inet_inetsw, level const[IPPROTO_TCP], optname const[TCP_INFO], optval ptr[out, tcp_info$inetsw], optlen ptr[inout, len[optval, int32]])
++getsockopt$inet_IP_RECVIF_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_RECVIF], optval ptr[out, int32], optlen ptr[inout, len[optval, int32]])
++setsockopt$IP_PIPEX_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_PIPEX], optval ptr[in, int32[0:1]], optlen len[optval])
++getsockopt$IP_TTL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_TTL], optval ptr[out, int32], optlen ptr[inout, len[optval, int32]])
++getsockopt$TCP_NODELAY_inetsw(fd sock_inet_inetsw, level const[IPPROTO_TCP], optname const[TCP_NODELAY], optval ptr[out, int32], optlen ptr[inout, len[optval, int32]])
++setsockopt$IP_MULTICAST_TTL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_MULTICAST_TTL], val ptr[in, int8], len len[val])
++setsockopt$IP_RECVTTL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_RECVTTL], optval ptr[in, int32], optlen len[optval])
++getsockopt$IP_ESP_TRANS_LEVEL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_ESP_TRANS_LEVEL], optval ptr[out, flags[ipsec_levels_inetsw, int32]], optlen ptr[inout, len[optval, int32]])
++getsockopt$MRT_ASSERT_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[MRT_ASSERT], val ptr[out, int32], len ptr[inout, len[val, int32]])
++setsockopt$IP_ESP_TRANS_LEVEL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_ESP_TRANS_LEVEL], val ptr[in, int32[ipsec_level_inetsw]], len len[val])
++setsockopt$TCP_NOPUSH_inetsw(fd sock_inet_inetsw, level const[IPPROTO_TCP], optname const[TCP_NOPUSH], optval ptr[in, int32], optlen len[optval])
++setsockopt$IP_RECVRTABLE_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_RECVRTABLE], optval ptr[in, int32], optlen len[optval])
++setsockopt$MRT_DONE_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[MRT_DONE], optval ptr[in, int32], optlen len[optval])
++setsockopt$inet_IP_MULTICAST_LOOP_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_MULTICAST_LOOP], val ptr[in, int8], len len[val])
++setsockopt$IP_RECVIF_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_RECVIF], optval ptr[in, int32], optlen len[optval])
++getsockopt$IP_OPTIONS_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_OPTIONS], optval ptr[out, array[int8, 40]], optlen ptr[inout, len[optval, int32]])
++setsockopt$IP_ESP_NETWORK_LEVEL_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_ESP_NETWORK_LEVEL], optval ptr[in, flags[esp_network_level_inetsw, int32]], optlen len[optval])
++setsockopt$IP_RECVDSTPORT_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_RECVDSTPORT], optval ptr[in, int32], optlen len[optval])
++setsockopt$MRT_DEL_VIF_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[MRT_DEL_VIF], val ptr[in, vifi_t$inetsw], len len[val])
++getsockopt$IP_PIPEX_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_PIPEX], optval ptr[out, int32], optlen ptr[inout, len[optval, int32]])
++getsockopt$IP_TOS_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], optname const[IP_TOS], optval ptr[out, int32], optlen ptr[inout, len[optval, int32]])
++getsockopt$TCP_NOPUSH_inetsw(fd sock_inet_inetsw, level const[IPPROTO_TCP], opt const[TCP_NOPUSH], val ptr[out, int32], len ptr[inout, len[val, int32]])
++setsockopt$TCP_MD5SIG_inetsw(fd sock_inet_inetsw, level const[IPPROTO_TCP], optname const[TCP_MD5SIG], optval ptr[in, int32], optlen len[optval])
++setsockopt$IP_IPSECFLOWINFO_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_IPSECFLOWINFO], val ptr[in, int32], len len[val])
++getsockopt$IP_IPSECFLOWINFO_inetsw(fd sock_inet_inetsw, level const[IPPROTO_IP], opt const[IP_IPSECFLOWINFO], val ptr[out, ipsecflowinfo$inetsw], len ptr[inout, len[val, int32]])
++
++ipsec_level_inetsw = IPSEC_LEVEL_DEFAULT, IPSEC_LEVEL_NONE, IPSEC_LEVEL_AVAIL, IPSEC_LEVEL_USE, IPSEC_LEVEL_REQUIRE, IPSEC_LEVEL_UNIQUE
++inet_protocols_inetsw = IPPROTO_IP, IPPROTO_ICMP, IPPROTO_IGMP, IPPROTO_GGP, IPPROTO_IPIP, IPPROTO_TCP, IPPROTO_EGP, IPPROTO_PUP, IPPROTO_UDP, IPPROTO_IDP, IPPROTO_TP, IPPROTO_IPV6, IPPROTO_ROUTING, IPPROTO_FRAGMENT, IPPROTO_RSVP, IPPROTO_GRE, IPPROTO_ESP, IPPROTO_AH, IPPROTO_MOBILE, IPPROTO_NONE, IPPROTO_DSTOPTS, IPPROTO_EON, IPPROTO_ETHERIP, IPPROTO_ENCAP, IPPROTO_PIM, IPPROTO_IPCOMP, IPPROTO_SCTP, IPPROTO_RAW, IPPROTO_CARP, IPPROTO_PFSYNC, IPPROTO_UDPLITE, IPPROTO_MPLS
++ip_portrange_inetsw = IP_PORTRANGE_DEFAULT, IP_PORTRANGE_HIGH, IP_PORTRANGE_LOW
++ip_tos_values_inetsw = IPTOS_LOWDELAY, IPTOS_THROUGHPUT, IPTOS_RELIABILITY, IPTOS_PREC_NETCONTROL, IPTOS_PREC_INTERNETCONTROL, IPTOS_PREC_CRITIC_ECP, IPTOS_PREC_FLASHOVERRIDE, IPTOS_PREC_FLASH, IPTOS_PREC_IMMEDIATE, IPTOS_PREC_PRIORITY, IPTOS_PREC_ROUTINE
++tcp_info_options_inetsw = TCPI_OPT_TIMESTAMPS, TCPI_OPT_SACK, TCPI_OPT_WSCALE, TCPI_OPT_ECN, TCPI_OPT_TOE
++vif_flags_inetsw = VIFF_TUNNEL, VIFF_SRCRT
++esp_network_level_inetsw = IPSEC_LEVEL_DEFAULT, IPSEC_LEVEL_NONE, IPSEC_LEVEL_AVAIL, IPSEC_LEVEL_BYPASS, IPSEC_LEVEL_REQUIRE, IPSEC_LEVEL_UNIQUE
++inet_socket_type_inetsw = SOCK_STREAM, SOCK_DGRAM, SOCK_RAW, SOCK_RDM, SOCK_SEQPACKET, SOCK_CLOEXEC, SOCK_NONBLOCK, SOCK_CLOFORK, SOCK_DNS, SOCK_NONBLOCK_INHERIT
++ipsec_levels_inetsw = IPSEC_LEVEL_DEFAULT, IPSEC_LEVEL_NONE, IPSEC_LEVEL_AVAIL, IPSEC_LEVEL_BYPASS, IPSEC_LEVEL_REQUIRE, IPSEC_LEVEL_UNIQUE
++inet_raw_proto_inetsw = IPPROTO_RAW, IPPROTO_ICMP, IPPROTO_IGMP, IPPROTO_GRE, IPPROTO_IPIP, IPPROTO_IPV6, IPPROTO_ESP, IPPROTO_AH, IPPROTO_PIM, IPPROTO_SCTP, IPPROTO_CARP, IPPROTO_PFSYNC
++tcp_states_inetsw = TCPS_CLOSED, TCPS_LISTEN, TCPS_SYN_SENT, TCPS_SYN_RECEIVED, TCPS_ESTABLISHED, TCPS_CLOSE_WAIT, TCPS_FIN_WAIT_1, TCPS_CLOSING, TCPS_LAST_ACK, TCPS_FIN_WAIT_2, TCPS_TIME_WAIT
++mrt_api_flags_inetsw = MRT_API_FLAGS_BW_REPORT
++ip_portrange_flags_inetsw = IP_PORTRANGE_DEFAULT, IP_PORTRANGE_HIGH, IP_PORTRANGE_LOW
++
++in_addr$inetsw {
++	s_addr	ipv4_addr
++}
++
++mfcctl$inetsw {
++	mfcc_origin	in_addr$inetsw
++	mfcc_mcastgrp	in_addr$inetsw
++	mfcc_parent	int16
++	mfcc_ttls	array[int8, MAXVIFS]
++}
++
++mfc_api_config$inetsw {
++	mfc_mrt_api_config	flags[mrt_api_flags_inetsw, int32]
++}
++
++mrtapi_config$inetsw {
++	status	int32
++}
++
++tcp_info$inetsw {
++	tcpi_state		flags[tcp_states_inetsw, int8]
++	__tcpi_ca_state		int8
++	__tcpi_retransmits	int8
++	__tcpi_probes		int8
++	__tcpi_backoff		int8
++	tcpi_options		flags[tcp_info_options_inetsw, int8]
++	tcpi_snd_wscale		int8
++	tcpi_rcv_wscale		int8
++	tcpi_rto		int32
++	__tcpi_ato		int32
++	tcpi_snd_mss		int32
++	tcpi_rcv_mss		int32
++	__tcpi_unacked		int32
++	__tcpi_sacked		int32
++	__tcpi_lost		int32
++	__tcpi_retrans		int32
++	__tcpi_fackets		int32
++	tcpi_last_data_sent	int32
++	tcpi_last_ack_sent	int32
++	tcpi_last_data_recv	int32
++	tcpi_last_ack_recv	int32
++	__tcpi_pmtu		int32
++	__tcpi_rcv_ssthresh	int32
++	tcpi_rtt		int32
++	tcpi_rttvar		int32
++	tcpi_snd_ssthresh	int32
++	tcpi_snd_cwnd		int32
++	__tcpi_advmss		int32
++	__tcpi_reordering	int32
++	__tcpi_rcv_rtt		int32
++	tcpi_rcv_space		int32
++	tcpi_snd_wnd		int32
++	tcpi_snd_nxt		int32
++	tcpi_rcv_nxt		int32
++	tcpi_toe_tid		int32
++	tcpi_snd_rexmitpack	int32
++	tcpi_rcv_ooopack	int32
++	tcpi_snd_zerowin	int32
++	tcpi_rttmin		int32
++	tcpi_max_sndwnd		int32
++	tcpi_rcv_adv		int32
++	tcpi_rcv_up		int32
++	tcpi_snd_una		int32
++	tcpi_snd_up		int32
++	tcpi_snd_wl1		int32
++	tcpi_snd_wl2		int32
++	tcpi_snd_max		int32
++	tcpi_ts_recent		int32
++	tcpi_ts_recent_age	int32
++	tcpi_rfbuf_cnt		int32
++	tcpi_rfbuf_ts		int32
++	tcpi_so_rcv_sb_cc	int32
++	tcpi_so_rcv_sb_hiwat	int32
++	tcpi_so_rcv_sb_lowat	int32
++	tcpi_so_rcv_sb_wat	int32
++	tcpi_so_snd_sb_cc	int32
++	tcpi_so_snd_sb_hiwat	int32
++	tcpi_so_snd_sb_lowat	int32
++	tcpi_so_snd_sb_wat	int32
++}
++
++ip_mreq$inetsw {
++	imr_multiaddr	ipv4_addr
++	imr_interface	ipv4_addr
++}
++
++vifctl$inetsw {
++	vifc_vifi	int16[0:31]
++	vifc_flags	flags[vif_flags_inetsw, int8]
++	vifc_threshold	int8
++	vifc_rate_limit	int32
++	vifc_lcl_addr	in_addr$inetsw
++	vifc_rmt_addr	in_addr$inetsw
++}
++
++ipsecflowinfo$inetsw {
++	flowid	int32
++}
++
++type vifi_t$inetsw int16
+diff --git a/sys/openbsd/cloud#inetsw#gemini-3-flash-preview.txt.const b/sys/openbsd/cloud#inetsw#gemini-3-flash-preview.txt.const
+new file mode 100644
+index 000000000..71d0827a8
+--- /dev/null
++++ b/sys/openbsd/cloud#inetsw#gemini-3-flash-preview.txt.const
+@@ -0,0 +1,128 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AF_INET = amd64:2
++IPPROTO_AH = amd64:51
++IPPROTO_CARP = amd64:112
++IPPROTO_DSTOPTS = amd64:60
++IPPROTO_EGP = amd64:8
++IPPROTO_ENCAP = amd64:98
++IPPROTO_EON = amd64:80
++IPPROTO_ESP = amd64:50
++IPPROTO_ETHERIP = amd64:97
++IPPROTO_FRAGMENT = amd64:44
++IPPROTO_GGP = amd64:3
++IPPROTO_GRE = amd64:47
++IPPROTO_ICMP = amd64:1
++IPPROTO_IDP = amd64:22
++IPPROTO_IGMP = amd64:2
++IPPROTO_IP = amd64:0
++IPPROTO_IPCOMP = amd64:108
++IPPROTO_IPIP = amd64:4
++IPPROTO_IPV6 = amd64:41
++IPPROTO_MOBILE = amd64:55
++IPPROTO_MPLS = amd64:137
++IPPROTO_NONE = amd64:59
++IPPROTO_PFSYNC = amd64:240
++IPPROTO_PIM = amd64:103
++IPPROTO_PUP = amd64:12
++IPPROTO_RAW = amd64:255
++IPPROTO_ROUTING = amd64:43
++IPPROTO_RSVP = amd64:46
++IPPROTO_SCTP = amd64:132
++IPPROTO_TCP = amd64:6
++IPPROTO_TP = amd64:29
++IPPROTO_UDP = amd64:17
++IPPROTO_UDPLITE = amd64:136
++IPSEC_LEVEL_AVAIL = amd64:1
++IPSEC_LEVEL_BYPASS = amd64:0
++IPSEC_LEVEL_DEFAULT = amd64:1
++IPSEC_LEVEL_NONE = amd64:0
++IPSEC_LEVEL_REQUIRE = amd64:3
++IPSEC_LEVEL_UNIQUE = amd64:4
++IPSEC_LEVEL_USE = amd64:2
++IPTOS_LOWDELAY = amd64:16
++IPTOS_PREC_CRITIC_ECP = amd64:160
++IPTOS_PREC_FLASH = amd64:96
++IPTOS_PREC_FLASHOVERRIDE = amd64:128
++IPTOS_PREC_IMMEDIATE = amd64:64
++IPTOS_PREC_INTERNETCONTROL = amd64:192
++IPTOS_PREC_NETCONTROL = amd64:224
++IPTOS_PREC_PRIORITY = amd64:32
++IPTOS_PREC_ROUTINE = amd64:0
++IPTOS_RELIABILITY = amd64:4
++IPTOS_THROUGHPUT = amd64:8
++IP_ADD_MEMBERSHIP = amd64:12
++IP_AUTH_LEVEL = amd64:20
++IP_DROP_MEMBERSHIP = amd64:13
++IP_ESP_NETWORK_LEVEL = amd64:22
++IP_ESP_TRANS_LEVEL = amd64:21
++IP_HDRINCL = amd64:2
++IP_IPCOMP_LEVEL = amd64:29
++IP_IPDEFTTL = amd64:37
++IP_IPSECFLOWINFO = amd64:36
++IP_MINTTL = amd64:32
++IP_MULTICAST_IF = amd64:9
++IP_MULTICAST_LOOP = amd64:11
++IP_MULTICAST_TTL = amd64:10
++IP_OPTIONS = amd64:1
++IP_PIPEX = amd64:34
++IP_PORTRANGE = amd64:19
++IP_PORTRANGE_DEFAULT = amd64:0
++IP_PORTRANGE_HIGH = amd64:1
++IP_PORTRANGE_LOW = amd64:2
++IP_RECVDSTADDR = amd64:7
++IP_RECVDSTPORT = amd64:33
++IP_RECVIF = amd64:30
++IP_RECVOPTS = amd64:5
++IP_RECVRETOPTS = amd64:6
++IP_RECVRTABLE = amd64:35
++IP_RECVTTL = amd64:31
++IP_RETOPTS = amd64:8
++IP_TOS = amd64:3
++IP_TTL = amd64:4
++MAXVIFS = amd64:32
++MRT_ADD_MFC = amd64:104
++MRT_ADD_VIF = amd64:102
++MRT_API_CONFIG = amd64:110
++MRT_API_FLAGS_BW_REPORT = amd64:1
++MRT_API_SUPPORT = amd64:109
++MRT_ASSERT = amd64:107
++MRT_DEL_MFC = amd64:105
++MRT_DEL_VIF = amd64:103
++MRT_DONE = amd64:101
++MRT_INIT = amd64:100
++MRT_VERSION = amd64:106
++SOCK_CLOEXEC = amd64:32768
++SOCK_CLOFORK = amd64:2048
++SOCK_DGRAM = amd64:2
++SOCK_DNS = amd64:4096
++SOCK_NONBLOCK = amd64:16384
++SOCK_NONBLOCK_INHERIT = amd64:8192
++SOCK_RAW = amd64:3
++SOCK_RDM = amd64:4
++SOCK_SEQPACKET = amd64:5
++SOCK_STREAM = amd64:1
++TCPI_OPT_ECN = amd64:8
++TCPI_OPT_SACK = amd64:2
++TCPI_OPT_TIMESTAMPS = amd64:1
++TCPI_OPT_TOE = amd64:16
++TCPI_OPT_WSCALE = amd64:4
++TCPS_CLOSED = amd64:0
++TCPS_CLOSE_WAIT = amd64:5
++TCPS_CLOSING = amd64:7
++TCPS_ESTABLISHED = amd64:4
++TCPS_FIN_WAIT_1 = amd64:6
++TCPS_FIN_WAIT_2 = amd64:9
++TCPS_LAST_ACK = amd64:8
++TCPS_LISTEN = amd64:1
++TCPS_SYN_RECEIVED = amd64:3
++TCPS_SYN_SENT = amd64:2
++TCPS_TIME_WAIT = amd64:10
++TCP_INFO = amd64:9
++TCP_MAXSEG = amd64:2
++TCP_MD5SIG = amd64:4
++TCP_NODELAY = amd64:1
++TCP_NOPUSH = amd64:16
++TCP_SACK_ENABLE = amd64:8
++VIFF_SRCRT = amd64:2
++VIFF_TUNNEL = amd64:1
+diff --git a/sys/openbsd/cloud#pciioctl#gemini-3-flash-preview.txt b/sys/openbsd/cloud#pciioctl#gemini-3-flash-preview.txt
+new file mode 100755
+index 000000000..a96785146
+--- /dev/null
++++ b/sys/openbsd/cloud#pciioctl#gemini-3-flash-preview.txt
+@@ -0,0 +1,55 @@
++meta arches["amd64"]
++
++include <sys/types.h>
++include <sys/fcntl.h>
++include <sys/pciio.h>
++
++resource fd_pci_pciioctl[fd]
++
++openat$pci_pciioctl(fd const[AT_FDCWD], file ptr[in, string[pci_devices]], flags flags[open_flags], mode const[0]) fd_pci_pciioctl
++pci_devices = "/dev/pci0", "/dev/pci1", "/dev/pci2", "/dev/pci3"
++
++ioctl$PCIOCREADMASK_pciioctl(fd fd_pci_pciioctl, cmd const[PCIOCREADMASK], arg ptr[inout, pci_io$pciioctl])
++ioctl$PCIOCWRITE_pciioctl(fd fd_pci_pciioctl, cmd const[PCIOCWRITE], arg ptr[inout, pci_io$pciioctl])
++ioctl$PCIOCGETVPD_pciioctl(fd fd_pci_pciioctl, cmd const[PCIOCGETVPD], arg ptr[inout, pci_vpd_req$pciioctl])
++ioctl$PCIOCSETVGA_pciioctl(fd fd_pci_pciioctl, cmd const[PCIOCSETVGA], arg ptr[in, pci_vga$pciioctl])
++ioctl$PCIOCGETVGA_pciioctl(fd fd_pci_pciioctl, cmd const[PCIOCGETVGA], arg ptr[inout, pci_vga$pciioctl])
++ioctl$PCIOCREAD_pciioctl(fd fd_pci_pciioctl, cmd const[PCIOCREAD], arg ptr[inout, pci_io$pciioctl])
++ioctl$PCIOCGETROM_pciioctl(fd fd_pci_pciioctl, cmd const[PCIOCGETROM], arg ptr[inout, pci_rom$pciioctl])
++ioctl$PCIOCGETROMLEN_pciioctl(fd fd_pci_pciioctl, cmd const[PCIOCGETROMLEN], arg ptr[inout, pci_rom$pciioctl])
++
++pci_vga_lock_flags_pciioctl = PCI_VGA_UNLOCK, PCI_VGA_LOCK, PCI_VGA_TRYLOCK
++pci_io_width_pciioctl = 1, 2, 4
++pci_vga_decode_flags_pciioctl = PCI_VGA_IO_ENABLE, PCI_VGA_MEM_ENABLE
++
++pci_vpd_req$pciioctl {
++	pv_sel		pcisel$pciioctl
++	pv_offset	int32
++	pv_count	len[pv_data, int32]
++	pv_data		ptr[out, array[int32]]
++}
++
++pci_vga$pciioctl {
++	pv_sel		pcisel$pciioctl
++	pv_lock		flags[pci_vga_lock_flags_pciioctl, int32]
++	pv_decode	flags[pci_vga_decode_flags_pciioctl, int32]
++}
++
++pci_rom$pciioctl {
++	pr_sel		pcisel$pciioctl
++	pr_romlen	len[pr_rom, int32]
++	pr_rom		ptr[out, array[int8]]
++}
++
++pcisel$pciioctl {
++	pc_bus	int8
++	pc_dev	int8[0:31]
++	pc_func	int8[0:7]
++}
++
++pci_io$pciioctl {
++	pi_sel		pcisel$pciioctl
++	pi_reg		int32[0:4095]
++	pi_width	flags[pci_io_width_pciioctl, int32]
++	pi_data		int32
++}
+diff --git a/sys/openbsd/cloud#pciioctl#gemini-3-flash-preview.txt.const b/sys/openbsd/cloud#pciioctl#gemini-3-flash-preview.txt.const
+new file mode 100644
+index 000000000..47a471c98
+--- /dev/null
++++ b/sys/openbsd/cloud#pciioctl#gemini-3-flash-preview.txt.const
+@@ -0,0 +1,16 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++PCIOCGETROM = amd64:3222302725
++PCIOCGETROMLEN = amd64:3222302724
++PCIOCGETVGA = amd64:3222040582
++PCIOCGETVPD = amd64:3222827017
++PCIOCREAD = amd64:3222302722
++PCIOCREADMASK = amd64:3222302728
++PCIOCSETVGA = amd64:3222040583
++PCIOCWRITE = amd64:3222302723
++PCI_VGA_IO_ENABLE = amd64:1
++PCI_VGA_LOCK = amd64:1
++PCI_VGA_MEM_ENABLE = amd64:2
++PCI_VGA_TRYLOCK = amd64:2
++PCI_VGA_UNLOCK = amd64:0
+diff --git a/sys/openbsd/cloud#spkrioctl#gemini-3-flash-preview.txt b/sys/openbsd/cloud#spkrioctl#gemini-3-flash-preview.txt
+new file mode 100755
+index 000000000..89a3a2ae9
+--- /dev/null
++++ b/sys/openbsd/cloud#spkrioctl#gemini-3-flash-preview.txt
+@@ -0,0 +1,22 @@
++meta arches["amd64"]
++
++include <sys/ioccom.h>
++include <dev/isa/spkrio.h>
++include <sys/types.h>
++include <sys/fcntl.h>
++
++resource fd_speaker_spkrioctl[fd]
++
++# valid: true
++openat$speaker_spkrioctl(fd const[AT_FDCWD], file ptr[in, string["/dev/speaker"]], flags flags[open_flags], mode const[0]) fd_speaker_spkrioctl
++
++# valid: true
++ioctl$SPKRTUNE_spkrioctl(fd fd_speaker_spkrioctl, cmd const[SPKRTUNE])
++# valid: true
++ioctl$SPKRTONE_spkrioctl(fd fd_speaker_spkrioctl, cmd const[SPKRTONE], arg ptr[in, tone_t$spkrioctl])
++
++# valid: true
++tone_t$spkrioctl {
++	frequency	int32
++	duration	int32
++}
+diff --git a/sys/openbsd/cloud#spkrioctl#gemini-3-flash-preview.txt.const b/sys/openbsd/cloud#spkrioctl#gemini-3-flash-preview.txt.const
+new file mode 100644
+index 000000000..63600ca89
+--- /dev/null
++++ b/sys/openbsd/cloud#spkrioctl#gemini-3-flash-preview.txt.const
+@@ -0,0 +1,5 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++SPKRTONE = amd64:2148029185
++SPKRTUNE = amd64:536892162
+diff --git a/sys/openbsd/cloud#unixsw#gemini-3-flash-preview.txt b/sys/openbsd/cloud#unixsw#gemini-3-flash-preview.txt
+new file mode 100755
+index 000000000..f5b688660
+--- /dev/null
++++ b/sys/openbsd/cloud#unixsw#gemini-3-flash-preview.txt
+@@ -0,0 +1,86 @@
++meta arches["amd64"]
++
++include <sys/sockio.h>
++include <sys/types.h>
++include <sys/socket.h>
++include <sys/uio.h>
++include <sys/un.h>
++
++resource fd_unix_unixsw[fd]
++
++define SCM_RIGHTS	0x01
++define SOL_SOCKET	0xffff
++define AF_UNIX	1
++define SCM_CREDS	0x02
++
++socket$unix_unixsw(domain const[AF_UNIX], type flags[sock_type_unix_unixsw], proto const[0]) fd_unix_unixsw
++socket$unix_seqpacket_unixsw(domain const[AF_UNIX], type const[SOCK_SEQPACKET], proto const[0]) fd_unix_unixsw
++socket$unix_dgram_unixsw(domain const[AF_UNIX], type flags[sock_type_dgram_unixsw], proto const[0]) fd_unix_unixsw
++socket$unix_stream_unixsw(domain const[AF_UNIX], type flags[sock_type_stream_unixsw], proto const[0]) fd_unix_unixsw
++
++socketpair$unix_seqpacket_unixsw(domain const[AF_UNIX], type const[SOCK_SEQPACKET], proto const[0], sv ptr[out, array[fd_unix_unixsw, 2]])
++socketpair$unix_dgram_unixsw(domain const[AF_UNIX], type const[SOCK_DGRAM], proto const[0], sv ptr[out, array[fd_unix_unixsw, 2]])
++socketpair$unix_stream_unixsw(domain const[AF_UNIX], type const[SOCK_STREAM], proto const[0], sv ptr[out, array[fd_unix_unixsw, 2]])
++sendto$unix_unixsw(fd fd_unix_unixsw, msg ptr[in, array[int8]], len len[msg], f flags[send_flags], to ptr[in, sockaddr_un$unixsw], tolen len[to])
++accept$unix_unixsw(fd fd_unix_unixsw, addr ptr[out, sockaddr_un$unixsw], addrlen ptr[inout, len[addr, int32]]) fd_unix_unixsw
++recvmsg$unix_unixsw(fd fd_unix_unixsw, msg ptr[inout, msghdr_unix$unixsw], flags flags[recv_flags])
++sendmsg$unix_unixsw(fd fd_unix_unixsw, msg ptr[in, msghdr_unix$unixsw], flags flags[send_flags])
++bind$unix_unixsw(fd fd_unix_unixsw, addr ptr[in, sockaddr_un$unixsw], addrlen len[addr])
++getsockname$unix_unixsw(fd fd_unix_unixsw, addr ptr[out, sockaddr_un$unixsw], addrlen ptr[inout, len[addr, int32]])
++getpeername$unix_unixsw(fd fd_unix_unixsw, addr ptr[out, sockaddr_un$unixsw], addrlen ptr[inout, len[addr, int32]])
++listen$unix_unixsw(fd fd_unix_unixsw, backlog int32)
++connect$unix_unixsw(fd fd_unix_unixsw, addr ptr[in, sockaddr_un$unixsw], addrlen len[addr])
++recvfrom$unix_unixsw(fd fd_unix_unixsw, buf ptr[out, array[int8]], len len[buf], flags flags[recv_flags], addr ptr[out, sockaddr_un$unixsw, opt], addrlen ptr[inout, len[addr, int32], opt])
++ioctl$SIOCSPGRP_unixsw(fd fd_unix_unixsw, cmd const[SIOCSPGRP], arg ptr[in, int32])
++ioctl$SIOCATMARK_unixsw(fd fd_unix_unixsw, cmd const[SIOCATMARK], arg ptr[out, int32])
++ioctl$SIOCGPGRP_unixsw(fd fd_unix_unixsw, cmd const[SIOCGPGRP], arg ptr[out, int32])
++
++sock_type_stream_unixsw = SOCK_STREAM, SOCK_CLOEXEC, SOCK_NONBLOCK, SOCK_CLOFORK, SOCK_DNS
++sock_type_unix_unixsw = SOCK_STREAM, SOCK_DGRAM, SOCK_SEQPACKET
++sock_type_dgram_unixsw = SOCK_DGRAM
++
++sockaddr_un$unixsw {
++	sun_len		len[parent, int8]
++	sun_family	const[AF_UNIX, int8]
++	sun_path	string[filename, 104]
++}
++
++iovec$unixsw {
++	iov_base	ptr[inout, array[int8]]
++	iov_len		len[iov_base, intptr]
++}
++
++msghdr_unix$unixsw {
++	msg_name	ptr[inout, sockaddr_un$unixsw, opt]
++	msg_namelen	len[msg_name, int32]
++	msg_iov		ptr[in, array[iovec$unixsw]]
++	msg_iovlen	len[msg_iov, int32]
++	msg_control	ptr[inout, array[cmsghdr_unix$unixsw], opt]
++	msg_controllen	len[msg_control, int32]
++	msg_flags	int32
++}
++
++cmsg_unix_creds$unixsw {
++	cmsg_len	len[parent, int32]
++	cmsg_level	const[SOL_SOCKET, int32]
++	cmsg_type	const[SCM_CREDS, int32]
++	creds		sockpeercred$unixsw
++}
++
++cmsg_unix_rights$unixsw {
++	cmsg_len	len[parent, int32]
++	cmsg_level	const[SOL_SOCKET, int32]
++	cmsg_type	const[SCM_RIGHTS, int32]
++	fds		array[fd]
++}
++
++sockpeercred$unixsw {
++	uid	int32
++	gid	int32
++	pid	int32
++}
++
++cmsghdr_unix$unixsw [
++	rights	cmsg_unix_rights$unixsw
++	creds	cmsg_unix_creds$unixsw
++] [varlen]
+diff --git a/sys/openbsd/cloud#unixsw#gemini-3-flash-preview.txt.const b/sys/openbsd/cloud#unixsw#gemini-3-flash-preview.txt.const
+new file mode 100644
+index 000000000..bcb08142d
+--- /dev/null
++++ b/sys/openbsd/cloud#unixsw#gemini-3-flash-preview.txt.const
+@@ -0,0 +1,16 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AF_UNIX = amd64:1
++SCM_CREDS = amd64:2
++SCM_RIGHTS = amd64:1
++SIOCATMARK = amd64:1074033415
++SIOCGPGRP = amd64:1074033417
++SIOCSPGRP = amd64:2147775240
++SOCK_CLOEXEC = amd64:32768
++SOCK_CLOFORK = amd64:2048
++SOCK_DGRAM = amd64:2
++SOCK_DNS = amd64:4096
++SOCK_NONBLOCK = amd64:16384
++SOCK_SEQPACKET = amd64:5
++SOCK_STREAM = amd64:1
++SOL_SOCKET = amd64:65535
+diff --git a/sys/openbsd/cloud#vmmioctl#gemini-3-flash-preview.txt b/sys/openbsd/cloud#vmmioctl#gemini-3-flash-preview.txt
+new file mode 100755
+index 000000000..be0819d41
+--- /dev/null
++++ b/sys/openbsd/cloud#vmmioctl#gemini-3-flash-preview.txt
+@@ -0,0 +1,213 @@
++meta arches["amd64"]
++
++include <sys/types.h>
++include <sys/fcntl.h>
++include <sys/ioccom.h>
++include <sys/param.h>
++include <sys/queue.h>
++include <sys/rwlock.h>
++include <sys/mman.h>
++include <dev/vmm/vmm.h>
++include <machine/fpu.h>
++include <machine/vmmvar.h>
++
++resource fd_vmm_vmmioctl[fd]
++resource vmm_id_vmmioctl[int32]
++
++define VMM_EXIT_CR_READ	1
++define VMM_VMPARAMS_MAX	16
++define VMM_EXIT_CR_WRITE	0
++
++openat$vmm_vmmioctl(fd const[AT_FDCWD], file ptr[in, string["/dev/vmm"]], flags flags[open_flags], mode const[0]) fd_vmm_vmmioctl
++
++ioctl$VMM_IOC_CREATE_vmmioctl(fd fd_vmm_vmmioctl, cmd const[VMM_IOC_CREATE], arg ptr[inout, vm_create_params$vmmioctl])
++ioctl$VMM_IOC_RUN_vmmioctl(fd fd_vmm_vmmioctl, cmd const[VMM_IOC_RUN], arg ptr[inout, vm_run_params$vmmioctl])
++ioctl$VMM_IOC_INFO_vmmioctl(fd fd_vmm_vmmioctl, cmd const[VMM_IOC_INFO], arg ptr[inout, vm_info_params$vmmioctl])
++ioctl$VMM_IOC_TERM_vmmioctl(fd fd_vmm_vmmioctl, cmd const[VMM_IOC_TERM], arg ptr[in, vm_terminate_params$vmmioctl])
++ioctl$VMM_IOC_RESETCPU_vmmioctl(fd fd_vmm_vmmioctl, cmd const[VMM_IOC_RESETCPU], arg ptr[in, vm_resetcpu_params$vmmioctl])
++ioctl$VMM_IOC_READREGS_vmmioctl(fd fd_vmm_vmmioctl, cmd const[VMM_IOC_READREGS], arg ptr[inout, vm_rwregs_params$vmmioctl])
++ioctl$VMM_IOC_WRITEVMPARAMS_vmmioctl(fd fd_vmm_vmmioctl, cmd const[VMM_IOC_WRITEVMPARAMS], arg ptr[in, vm_rwvmparams_params$vmmioctl])
++ioctl$VMM_IOC_SHAREMEM_vmmioctl(fd fd_vmm_vmmioctl, cmd const[VMM_IOC_SHAREMEM], arg ptr[in, vm_sharemem_params$vmmioctl])
++ioctl$VMM_IOC_WRITEREGS_vmmioctl(fd fd_vmm_vmmioctl, cmd const[VMM_IOC_WRITEREGS], arg ptr[in, vm_rwregs_params$vmmioctl])
++ioctl$VMM_IOC_READVMPARAMS_vmmioctl(fd fd_vmm_vmmioctl, cmd const[VMM_IOC_READVMPARAMS], arg ptr[inout, vm_rwvmparams_params$vmmioctl])
++
++vm_mem_type_vmmioctl = VM_MEM_RAM, VM_MEM_RESERVED, VM_MEM_MMIO
++vcpu_inject_type_vmmioctl = VCPU_INJECT_NONE, VCPU_INJECT_INTR, VCPU_INJECT_EX, VCPU_INJECT_NMI
++vmm_vei_dir_vmmioctl = VEI_DIR_OUT, VEI_DIR_IN
++vm_exit_cr_dir_vmmioctl = VMM_EXIT_CR_WRITE, VMM_EXIT_CR_READ
++
++vm_create_params$vmmioctl {
++	vcp_nmemranges	intptr[0:16]
++	vcp_ncpus	intptr[1:64]
++	vcp_memranges	array[vm_mem_range$vmmioctl, 16]
++	vcp_name	array[int8, 64]
++	vcp_sev		int32
++	vcp_seves	int32
++	vcp_id		vmm_id_vmmioctl	(out)
++	vcp_poscbit	int32
++	vcp_asid	array[int32, 512]
++}
++
++vm_info_params$vmmioctl {
++	vip_size	bytesize[vip_info, intptr]
++	vip_info_ct	intptr
++	vip_info	ptr[out, array[vm_info_result$vmmioctl], opt]
++}
++
++vm_exit_cr$vmmioctl {
++	vec_crnum	int8
++	vec_dir		flags[vm_exit_cr_dir_vmmioctl, int8]
++	vec_reg		int8
++	vec_insn_len	int8
++}
++
++vm_terminate_params$vmmioctl {
++	vtp_vm_id	vmm_id_vmmioctl
++}
++
++vm_sharemem_params$vmmioctl {
++	vmp_id		vmm_id_vmmioctl
++	vmp_guestpa	int64
++	vmp_va		vma
++	vmp_size	len[vmp_va, intptr]
++}
++
++vm_rwvmparams_params$vmmioctl {
++	vrp_vm_id	vmm_id_vmmioctl	(in)
++	vrp_vcpu_id	int32	(in)
++	vrp_mask	int32	(in)
++	vrp_data	array[int64, VMM_VMPARAMS_MAX]	(inout)
++}
++
++vm_exit_io$vmmioctl {
++	vei_port	int16
++	vei_width	int8
++	vei_dir		int8
++	vei_data	array[int8, 4]
++}
++
++vm_exit_paging$vmmioctl {
++	vei_gpa	int64
++}
++
++vm_exit_vcpu$vmmioctl {
++	ve_reason	int32
++	ve_vcpuid	int32
++	ve_exit_info	vm_exit_info$vmmioctl
++}
++
++vcpu_inject_event$vmmioctl {
++	vie_vector	int8
++	vie_errorcode	int32
++	vie_type	flags[vcpu_inject_type_vmmioctl, int8]
++}
++
++vcpu_reg_state$vmmioctl {
++	vrs_gprs	array[int64, 18]
++	vrs_crs		array[int64, 10]
++	vrs_msrs	array[int64, 7]
++	vrs_drs		array[int64, 6]
++	vrs_sregs	array[vcpu_segment_info$vmmioctl, 8]
++	vrs_gdtr	vcpu_segment_info$vmmioctl
++	vrs_idtr	vcpu_segment_info$vmmioctl
++}
++
++vm_exit_ipt$vmmioctl {
++	vei_mask	int64
++	vei_data	int64
++	vei_gpa		int64
++	vei_instruction	array[int8, 15]
++	vei_insn_len	int8
++}
++
++vm_exit_mem$vmmioctl {
++	vei_gpa	int64
++	vei_gva	int64
++	vei_len	int32
++	vei_dir	int8
++}
++
++vm_info_result$vmmioctl {
++	vir_memory_size	intptr
++	vir_used_size	intptr
++	vir_ncpus	intptr
++	vir_vcpu_state	array[int8, VMM_MAX_VCPUS_PER_VM]
++	vir_creator_pid	int32
++	vir_id		vmm_id_vmmioctl
++	vir_name	array[int8, VMM_MAX_NAME_LEN]
++}
++
++vm_rwregs_params$vmmioctl {
++	vrwp_vm_id	vmm_id_vmmioctl
++	vrwp_vcpu_id	int32
++	vrwp_mask	int64
++	vrwp_regs	vcpu_reg_state$vmmioctl
++}
++
++vm_run_params$vmmioctl {
++	vrp_vm_id		vmm_id_vmmioctl
++	vrp_vcpu_id		int32
++	vrp_inject		vcpu_inject_event$vmmioctl
++	vrp_intr_pending	int8
++	vrp_exit		ptr[inout, vm_exit$vmmioctl]
++	vrp_exit_reason		int16	(out)
++	vrp_irqready		int8	(out)
++}
++
++vm_exit_msr$vmmioctl {
++	vmr_msr		int32
++	vmr_data	int64
++}
++
++vcpu_segment_info$vmmioctl {
++	vsi_sel		int16
++	vsi_limit	int32
++	vsi_ar		int32
++	vsi_base	int64
++}
++
++vm_mem_range$vmmioctl {
++	vmr_gpa		intptr
++	vmr_va		vma
++	vmr_size	intptr
++	vmr_type	flags[vm_mem_type_vmmioctl, int32]
++}
++
++vm_exit_inout$vmmioctl {
++	vei_port	int16
++	vei_width	int8
++	vei_dir		flags[vmm_vei_dir_vmmioctl, int8]
++	vei_data	int32
++}
++
++vm_resetcpu_params$vmmioctl {
++	vrp_vm_id	vmm_id_vmmioctl
++	vrp_vcpu_id	int32
++}
++
++vm_exit$vmmioctl {
++	ve_reason	int32
++	ve_ndata	int32
++	ve_data		vm_exit_data$vmmioctl
++}
++
++vm_exit_insn$vmmioctl {
++	vei_insn	array[int8, 16]
++	vei_insn_len	int8
++}
++
++vm_exit_data$vmmioctl [
++	inout	vm_exit_inout$vmmioctl
++	ipt	vm_exit_ipt$vmmioctl
++	mem	vm_exit_mem$vmmioctl
++	msr	vm_exit_msr$vmmioctl
++	cr	vm_exit_cr$vmmioctl
++	vcpu	vm_exit_vcpu$vmmioctl
++] [varlen]
++
++vm_exit_info$vmmioctl [
++	vei_io		vm_exit_io$vmmioctl
++	vei_mem		vm_exit_mem$vmmioctl
++	vei_paging	vm_exit_paging$vmmioctl
++	vei_insn	vm_exit_insn$vmmioctl
++] [varlen]
+diff --git a/sys/openbsd/cloud#vmmioctl#gemini-3-flash-preview.txt.const b/sys/openbsd/cloud#vmmioctl#gemini-3-flash-preview.txt.const
+new file mode 100644
+index 000000000..2393f5399
+--- /dev/null
++++ b/sys/openbsd/cloud#vmmioctl#gemini-3-flash-preview.txt.const
+@@ -0,0 +1,27 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++VCPU_INJECT_EX = amd64:2
++VCPU_INJECT_INTR = amd64:1
++VCPU_INJECT_NMI = amd64:3
++VCPU_INJECT_NONE = amd64:0
++VEI_DIR_IN = amd64:1
++VEI_DIR_OUT = amd64:0
++VMM_EXIT_CR_READ = amd64:1
++VMM_EXIT_CR_WRITE = amd64:0
++VMM_IOC_CREATE = amd64:3395311105
++VMM_IOC_INFO = amd64:3222820355
++VMM_IOC_READREGS = amd64:3259520519
++VMM_IOC_READVMPARAMS = amd64:3223344649
++VMM_IOC_RESETCPU = amd64:2185254405
++VMM_IOC_RUN = amd64:3223868930
++VMM_IOC_SHAREMEM = amd64:3264239115
++VMM_IOC_TERM = amd64:2147767812
++VMM_IOC_WRITEREGS = amd64:2185778696
++VMM_IOC_WRITEVMPARAMS = amd64:2149602826
++VMM_MAX_NAME_LEN = amd64:64
++VMM_MAX_VCPUS_PER_VM = amd64:64
++VMM_VMPARAMS_MAX = amd64:16
++VM_MEM_MMIO = amd64:2
++VM_MEM_RAM = amd64:0
++VM_MEM_RESERVED = amd64:1
+diff --git a/sys/openbsd/cloud#vndioctl#gemini-3-flash-preview.txt b/sys/openbsd/cloud#vndioctl#gemini-3-flash-preview.txt
+new file mode 100755
+index 000000000..9dd43a90c
+--- /dev/null
++++ b/sys/openbsd/cloud#vndioctl#gemini-3-flash-preview.txt
+@@ -0,0 +1,89 @@
++meta arches["amd64"]
++
++include <sys/types.h>
++include <sys/fcntl.h>
++include <sys/param.h>
++include <sys/ioctl.h>
++include <sys/dkio.h>
++include <sys/disklabel.h>
++include <dev/vndioctl.h>
++
++resource fd_vnd_vndioctl[fd]
++
++openat$vnd_vndioctl(fd const[AT_FDCWD], file ptr[in, string["/dev/rvnd0c"]], flags flags[open_flags], mode const[0]) fd_vnd_vndioctl
++
++ioctl$DIOCRLDINFO_vndioctl(fd fd_vnd_vndioctl, cmd const[DIOCRLDINFO])
++ioctl$DIOCGPART_vndioctl(fd fd_vnd_vndioctl, cmd const[DIOCGPART], arg ptr[inout, partinfo$vndioctl])
++ioctl$VNDIOCSET_vndioctl(fd fd_vnd_vndioctl, cmd const[VNDIOCSET], arg ptr[inout, vnd_ioctl$vndioctl])
++ioctl$VNDIOCCLR_vndioctl(fd fd_vnd_vndioctl, cmd const[VNDIOCCLR], arg ptr[inout, vnd_ioctl$vndioctl])
++ioctl$DIOCSDINFO_vndioctl(fd fd_vnd_vndioctl, cmd const[DIOCSDINFO], arg ptr[in, disklabel$vndioctl])
++ioctl$DIOCGDINFO_vndioctl(fd fd_vnd_vndioctl, cmd const[DIOCGDINFO], arg ptr[out, disklabel$vndioctl])
++ioctl$VNDIOCGET_vndioctl(fd fd_vnd_vndioctl, cmd const[VNDIOCGET], arg ptr[inout, vnd_user$vndioctl])
++ioctl$DIOCWDINFO_vndioctl(fd fd_vnd_vndioctl, cmd const[DIOCWDINFO], arg ptr[in, disklabel$vndioctl])
++ioctl$DIOCGPDINFO_vndioctl(fd fd_vnd_vndioctl, cmd const[DIOCGPDINFO], arg ptr[out, disklabel$vndioctl])
++
++fstype_flags_vndioctl = FS_UNUSED, FS_SWAP, FS_V6, FS_V7, FS_SYSV, FS_V71K, FS_V8, FS_BSDFFS, FS_MSDOS, FS_BSDLFS, FS_OTHER, FS_HPFS, FS_ISO9660, FS_BOOT, FS_ADOS, FS_HFS, FS_EXT2FS, FS_RAID
++
++partinfo$vndioctl {
++	disklab	intptr	(out)
++	part	intptr	(out)
++}
++
++vnd_ioctl$vndioctl {
++	vnd_file	ptr[in, filename]
++	vnd_secsize	intptr
++	vnd_nsectors	intptr
++	vnd_ntracks	intptr
++	vnd_size	int64	(out)
++	vnd_key		ptr[in, array[int8]]
++	vnd_keylen	len[vnd_key, int32]
++	vnd_type	int16
++}
++
++vnd_user$vndioctl {
++	vnu_file	array[int8, VNDNLEN]
++	vnu_unit	int32
++	vnu_dev		int32
++	vnu_ino		int64
++}
++
++partition$vndioctl {
++	p_size		int32
++	p_offset	int32
++	p_offseth	int16
++	p_sizeh		int16
++	p_fstype	flags[fstype_flags_vndioctl, int8]
++	p_fragblock	int8
++	p_cpg		int16
++}
++
++disklabel$vndioctl {
++	d_magic		const[DISKMAGIC, int32]
++	d_type		int16
++	d_subtype	int16
++	d_typename	array[int8, 16]
++	d_packname	array[int8, 16]
++	d_secsize	int32
++	d_nsectors	int32
++	d_ntracks	int32
++	d_ncylinders	int32
++	d_secpercyl	int32
++	d_secperunit	int32
++	d_uid		array[int8, 8]
++	d_acylinders	int32
++	d_bstarth	int16
++	d_bendh		int16
++	d_bstart	int32
++	d_bend		int32
++	d_flags		int32
++	d_spare4	array[int32, 5]
++	d_secperunith	int16
++	d_version	int16
++	d_spare		array[int32, 4]
++	d_magic2	const[DISKMAGIC, int32]
++	d_checksum	int16
++	d_npartitions	len[d_partitions, int16]
++	d_spare2	int32
++	d_spare3	int32
++	d_partitions	array[partition$vndioctl, MAXPARTITIONSUNIT]
++}
+diff --git a/sys/openbsd/cloud#vndioctl#gemini-3-flash-preview.txt.const b/sys/openbsd/cloud#vndioctl#gemini-3-flash-preview.txt.const
+new file mode 100644
+index 000000000..d9d8b103c
+--- /dev/null
++++ b/sys/openbsd/cloud#vndioctl#gemini-3-flash-preview.txt.const
+@@ -0,0 +1,33 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++DIOCGDINFO = amd64:1150575717
++DIOCGPART = amd64:2148557928
++DIOCGPDINFO = amd64:1150575730
++DIOCRLDINFO = amd64:536896627
++DIOCSDINFO = amd64:2224317542
++DIOCWDINFO = amd64:2224317543
++DISKMAGIC = amd64:2186691927
++FS_ADOS = amd64:14
++FS_BOOT = amd64:13
++FS_BSDFFS = amd64:7
++FS_BSDLFS = amd64:9
++FS_EXT2FS = amd64:17
++FS_HFS = amd64:15
++FS_HPFS = amd64:11
++FS_ISO9660 = amd64:12
++FS_MSDOS = amd64:8
++FS_OTHER = amd64:10
++FS_RAID = amd64:19
++FS_SWAP = amd64:1
++FS_SYSV = amd64:4
++FS_UNUSED = amd64:0
++FS_V6 = amd64:2
++FS_V7 = amd64:3
++FS_V71K = amd64:5
++FS_V8 = amd64:6
++MAXPARTITIONSUNIT = amd64:64
++VNDIOCCLR = amd64:2151171585
++VNDIOCGET = amd64:3289400835
++VNDIOCSET = amd64:3224913408
++VNDNLEN = amd64:1024
+diff --git a/sys/openbsd/dev_vmm.txt.const b/sys/openbsd/dev_vmm.txt.const
+index 05ea3e9af..75450b9d3 100644
+--- a/sys/openbsd/dev_vmm.txt.const
++++ b/sys/openbsd/dev_vmm.txt.const
+@@ -6,12 +6,12 @@ VCPU_REGS_NDRS = amd64:6
+ VCPU_REGS_NGPRS = amd64:18
+ VCPU_REGS_NMSRS = amd64:7
+ VCPU_REGS_NSREGS = amd64:8
+-VMM_IOC_CREATE = amd64:3260569089
++VMM_IOC_CREATE = amd64:3395311105
+ VMM_IOC_INFO = amd64:3222820355
+ VMM_IOC_INTR = amd64:2148292102
+ VMM_IOC_READREGS = amd64:3259520519
+ VMM_IOC_RESETCPU = amd64:2185254405
+-VMM_IOC_RUN = amd64:3223344642
++VMM_IOC_RUN = amd64:3223868930
+ VMM_IOC_TERM = amd64:2147767812
+ VMM_IOC_WRITEREGS = amd64:2185778696
+ VMM_MAX_MEM_RANGES = amd64:16
