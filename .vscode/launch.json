@@ -5,6 +5,100 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "go: launch src/rmunused/main.go",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/src/rmunused/main.go",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "-indir=${workspaceFolder}/syzkaller/sys/linux"
+            ],
+        },
+        {
+            "name": "go: launch experiment/ablation/trimtool/main.go",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/experiment/ablation/trimtool/main.go",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "-db=${workspaceFolder}/data/database/linux.db",
+                "-kernel=/vol/linux/v6.18/build",
+                "-os=linux",
+                "-model=gemini-3-flash-preview",
+                "-outdir=${workspaceFolder}/workdir/ablation/trimtool",
+                "-ref=${workspaceFolder}/data/refs/linux/sg.txt",
+                "-sysdir=${workspaceFolder}/data/trimsys",
+                "-disable=get_func_code_by_name",
+                "-jobs=1"
+            ],
+        },
+        {
+            "name": "go: launch experiment/ablation/noiter/main.go",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/experiment/ablation/noiter/main.go",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "-db=${workspaceFolder}/data/database/linux.db",
+                "-model=gemini-3-flash-preview",
+                "-outdir=${workspaceFolder}/workdir/ablation/noiter",
+                "-ref=${workspaceFolder}/data/refs/linux/sg.txt",
+                "-jobs=1"
+            ],
+        },
+        {
+            "name": "go: launch experiment/ablation/nodb/main.go",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/experiment/ablation/nodb/main.go",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "-db=${workspaceFolder}/data/database/linux.db",
+                "-kernel=/vol/linux/v6.18/build",
+                "-model=gemini-3-flash-preview",
+                "-outdir=${workspaceFolder}/workdir/ablation/nodb",
+                "-ref=${workspaceFolder}/data/refs/linux/sg.txt",
+                "-sysdir=${workspaceFolder}/data/trimsys",
+                "-jobs=1"
+            ],
+        },
+        {
+            "name": "go: launch experiment/viz/align/main.go",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/experiment/viz/align/main.go",
+            "args": [
+                "-input=${workspaceFolder}/workdir/acc/align.csv",
+            ],
+        },
+        {
+            "name": "go: launch experiment/viz/fuzz/main.go",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/experiment/viz/fuzz/main.go",
+            "args": [
+                "-expdir=${workspaceFolder}/workdir/experiment",
+                "-master=cloud",
+            ],
+        },
+        {
+            "name": "go: launch refactor",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "github.com/Radon10043/cloud/src/refactor",
+            "args": [
+                "-indir=${workspaceFolder}/workdir/specs/linux-v6.18-kernel-gemini-3-flash-preview/specs",
+                "-outdir=${workspaceFolder}/workdir/specs/linux-v6.18-kernel-gemini-3-flash-preview/refactor",
+            ]
+        },
+        {
             "name": "go: launch generator (netbsd)",
             "type": "go",
             "request": "launch",
