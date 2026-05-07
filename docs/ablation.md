@@ -44,3 +44,18 @@ generator-trimtool: disable available tool(s) in spec generation.
     -disable=get_func_code_by_name \
     -jobs=4
 ```
+
+available tools:
+```
+get_enum_code_by_enumerator
+get_enum_code_by_specifier
+get_func_code_by_name
+get_global_var_code_by_name
+get_macro_def_code_by_name
+get_macro_def_loc_by_name
+get_macro_def_codes_by_pattern
+get_struct_code_by_name
+get_union_code_by_name
+get_typedef_code_by_define
+get_typedef_type_by_define
+```
