@@ -2,38 +2,57 @@
 
 Thank you for browsing the SyzPilot repository. This document details steps about using SyzPilot to synthesize specifications and run fuzzing.
 
-> [!NOTE]
-> "cloud" is an alias for SyzPilot. If "cloud" appears in the documentation, you can simply replace it with "SyzPilot" :)
+**NOTE:** "cloud" is an alias for SyzPilot. If "cloud" appears in the documentation, you can simply replace it with "SyzPilot" :)
+
+Please replace the following variables according to the actual situation:
+- `SYZPILOT`: directory for saveing SyzPilot source.
+- `$KERNSRC`: directory for saving kernel source.
 
 ```bash
 git clone --recurse-submodules https://github.com/XXXXX/SyzPilot
 # if you forgot to clone with --recurse-submodules, run `git submodule update --init --recursive` under SyzPilot directory to update submodules
 ```
 
-## build
+## Reuse synthesized specs
 
+Specifications used in our evaluation are saved under `$SYZPILOT/patch/specs-*`, feel free to reuse them to avoid duplicate synthesis. Remember to apply the patch to enable syzkaller to support fuzzing OpenBSD kernel on Linux.
+
+`specs-kern` saves specs for full kernel fuzzing:
+```bash
+cd $SYZPILOT/syzkaller
+git apply ../patch/syzkaller/*
+git apply ../patch/specs-kern/*
+```
+
+`specs-subsys` save specs for subsystem fuzzing, we re-synthesize specs for those subsystems that already exist spec:
+```bash
+cd $SYZPILOT/syzkaller
+git apply ../patch/syzkaller/*
+git apply ../patch/specs-subsystem/*
+```
+
+## Use SyzPilot to synthesize specs
+
+### Build
+
+SyzPilot can be easily built via following commands:
 ```bash
 cd $SYZPILOT
 make
 ```
 
-## run
+### Kernel knowledgebase construction
 
-### reuse synthesized specifications
-
-Specifications used in our evaluation are saved under `$SYZPILOT/patch/specs-*`, feel free to reuse them to avoid duplicate generation.
-
-### analyze
-
-We use linux v6.18 as an example.
+Let's use linux v6.18 as an example:
 ```bash
+git clone --depth 1 -b v6.18 https://github.com/torvalds/linux $KERNSRC
+cp $SYZPILOT/configs/kernel/linux.config $KERNSRC/.config
 cd $KERNSRC
-cp $SYZPILOT/configs/kernel/linux.config .config
 make CC="ccache clang" olddefconfig modules_prepare all -j16
 python3 scripts/clang-tools/gen_compile_commands.py
 ```
 
-Analyze kernel code:
+Analyze kernel compile code and construct knowledge base:
 ```bash
 cd $SYZPILOT
 ./bin/analyzer -i $KERNEL/compile_commands.json -o data/database/linux.db -j 16 > logs/analyze.log 2>&1
@@ -44,7 +63,70 @@ flags for analyzer:
 - `-o`: path to the output database (default: ./data/kernel.db)
 - `-j`: number of parallel jobs (default: 1)
 
-### generate minitask
+### Synthesize specs in an agentic manner
+
+setup .env file:
+```bash
+cd $SYZPILOT
+echo "OPENAI_BASE_URL=[YOUR_BASE_URL]" > .env
+echo "OPENAI_API_KEY=[YOUR_API_KEY]" >> .env
+```
+
+We need prepare a reference file for spec synthesis, let's use `dvb_frontend_fops` from Linux DVB subsystem as an example:
+```bash
+cd $SYZPILOT
+mkdir workdir
+echo "variable,dvb_frontend_fops" > workdir/ref.txt
+```
+
+Generate syscall specs:
+```bash
+./bin/generator \
+    -db=./data/database/linux.db \
+    -outdir=./workdir/minitask \
+    -kernel=$KERNSRC \
+    -os=linux \
+    -model=gemini-3-flash-preview \
+    -ref=./workdir/ref.txt \
+    -jobs=4 > logs/generate.log 2>&1
+```
+**CAUTION:** Please watch out the token costs during synthesis!
+
+Some flags of generator:
+- required:
+    - `-model`: model to be queried, e.g. gemini-3-flash-preview
+    - `-db`: path to the kernel knowledge database, which is produced by following [Kernel knowledgebase construction](#kernel-knowledgebase-construction)
+    - `-outdir`: output path for saving specs synthesized by SyzPilot
+    - `-kernel`: path to kernel for spec validation
+    - `-os`: target OS type, currently support linux, freebsd, openbsd, and netbsd.
+    - `-ref`: path to file includes reference global variables or functions for spec synthesis.
+- optional:
+    - `-env`: path to the .env file (default: `$PWD/.env`)
+    - `-extract-bin`: path to `syz-extract` (default: `$PWD/bin/syz-extract`)
+    - `-check-bin`: path to `syz-check` (default: `$PWD/bin/syz-check`)
+    - `-sysdir`: path to directory like `syzkaller/sys`, SyzPilot will reuse specs under `-sysdir` to avoid duplicate synthesis of some common flags, syscalls, etc.. (default: `$PWD/syzkaller/sys`)
+    - `-resume`: whether resume previous progress (default: true)
+    - `-max-fix`: max attempts for fixing generated spec (default: 5)
+    - `-max-retry`: max attempts for performing outline-generate-fix, -1 means inifinity tries (default: 5)
+    - `-jobs`: number of parallel jobs (default: 1)
+    - `-otl-system-prompt`: path to file(s) for outline prompt, use comma to separate multiple files (default: `$PWD/data/prompts/outline/instruction.md,$PWD/data/prompts/outline/example_media.md,$PWD/data/prompts/outline/example_ppp.md`)
+    - `-gen-system-prompt`: path to file(s) for generate prompt, use comma to separate multiple files (default: `$PWD/data/prompts/generate/instruction.md,$PWD/data/prompts/generate/example_media.md,$PWD/data/prompts/generate/example_ppp.md`)
+    - `-fix-system-prompt`: path to file(s) for fix prompt, use comma to separate multiple files (default: `$PWD/data/prompts/fix/instruction.md,$PWD/data/prompts/fix/example_v4l2.md`)
+
+### fuzzing
+
+```bash
+cd $SYZPILOT/syzkaller
+git apply ../patch/syzkaller/*
+# Apply your generated specs
+make all
+
+./bin/syz-manager -config=./workdir/fuzz.cfg
+```
+
+### Tool: minitask
+
+SyzPilot also provides a useful binary called `minitask`. It selects global variables that associated with syscalls by string matching and lists all syscalls that require specification.
 
 setup .env file:
 ```bash
@@ -64,61 +146,6 @@ minimize references for spec generation:
 extract references:
 ```bash
 ./scripts/reflist.sh ./workdir/minitask > ./workdir/minitask/ref.txt
-```
-
-### generate
-
-setup .env file:
-```bash
-echo "OPENAI_BASE_URL=[YOUR_BASE_URL]" > .env
-echo "OPENAI_API_KEY=[YOUR_API_KEY]" >> .env
-```
-
-> [!CAUTION]
-> Please watch out the token costs during generation!
-
-Generate syscall specs:
-```bash
-./bin/generator \
-    -db=./data/database/linux.db \
-    -outdir=./workdir/minitask \
-    -kernel=$KERNSRC \
-    -os=linux \
-    -model=gemini-3-flash-preview \
-    -ref=./workdir/minitask/ref.txt \
-    -jobs=4 > logs/generate.log 2>&1
-```
-
-Some flags of generator:
-- required:
-    - `-model`: model to be queried
-    - `-db`: path to the database that saves kernel analysis results
-    - `-outdir`: output path for saving specs generated by agent
-    - `-kernel`: path to kernel for spec validation
-    - `-os`: target OS type
-    - `-ref`: path to file includes interested global variables or functions
-- optional:
-    - `-env`: path to the .env file (default: `$PWD/.env`)
-    - `-extract-bin`: path to `syz-extract` (default: `$PWD/bin/syz-extract`)
-    - `-check-bin`: path to `syz-check` (default: `$PWD/bin/syz-check`)
-    - `-sysdir`: path to directory like syzkaller/sys, program will reuse specs under `-sysdir` to avoid redundant some common flags, e.g. `open_flags`.(default: `$PWD/syzkaller/sys`)
-    - `-resume`: whether resume previous progress (default: true)
-    - `-max-fix`: max attempts for fixing generated spec (default: 5)
-    - `-max-retry`: max attempts for performing outline-generate-fix, -1 means inifinity tries (default: 5)
-    - `-jobs`: number of parallel jobs (default: 1)
-    - `-otl-system-prompt`: path to file(s) for outline prompt, use comma to separate multiple files (default: `$PWD/data/prompts/outline/instruction.md,$PWD/data/prompts/outline/example_media.md,$PWD/data/prompts/outline/example_ppp.md`)
-    - `-gen-system-prompt`: path to file(s) for generate prompt, use comma to separate multiple files (default: `$PWD/data/prompts/generate/instruction.md,$PWD/data/prompts/generate/example_media.md,$PWD/data/prompts/generate/example_ppp.md`)
-    - `-fix-system-prompt`: path to file(s) for fix prompt, use comma to separate multiple files (default: `$PWD/data/prompts/fix/instruction.md,$PWD/data/prompts/fix/example_v4l2.md`)
-
-### fuzzing
-
-```bash
-cd $SYZPILOT/syzkaller
-git apply ../patch/syzkaller/*
-# Apply your generated specs
-make all
-
-./bin/syz-manager -config=./workdir/fuzz.cfg
 ```
 
 ## reproduce evaluation
