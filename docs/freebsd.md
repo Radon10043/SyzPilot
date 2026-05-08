@@ -1,20 +1,17 @@
-# setup cloud and run fuzzing for freebsd kernel
+# setup SyzPilot and run fuzzing for freebsd kernel
 
 Please replace the following variables according to the actual situation:
 - `$VMDIR`: directory for saving FreeBSD image(s).
-- `$KERNSRC_HOST`: directory for saving FreeBSD kernel source (host).
-- `$KERNSRC_VM`: directory for saving FreeBSD kernel source (vm).
-- `CLOUD_HOST`: directory for saveing cloud source (host).
-- `CLOUD_VM`: directory for saveing cloud source (vm).
+- `$KERNSRC`: directory for saving FreeBSD kernel source.
+- `$SYZPILOT`: directory for saveing SyzPilot source.
 - `$LLVM_HOME`: directory for llvm
 
 ## ubuntu host, qemu vm
 
 ### environment setup
 
-Download FreeBSD image from [https://download.freebsd.org/snapshots/VM-IMAGES](https://download.freebsd.org/snapshots/VM-IMAGES). I use [15.0-STABLE/amd64/Latest/FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz](https://download.freebsd.org/snapshots/VM-IMAGES/15.0-STABLE/amd64/Latest/FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz).
+(host) Download FreeBSD image from [https://download.freebsd.org/snapshots/VM-IMAGES](https://download.freebsd.org/snapshots/VM-IMAGES). I use [15.0-STABLE/amd64/Latest/FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz](https://download.freebsd.org/snapshots/VM-IMAGES/15.0-STABLE/amd64/Latest/FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz).
 ```bash
-# run following commands on host
 cd $VMDIR
 wget https://download.freebsd.org/snapshots/VM-IMAGES/15.0-STABLE/amd64/Latest/FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz
 unxz -k FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz
@@ -25,9 +22,8 @@ qemu-system-x86_64 -m 16G -smp 16 -hda ./dev.qcow2 -enable-kvm -net nic -net use
 
 press 3 and input `set console="comconsole"` and `boot`.
 
-setup environment of vm:
+(vm) setup environment of vm:
 ```sh
-# run following commands on vm
 echo "autoboot_delay=\"-1\"" >> /boot/loader.conf
 echo "console=\"comconsole\"" >> /boot/loader.conf
 /etc/rc.d/growfs onestart
@@ -56,9 +52,8 @@ python3 -m ensurepip
 pip3 install compiledb
 ```
 
-install flatbuffers v23.5.26:
+(vm) install flatbuffers v23.5.26:
 ```sh
-# run following commands on vm
 wget https://github.com/google/flatbuffers/archive/refs/tags/v23.5.26.tar.gz
 tar -xzvf v23.5.26.tar.gz
 cd flatbuffers-23.5.26
@@ -68,26 +63,25 @@ cd ..
 rm -rf flatbuffers-23.5.26 v23.5.26.tar.gz
 ```
 
-### cloud setup
+### SyzPilot setup
 
-download cloud and submodules:
+(vm) download SyzPilot and submodules:
 ```sh
-# run following commands on vm
-cd /root
-git clone --recurse-submodules https://github.com/Radon10043/cloud
-# if you forgot to clone with --recurse-submodules, run `git submodule update --init --recursive` under cloud directory to update submodules
+mkdir /root/SyzPilot
+wget -O /root/SyzPilot/src.zip https://anonymous.4open.science/api/repo/SyzPilot/zip
+cd /root/SyzPilot && unzip src.zip && rm src.zip
+git clone https://github.com/google/syzkaller
+cd syzkaller && git checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
 ```
 
-build cloud:
+(vm) build SyzPilot:
 ```sh
-# run following commands on vm
-cd $CLOUD_VM
+cd $SYZPILOT
 gmake
 ```
 
-download source of FreeBSD, generate `compile_commands.json` and build kernel:
+(vm) download source of FreeBSD, generate `compile_commands.json` and build kernel:
 ```sh
-# run following commands on vm
 cd /root
 mkdir -p freebsd/15.0.0
 cd freebsd/15.0.0
@@ -95,113 +89,104 @@ git clone -b release/15.0.0 --depth 1 https://github.com/freebsd/freebsd-src bui
 cp -r build extract # former for kernel building, latter for const extraction
 
 cd build/sys/amd64/conf
-cp $CLOUD_VM/configs/kernel/freebsd.config CLOUD
-config CLOUD && cd ../compile/CLOUD
+cp $SYZPILOT/configs/kernel/freebsd.config SYZPILOT
+config SYZPILOT && cd ../compile/SYZPILOT
 make cleandepend && make depend
 compiledb make -n
 make -j$(sysctl -n hw.ncpu)
 ```
 
-analyze `compile_commands.json` of FreeBSD and create kernel source database:
+(vm) analyze `compile_commands.json` of FreeBSD and create kernel source database:
 ```sh
-# run following commands on vm
-cd $CLOUD_VM
+cd $SYZPILOT
 ./bin/analyzer \
-    -i $KERNSRC_VM/build/15.0.0/sys/amd64/compile/CLOUD/compile_commands.json \
+    -i $KERNSRC/build/15.0.0/sys/amd64/compile/SYZPILOT/compile_commands.json \
     -j 8 \
-    -o $CLOUD/data/database/freebsd.db
+    -o $SYZPILOT/data/database/freebsd.db
 ```
 
-run spec generator:
+(vm) run spec generator:
 ```sh
-# run following commands on vm
-$CLOUD_VM/bin/generator \
-    -db=$CLOUD_VM/data/dadabase/freebsd.db \
+$SYZPILOT/bin/generator \
+    -db=$SYZPILOT/data/dadabase/freebsd.db \
     -os=freebsd \
-    -outdir=$CLOUD_VM/workdir/gen-specs \
-    -kernel=$KERNSRC_VM/build/15.0.0 \
+    -outdir=$SYZPILOT/workdir/gen-specs \
+    -kernel=$KERNSRC/build/15.0.0 \
     -model=gemini-2.5-flash \
-    -varlist=$CLOUD_VM/workdir/gen-specs/varlist.txt \
+    -ref=$REFFILE \
     -jobs=4 > logs/generator.log 2>&1
 ```
 
-After generator finishes executing, check `$CLOUD_VM/workdir/gen-specs` for details.
+After generator finishes executing, check `$SYZPILOT/workdir/gen-specs` for details.
 
-feel free to shutdown vm:
+(vm) feel free to shutdown vm:
 ```sh
-# run following commands on vm
 shutdown -p now
 ```
 
 ### start fuzzing
 
-start vm with image `dev.qcow2` and ssh to it:
+(host) start vm with image `dev.qcow2` and ssh to it:
 ```bash
-# run following commands on host
 # start vm in daemon
 qemu-system-x86_64 -m 16G -smp 16 -hda $VMDIR/dev.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -daemonize -cpu host -display none
 ssh -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 ```
 
-generate and install ssh key:
+(host) generate and install ssh key:
 ```bash
-# run following commands on host
 cd $VMDIR
 ssh-keygen -t rsa -f ./freebsd.id_rsa -N ""
 ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 ```
 
-in vm, build syzkaller and copy executor programs to host:
+(vm) build syzkaller:
 ```sh
-# run following commands on vm
-cd $CLOUD/syzkaller && gmake target
-
-# run following commands on host
-scp -i ./freebsd.id_rsa -P 3733 -r -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost:$CLOUD/syzkaller/freebsd_amd64 $CLOUD/syzkaller/bin
+cd $SYZPILOT/syzkaller && gmake target
 ```
 
-shutdown vm:
+(host) copy executor programs to host
+```bash
+scp -i ./freebsd.id_rsa -P 3733 -r -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost:$SYZPILOT/syzkaller/freebsd_amd64 $SYZPILOT/syzkaller/bin
+```
+
+(vm) shutdown vm:
 ```sh
-# run following commands on vm
 shutdown -p now
 ```
 
-duplicate an image to differentiate between the development machine and the fuzzing target machine.
+(host) duplicate an image to differentiate between the development machine and the fuzzing target machine.
 ```bash
-# run following commands on host
 cp $VMDIR/dev.qcow2 $VMDIR/target.qcow2
 ```
 
-start vm with image `target.qcow2` and ssh to it:
+(host) start vm with image `target.qcow2` and ssh to it:
 ```bash
-# run following commands on host
 # start vm in daemon
 qemu-system-x86_64 -m 16G -smp 16 -hda $VMDIR/target.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -daemonize -cpu host -display none
 ssh -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 ```
 
-replace kernel in `target.qcow2` with new built kernel:
+(host) replace kernel in `target.qcow2` with new built kernel:
 ```bash
-# run following commands on host
-cd $KERNSRC/sys/amd64/compile/CLOUD
+cd $KERNSRC/sys/amd64/compile/SYZPILOT
 make install
 reboot
-uname -i # expect is CLOUD
+uname -i # expect is SYZPILOT
 shutdown -p now
 ```
 
-run syzkaller:
+(host) run syzkaller:
 ```bash
-# run following commands on host
-cd $CLOUD
+cd $SYZPILOT
 mkdir workdir
 cat <<__EOF__ > workdir/freebsd.cfg
 {
     "name": "freebsd",
     "target": "freebsd/amd64",
     "http": ":10000",
-    "workdir": "$CLOUD/workdir",
-    "syzkaller": "$CLOUD/syzkaller",
+    "workdir": "$SYZPILOT/workdir",
+    "syzkaller": "$SYZPILOT/syzkaller",
     "sshkey": "$VMDIR/freebsd.id_rsa",
     "sandbox": "none",
     "procs": 8,
@@ -411,7 +396,7 @@ sshfs -p 3733 \
     -o compression=no \
     -o idmap=user \
     -o follow_symlinks \
-    root@localhost:$CLOUD_VM ./mnt/cloud
+    root@localhost:$SYZPILOT $SYZPILOT
 ```
 
 ## build and replace freebsd kernel on linux host
@@ -422,12 +407,12 @@ build freebsd kernel:
 ```bash
 # run following command on host
 cd $KERNSRC
-cp $CLOUD/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
+cp $SYZPILOT/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
 
 mkdir build dist
 MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 buildworld
-MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 buildkernel KERNCONF=CLOUD
-MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 installkernel KERNCONF=CLOUD DESTDIR=$PWD/dist
+MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 buildkernel KERNCONF=SYZPILOT
+MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 installkernel KERNCONF=SYZPILOT DESTDIR=$PWD/dist
 ```
 
 start freebsd vm:
@@ -440,9 +425,9 @@ install built kernel to vm:
 ```bash
 # run following commands on host
 cd $VMDIR
-scp -P 3733 -r -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $KERNSRC_HOST/build/15.0.0/dist/* root@localhost:/
+scp -P 3733 -r -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $KERNSRC/build/15.0.0/dist/* root@localhost:/
 ssh -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost reboot
-ssh -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -i # output should be CLOUD
+ssh -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -i # output should be SYZPILOT
 ```
 
 ## frequently used commands
@@ -492,7 +477,7 @@ scp -P 3733 \
 
 use sshfs to mount directory:
 ```bash
-mkdir -p mnt/cloud
+mkdir -p mnt/SyzPilot
 sshfs -p 3733 \
     -o "StrictHostKeyChecking=no" \
     -o "UserKnownHostsFile=/dev/null" \
@@ -502,10 +487,10 @@ sshfs -p 3733 \
     -o compression=no \
     -o idmap=user \
     -o follow_symlinks \
-    root@localhost:/root/cloud ./mnt/cloud
+    root@localhost:/root/SyzPilot ./mnt/SyzPilot
 ```
 
 unmount directory mounted by sshfs:
 ```bash
-fusermount -u mnt/cloud
+fusermount -u mnt/SyzPilot
 ```
