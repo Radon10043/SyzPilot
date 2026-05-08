@@ -1,6 +1,6 @@
 # SyzPilot
 
-Thank you for browsing the SyzPilot repository. This document details steps about using SyzPilot to synthesize specifications and run fuzzing.
+Thank you for browsing the SyzPilot repository. This document details steps about using SyzPilot to synthesize specifications and run fuzzing for Linux kernel, it also support [FreeBSD](docs/freebsd.md), [OpenBSD](docs/openbsd.md), and [NetBSD](docs/netbsd.md). Some commands in the document are only applicable during anonymous reviewing, which may differ from those in the release version.
 
 **NOTE:** "cloud" is an alias for SyzPilot. If "cloud" appears in the documentation, you can simply replace it with "SyzPilot" :)
 
@@ -12,7 +12,7 @@ Please replace the following variables according to the actual situation:
 
 We recommend running SyzPilot using docker, you can build the docker image via following command:
 ```bash
-wget https://raw.githubusercontent.com/XXXXX/SyzPilot/refs/heads/main/docker/Dockerfile
+wget -O Dockerfile https://anonymous.4open.science/api/repo/SyzPilot/file/docker/Dockerfile?v=ed2d2c86&download=true
 docker build -t syzpilot:latest --network host -f ./Dockerfile .
 ```
 
@@ -35,14 +35,18 @@ I recommend download fuzzers, kernels, images, etc. to the mounted directory `/v
 
 We next detail how to setup and use SyzPilot for syscall spec synthesis. Note that all commands below are executed in the container.
 
-If you don't want to re-synthesize specs, you can also [reuse our synthesized specs](#reuse-synthesized-specs), which are used in our evaluation.
+If you don't want to re-synthesize specs, you can also [reuse our synthesized specs](#reuse-synthesized-specs), they are also used in our evaluation.
 
 ### Download SyzPilot
 
+Download SyzPilot and associated syzkaller:
 ```bash
 # export SYZPILOT=/vol/SyzPilot
-git clone --recurse-submodules https://github.com/XXXXX/SyzPilot $SYZPILOT
-# if you forgot to clone with --recurse-submodules, run `git submodule update --init --recursive` under SyzPilot directory to update submodules
+mkdir /vol/SyzPilot && cd /vol/SyzPilot
+wget -O /vol/SyzPilot/src.zip https://anonymous.4open.science/api/repo/SyzPilot/zip
+cd SyzPilot && unzip src.zip && rm src.zip
+git clone https://github.com/google/syzkaller
+cd syzkaller && git checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
 ```
 
 ### Build SyzPilot
@@ -65,7 +69,7 @@ make CC="ccache clang" olddefconfig modules_prepare all -j16
 python3 scripts/clang-tools/gen_compile_commands.py
 ```
 
-Analyze kernel compile code and construct knowledge base:
+Analyze kernel compile commands and construct knowledge base:
 ```bash
 cd $SYZPILOT
 ./bin/analyzer -i $KERNSRC/compile_commands.json -o data/database/linux.db -j 16 > logs/analyze.log 2>&1
@@ -92,6 +96,8 @@ mkdir workdir
 echo "variable,dvb_frontend_fops" > workdir/ref.txt
 ```
 
+If you find it tedious to manually enumerate all syscall related elements, you can use the tool [minitask](#minitask) provided by SyzPilot to automatically filter related elements and list syscalls whose spec need to be synthesized.
+
 Generate syscall specs:
 ```bash
 cd $SYZPILOT
@@ -107,7 +113,7 @@ cd $SYZPILOT
 
 **CAUTION:** Please watch out the token costs during synthesis!
 
-Some flags of generator:
+Description for flags of generator:
 - required:
     - `-model`: model to be queried, e.g. gemini-3-flash-preview
     - `-db`: path to the kernel knowledge database, which is produced by following [Analyze kernel](#analyze-kernel) section
@@ -141,7 +147,7 @@ cd $SYZPILOT
 sed -i '1i meta arches["amd64"]' workdir/refactored/*.txt
 ```
 
-**TODO:** Currently variable/function name is added as suffix to each spec elements, e.g. `iocrl$ABC` -> `ioctl$ABC_dvb_frontend_fops`, but such refactoring may inconvenient for subsystem fuzzing, we have to list the full names of all synthesized syscalls to distinguish them from syscalls from syzkaller. We are currently considering a more reasonable refactoring method.
+**TODO:** Currently variable/function name is added as suffix to each spec elements, e.g. `iocrl$ABC` -> `ioctl$ABC_dvb_frontend_fops`, but such refactoring may inconvenient for subsystem fuzzing, we have to list the full names of all synthesized syscalls to distinguish them from syscalls of syzkaller. We are currently considering a more reasonable refactoring method.
 
 ### Integrate synthesized specs to syzkaller
 
@@ -203,16 +209,22 @@ __EOF__
 
 ### minitask
 
-SyzPilot also provides a useful binary called `minitask`. It selects global variables that associated with syscalls by string matching and lists all syscalls that require specification.
+`minitask` selects global variables that associated with syscalls by string matching and lists all syscalls that require specification. By utilizing it, we can avoid tedious of manually enumerate syscall related elements and avoid duplicate spec synthesis for the same syscall.
 
-setup .env file:
+Build:
 ```bash
-echo "OPENAI_BASE_URL=[GEMINI_OPENAI_COMPATITABLE_URL]" > .env
-echo "OPENAI_API_KEY=[GEMINI_API_KEY]" >> .env
+make minitask   # it will also be built via `make all`
 ```
 
-minimize references for spec generation:
+Setup .env file if you haven't already:
 ```bash
+echo "OPENAI_BASE_URL=[YOUR_BASE_URL]" > .env
+echo "OPENAI_API_KEY=[YOUR_API_KEY]" >> .env
+```
+
+Run minitask to select all syscall related elements and enumerate all unique syscalls requiring spec synthesis:
+```bash
+cd $SYZPILOT
 ./bin/minitask \
     -db=./data/database/linux.db \
     -os=linux \
@@ -252,7 +264,7 @@ git apply ../patch/specs-subsystem/*
 
 ## Reproduce evaluation
 
-please follow [env-setup.md](/experiment/docs/env-setup.md) to setup evaluation environment, and then you can reproduce our evaluation via [docker compose files](/experiment/docs/docker-compose.md) easily.
+please follow [env-setup.md](experiment/docs/env-setup.md) to setup evaluation environment, and then you can reproduce our evaluation via [docker compose files](experiment/docs/docker-compose.md) easily.
 
 ## Trophies
 
