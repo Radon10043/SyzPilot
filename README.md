@@ -5,35 +5,47 @@ Thank you for browsing the SyzPilot repository. This document details steps abou
 **NOTE:** "cloud" is an alias for SyzPilot. If "cloud" appears in the documentation, you can simply replace it with "SyzPilot" :)
 
 Please replace the following variables according to the actual situation:
-- `SYZPILOT`: directory for saveing SyzPilot source.
+- `$SYZPILOT`: directory for saveing SyzPilot source.
 - `$KERNSRC`: directory for saving kernel source.
 
+## Build docker image
+
+We recommend running SyzPilot using docker, you can build the docker image via following command:
 ```bash
-git clone --recurse-submodules https://github.com/XXXXX/SyzPilot
+wget https://raw.githubusercontent.com/XXXXX/SyzPilot/refs/heads/main/docker/Dockerfile
+docker build -t syzpilot:latest --network host -f ./Dockerfile .
+```
+
+Let's start a container and setup SyzPilot:
+```bash
+docker run \
+    -d \
+    -v ./vol:/vol \
+    --cpus 20 \
+    --network host \
+    --privileged \
+    --name syzpilot-test \
+    syzpilot:latest tail -f /dev/null
+docker exec -it syzpilot-test bash
+```
+
+I recommend download fuzzers, kernels, images, etc. to the mounted directory `/vol` for continuous storage :)
+
+## Build & run SyzPilot
+
+We next detail how to setup and use SyzPilot for syscall spec synthesis. Note that all commands below are executed in the container.
+
+If you don't want to re-synthesize specs, you can also [reuse our synthesized specs](#reuse-synthesized-specs), which are used in our evaluation.
+
+### Download SyzPilot
+
+```bash
+# export SYZPILOT=/vol/SyzPilot
+git clone --recurse-submodules https://github.com/XXXXX/SyzPilot $SYZPILOT
 # if you forgot to clone with --recurse-submodules, run `git submodule update --init --recursive` under SyzPilot directory to update submodules
 ```
 
-## Reuse synthesized specs
-
-Specifications used in our evaluation are saved under `$SYZPILOT/patch/specs-*`, feel free to reuse them to avoid duplicate synthesis. Remember to apply the patch to enable syzkaller to support fuzzing OpenBSD kernel on Linux.
-
-`specs-kern` saves specs for full kernel fuzzing:
-```bash
-cd $SYZPILOT/syzkaller
-git apply ../patch/syzkaller/*
-git apply ../patch/specs-kern/*
-```
-
-`specs-subsys` save specs for subsystem fuzzing, we re-synthesize specs for those subsystems that already exist spec:
-```bash
-cd $SYZPILOT/syzkaller
-git apply ../patch/syzkaller/*
-git apply ../patch/specs-subsystem/*
-```
-
-## Use SyzPilot to synthesize specs
-
-### Build
+### Build SyzPilot
 
 SyzPilot can be easily built via following commands:
 ```bash
@@ -41,10 +53,11 @@ cd $SYZPILOT
 make
 ```
 
-### Kernel knowledgebase construction
+### Analyze kernel
 
-Let's use linux v6.18 as an example:
+We need analyze kernel and construct the corresponding knowledgebase, let's use linux v6.18 as an example:
 ```bash
+# export KERNSRC=/vol/linux/v6.18
 git clone --depth 1 -b v6.18 https://github.com/torvalds/linux $KERNSRC
 cp $SYZPILOT/configs/kernel/linux.config $KERNSRC/.config
 cd $KERNSRC
@@ -55,10 +68,10 @@ python3 scripts/clang-tools/gen_compile_commands.py
 Analyze kernel compile code and construct knowledge base:
 ```bash
 cd $SYZPILOT
-./bin/analyzer -i $KERNEL/compile_commands.json -o data/database/linux.db -j 16 > logs/analyze.log 2>&1
+./bin/analyzer -i $KERNSRC/compile_commands.json -o data/database/linux.db -j 16 > logs/analyze.log 2>&1
 ```
 
-flags for analyzer:
+Flags for analyzer:
 - `-i`: path to `compile_commands.json`
 - `-o`: path to the output database (default: ./data/kernel.db)
 - `-j`: number of parallel jobs (default: 1)
@@ -81,6 +94,7 @@ echo "variable,dvb_frontend_fops" > workdir/ref.txt
 
 Generate syscall specs:
 ```bash
+cd $SYZPILOT
 ./bin/generator \
     -db=./data/database/linux.db \
     -outdir=./workdir/minitask \
@@ -90,12 +104,13 @@ Generate syscall specs:
     -ref=./workdir/ref.txt \
     -jobs=4 > logs/generate.log 2>&1
 ```
+
 **CAUTION:** Please watch out the token costs during synthesis!
 
 Some flags of generator:
 - required:
     - `-model`: model to be queried, e.g. gemini-3-flash-preview
-    - `-db`: path to the kernel knowledge database, which is produced by following [Kernel knowledgebase construction](#kernel-knowledgebase-construction)
+    - `-db`: path to the kernel knowledge database, which is produced by following [Analyze kernel](#analyze-kernel) section
     - `-outdir`: output path for saving specs synthesized by SyzPilot
     - `-kernel`: path to kernel for spec validation
     - `-os`: target OS type, currently support linux, freebsd, openbsd, and netbsd.
@@ -113,18 +128,80 @@ Some flags of generator:
     - `-gen-system-prompt`: path to file(s) for generate prompt, use comma to separate multiple files (default: `$PWD/data/prompts/generate/instruction.md,$PWD/data/prompts/generate/example_media.md,$PWD/data/prompts/generate/example_ppp.md`)
     - `-fix-system-prompt`: path to file(s) for fix prompt, use comma to separate multiple files (default: `$PWD/data/prompts/fix/instruction.md,$PWD/data/prompts/fix/example_v4l2.md`)
 
-### fuzzing
+### Refactor synthesized specs
 
+Refactor synthesized specs, add unique suffix to each elements to avoid conflicts among syntheszied specs:
+```bash
+cd $SYZPILOT
+./bin/refactor -indir=./workdir/specs -outdir=./workdir/refactored
+```
+
+(OptionaL) Add `meta arches["amd64"]` to limit the scope of the specs:
+```bash
+sed -i '1i meta arches["amd64"]' workdir/refactored/*.txt
+```
+
+**TODO:** Currently variable/function name is added as suffix to each spec elements, e.g. `iocrl$ABC` -> `ioctl$ABC_dvb_frontend_fops`, but such refactoring may inconvenient for subsystem fuzzing, we have to list the full names of all synthesized syscalls to distinguish them from syscalls from syzkaller. We are currently considering a more reasonable refactoring method.
+
+### Integrate synthesized specs to syzkaller
+
+**NOTE:** During integration, some errors in the synthesized specs may need to fix manually, typically involves adjusting the order of include files and removing unused elements. [Several utility tools](#utility-tools) is provided by SyzPilot to help fix errors.
+
+Patch syzkaller to support some const value extraction:
 ```bash
 cd $SYZPILOT/syzkaller
 git apply ../patch/syzkaller/*
-# Apply your generated specs
-make all
-
-./bin/syz-manager -config=./workdir/fuzz.cfg
 ```
 
-### Tool: minitask
+Integrate specs with syzkaller:
+```bash
+cd $SYZPILOT/syzkaller
+cp ../workdir/refactored/* sys/linux
+make bin/syz-extract
+ls sys/linux/cloud*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$KERNSRC -os=linux -arch=amd64
+make generate
+```
+
+### Fuzzing with synthesized specs
+
+Create a Debian bullseye image to support fuzzing:
+```bash
+mkdir -p /vol/images/Debian && cd /vol/images/Debian
+cp $SYZPILOT/scripts/linux/create-image.sh .
+chmod +x ./create-image.sh
+./create-image.sh
+```
+
+Start fuzzing with synthesized specs:
+```bash
+cd $SYZPILOT
+cat <<__EOF__ > workdir/fuzz.cfg
+{
+	"target": "linux/amd64",
+	"http": "127.0.0.1:56741",
+	"workdir": "$SYZPILOT/workdir",
+	"kernel_obj": "$KERNSRC",
+	"image": "$IMAGE/bullseye.img",
+	"sshkey": "$IMAGE/bullseye.id_rsa",
+	"syzkaller": "$SYZPILOT/syzkaller",
+	"procs": 8,
+	"type": "qemu",
+	"reproduce": false,
+	"vm": {
+		"count": 4,
+		"kernel": "$KERNSRC/arch/x86/boot/bzImage",
+		"cpu": 8,
+		"mem": 2048
+	}
+}
+__EOF__
+
+./syzkaller/bin/syz-manager -config=./workdir/fuzz.cfg
+```
+
+## Utility tools
+
+### minitask
 
 SyzPilot also provides a useful binary called `minitask`. It selects global variables that associated with syscalls by string matching and lists all syscalls that require specification.
 
@@ -148,15 +225,40 @@ extract references:
 ./scripts/reflist.sh ./workdir/minitask > ./workdir/minitask/ref.txt
 ```
 
-## reproduce evaluation
+### rmunused
+
+Remove unused elements inplace:
+```bash
+$SYZPILOT/bin/rmunused -indir=$SYZPILOT/syzkaller/sys/linux
+```
+
+## Reuse synthesized specs
+
+Specifications used in our evaluation are saved under `$SYZPILOT/patch/specs-*`, feel free to reuse them to avoid duplicate synthesis. Remember to apply the patch to enable syzkaller to support fuzzing OpenBSD kernel on Linux.
+
+`specs-kern` saves specs for full kernel fuzzing:
+```bash
+cd $SYZPILOT/syzkaller
+git apply ../patch/syzkaller/*
+git apply ../patch/specs-kern/*
+```
+
+`specs-subsys` save specs for subsystem fuzzing, we re-synthesize specs for those subsystems that already exist spec:
+```bash
+cd $SYZPILOT/syzkaller
+git apply ../patch/syzkaller/*
+git apply ../patch/specs-subsystem/*
+```
+
+## Reproduce evaluation
 
 please follow [env-setup.md](/experiment/docs/env-setup.md) to setup evaluation environment, and then you can reproduce our evaluation via [docker compose files](/experiment/docs/docker-compose.md) easily.
 
-## trophies
+## Trophies
 
-to ensure anonymity, we will release all links after the paper is accepted.
+To ensure anonymity, we will release all links after the paper is accepted.
 
-### merged specifications
+### Merged specifications
 
 - sys/freebsd: generate headers for const extraction and add syscall descriptions
 - sys/openbsd: update wscons.txt and add dev_dri.txt
@@ -167,7 +269,7 @@ to ensure anonymity, we will release all links after the paper is accepted.
 - sys/linux: update flags in dev_video4linux.txt
 - sys/linux: add v4l2_meta_format
 
-### linux bugs
+### Linux bugs
 
 - CVE-0000-00000, WARNING in find_free_extent
 - CVE-0000-00000, general protection fault in xchk_btree
@@ -189,19 +291,23 @@ to ensure anonymity, we will release all links after the paper is accepted.
 bugs related to our generated specification and reported by syzbot:
 
 - CVE-0000-00000, BUG: corrupted list in io_poll_remove_entries
-- memory leak in dvb_register_device
-- KMSAN: uninit-value in vidtv_ts_null_write_into
+- CVE-0000-00000, KMSAN: uninit-value in vidtv_ts_null_write_into
+- CVE-0000-00000, general protection fault in nilfs_mdt_save_to_shadow_map
+- CVE-0000-00000, memory leak in vidtv_psi_service_desc_init
+- INFO: task hung in nilfs_transaction_begin
+- INFO: trying to register non-static key in as102_dvb_dmx_start_feed
 - KASAN: slab-use-after-free Read in dvb_frontend_release
-- KMSAN: uninit-value in dvb_demux_read
-- memory leak in vidtv_psi_service_desc_init
 - KMSAN: uninit-value in dvbdmx_release_ts_feed
-- BUG: corrupted list in io_poll_remove_entries
-- general protection fault in nilfs_mdt_save_to_shadow_map
+- KMSAN: uninit-value in dvb_demux_read
+- WARNING in as102_dvb_dmx_start_feed media
 - WARNING in nilfs_btree_mark
+- WARNING in nilfs_ioctl_prepare_clean_segments
 - general protection fault in bio_add_page
 - general protection fault in bio_alloc_bioset
+- memory leak in dvb_register_device
+- memory leak in vidtv_psi_short_event_desc_init
 
-### freebsd bugs
+### FreeBSD bugs
 
 - Fatal trap NUM: general protection fault while in kernel mode in cam_periph_runccb
 - Fatal trap NUM: page fault while in kernel mode in cam_periph_runccb
@@ -218,12 +324,12 @@ test cases generated by SyzPilot are incorporated into FreeBSD's test suite:
 
 - stress2: Added syzkaller reproducers. Update the exclude file
 
-### openbsd bugs
+### OpenBSD bugs
 
 - uvm_fault: dovutimens
 - uvm_fault: lptpushbytes
 
-### netbsd bugs
+### NetBSD bugs
 
 - assert failed: chp->ch_drive[drive].drv_softc == NULL
 - assert failed: hispgrp->pg_jobc > NUM
