@@ -266,6 +266,10 @@ git apply ../patch/specs-subsystem/*
 
 please follow [env-setup.md](experiment/docs/env-setup.md) to setup evaluation environment, and then you can reproduce our evaluation via [docker compose files](experiment/docs/docker-compose.md) easily.
 
+## Re-synthesize subsystem specs
+
+Please see [subsystem.md](docs/subsystem.md#how-to-re-generate-specs-for-other-subsystem) to check how to re-synthesize specs for a subsystem that already have specs.
+
 ## Trophies
 
 To ensure anonymity, we will release all links after the paper is accepted.
