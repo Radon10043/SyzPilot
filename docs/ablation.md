@@ -1,7 +1,6 @@
 # ablation
 
-> [!NOTE]
-> generator-nodb and generator-noiter only support linux kernel, but they are easy to extend to other kernels I think.
+**NOTE:** generator-nodb and generator-noiter only support linux kernel, but they are easy to extend to other kernels I think.
 
 build:
 ```bash

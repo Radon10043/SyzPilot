@@ -1,16 +1,15 @@
-# setup cloud and run fuzzing for openbsd kernel
+# setup SyzPilot and run fuzzing for openbsd kernel
 
 Please replace the following variables according to the actual situation:
 - `$VMDIR`: directory for saving OpenBSD image(s).
 - `$KERNSRC`: directory for saving OpenBSD kernel source.
-- `$CLOUD`: directory for saving cloud source.
+- `$SYZPILOT`: directory for saving SyzPilot source.
 - `$WORKDIR`: directory for working.
 
 ## openbsd vm setup
 
-Download OpenBSD image from [https://www.openbsd.org/faq/faq4.html#Download](https://www.openbsd.org/faq/faq4.html#Download), I use `install78.iso`.
+(host) Download OpenBSD image from [https://www.openbsd.org/faq/faq4.html#Download](https://www.openbsd.org/faq/faq4.html#Download), I use `install78.iso`.
 ```bash
-# run following commands on host
 cd $VMDIR
 wget https://cdn.openbsd.org/pub/OpenBSD/7.8/amd64/install78.iso
 qemu-img create -f qcow2 dev.qcow2 200G
@@ -26,13 +25,13 @@ qemu-system-x86_64 \
     -nographic
 ```
 
-in vm, input following contents (be quick!):
+(vm) input following contents (be quick!):
 ```
 set tty com0
 boot
 ```
 
-during openbsd installation, following contents are different with default:
+(vm) during openbsd installation, following contents are different with default:
 ```
 Allow root ssh login? <yes>
 
@@ -66,9 +65,8 @@ Location of set? <cd0>
 Directory does not contain SHA256.sig. Continue without verification? <yes>
 ```
 
-After installation complete, shutdown vm and boot it via:
+(host) After installation complete, shutdown vm and boot it:
 ```bash
-# run following commands on the host
 # both username and password are root
 qemu-system-x86_64 \
     -enable-kvm \
@@ -80,10 +78,8 @@ qemu-system-x86_64 \
     -nographic
 ```
 
-run following commands for basic package installation:
+(vm) run following commands for basic package installation:
 ```sh
-# run following commands on vm
-
 # if you need proxy, uncomment following commands
 # echo "export http_proxy=http://10.0.2.2:7890" >> /root/.profile
 # echo "export https_proxy=http://10.0.2.2:7890" >> /root/.profile
@@ -111,26 +107,25 @@ rcctl -f start vmd
 rcctl enable vmd
 ```
 
-## cloud setup
+## SyzPilot setup
 
-cloud must be setup under openbsd environment, let's download it first:
+(vm) SyzPilot must be setup under openbsd environment, let's download it first:
 ```sh
-# run following commands on vm
-cd /root
-git clone --recurse-submodules https://github.com/Radon10043/cloud
-# if you forgot to clone with --recurse-submodules, run `git submodule update --init --recursive` under cloud directory to update submodules
+mkdir /root/SyzPilot
+wget -O /root/SyzPilot/src.zip https://anonymous.4open.science/api/repo/SyzPilot/zip
+cd /root/SyzPilot && unzip src.zip && rm src.zip
+git clone https://github.com/google/syzkaller
+cd syzkaller && git checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
 ```
 
-build cloud:
+(vm) build SyzPilot:
 ```sh
-# run following commands on vm
-cd $CLOUD
+cd $SYZPILOT
 LLVM_CONFIG=llvm-config-19 gmake
 ```
 
-download source of OpenBSD and checkout to `23290a22`, which is the latest version in 2025:
+(vm) download source of OpenBSD and checkout to `23290a22`, which is the latest version in 2025:
 ```sh
-# run following commands on vm
 mkdir -p $KERNSRC
 git clone https://github.com/openbsd/src $KERNSRC
 cd $KERNSRC
@@ -138,44 +133,42 @@ cd $KERNSRC
 git checkout 23290a22d1dee9d1d0b277c2896d441128a32f42
 ```
 
-build kernel and generate `compile_commands.json`:
+(vm) build kernel and generate `compile_commands.json`:
 ```sh
-# run following commands on vm
-cp $CLOUD/configs/kernel/openbsd.config $KERNSRC/sys/arch/amd64/conf/CLOUD
+cp $SYZPILOT/configs/kernel/openbsd.config $KERNSRC/sys/arch/amd64/conf/SYZPILOT
 cd $KERNSRC/sys/arch/amd64/conf
-config CLOUD
-cd ../compile/CLOUD
+config SYZPILOT
+cd ../compile/SYZPILOT
 make depend
 make -j4 | tee make.log
 
 compiledb --parse make.log
 ```
 
-construct database:
+(vm) construct database:
 ```sh
-# run following commands on vm
-cd $CLOUD
-LD_LIBRARY_PATH=/usr/local/llvm19/lib:$LD_LIBRARY_PATH ./bin/analyzer -i $KERNSRC/sys/arch/amd64/compile/CLOUD/compile_commands.json -j 8 -o data/database/openbsd.db
+cd $SYZPILOT
+LD_LIBRARY_PATH=/usr/local/llvm19/lib:$LD_LIBRARY_PATH ./bin/analyzer -i $KERNSRC/sys/arch/amd64/compile/SYZPILOT/compile_commands.json -j 8 -o data/database/openbsd.db
 ```
 
-feel free to run minitask or generator:
+(vm) feel free to run minitask or generator:
 ```sh
-# run following commands on vm
 # minitask
-$CLOUD/bin/minitask \
-    -db=$CLOUD/data/database/openbsd.db \
+$SYZPILOT/bin/minitask \
+    -db=$SYZPILOT/data/database/openbsd.db \
     -os=openbsd \
-    -outdir=$CLOUD/workdir/minitask \
-    -model=gemini-2.5-flash > logs/minitask.log 2>&1
+    -outdir=$SYZPILOT/workdir/minitask \
+    -model=gemini-3-flash-preview > logs/minitask.log 2>&1
+$SYZPILOT/scripts/reflist.sh $SYZPILOT/workdir/minitask/specs > workdir/minitask/ref.txt
 
 # generator
-$CLOUD/bin/generator \
-    -db=$CLOUD/data/database/openbsd.db \
+$SYZPILOT/bin/generator \
+    -db=$SYZPILOT/data/database/openbsd.db \
     -os=openbsd \
-    -outdir=$CLOUD/workdir/out \
+    -outdir=$SYZPILOT/workdir/minitask \
     -kernel=$KERNSRC \
-    -model=gemini-2.5-flash \
-    -varlist=$CLOUD/workdir/out/varlist.txt \
+    -model=gemini-3-flash-preview \
+    -ref=$SYZPILOT/workdir/minitask/ref.txt \
     -jobs=4 > logs/generate.log 2>&1
 ```
 
@@ -185,15 +178,13 @@ $CLOUD/bin/generator \
 
 **NOTE: you can't symbolize openbsd crash reports on linux, but you can copy report to openbsd to symbolize it.**
 
-duplicate a vm as the fuzz target.
+(host) duplicate a vm as the fuzz target.
 ```bash
-# run following commands on host
 cp $VMDIR/dev.qcow2 $VMDIR/target.qcow2
 ```
 
-start and setup fuzz target vm.
+(host) start and setup fuzz target vm.
 ```bash
-# run following commands on host
 qemu-system-x86_64 \
     -enable-kvm \
     -m 16G \
@@ -206,9 +197,8 @@ qemu-system-x86_64 \
     -nographic
 ```
 
-generate and copy ssh key to target vm.
+(host) generate and copy ssh key to target vm.
 ```bash
-# run following commands on host
 cd $VMDIR
 ssh-keygen -t rsa -f openbsd.id_rsa -N ''
 ssh-copy-id \
@@ -219,17 +209,15 @@ ssh-copy-id \
     root@localhost
 ```
 
-install target version of kernel in fuzz target vm.
+(vm) install target version of kernel in fuzz target vm.
 ```sh
-# run following commands on fuzz target vm
-cd $KERNSRC/sys/arch/amd64/compile/CLOUD
+cd $KERNSRC/sys/arch/amd64/compile/SYZPILOT
 make install
 shutdown -p now
 ```
 
-run syzkaller on ubuntu host and fuzz openbsd kernel with qemu vm.
+(host) run syzkaller on ubuntu host and fuzz openbsd kernel with qemu vm.
 ```sh
-# run following comands on host
 cd $WORKDIR
 cat <<__EOF__ > test.cfg
 {
@@ -237,7 +225,7 @@ cat <<__EOF__ > test.cfg
     "target": "openbsd/amd64",
     "http": ":10000",
     "workdir": "$WORKDIR/out",
-    "syzkaller": "$CLOUD/syzkaller",
+    "syzkaller": "$SYZPILOT/syzkaller",
     "image": "$VM/target.qcow2",
     "sshkey": "$VM/openbsd.id_rsa",
     "sandbox": "none",
@@ -251,8 +239,7 @@ cat <<__EOF__ > test.cfg
 }
 __EOF__
 
-git clone https://github.com/openbsd/src openbsd
-$CLOUD/syzkaller/bin/syz-manager -config=$WORKDIR/test.cfg
+$SYZPILOT/syzkaller/bin/syz-manager -config=$WORKDIR/test.cfg
 ```
 
 ### openbsd host, openbsd vm
@@ -302,16 +289,16 @@ vmctl stop -w syzkaller-1
 
 Now we can start fuzzing:
 ```bash
-cd $CLOUD && mkdir workdir
+cd $SYZPILOT && mkdir workdir
 cat <<__EOF__ > workdir/test.cfg
 {
   "name": "openbsd",
   "target": "openbsd/amd64",
   "http": ":10000",
-  "workdir": "$CLOUD/workdir/out",
+  "workdir": "$SYZPILOT/workdir/out",
   "kernel_obj": "/sys/arch/amd64/compile/SYZKALLER/obj",
   "kernel_src": "/",
-  "syzkaller": "$CLOUD/syzkaller",
+  "syzkaller": "$SYZPILOT/syzkaller",
   "image": "/root/vm.qcow2",
   "sshkey": "/root/vm.sshkey",
   "sandbox": "none",
@@ -346,10 +333,6 @@ git clone https://github.com/jesseduffield/lazygit.git
 cd lazygit
 go install
 cd ..
-
-# my neovim config
-mkdir -p /root/.config/nvim
-git clone https://github.com/Radon10043/nvimcfg /root/.config/nvim
 ```
 
 ### vscode+sshfs
@@ -366,19 +349,18 @@ sshfs -p 6736 \
     -o compression=no \
     -o idmap=user \
     -o follow_symlinks \
-    root@localhost:$CLOUD ./cloud
+    root@localhost:$SYZPILOT ./SyzPilot
 ```
 
 feel free to unmount it:
 ```bash
 # run following commands on host
-fusermount -u ./cloud
+fusermount -u ./SyzPilot
 ```
 
 ## fuzzing latest kernel
 
-> [!CAUTION]
-> If a new kernel is installed with an old user-space, the image may broken! please upgrade use-space and kernel-space first then install the customized kernel for fuzzing.
+**CAUTION:** If a new kernel is installed with an old user-space, the image may broken! please upgrade use-space and kernel-space first then install the customized kernel for fuzzing.
 
 upgrade user-space and kernel-space to the latest snapshot:
 ```bash
@@ -388,9 +370,9 @@ sysupgrade -s
 compile and install customized latest OpenBSD kernel.
 ```bash
 cd $KERNSRC && git pull
-cp $CLOUD/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
-cd sys/arch/amd64/conf && config CLOUD
-cd ../compile/CLOUD
+cp $SYZPILOT/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
+cd sys/arch/amd64/conf && config SYZPILOT
+cd ../compile/SYZPILOT
 make depend && make -j4 && make install
 ```
 
@@ -453,5 +435,5 @@ sshfs -p 6736 \
     -o compression=no \
     -o idmap=user \
     -o follow_symlinks \
-    root@localhost:/root/cloud ./mnt/cloud
+    root@localhost:/root/SyzPilot ./mnt/SyzPilot
 ```

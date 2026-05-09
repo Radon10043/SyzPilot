@@ -2,7 +2,7 @@
 
 linux:
 ```bash
-cd $CLOUD
+cd $SYZPILOT
 nohup ./bin/generator \
     -db=./data/database/linux.db \
     -outdir=./workdir/specs/linux-v6.18-subsystems-gemini-3-flash-preview \
@@ -16,7 +16,7 @@ nohup ./bin/generator \
 
 freebsd:
 ```bash
-cd $CLOUD
+cd $SYZPILOT
 nohup ./bin/generator \
     -db=./data/database/freebsd.db \
     -outdir=./workdir/specs/freebsd-15.0.0-inet_icmp-gemini-3-flash-preview \
@@ -30,7 +30,7 @@ nohup ./bin/generator \
 
 openbsd:
 ```bash
-cd $CLOUD
+cd $SYZPILOT
 nohup ./bin/generator \
     -db=./data/database/openbsd.db \
     -outdir=./workdir/specs/openbsd-23290a22-vnd-gemini-3-flash-preview \
@@ -44,7 +44,7 @@ nohup ./bin/generator \
 
 netbsd:
 ```bash
-cd $CLOUD
+cd $SYZPILOT
 nohup ./bin/generator \
     -db=./data/database/netbsd.db \
     -outdir=./workdir/specs/netbsd-15e7fbc5-tprof-gemini-3-flash-preview \
@@ -60,7 +60,7 @@ nohup ./bin/generator \
 
 please merge subsystem's config file to kernel.cfg to test subsystem in target manner, e.g. test linux/ocfs2:
 ```bash
-cd $CLOUD
+cd $SYZPILOT
 jq -s 'add' configs/fuzz/linux/kernel.cfg configs/fuzz/linux/ocfs2.cfg > $WORKDIR/test.cfg
 ./syzkaller/bin/syz-manager -config=$WORKDIR/test.cfg
 ```
@@ -75,4 +75,4 @@ ls sys/linux/cloud*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -
 1. copy syzkaller/sys/$OS/*.txt to a tmp dir
 2. delete related specs
 3. extract consts, run syz-check, manual fix errors, repeat until no error report
-4. run cloud to generate specs
+4. run SyzPilot to generate specs
