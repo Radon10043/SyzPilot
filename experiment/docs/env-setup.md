@@ -1,7 +1,6 @@
 # experiment environment setup
 
-> [!NOTE]
-> the document currently contains many redundant steps and verbose statements and needs to be refactored.
+**NOTE:** the document currently contains many redundant steps and verbose statements and needs to be refactored.
 
 Please replace the following variables according to the actual situation:
 - `$EXPERIMENT_ROOT`: directory for saving experiment artifacts.
@@ -9,17 +8,19 @@ Please replace the following variables according to the actual situation:
 
 ### preparation
 
-prepare ~1T free space, start up a container based on cloud image. In container, run:
+prepare ~1T free space, start up a container based on SyzPilot image. In container, run:
 ```bash
 cd $EXPERIMENT_ROOT
 mkdir kernel fuzzer images
 ```
 
-download cloud first, many important artifacts are in this repository:
+download SyzPilot first, many important artifacts are in this repository:
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer
-git clone https://github.com/Radon10043/cloud && cd cloud
-git submodule update --init --recursive
+mkdir $EXPERIMENT_ROOT/fuzzer/SyzPilot
+wget -O $EXPERIMENT_ROOT/fuzzer/SyzPilot/src.zip https://anonymous.4open.science/api/repo/SyzPilot/zip
+cd $EXPERIMENT_ROOT/fuzzer/SyzPilot && unzip src.zip && rm src.zip
+git clone https://github.com/google/syzkaller
+cd syzkaller && git checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
 ```
 
 ### setup kernel/linux
@@ -33,12 +34,12 @@ git clone -b v6.6.119 --depth 1 https://github.com/gregkh v6.6.119
 git clone -b v6.1.159 --depth 1 https://github.com/gregkh v6.1.159
 git clone -b v5.15.197 --depth 1 https://github.com/gregkh v5.15.197
 
-cd $EXPERIMENT_ROOT/kernel/linux/v6.18 && cp $EXPERIMENT_ROOT/fuzzer/cloud/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
-cd $EXPERIMENT_ROOT/kernel/linux/v6.17.13 && cp $EXPERIMENT_ROOT/fuzzer/cloud/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
-cd $EXPERIMENT_ROOT/kernel/linux/v6.12.63 && cp $EXPERIMENT_ROOT/fuzzer/cloud/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
-cd $EXPERIMENT_ROOT/kernel/linux/v6.6.119 && cp $EXPERIMENT_ROOT/fuzzer/cloud/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
-cd $EXPERIMENT_ROOT/kernel/linux/v6.1.159 && cp $EXPERIMENT_ROOT/fuzzer/cloud/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
-cd $EXPERIMENT_ROOT/kernel/linux/v5.15.197 && cp $EXPERIMENT_ROOT/fuzzer/cloud/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
+cd $EXPERIMENT_ROOT/kernel/linux/v6.18 && cp $EXPERIMENT_ROOT/fuzzer/SyzPilot/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
+cd $EXPERIMENT_ROOT/kernel/linux/v6.17.13 && cp $EXPERIMENT_ROOT/fuzzer/SyzPilot/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
+cd $EXPERIMENT_ROOT/kernel/linux/v6.12.63 && cp $EXPERIMENT_ROOT/fuzzer/SyzPilot/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
+cd $EXPERIMENT_ROOT/kernel/linux/v6.6.119 && cp $EXPERIMENT_ROOT/fuzzer/SyzPilot/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
+cd $EXPERIMENT_ROOT/kernel/linux/v6.1.159 && cp $EXPERIMENT_ROOT/fuzzer/SyzPilot/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
+cd $EXPERIMENT_ROOT/kernel/linux/v5.15.197 && cp $EXPERIMENT_ROOT/fuzzer/SyzPilot/configs/kernel/linux.cfg && make CC=clang olddefconfig all -j$JOBS
 ```
 
 ### setup kernel/netbsd
@@ -53,10 +54,10 @@ git remote add origin https://github.com/NetBSD/src
 git fetch --depth 1 origin 15e7fbc53d77cd7cc1d62511982b8972c4c0c421
 git checkout 15e7fbc5
 
-cp $CLOUD/configs/kernel/netbsd.config sys/arch/amd64/conf/CLOUD
+cp $SYZPILOT/configs/kernel/netbsd.config sys/arch/amd64/conf/SYZPILOT
 ./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools tools
 ./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools -D ../dest distribution
-./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=CLOUD
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=SYZPILOT
 ```
 
 ```bash
@@ -69,10 +70,10 @@ git remote add origin https://github.com/NetBSD/src
 git fetch --depth 1 origin ceec3d80eed1a1082cacf866e3f09e31657b8525
 git checkout ceec3d80
 
-cp $CLOUD/configs/kernel/netbsd.config sys/arch/amd64/conf/CLOUD
+cp $SYZPILOT/configs/kernel/netbsd.config sys/arch/amd64/conf/SYZPILOT
 ./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools tools
 ./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools -D ../dest distribution
-./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=CLOUD
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=SYZPILOT
 ```
 
 ```bash
@@ -85,10 +86,10 @@ git remote add origin https://github.com/NetBSD/src
 git fetch --depth 1 origin 3c0f56ea164d7e5bea72b1c64425fb24f9f3be6f
 git checkout 3c0f56ea
 
-cp $CLOUD/configs/kernel/netbsd.config sys/arch/amd64/conf/CLOUD
+cp $SYZPILOT/configs/kernel/netbsd.config sys/arch/amd64/conf/SYZPILOT
 ./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools tools
 ./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools -D ../dest distribution
-./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=CLOUD
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=SYZPILOT
 ```
 
 tprof is not enabled in syzbot's config, prepare one so that we can perform targeted fuzzing to it:
@@ -102,17 +103,17 @@ git remote add origin https://github.com/NetBSD/src
 git fetch --depth 1 origin 15e7fbc53d77cd7cc1d62511982b8972c4c0c421
 git checkout 15e7fbc5
 
-cp $CLOUD/configs/kernel/netbsd.extend.config sys/arch/amd64/conf/CLOUD
+cp $SYZPILOT/configs/kernel/netbsd.extend.config sys/arch/amd64/conf/SYZPILOT
 ./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools tools
 ./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools -D ../dest distribution
-./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=CLOUD
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=SYZPILOT
 ```
 
 ### setup image/linux
 
 ```bash
 mkdir -p $EXPERIMENT_ROOT/images/Debian/bullseye && cd $EXPERIMENT_ROOT/images/Debian/bullseye
-cp $EXPERIMENT_ROOT/fuzzer/cloud/scripts/linux/create-image.sh && chmod +x ./create-image.sh
+cp $EXPERIMENT_ROOT/fuzzer/SyzPilot/scripts/linux/create-image.sh && chmod +x ./create-image.sh
 ./create-image.sh
 ```
 
@@ -163,13 +164,18 @@ ASSUME_ALWAYS_YES=true pkg update -f
 ASSUME_ALWAYS_YES=true pkg install bash curl gcc git gmake go golangci-lint llvm cmake
 ASSUME_ALWAYS_YES=true pkg install vim dnsmasq wget tmux ccache pkgconf sqlite3 python3
 
+mkdir /root/SyzPilot
+wget -O /root/SyzPilot/src.zip https://anonymous.4open.science/api/repo/SyzPilot/zip
+cd /root/SyzPilot && unzip src.zip && rm src.zip
+git clone https://github.com/google/syzkaller
+cd syzkaller && git checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
+
 cd /root
-git clone https://github.com/Radon10043/cloud
 git clone -b release/15.0.0 --depth 1 https://github.com/freebsd/freebsd-src 15.0.0
 cd 15.0.0
-cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
-cd sys/amd64/conf && config CLOUD
-cd ../compile/CLOUD
+cp /root/SyzPilot/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
+cd sys/amd64/conf && config SYZPILOT
+cd ../compile/SYZPILOT
 make cleandepend && make depend
 make -j16 && make install
 reboot
@@ -181,7 +187,7 @@ cd $EXPERIMENT_ROOT/images/freebsd
 ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of following command should like:
-#   FreeBSD freebsd 15.0-RELEASE FreeBSD 15.0-RELEASE 7aedc8de6446 CLOUD amd64
+#   FreeBSD freebsd 15.0-RELEASE FreeBSD 15.0-RELEASE 7aedc8de6446 SYZPILOT amd64
 ssh -i ./freebsd.id_rsa -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -a
 ```
 
@@ -229,13 +235,18 @@ ASSUME_ALWAYS_YES=true pkg update -f
 ASSUME_ALWAYS_YES=true pkg install bash curl gcc git gmake go golangci-lint llvm cmake
 ASSUME_ALWAYS_YES=true pkg install vim dnsmasq wget tmux ccache pkgconf sqlite3 python3
 
+mkdir /root/SyzPilot
+wget -O /root/SyzPilot/src.zip https://anonymous.4open.science/api/repo/SyzPilot/zip
+cd /root/SyzPilot && unzip src.zip && rm src.zip
+git clone https://github.com/google/syzkaller
+cd syzkaller && git checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
+
 cd /root
-git clone https://github.com/Radon10043/cloud
 git clone -b release/14.3.0 --depth 1 https://github.com/freebsd/freebsd-src 14.3.0
 cd 14.3.0
-cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
-cd sys/amd64/conf && config CLOUD
-cd ../compile/CLOUD
+cp /root/SyzPilot/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
+cd sys/amd64/conf && config SYZPILOT
+cd ../compile/SYZPILOT
 make cleandepend && make depend
 make -j16 && make install
 reboot
@@ -247,7 +258,7 @@ cd $EXPERIMENT_ROOT/images/freebsd
 ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of following command should like:
-#   FreeBSD freebsd 14.3-RELEASE FreeBSD 14.3-RELEASE 8c9ce319fef7 CLOUD amd64
+#   FreeBSD freebsd 14.3-RELEASE FreeBSD 14.3-RELEASE 8c9ce319fef7 SYZPILOT amd64
 ssh -i ./freebsd.id_rsa -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -a
 ```
 
@@ -295,13 +306,18 @@ ASSUME_ALWAYS_YES=true pkg update -f
 ASSUME_ALWAYS_YES=true pkg install bash curl gcc git gmake go golangci-lint llvm cmake
 ASSUME_ALWAYS_YES=true pkg install vim dnsmasq wget tmux ccache pkgconf sqlite3 python3
 
+mkdir /root/SyzPilot
+wget -O /root/SyzPilot/src.zip https://anonymous.4open.science/api/repo/SyzPilot/zip
+cd /root/SyzPilot && unzip src.zip && rm src.zip
+git clone https://github.com/google/syzkaller
+cd syzkaller && git checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
+
 cd /root
-git clone https://github.com/Radon10043/cloud
 git clone -b release/14.2.0 --depth 1 https://github.com/freebsd/freebsd-src 14.2.0
 cd 14.2.0
-cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
-cd sys/amd64/conf && config CLOUD
-cd ../compile/CLOUD
+cp /root/SyzPilot/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
+cd sys/amd64/conf && config SYZPILOT
+cd ../compile/SYZPILOT
 make cleandepend && make depend
 make -j16 && make install
 reboot
@@ -313,7 +329,7 @@ cd $EXPERIMENT_ROOT/images/freebsd
 ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of following command should like:
-#   FreeBSD freebsd 14.2-RELEASE FreeBSD 14.2-RELEASE c8918d6c7 CLOUD amd64
+#   FreeBSD freebsd 14.2-RELEASE FreeBSD 14.2-RELEASE c8918d6c7 SYZPILOT amd64
 ssh -i ./freebsd.id_rsa -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -a
 ```
 
@@ -407,17 +423,19 @@ pkg_add ccache sqlite3 bear python py3-pip gdb cmake
 pip3 install compiledb --break-system-packages
 echo "export PATH=/root/go/bin:\$PATH" >> /root/.profile
 
-git clone https://github.com/Radon10043/cloud
-
 mkdir openbsd-23290a22 && cd openbsd-23290a22
 git init .
 git remote add origin https://github.com/openbsd/src
 git fetch --depth 1 origin 23290a22d1dee9d1d0b277c2896d441128a32f42
 git checkout 23290a22
 
-cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
-cd sys/arch/amd64/conf && config CLOUD
-cd ../compile/CLOUD
+mkdir /root/SyzPilot
+wget -O /root/SyzPilot/src.zip https://anonymous.4open.science/api/repo/SyzPilot/zip
+cd /root/SyzPilot && unzip src.zip && rm src.zip
+
+cp /root/SyzPilot/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
+cd sys/arch/amd64/conf && config SYZPILOT
+cd ../compile/SYZPILOT
 make depend && make -j16 && make install
 reboot
 ```
@@ -428,7 +446,7 @@ cd $EXPERIMENT_ROOT/images/openbsd
 ssh-copy-id -i ./openbsd.id_rsa.pub -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of following command should like:
-#   OpenBSD openbsd.my.domain 7.8 CLOUD#0 amd64 amd64
+#   OpenBSD openbsd.my.domain 7.8 SYZPILOT#0 amd64 amd64
 ssh -i ./openbsd.id_rsa -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -a
 ```
 
@@ -510,17 +528,19 @@ pkg_add ccache sqlite3 bear python py3-pip gdb cmake
 pip3 install compiledb --break-system-packages
 echo "export PATH=/root/go/bin:\$PATH" >> /root/.profile
 
-git clone https://github.com/Radon10043/cloud
-
 mkdir openbsd-6bf0f93a && cd openbsd-6bf0f93a
 git init .
 git remote add origin https://github.com/openbsd/src
 git fetch --depth 1 origin 6bf0f93af4a8aa5d28d638525b1eb0c5b2f57941
 git checkout 6bf0f93a
 
-cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
-cd sys/arch/amd64/conf && config CLOUD
-cd ../compile/CLOUD
+mkdir /root/SyzPilot
+wget -O /root/SyzPilot/src.zip https://anonymous.4open.science/api/repo/SyzPilot/zip
+cd /root/SyzPilot && unzip src.zip && rm src.zip
+
+cp /root/SyzPilot/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
+cd sys/arch/amd64/conf && config SYZPILOT
+cd ../compile/SYZPILOT
 make depend && make -j16 && make install
 reboot
 ```
@@ -531,7 +551,7 @@ cd $EXPERIMENT_ROOT/images/openbsd
 ssh-copy-id -i ./openbsd.id_rsa.pub -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of following command should like:
-#   OpenBSD openbsd.my.domain 7.8 CLOUD#0 amd64
+#   OpenBSD openbsd.my.domain 7.8 SYZPILOT#0 amd64
 ssh -i ./openbsd.id_rsa -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -a
 ```
 
@@ -613,17 +633,19 @@ pkg_add ccache sqlite3 bear python py3-pip gdb cmake
 pip3 install compiledb --break-system-packages
 echo "export PATH=/root/go/bin:\$PATH" >> /root/.profile
 
-git clone https://github.com/Radon10043/cloud
-
 mkdir openbsd-6dac8606 && cd openbsd-6dac8606
 git init .
 git remote add origin https://github.com/openbsd/src
 git fetch --depth 1 origin 6dac8606615b68ce13d259f805724b9d640096fa
 git checkout 6dac8606
 
-cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
-cd sys/arch/amd64/conf && config CLOUD
-cd ../compile/CLOUD
+mkdir /root/SyzPilot
+wget -O /root/SyzPilot/src.zip https://anonymous.4open.science/api/repo/SyzPilot/zip
+cd /root/SyzPilot && unzip src.zip && rm src.zip
+
+cp /root/SyzPilot/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
+cd sys/arch/amd64/conf && config SYZPILOT
+cd ../compile/SYZPILOT
 make depend && make -j16 && make install
 reboot
 ```
@@ -634,7 +656,7 @@ cd $EXPERIMENT_ROOT/images/openbsd
 ssh-copy-id -i ./openbsd.id_rsa.pub -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of following command should like:
-#   OpenBSD openbsd.my.domain 7.4 CLOUD#0 amd64
+#   OpenBSD openbsd.my.domain 7.4 SYZPILOT#0 amd64
 ssh -i ./openbsd.id_rsa -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -a
 ```
 
@@ -697,7 +719,7 @@ scp -P 6382 \
     -i ./netbsd.id_rsa \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
-    $EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5/src/sys/arch/amd64/compile/obj/CLOUD/netbsd root@localhost:/netbsd
+    $EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5/src/sys/arch/amd64/compile/obj/SYZPILOT/netbsd root@localhost:/netbsd
 ```
 
 (vm) reboot, verify kernel version, load kcov module and poweroff vm:
@@ -705,7 +727,7 @@ scp -P 6382 \
 reboot
 
 # output of uname command should like:
-#   NetBSD  10.1_STABLE NetBSD 10.1_STABLE (CLOUD) #1: Sat Mar 28 20:59:39 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/15e7fbc5...
+#   NetBSD  10.1_STABLE NetBSD 10.1_STABLE (SYZPILOT) #1: Sat Mar 28 20:59:39 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/15e7fbc5...
 uname -a
 
 cd /dev
@@ -759,7 +781,7 @@ scp -P 6382 \
     -i ./netbsd.id_rsa \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
-    $EXPERIMENT_ROOT/kernel/netbsd/ceec3d80/src/sys/arch/amd64/compile/obj/CLOUD/netbsd root@localhost:/netbsd
+    $EXPERIMENT_ROOT/kernel/netbsd/ceec3d80/src/sys/arch/amd64/compile/obj/SYZPILOT/netbsd root@localhost:/netbsd
 ```
 
 (vm) reboot, verify kernel version, load kcov module and poweroff vm:
@@ -767,7 +789,7 @@ scp -P 6382 \
 reboot
 
 # output of uname command should like:
-#   NetBSD  10.99.12 NetBSD 10.99.12 (CLOUD) #0: Sat Mar 28 22:53:06 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/ceec3d80...
+#   NetBSD  10.99.12 NetBSD 10.99.12 (SYZPILOT) #0: Sat Mar 28 22:53:06 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/ceec3d80...
 uname -a
 
 cd /dev
@@ -821,7 +843,7 @@ scp -P 6382 \
     -i ./netbsd.id_rsa \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
-    $EXPERIMENT_ROOT/kernel/netbsd/3c0f56ea/src/sys/arch/amd64/compile/obj/CLOUD/netbsd root@localhost:/netbsd
+    $EXPERIMENT_ROOT/kernel/netbsd/3c0f56ea/src/sys/arch/amd64/compile/obj/SYZPILOT/netbsd root@localhost:/netbsd
 ```
 
 (vm) reboot, verify kernel version, load kcov module and poweroff vm:
@@ -829,7 +851,7 @@ scp -P 6382 \
 reboot
 
 # output of uname command should like:
-#   NetBSD  10.99.10 NetBSD 10.99.10 (CLOUD) #0: Sat Mar 28 21:44:46 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/3c0f56ea...
+#   NetBSD  10.99.10 NetBSD 10.99.10 (SYZPILOT) #0: Sat Mar 28 21:44:46 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/3c0f56ea...
 uname -a
 
 cd /dev
@@ -883,7 +905,7 @@ scp -P 6382 \
     -i ./netbsd.id_rsa \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
-    $EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5-tprof/src/sys/arch/amd64/compile/obj/CLOUD/netbsd root@localhost:/netbsd
+    $EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5-tprof/src/sys/arch/amd64/compile/obj/SYZPILOT/netbsd root@localhost:/netbsd
 ```
 
 (vm) reboot, verify kernel version, load kcov module and poweroff vm:
@@ -891,7 +913,7 @@ scp -P 6382 \
 reboot
 
 # output of uname command should like:
-#   NetBSD  10.1_STABLE NetBSD 10.1_STABLE (CLOUD) #1: Sat Mar 28 20:59:39 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/15e7fbc5...
+#   NetBSD  10.1_STABLE NetBSD 10.1_STABLE (SYZPILOT) #1: Sat Mar 28 20:59:39 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/15e7fbc5...
 uname -a
 
 cd /dev
@@ -899,29 +921,22 @@ sh MAKEDEV kcov
 poweroff
 ```
 
-### setup fuzzer/cloud
+### setup fuzzer/SyzPilot
 
 #### setup binaries for full kernel fuzzing
 
 ##### linux binaries
 
-(host) build cloud/syzkaller for linux:
+(host) build SyzPilot/syzkaller for linux:
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer
-git clone --recurse-submodules https://github.com/Radon10043/cloud
-# or git clone https://github.com/Radon10043/cloud && cd cloud && git submodule update --init --recursive
-
-cd cloud/syzkaller
-git apply \
-    ../patch/syzkaller/linux.patch \
-    ../patch/syzkaller/freebsd.patch \
-    ../patch/syzkaller/openbsd.patch \
-    ../patch/syzkaller/netbsd.patch
-git apply \
-    ../patch/specs#syzkaller-ac3c71e7#freebsd-15.0.0#gemini-3-flash-preview.patch \
-    ../patch/specs#syzkaller-ac3c71e7#linux-v6.18#gemini-3-flash-preview.patch \
-    ../patch/specs#syzkaller-ac3c71e7#netbsd-15e7fbc5#gemini-3-flash-preview.patch \
-    ../patch/specs#syzkaller-ac3c71e7#openbsd-23290a22#gemini-3-flash-preview.patch
+mkdir SyzPilot
+wget -O SyzPilot/src.zip https://anonymous.4open.science/api/repo/SyzPilot/zip
+cd SyzPilot && unzip src.zip && rm src.zip
+git clone https://github.com/google/syzkaller
+cd syzkaller && git checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
+git apply ../patch/syzkaller/*
+git apply ../patch/specs-kern/*
 make all -j16
 ```
 
@@ -932,21 +947,14 @@ make all -j16
 qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/images/freebsd/15.0.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host -snapshot
 ```
 
-(vm) build needed binaries for cloud on freebsd vm:
+(vm) build needed binaries for SyzPilot on freebsd vm:
 ```sh
-cd /root/cloud
-git submodule update --init --recursive
-cd syzkaller
-git apply \
-    ../patch/syzkaller/linux.patch \
-    ../patch/syzkaller/freebsd.patch \
-    ../patch/syzkaller/openbsd.patch \
-    ../patch/syzkaller/netbsd.patch
-git apply \
-    ../patch/specs#syzkaller-ac3c71e7#freebsd-15.0.0#gemini-3-flash-preview.patch \
-    ../patch/specs#syzkaller-ac3c71e7#linux-v6.18#gemini-3-flash-preview.patch \
-    ../patch/specs#syzkaller-ac3c71e7#netbsd-15e7fbc5#gemini-3-flash-preview.patch \
-    ../patch/specs#syzkaller-ac3c71e7#openbsd-23290a22#gemini-3-flash-preview.patch
+wget -O /root/SyzPilot/src.zip https://anonymous.4open.science/api/repo/SyzPilot/zip
+cd /root/SyzPilot && unzip src.zip && rm src.zip
+git clone https://github.com/google/syzkaller
+cd syzkaller && git checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
+git apply ../patch/syzkaller/*
+git apply ../patch/specs-kern/*
 gmake target
 ```
 
@@ -956,7 +964,7 @@ scp -P 3733 \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
     -r \
-    root@localhost:/root/cloud/syzkaller/bin/freebsd_amd64 $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller/bin
+    root@localhost:/root/SyzPilot/syzkaller/bin/freebsd_amd64 $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller/bin
 ```
 
 ##### openbsd binaries
@@ -1014,7 +1022,7 @@ Directory does not contain SHA256.sig. Continue without verification? <yes>
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./dev.qcow2,format=qcow2 -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
 ```
 
-(vm) build needed binaries for cloud on freebsd vm:
+(vm) build needed binaries for SyzPilot on freebsd vm:
 ```sh
 # if you need proxy, run following commands
 # echo "export http_proxy=http://10.0.2.2:7890" >> /root/.profile
@@ -1030,20 +1038,13 @@ pkg_add ccache sqlite3 bear python py3-pip gdb cmake
 pip3 install compiledb --break-system-packages
 echo "export PATH=/root/go/bin:\$PATH" >> /root/.profile
 
-git clone https://github.com/radon10043/cloud && cd cloud
-git submodule update --init --recursive
+wget -O /root/SyzPilot/src.zip https://anonymous.4open.science/api/repo/SyzPilot/zip
+cd /root/SyzPilot && unzip src.zip && rm src.zip
+git clone https://github.com/google/syzkaller
+cd syzkaller && git checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
 
-cd syzkaller
-git apply \
-    ../patch/syzkaller/linux.patch \
-    ../patch/syzkaller/freebsd.patch \
-    ../patch/syzkaller/openbsd.patch \
-    ../patch/syzkaller/netbsd.patch
-git apply \
-    ../patch/specs#syzkaller-ac3c71e7#freebsd-15.0.0#gemini-3-flash-preview.patch \
-    ../patch/specs#syzkaller-ac3c71e7#linux-v6.18#gemini-3-flash-preview.patch \
-    ../patch/specs#syzkaller-ac3c71e7#netbsd-15e7fbc5#gemini-3-flash-preview.patch \
-    ../patch/specs#syzkaller-ac3c71e7#openbsd-23290a22#gemini-3-flash-preview.patch
+git apply ../patch/syzkaller/*
+git apply ../patch/specs-kern/*
 gmake target
 ```
 
@@ -1053,7 +1054,7 @@ scp -P 6736 \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
     -r \
-    root@localhost:/root/cloud/syzkaller/bin/openbsd_amd64 $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller/bin
+    root@localhost:/root/SyzPilot/syzkaller/bin/openbsd_amd64 $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller/bin
 ```
 
 (vm) close vm:
@@ -1065,15 +1066,15 @@ shutdown -p now
 
 (host):
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+cd $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller
 make target TARGETOS=netbsd SOURCEDIR=$EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5 CCFLAGS="-static-libstdc++" CXXFLAGS="-static-libstdc++"
 ```
 
-##### fuzzer/cloud/bin-kern
+##### fuzzer/SyzPilot/bin-kern
 
-(host) move full kernel fuzzing binaries to cloud/:
+(host) move full kernel fuzzing binaries to SyzPilot/:
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/cloud
+cd $EXPERIMENT_ROOT/fuzzer/SyzPilot
 mv syzkaller/bin bin-kern
 ```
 
@@ -1081,9 +1082,9 @@ mv syzkaller/bin bin-kern
 
 ##### linux binaries
 
-(host) build cloud/syzkaller for linux subsystems:
+(host) build SyzPilot/syzkaller for linux subsystems:
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+cd $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller
 git checkout . && git clean -fdx
 git apply ../patch/syzkaller/*
 git apply ../patch/specs-subsys/*
@@ -1097,9 +1098,9 @@ make all -j16
 qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/images/freebsd/15.0.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host -snapshot
 ```
 
-(vm) build needed binaries for cloud on freebsd vm:
+(vm) build needed binaries for SyzPilot on freebsd vm:
 ```sh
-cd /root/cloud
+cd /root/SyzPilot
 git submodule update --init --recursive
 cd syzkaller
 git apply ../patch/syzkaller/*
@@ -1113,7 +1114,7 @@ scp -P 3733 \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
     -r \
-    root@localhost:/root/cloud/syzkaller/bin/freebsd_amd64 $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller/bin
+    root@localhost:/root/SyzPilot/syzkaller/bin/freebsd_amd64 $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller/bin
 ```
 
 ##### openbsd binaries
@@ -1123,9 +1124,9 @@ scp -P 3733 \
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./dev.qcow2,format=qcow2 -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic -snapshot
 ```
 
-(vm) build needed binaries for cloud on freebsd vm:
+(vm) build needed binaries for SyzPilot on freebsd vm:
 ```sh
-cd /root/cloud/syzkaller
+cd /root/SyzPilot/syzkaller
 git apply ../patch/syzkaller/*
 git apply ../patch/specs-subsys/*
 gmake target
@@ -1137,7 +1138,7 @@ scp -P 6736 \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
     -r \
-    root@localhost:/root/cloud/syzkaller/bin/openbsd_amd64 $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller/bin
+    root@localhost:/root/SyzPilot/syzkaller/bin/openbsd_amd64 $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller/bin
 ```
 
 (vm) close vm:
@@ -1149,15 +1150,15 @@ shutdown -p now
 
 (host):
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+cd $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller
 make target TARGETOS=netbsd SOURCEDIR=$EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5-tprof CCFLAGS="-static-libstdc++" CXXFLAGS="-static-libstdc++"
 ```
 
-##### fuzzer/cloud/bin-subsys
+##### fuzzer/SyzPilot/bin-subsys
 
-(host) move full kernel fuzzing binaries to cloud/:
+(host) move full kernel fuzzing binaries to SyzPilot/:
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/cloud
+cd $EXPERIMENT_ROOT/fuzzer/SyzPilot
 mv syzkaller/bin bin-subsys
 ```
 
@@ -1168,7 +1169,7 @@ mv syzkaller/bin bin-subsys
 (host)
 ```bash
 cd $EXPERIMENT/fuzzer/syzkaller
-git apply $EXPERIMENT_ROOT/fuzzer/cloud/patch/syzkaller/openbsd.patch $EXPERIMENT_ROOT/fuzzer/cloud/patch/syzkaller/netbsd.patch
+git apply $EXPERIMENT_ROOT/fuzzer/SyzPilot/patch/syzkaller/openbsd.patch $EXPERIMENT_ROOT/fuzzer/SyzPilot/patch/syzkaller/netbsd.patch
 make all
 ```
 
@@ -1179,12 +1180,12 @@ make all
 qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/images/freebsd/15.0.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host -snapshot
 ```
 
-(vm) build needed binaries for cloud on freebsd vm:
+(vm) build needed binaries for SyzPilot on freebsd vm:
 ```sh
 cd /root
 git clone https://github.com/google/syzkaller && cd syzkaller
 git checkout ac3c71e7
-git apply /root/cloud/patch/syzkaller/freebsd.patch /root/cloud/patch/syzkaller/openbsd.patch
+git apply /root/SyzPilot/patch/syzkaller/freebsd.patch /root/SyzPilot/patch/syzkaller/openbsd.patch
 gmake target
 ```
 
@@ -1209,11 +1210,11 @@ poweroff
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=$EXPERIMENT_ROOT/images/openbsd/dev.qcow2,format=qcow2 -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
 ```
 
-(vm) build needed binaries for cloud on freebsd vm:
+(vm) build needed binaries for SyzPilot on freebsd vm:
 ```sh
 git clone https://github.com/google/syzkaller && cd syzkaller
 git checkout ac3c71e7
-git apply /root/cloud/patch/syzkaller/freebsd.patch /root/cloud/patch/syzkaller/openbsd.patch
+git apply /root/SyzPilot/patch/syzkaller/freebsd.patch /root/SyzPilot/patch/syzkaller/openbsd.patch
 gmake target
 ```
 
@@ -1246,9 +1247,9 @@ make target TARGETOS=netbsd SOURCEDIR=$EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5 CC
 cd $EXPERIMENT_ROOT/fuzzer
 git clone https://github.com/ise-uiuc/KernelGPT
 cd KernelGPT && git checkout e3464d23b8d59ffffb1bd5b2f7100c102c48bb3d
-git apply -3 $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGPT/repo.patch
+git apply -3 $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/KernelGPT/repo.patch
 git submodule update --init --depth 1 --progress syzkaller
-git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGPT/specs/linux-v6.7-kernel-gpt-4.patch
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/KernelGPT/specs/linux-v6.7-kernel-gpt-4.patch
 make -C syzkaller all
 mv syzkaller/bin bin-kern && cp -r bin-kern bin-subsys
 ```
@@ -1262,18 +1263,18 @@ mv syzkaller/bin bin-kern && cp -r bin-kern bin-subsys
 cd $EXPERIMENT_ROOT/fuzzer
 git clone https://github.com/ise-uiuc/KernelGPT KernelGEM
 cd KernelGEM && git checkout e3464d23b8d59ffffb1bd5b2f7100c102c48bb3d
-git apply -3 $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGEM/repo.patch
+git apply -3 $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/KernelGEM/repo.patch
 git submodule update --init --depth 1 --progress syzkaller
 
 # bin-kern
-git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGEM/specs/linux-v6.18-kernel-gemini-3-flash-preview.patch
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/KernelGEM/specs/linux-v6.18-kernel-gemini-3-flash-preview.patch
 make -C syzkaller all
 mv syzkaller/bin bin-kern
 
 # bin-subsys
 git -C syzkaller checkout .
 git -C syzkaller clean -fdx
-git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/KernelGEM/specs/linux-v6.18-subsystems-gemini-3-flash-preview.patch
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/KernelGEM/specs/linux-v6.18-subsystems-gemini-3-flash-preview.patch
 make -C syzkaller all
 mv syzkaller/bin bin-subsys
 ```
@@ -1285,18 +1286,18 @@ mv syzkaller/bin bin-subsys
 (host) directly use generated specs:
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/SyzDescribe
-git apply -3 $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzDescribe/repo.patch
+git apply -3 $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/SyzDescribe/repo.patch
 git submodule update --init --recursive
 
 # bin-kern
-git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzDescribe/specs/linux-v6.18-kernel.patch
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/SyzDescribe/specs/linux-v6.18-kernel.patch
 make -C syzkaller all
 mv syzkaller/bin bin-kern
 
 # bin-subsys
 git -C syzkaller checkout .
 git -C syzkaller clean -fdx
-git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzDescribe/specs/linux-v6.18-subsystems.patch
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/SyzDescribe/specs/linux-v6.18-subsystems.patch
 make -C syzkaller all
 mv syzkaller/bin bin-subsys
 ```
@@ -1308,18 +1309,18 @@ mv syzkaller/bin bin-subsys
 (host) directly use generated specs:
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/SyzGenPlusPlus
-git apply -3 $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzGenPlusPlus/repo.patch
+git apply -3 $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/SyzGenPlusPlus/repo.patch
 git submodule update --init --recursive
 
 # bin-kern
-git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzGenPlusPlus/specs/linux-v6.18-kernel.patch
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/SyzGenPlusPlus/specs/linux-v6.18-kernel.patch
 make -C syzkaller all
 mv syzkaller/bin bin-kern
 
 # bin-subsys
 git -C syzkaller checkout .
 git -C syzkaller clean -fdx
-git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzGenPlusPlus/specs/linux-v6.18-subsystems.patch
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/SyzGenPlusPlus/specs/linux-v6.18-subsystems.patch
 make -C syzkaller all
 mv syzkaller/bin bin-subsys
 ```
@@ -1331,18 +1332,18 @@ mv syzkaller/bin bin-subsys
 (host) directly use generated specs:
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/SyzSpec
-git apply -3 $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzSpec/repo.patch
+git apply -3 $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/SyzSpec/repo.patch
 git submodule update --init --recursive
 
 # bin-kern
-git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzSpec/specs/linux-v6.18-kernel.patch
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/SyzSpec/specs/linux-v6.18-kernel.patch
 make -C syzkaller all
 mv syzkaller/bin bin-kern
 
 # bin-subsys
 git -C syzkaller checkout .
 git -C syzkaller clean -fdx
-git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzSpec/specs/linux-v6.18-kernel.patch
+git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/SyzSpec/specs/linux-v6.18-kernel.patch
 make -C syzkaller all
 mv syzkaller/bin bin-subsys
 ```
@@ -1364,5 +1365,5 @@ echo "EXPERIMENT_ROOT_CONTAINER=[MOUNT_POINT_IN_CONTAINER]" >> compose.env
 
 (host) Finally, we can perfom fuzzing, for example:
 ```bash
-docker compose --env-file ./compose.env -f $EXPERIMENT_ROOT/fuzzer/cloud/experiment/docker-compose/compose.cloud.yaml up linux-v6.18-kernel --scale linux-v6.18-kernel=5 -d
+docker compose --env-file ./compose.env -f $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/docker-compose/compose.SyzPilot.yaml up linux-v6.18-kernel --scale linux-v6.18-kernel=5 -d
 ```
