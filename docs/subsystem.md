@@ -67,7 +67,7 @@ jq -s 'add' configs/fuzz/linux/kernel.cfg configs/fuzz/linux/ocfs2.cfg > $WORKDI
 
 extract const:
 ```bash
-ls sys/linux/cloud*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$KERNSRC -os=linux -arch=amd64
+ls sys/linux/gen*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$KERNSRC -os=linux -arch=amd64
 ```
 
 # how to re-generate specs for other subsystem?
