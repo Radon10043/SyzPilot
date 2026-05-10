@@ -166,7 +166,7 @@ Integrate specs with syzkaller:
 cd $SYZPILOT/syzkaller
 cp ../workdir/refactored/* sys/linux
 make bin/syz-extract
-ls sys/linux/cloud*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$KERNSRC -os=linux -arch=amd64
+ls sys/linux/gen*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$KERNSRC -os=linux -arch=amd64
 make generate
 ```
 
@@ -275,6 +275,8 @@ Please see [subsystem.md](docs/subsystem.md#how-to-re-generate-specs-for-other-s
 ## Trophies
 
 To ensure anonymity, we will release all links after the paper is accepted.
+
+**NOTE:** We will update trophies as soon as new specs synthesized by SyzPilot are merged into syzkaller repository or related issues are assigned CVEs.
 
 ### Merged specifications
 
