@@ -2,7 +2,9 @@
 
 Thank you for browsing the SyzPilot repository. This document details steps about using SyzPilot to synthesize specifications and run fuzzing for Linux kernel, it also support [FreeBSD](docs/freebsd.md), [OpenBSD](docs/openbsd.md), and [NetBSD](docs/netbsd.md). Some commands in the document are only applicable during anonymous reviewing, which may differ from those in the release version.
 
-**NOTE:** "cloud" is an alias for SyzPilot. If "cloud" appears in the documentation, you can simply replace it with "SyzPilot" :)
+**NOTE1:** Documents are still under improvement, some content may have typos. We are doing our best to review and fix them :)
+**NOTE2:** "cloud" is an alias for SyzPilot. If "cloud" appears in the documentation, you can simply replace it with "SyzPilot".
+**NOTE3:** We are considering how to share all intermediate data (~30G, including LLM query records, fuzzing results, etc.), OneDrive or Google Drive might be good ideas.
 
 Please replace the following variables according to the actual situation:
 - `$SYZPILOT`: directory for saveing SyzPilot source.
@@ -142,7 +144,7 @@ cd $SYZPILOT
 ./bin/refactor -indir=./workdir/specs -outdir=./workdir/refactored
 ```
 
-(OptionaL) Add `meta arches["amd64"]` to limit the scope of the specs:
+(Optional) Add `meta arches["amd64"]` to limit the scope of the specs:
 ```bash
 sed -i '1i meta arches["amd64"]' workdir/refactored/*.txt
 ```
