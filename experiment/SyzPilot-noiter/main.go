@@ -1,14 +1,14 @@
-// this variant disable kernel database querying during spec generate, only give
-// the reference to and corresponding code to the LLM, and prompt it to generate
-// syscall specs from scratch. The source is duplicated from src/generator/main.go
-// on be85413e. Please note that the implementation of this variant is very dirty
-// and I only use it for quick testing. Please run this program under root
-// directory of cloud :)
+// this variant disable iterate generation during spec generate, it give
+// the reference to LLM and prompt it to get all related elements via tool calling.
+// The source of these elements are directly embedded in prompt and LLM is prompted
+// to generate syscall specs. The source of this file is duplicated from
+// src/generator/main.go on be85413e. Please note that the implementation of this
+// variant is very dirty and I only use it for quick testing. Please run this
+// program under root directory of SyzPilot :)
 
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -21,15 +21,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Radon10043/cloud/src/pkg/agent"
-	"github.com/Radon10043/cloud/src/pkg/check"
-	"github.com/Radon10043/cloud/src/pkg/database"
-	osu "github.com/Radon10043/cloud/src/pkg/osutil"
-	"github.com/Radon10043/cloud/src/pkg/pool"
-	"github.com/Radon10043/cloud/src/pkg/stage"
-	myTools "github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/SyzPilot/src/pkg/agent"
+	"github.com/Radon10043/SyzPilot/src/pkg/check"
+	"github.com/Radon10043/SyzPilot/src/pkg/database"
+	"github.com/Radon10043/SyzPilot/src/pkg/pool"
+	"github.com/Radon10043/SyzPilot/src/pkg/stage"
+	"github.com/Radon10043/SyzPilot/src/pkg/utils"
 	"github.com/joho/godotenv"
-	"github.com/otiai10/copy"
+	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"
 )
 
@@ -46,24 +45,13 @@ type ProgConfig struct {
 	Db    string
 
 	// kernel configs
-	Os         string
-	Outdir     string
-	ExtractBin string
-	CheckBin   string
-	Kernel     string
-	Ref        string
-	Resume     bool
-	Prefix     string
-
-	// spec generation configs
-	Sysdir string
+	Outdir string
+	Ref    string
+	Resume bool
+	Prefix string
 
 	// prompt configs
-	OtlSysPrompt string
-	GenSysPrompt string
-	FixSysPrompt string
-	MaxFix       int
-	MaxRetry     int
+	MaxRetry int
 
 	// misc configs
 	Jobs int
@@ -93,41 +81,13 @@ func main() {
 	stap := safeToAbsPath{err: nil}
 	cfg.Db = stap.toAbsPath(cfg.Db)
 	cfg.Outdir = stap.toAbsPath(cfg.Outdir)
-	cfg.Kernel = stap.toAbsPath(cfg.Kernel)
-	cfg.Sysdir = stap.toAbsPath(cfg.Sysdir)
 	cfg.Ref = stap.toAbsPath(cfg.Ref)
 
 	// predefined values
 	cfg.Env = stap.toAbsPath("./.env")
-	cfg.ExtractBin = stap.toAbsPath("./bin/syz-extract")
-	cfg.CheckBin = stap.toAbsPath("./bin/syz-check")
 	cfg.Prefix = ""
-	cfg.Os = "linux"
 	cfg.Resume = true
-	cfg.MaxFix = 5
 	cfg.MaxRetry = 5
-	promptHelper := func(filesWithComma string) string {
-		files := strings.SplitSeq(filesWithComma, ",")
-		var absFiles strings.Builder
-		for f := range files {
-			absFiles.WriteString(stap.toAbsPath(f) + ",")
-		}
-		return strings.TrimRight(absFiles.String(), ",")
-	}
-	cfg.OtlSysPrompt = promptHelper(
-		"./data/prompts/outline/instruction.md," +
-			"./data/prompts/outline/example_media.md," +
-			"./data/prompts/outline/example_ppp.md",
-	)
-	cfg.GenSysPrompt = promptHelper(
-		"./data/prompts/generate/instruction.md," +
-			"./data/prompts/generate/example_media.md," +
-			"./data/prompts/generate/example_ppp.md",
-	)
-	cfg.FixSysPrompt = promptHelper(
-		"./data/prompts/fix/instruction.md," +
-			"./data/prompts/fix/example_v4l2.md",
-	)
 
 	// check validity of flags
 	if err := checkConfig(cfg); err != nil {
@@ -160,22 +120,6 @@ func main() {
 	}
 	log.Printf("Queue length: %d\n", len(queue))
 
-	// construct system prompt map, we have checked the validity of system prompt file(s) in
-	// checkConfig function, so it is okay to ignore error here
-	sysPromptMap := make(map[string]string)
-	spmWrtFunc := func(filesWithComma string, key string) {
-		files := strings.SplitSeq(filesWithComma, ",")
-		var sb strings.Builder
-		for file := range files {
-			data, _ := os.ReadFile(file)
-			repdata := bytes.ReplaceAll(data, []byte("{OS}"), []byte(cfg.Os))
-			sb.WriteString(string(repdata) + "\n")
-		}
-		sysPromptMap[key] = sb.String()
-	}
-	spmWrtFunc(cfg.OtlSysPrompt, "outline")
-	spmWrtFunc(cfg.GenSysPrompt, "generate")
-	spmWrtFunc(cfg.FixSysPrompt, "fix")
 	if cfg.MaxRetry == -1 {
 		cfg.MaxRetry = math.MaxInt
 	}
@@ -191,7 +135,7 @@ func main() {
 		jobWg.Add(1)
 		go func(tid int) {
 			defer jobWg.Done()
-			writeJob(tid, cfg, jobs, ress)
+			writeJob(tid, &db, cfg, jobs, ress)
 		}(w)
 	}
 	resWg.Add(1)
@@ -205,9 +149,8 @@ func main() {
 	// start to dispatch write jobs
 	for i, entry := range queue {
 		jobs <- WriteJob{
-			Progress:     fmt.Sprintf("%d/%d", i+1, len(queue)),
-			Entry:        entry,
-			SysPromptMap: &sysPromptMap,
+			Progress: fmt.Sprintf("%d/%d", i+1, len(queue)),
+			Entry:    entry,
 		}
 	}
 	close(jobs)
@@ -233,8 +176,6 @@ func checkEmptyConfig(cfg *ProgConfig) error {
 	}
 	check(cfg.Db, "-db")
 	check(cfg.Outdir, "-outdir")
-	check(cfg.Kernel, "-kernel")
-	check(cfg.Sysdir, "-sysdir")
 	check(cfg.Ref, "-ref")
 	if h.err != nil {
 		return h.err
@@ -293,8 +234,6 @@ func setConfigs() *ProgConfig {
 	flag.StringVar(&cfg.Model, "model", "gemini-2.5-flash", "The model to use")
 	flag.StringVar(&cfg.Db, "db", "", "Path to the database file")
 	flag.StringVar(&cfg.Outdir, "outdir", "", "Path to the output directory")
-	flag.StringVar(&cfg.Kernel, "kernel", "", "Path to kernel used for spec extraction")
-	flag.StringVar(&cfg.Sysdir, "sysdir", "./syzkaller/sys/", "Path to the sys directory (syzkaller/sys like structure)")
 	flag.StringVar(&cfg.Ref, "ref", "", "Path to the reference entries file")
 	flag.IntVar(&cfg.Jobs, "jobs", 1, "Maximum number of parallel jobs.")
 	flag.Parse()
@@ -319,21 +258,9 @@ func checkConfig(cfg *ProgConfig) error {
 	}
 	fileExistHelperFunc(cfg.Env, "-env")
 	fileExistHelperFunc(cfg.Db, "-db")
-	fileExistHelperFunc(cfg.Sysdir, "-sysdir")
 	if cfg.Ref != "" {
 		fileExistHelperFunc(cfg.Ref, "-ref")
 	}
-
-	// -os
-	osType, err := osu.ParseOsType(cfg.Os)
-	if err != nil {
-		return fmt.Errorf("-os: %v", err)
-	}
-
-	// -kernel
-	fileExistHelperFunc(cfg.Kernel, "-kernel")
-	kernelObjPath := osType.KernFilePath(cfg.Kernel)
-	fileExistHelperFunc(kernelObjPath, "-kernel")
 
 	if scfe.err != nil {
 		return scfe.err
@@ -348,10 +275,9 @@ func checkConfig(cfg *ProgConfig) error {
 }
 
 type WriteJob struct {
-	Progress     string             // a prefix to indicate progress, e.g., "1/100"
-	Entry        database.Entry     // the database entry (variable or function) to write spec for
-	SysPromptMap *map[string]string // system prompt map
-	Db           *database.Database // database instance
+	Progress string             // a prefix to indicate progress, e.g., "1/100"
+	Entry    database.Entry     // the database entry (variable or function) to write spec for
+	Db       *database.Database // database instance
 }
 
 type WriteJobRes struct {
@@ -361,63 +287,13 @@ type WriteJobRes struct {
 }
 
 // writeJob start a job to write syscall spec for a database entry (variable or function)
-func writeJob(tid int, cfg *ProgConfig, wjs <-chan WriteJob, wjr chan<- WriteJobRes) {
+func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJob, wjr chan<- WriteJobRes) {
 	logger := log.New(os.Stdout, "[T"+strconv.Itoa(tid)+"] ", log.LstdFlags|log.Lmsgprefix)
 	res := WriteJobRes{
 		Tid:   tid,
 		Entry: nil,
 		Err:   nil,
 	}
-
-	// create a SpecCheck instances
-	wd := filepath.Join(cfg.Outdir, "instance-"+strconv.Itoa(tid))
-	if _, err := os.Stat(wd); err == nil { // remove existing workdir and create a fresh one
-		if err = os.RemoveAll(wd); err != nil {
-			logger.Printf("failed to remove existing workdir: %v\n", err)
-			res.Err = err
-			wjr <- res
-			return
-		}
-	}
-	if err := os.MkdirAll(wd, 0755); err != nil {
-		logger.Printf("failed to create workdir: %v\n", err)
-		res.Err = err
-		wjr <- res
-		return
-	}
-	logger.Printf("copying extract kernel to workdir (%s) ...\n", wd)
-	// TODO: run make distclean under kernel-extract first?
-	if err := copy.Copy(cfg.Kernel, filepath.Join(wd, "kernel-extract")); err != nil {
-		logger.Printf("failed to copy extract kernel: %v\n", err)
-		res.Err = err
-		wjr <- res
-		return
-	}
-	logger.Printf("copying check kernel to workdir (%s) ...\n", wd)
-	if err := copy.Copy(cfg.Kernel, filepath.Join(wd, "kernel-check")); err != nil {
-		logger.Printf("failed to copy check kernel: %v\n", err)
-		res.Err = err
-		wjr <- res
-		return
-	}
-	osType, err := osu.ParseOsType(cfg.Os)
-	if err != nil {
-		logger.Printf("failed to parse OS type: %v\n", err)
-		res.Err = err
-		wjr <- res
-		return
-	}
-	sc := check.NewSpecCheck(
-		check.WithOs(osType),
-		check.WithSyzExtract(cfg.ExtractBin),
-		check.WithSyzCheck(cfg.CheckBin),
-		check.WithKernelForExtract(filepath.Join(wd, "kernel-extract")),
-		check.WithKernelForCheck(filepath.Join(wd, "kernel-check")),
-		check.WithWorkdir(wd),
-		check.WithSysdir(cfg.Sysdir),
-	)
-	sc.SetupWorkdir()
-	defer os.RemoveAll(wd)
 
 	// create an agent
 	llm, err := openai.New(
@@ -431,14 +307,12 @@ func writeJob(tid int, cfg *ProgConfig, wjs <-chan WriteJob, wjr chan<- WriteJob
 		wjr <- res
 		return
 	}
-	kAgent := agent.NewAgentWithTools(nil, llm, map[string]myTools.ToolExec{})
 
 	for wj := range wjs {
 		var (
 			logPrefix  = fmt.Sprintf("[T%d][%s]", tid, wj.Progress)
 			specPrefix = ""
 			entry      = wj.Entry
-			spm        = wj.SysPromptMap
 		)
 		res.Entry = entry
 
@@ -456,7 +330,7 @@ func writeJob(tid int, cfg *ProgConfig, wjs <-chan WriteJob, wjr chan<- WriteJob
 			wjr <- res
 			continue
 		}
-		spec, err := writeSpec(kAgent, sc, spm, entry, cfg, specPrefix, logPrefix)
+		spec, err := writeSpec(db, llm, nil, entry, cfg, specPrefix, logPrefix)
 		for j := 0; j < cfg.MaxRetry && err != nil; j++ {
 			logger.Printf(
 				"Retrying to write spec for %s, err=%s (attempt %d/%d) ...\n",
@@ -465,7 +339,7 @@ func writeJob(tid int, cfg *ProgConfig, wjs <-chan WriteJob, wjr chan<- WriteJob
 			// sleep for a while before write spec again to avoid frequent requests
 			slpTime := rand.Int31n(11) + 10
 			time.Sleep(time.Duration(slpTime) * time.Second)
-			spec, err = writeSpec(kAgent, sc, spm, entry, cfg, specPrefix, logPrefix)
+			spec, err = writeSpec(db, llm, nil, entry, cfg, specPrefix, logPrefix)
 		}
 		if err != nil {
 			logger.Printf("failed to write spec for %s: %v\n", entry.GetName(), err)
@@ -485,13 +359,6 @@ func writeJob(tid int, cfg *ProgConfig, wjs <-chan WriteJob, wjr chan<- WriteJob
 		}
 		logger.Printf("Spec for %s has been generated successfully.\n", entry.GetName())
 
-		// restore workdir for next write job, if we cannot restore workdir, subsequent jobs cannot be executed correctly,
-		// so we set res.Err and return directly
-		if err = sc.RestoreWorkdir(); err != nil {
-			logger.Printf("failed to restore spec check workdir: %v\n", err)
-			wjr <- res
-			return
-		}
 		wjr <- res
 	}
 }
@@ -499,9 +366,9 @@ func writeJob(tid int, cfg *ProgConfig, wjs <-chan WriteJob, wjr chan<- WriteJob
 // writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a database entry,
 // return the final syzlang spec and whether it is valid
 func writeSpec(
-	kAgent *agent.Agent,
+	db *database.Database,
+	llm *openai.LLM,
 	sc *check.SpecCheck,
-	sysPromptMap *map[string]string,
 	entry database.Entry,
 	cfg *ProgConfig,
 	specPrefix string,
@@ -514,7 +381,7 @@ func writeSpec(
 		Next:       "outline",
 		SpecPrefix: specPrefix,
 		LogPrefix:  logPrefix,
-		MaxFix:     cfg.MaxFix,
+		MaxFix:     0,
 		Scheck:     sc,
 		Tqueue:     nil,
 		TqueuePath: filepath.Join(specdir, ".tqueue"),
@@ -531,23 +398,6 @@ func writeSpec(
 		return "", fmt.Errorf("failed to create workdir: %v", err)
 	}
 
-	// init SyzPool with existing specs in sysdir
-	specfs, err := filepath.Glob(filepath.Join(cfg.Sysdir, sc.Os.String(), "*.txt"))
-	if err != nil {
-		return "", fmt.Errorf("failed to glob spec files in sysdir: %v", err)
-	}
-	for _, specf := range specfs {
-		specb, err := os.ReadFile(specf)
-		if err != nil {
-			return "", fmt.Errorf("failed to read spec file %s: %v", specf, err)
-		}
-		tmpPool, err := pool.NewSpecPoolFromSyzlang(string(specb))
-		if err != nil {
-			return "", fmt.Errorf("failed to convert syzlang to SpecPool for file %s: %v", specf, err)
-		}
-		sh.SyzPool.Merge(tmpPool)
-	}
-
 	// if resume is enabled, recover existing progress
 	if cfg.Resume {
 		if err = sh.RecoverProgress(); err != nil {
@@ -555,50 +405,87 @@ func writeSpec(
 		}
 	} // otherwise start from scratch
 
-	// start the write spec loop, limit the number of iterations to avoid infinite loop
-	// TODO: for some long tasks, 100 iterations may not be enough, consider a more flexible
-	// strategy to determine whether to stop the loop
-	for range 100 {
-		sh.UpdateNextStep()
-		if sh.Next == "complete" {
-			sh.Tqueue.Clear()
-			sh.Spool.Clear()
-			break
-		}
-		if err := execWriteStep(kAgent, sysPromptMap, entry, sh); err != nil {
-			return "", fmt.Errorf("failed to exec write step: %v", err)
-		}
-		if err := sh.WriteCurrStat(); err != nil {
-			return "", fmt.Errorf("failed to write current state: %v", err)
-		}
-	}
-	if err = sh.WriteCurrStat(); err != nil {
-		return "", fmt.Errorf("failed to write current state: %v", err)
-	}
-
-	if sh.Next != "complete" {
-		return "", fmt.Errorf("failed to complete spec writing after max iterations")
+	// start write spec
+	spec, err := execWriteStep(db, llm, entry, sh)
+	if err != nil {
+		return "", fmt.Errorf("failed to exec write step: %v", err)
 	}
 
 	// Only return specs generated by agent
-	return sh.Pool.Syzlang(pool.WithValidComment(true)), nil
+	return spec, nil
 }
 
 // execWriteStep execute one step of the write spec process according to sh.Next
 func execWriteStep(
-	kAgent *agent.Agent, sysPromptMap *map[string]string, entry database.Entry, sh *stage.StageHelper,
-) error {
-	logger := log.New(os.Stdout, sh.LogPrefix+"["+entry.GetName()+"]["+sh.Next+"] ", log.LstdFlags|log.Lmsgprefix)
-	switch sh.Next {
-	case "outline":
-		return stage.ExecOutlineStep(kAgent, (*sysPromptMap)["outline"], entry, logger, sh)
-	case "generate":
-		return stage.ExecGenerateStep(kAgent, (*sysPromptMap)["generate"], entry, logger, sh)
-	case "fix":
-		return stage.ExecFixStep(kAgent, (*sysPromptMap)["fix"], logger, sh)
-	case "complete":
-	default:
-		return fmt.Errorf("unknown next step: %s", sh.Next)
+	db *database.Database, llm *openai.LLM, entry database.Entry, sh *stage.StageHelper,
+) (string, error) {
+	// retrieve all related elements first, then prompt LLM to generate specs based on these elements
+	logger := log.New(os.Stdout, sh.LogPrefix+"["+entry.GetName()+"]", log.LstdFlags|log.Lmsgprefix)
+
+	// we dont exit program if retrieve failed, instead, we check agent's message to extract related elements
+	logger.Printf("Retrieving related elements ...\n")
+	var relaElems strings.Builder
+	kAgent := agent.NewAgent(db, llm)
+	err := retrieveRelaElems(kAgent, entry, logger)
+	if err != nil {
+		fmt.Printf("error occured during retrieving related elements: %v\n", err)
+	}
+	for _, msg := range kAgent.Messages {
+		if msg.Role != "tool" {
+			continue
+		}
+		relaElems.WriteString(msg.Parts[0].(llms.ToolCallResponse).Content + "\n\n")
+	}
+	if err = sh.SaveQueryMessages(kAgent, "retrieve-"); err != nil {
+		return "", fmt.Errorf("failed to save query messages after retrieving related elements: %v", err)
+	}
+	kAgent.Purge()
+
+	// prompt LLM to generate spec based on retrieved elements
+	logger.Printf("Generating spec based on retrieved related elements ...\n")
+	kAgent = agent.NewAgentWithTools(nil, llm, nil)
+	prompt := fmt.Sprintf("Please generate syzlang spec based on following related elements. The specification should be enclosed in code fences and the language should be syzlang.:\n```c\n%s\n\n%s\n```\n", entry.GetCode(), relaElems.String())
+	kAgent.AddHumanMessage(prompt)
+	resp, err := kAgent.Query()
+	if err != nil {
+		return "", fmt.Errorf("failed to query agent for spec generation: %v", err)
+	}
+	logger.Printf("Spec generation completed.\n")
+	if err = sh.SaveQueryMessages(kAgent, "generate-"); err != nil {
+		return "", fmt.Errorf("failed to save query messages after generating spec: %v", err)
+	}
+	kAgent.Purge()
+
+	spec, found := utils.ExtractFirstCodeBlock(resp.Choices[0].Content, "syzlang")
+	if !found {
+		return "", fmt.Errorf("failed to extract spec from agent response")
+	}
+
+	return spec, nil
+}
+
+func retrieveRelaElems(kAgent *agent.Agent, entry database.Entry, logger *log.Logger) error {
+	prompt := fmt.Sprintf(
+		"please list all elements' name that related to the system calls based on following reference:"+
+			"```c\n%s\n```\n",
+		entry.GetCode(),
+	)
+	kAgent.AddHumanMessage(prompt)
+	for {
+		resp, err := kAgent.Query()
+		if err != nil {
+			return fmt.Errorf("failed to query agent: %v", err)
+		}
+		if len(resp.Choices[0].ToolCalls) == 0 {
+			break
+		}
+		for _, tc := range resp.Choices[0].ToolCalls {
+			logger.Printf("Tool call: %s\n", tc.FunctionCall)
+		}
+		err = kAgent.ExecTools()
+		if err != nil {
+			return fmt.Errorf("failed to execute tools: %v", err)
+		}
 	}
 	return nil
 }
