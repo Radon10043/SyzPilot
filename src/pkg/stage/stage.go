@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Radon10043/cloud/src/pkg/agent"
-	"github.com/Radon10043/cloud/src/pkg/check"
-	"github.com/Radon10043/cloud/src/pkg/pool"
-	"github.com/Radon10043/cloud/src/pkg/queue"
+	"github.com/Radon10043/SyzPilot/src/pkg/agent"
+	"github.com/Radon10043/SyzPilot/src/pkg/check"
+	"github.com/Radon10043/SyzPilot/src/pkg/pool"
+	"github.com/Radon10043/SyzPilot/src/pkg/queue"
 )
 
 // StageHelper is a helper struct to hold intermediate results during spec writing

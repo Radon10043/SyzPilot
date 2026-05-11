@@ -6,8 +6,8 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/Radon10043/cloud/src/pkg/check"
-	osu "github.com/Radon10043/cloud/src/pkg/osutil"
+	"github.com/Radon10043/SyzPilot/src/pkg/check"
+	osu "github.com/Radon10043/SyzPilot/src/pkg/osutil"
 	"github.com/joho/godotenv"
 )
 
@@ -24,7 +24,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	wd, err := os.MkdirTemp(os.TempDir(), "cloud-*")
+	wd, err := os.MkdirTemp(os.TempDir(), "test-*")
 	if err != nil {
 		panic(err)
 	}

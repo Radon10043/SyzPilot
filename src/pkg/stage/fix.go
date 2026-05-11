@@ -9,11 +9,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Radon10043/cloud/src/pkg/agent"
-	"github.com/Radon10043/cloud/src/pkg/check"
-	"github.com/Radon10043/cloud/src/pkg/pool"
-	"github.com/Radon10043/cloud/src/pkg/queue"
-	"github.com/Radon10043/cloud/src/pkg/utils"
+	"github.com/Radon10043/SyzPilot/src/pkg/agent"
+	"github.com/Radon10043/SyzPilot/src/pkg/check"
+	"github.com/Radon10043/SyzPilot/src/pkg/pool"
+	"github.com/Radon10043/SyzPilot/src/pkg/queue"
+	"github.com/Radon10043/SyzPilot/src/pkg/utils"
 	"github.com/tmc/langchaingo/llms"
 )
 

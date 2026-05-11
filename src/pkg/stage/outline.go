@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/Radon10043/cloud/src/pkg/agent"
-	"github.com/Radon10043/cloud/src/pkg/database"
-	"github.com/Radon10043/cloud/src/pkg/queue"
-	"github.com/Radon10043/cloud/src/pkg/utils"
+	"github.com/Radon10043/SyzPilot/src/pkg/agent"
+	"github.com/Radon10043/SyzPilot/src/pkg/database"
+	"github.com/Radon10043/SyzPilot/src/pkg/queue"
+	"github.com/Radon10043/SyzPilot/src/pkg/utils"
 	"github.com/tmc/langchaingo/llms"
 )
 

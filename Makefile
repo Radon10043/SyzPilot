@@ -47,10 +47,10 @@ analyzer: prepare
 		$(LLVM_LIBS)
 
 generator: prepare
-	$(GO) build $(GOFLAGS) -o bin/generator github.com/Radon10043/cloud/src/generator/
+	$(GO) build $(GOFLAGS) -o bin/generator github.com/Radon10043/SyzPilot/src/generator/
 
 minitask: prepare
-	$(GO) build $(GOFLAGS) -o bin/minitask github.com/Radon10043/cloud/src/minitask/
+	$(GO) build $(GOFLAGS) -o bin/minitask github.com/Radon10043/SyzPilot/src/minitask/
 
 syz-check: prepare
 	cd syzkaller/ && \
@@ -61,15 +61,14 @@ syz-extract: prepare
 	$(GO) build $(GOFLAGS) -o $(PWD)/bin/syz-extract $(PWD)/syzkaller/sys/syz-extract/
 
 pool2syz: prepare
-	$(GO) build $(GOFLAGS) -o bin/pool2syz github.com/Radon10043/cloud/src/pool2syz/
+	$(GO) build $(GOFLAGS) -o bin/pool2syz github.com/Radon10043/SyzPilot/src/pool2syz/
 
 refactor: prepare
-	$(GO) build $(GOFLAGS) -o bin/refactor github.com/Radon10043/cloud/src/refactor/
+	$(GO) build $(GOFLAGS) -o bin/refactor github.com/Radon10043/SyzPilot/src/refactor/
 
 rmunused: prepare
-	$(GO) build $(GOFLAGS) -o bin/rmunused github.com/Radon10043/cloud/src/rmunused/
+	$(GO) build $(GOFLAGS) -o bin/rmunused github.com/Radon10043/SyzPilot/src/rmunused/
 
 ablation: prepare
-	$(GO) build $(GOFLAGS) -o bin/generator-nodb github.com/Radon10043/cloud/experiment/cloud-nodb/
-	$(GO) build $(GOFLAGS) -o bin/generator-noiter github.com/Radon10043/cloud/experiment/cloud-noiter/
-	$(GO) build $(GOFLAGS) -o bin/generator-trimtool github.com/Radon10043/cloud/experiment/cloud-trimtool/
+	$(GO) build $(GOFLAGS) -o bin/generator-nodb github.com/Radon10043/SyzPilot/experiment/SyzPilot-nodb/
+	$(GO) build $(GOFLAGS) -o bin/generator-noiter github.com/Radon10043/SyzPilot/experiment/SyzPilot-noiter/

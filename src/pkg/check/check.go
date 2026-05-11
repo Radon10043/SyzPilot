@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	osu "github.com/Radon10043/cloud/src/pkg/osutil"
-	"github.com/Radon10043/cloud/src/pkg/utils"
+	osu "github.com/Radon10043/SyzPilot/src/pkg/osutil"
+	"github.com/Radon10043/SyzPilot/src/pkg/utils"
 	"github.com/otiai10/copy"
 )
 

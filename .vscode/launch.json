@@ -84,7 +84,7 @@
             "program": "${workspaceFolder}/experiment/viz/fuzz/main.go",
             "args": [
                 "-expdir=${workspaceFolder}/workdir/experiment",
-                "-master=cloud",
+                "-master=SyzPilot",
             ],
         },
         {
@@ -92,7 +92,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "github.com/Radon10043/cloud/src/refactor",
+            "program": "github.com/Radon10043/SyzPilot/src/refactor",
             "args": [
                 "-indir=${workspaceFolder}/workdir/specs/linux-v6.18-kernel-gemini-3-flash-preview/specs",
                 "-outdir=${workspaceFolder}/workdir/specs/linux-v6.18-kernel-gemini-3-flash-preview/refactor",
@@ -103,7 +103,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "github.com/Radon10043/cloud/src/generator",
+            "program": "github.com/Radon10043/SyzPilot/src/generator",
             "args": [
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/netbsd.db",
@@ -120,7 +120,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "github.com/Radon10043/cloud/src/minitask",
+            "program": "github.com/Radon10043/SyzPilot/src/minitask",
             "args": [
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/netbsd.db",
@@ -135,7 +135,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "github.com/Radon10043/cloud/src/minitask",
+            "program": "github.com/Radon10043/SyzPilot/src/minitask",
             "args": [
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/openbsd.db",
@@ -150,7 +150,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "github.com/Radon10043/cloud/src/minitask",
+            "program": "github.com/Radon10043/SyzPilot/src/minitask",
             "args": [
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/freebsd.db",
@@ -165,7 +165,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "github.com/Radon10043/cloud/src/minitask",
+            "program": "github.com/Radon10043/SyzPilot/src/minitask",
             "args": [
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/linux.db",
@@ -180,7 +180,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "github.com/Radon10043/cloud/src/generator",
+            "program": "github.com/Radon10043/SyzPilot/src/generator",
             "args": [
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/linux.db",
@@ -198,7 +198,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "github.com/Radon10043/cloud/src/generator",
+            "program": "github.com/Radon10043/SyzPilot/src/generator",
             "args": [
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/linux.db",

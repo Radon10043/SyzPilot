@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/Radon10043/cloud/src/pkg/ast"
-	"github.com/Radon10043/cloud/src/pkg/pool"
+	"github.com/Radon10043/SyzPilot/src/pkg/ast"
+	"github.com/Radon10043/SyzPilot/src/pkg/pool"
 )
 
 var (

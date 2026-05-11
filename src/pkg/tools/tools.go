@@ -1,7 +1,7 @@
 package tools
 
 import (
-	"github.com/Radon10043/cloud/src/pkg/database"
+	"github.com/Radon10043/SyzPilot/src/pkg/database"
 	"github.com/tmc/langchaingo/llms"
 )
 
