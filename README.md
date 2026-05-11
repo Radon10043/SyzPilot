@@ -272,7 +272,7 @@ Please follow [env-setup.md](experiment/docs/env-setup.md) to setup the evaluati
 
 ## Re-synthesize subsystem specs
 
-Please see [subsystem.md](docs/subsystem.md#how-to-re-generate-specs-for-other-subsystem) for instructions on re-synthesizing specs for a subsystem that already has specs.
+Please see [subsystem.md](docs/subsystem.md#how-to-re-synthesize-specs-for-a-subsystem) for instructions on re-synthesizing specs for a subsystem that already has specs.
 
 ## Trophies
 
