@@ -1,13 +1,13 @@
-# ablation
+# Ablation
 
-**NOTE:** generator-nodb and generator-noiter only support linux kernel, but they are easy to extend to other kernels I think.
+**NOTE:** `generator-nodb` and `generator-noiter` currently support only the Linux kernel, but they should be easy to extend to other kernels.
 
-build:
+Build:
 ```bash
 make ablation
 ```
 
-generator-nodb: disable kernel database, only rely on LLM's inherent knowledge.
+`generator-nodb`: disables the kernel database and relies only on the LLM's inherent knowledge.
 ```bash
 ./bin/generator-nodb \
     -db=./data/database/linux.db \
@@ -19,7 +19,7 @@ generator-nodb: disable kernel database, only rely on LLM's inherent knowledge.
     -jobs=4
 ```
 
-generator-noiter: disable iteration, directly let LLM to generate syscall specs.
+`generator-noiter`: disables iteration and asks the LLM to generate syscall specs directly.
 ```bash
 ./bin/generator-noiter \
     -db=./data/database/linux.db \
