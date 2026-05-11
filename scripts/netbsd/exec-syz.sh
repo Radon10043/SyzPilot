@@ -4,11 +4,11 @@
 # can trigger the specific bug.
 #
 # usage:
-#   REPRO=/path/to/repro.syz SSHKEY=/path/to/freebsd.sshkey $CLOUD/scripts/freebsd/exec-syz.sh
+#   REPRO=/path/to/repro.syz SSHKEY=/path/to/freebsd.sshkey $SYZPILOT/scripts/freebsd/exec-syz.sh
 
 set -e
 
-CLOUD=$(realpath $(dirname $0)/../..)
+SYZPILOT=$(realpath $(dirname $0)/../..)
 
 scp -P 63822 \
     -F /dev/null \
@@ -19,7 +19,7 @@ scp -P 63822 \
     -o ConnectTimeout=10 \
     -i $SSHKEY \
     -v \
-    $CLOUD/syzkaller/bin/netbsd_amd64/* root@localhost:/tmp/
+    $SYZPILOT/syzkaller/bin/netbsd_amd64/* root@localhost:/tmp/
 
 scp -P 63822 \
     -F /dev/null \

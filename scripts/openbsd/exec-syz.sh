@@ -4,11 +4,11 @@
 # can trigger the specific bug.
 #
 # usage:
-#   REPRO=/path/to/repro.syz SSHKEY=/path/to/openbsd.sshkey $CLOUD/scripts/openbsd/exec-syz.sh
+#   REPRO=/path/to/repro.syz SSHKEY=/path/to/openbsd.sshkey $SYZPILOT/scripts/openbsd/exec-syz.sh
 
 set -e
 
-CLOUD=$(realpath $(dirname $0)/../..)
+SYZPILOT=$(realpath $(dirname $0)/../..)
 
 scp -P 56736 \
     -F /dev/null \
@@ -19,7 +19,7 @@ scp -P 56736 \
     -o ConnectTimeout=10 \
     -i $SSHKEY \
     -v \
-    $CLOUD/syzkaller/bin/openbsd_amd64/* root@localhost:/tmp/
+    $SYZPILOT/syzkaller/bin/openbsd_amd64/* root@localhost:/tmp/
 
 scp -P 56736 \
     -F /dev/null \

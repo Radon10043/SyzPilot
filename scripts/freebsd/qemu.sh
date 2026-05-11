@@ -3,7 +3,7 @@
 # qemu command used by syzkaller, for debugging
 #
 # usage:
-#   IMAGE=/path/to/image-under-test.qcow2 $CLOUD/scripts/freebsd/qemu.sh
+#   IMAGE=/path/to/image-under-test.qcow2 $SYZPILOT/scripts/freebsd/qemu.sh
 
 qemu-system-x86_64 \
     -m 16384 \

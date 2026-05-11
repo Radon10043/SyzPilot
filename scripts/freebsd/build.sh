@@ -66,11 +66,11 @@ build_freebsd_on_linux() {
     MAKEOBJDIRPREFIX=$SOURCEDIR/build $BEAR $SOURCEDIR/tools/build/make.py \
         -j $JOBS --cross-bindir=$LLVM_HOME/bin \
         TARGET=$HOSTARCH TARGET_ARCH=$HOSTARCH \
-        buildkernel KERNCONF=CLOUD
+        buildkernel KERNCONF=SYZPILOT
     MAKEOBJDIRPREFIX=$SOURCEDIR/build $SOURCEDIR/tools/build/make.py \
         -j $JOBS --cross-bindir=$LLVM_HOME/bin \
         TARGET=$HOSTARCH TARGET_ARCH=$HOSTARCH \
-        installkernel KERNCONF=CLOUD DESTDIR=$SOURCEDIR/build/dist
+        installkernel KERNCONF=SYZPILOT DESTDIR=$SOURCEDIR/build/dist
 
     # TODO: how to generate compile_commands.json on linux for freebsd?
     if [ $GEN_COMPILE_CMD -eq 1 ]; then
@@ -80,14 +80,14 @@ build_freebsd_on_linux() {
 
 build_freebsd_on_freebsd() {
     cd $SOURCEDIR/sys/$HOSTARCH/conf
-    config CLOUD && cd ../compile/CLOUD
+    config SYZPILOT && cd ../compile/SYZPILOT
     make cleandepend && make depend
     if [ $GEN_COMPILE_CMD -eq 1 ]; then
         compiledb make -n
     fi
     make -j$JOBS
     if [ $GEN_COMPILE_CMD -eq 1 ]; then
-        echo "$SOURCEDIR/sys/$HOSTARCH/conf/compile/CLOUD/compile_commands.json is generated"
+        echo "$SOURCEDIR/sys/$HOSTARCH/conf/compile/SYZPILOT/compile_commands.json is generated"
     fi
     echo "you can run 'make installkernel' under $SOURCEDIR to install the kernel on the machine"
 }
@@ -95,6 +95,6 @@ build_freebsd_on_freebsd() {
 echo "building freebsd kernel on $HOSTOS ..."
 KERNEL_CONFIG_PATH=$(dirname $(realpath $0))/../../configs/kernel/freebsd.config
 cd $SOURCEDIR
-cp $KERNEL_CONFIG_PATH $SOURCEDIR/sys/$HOSTARCH/conf/CLOUD
+cp $KERNEL_CONFIG_PATH $SOURCEDIR/sys/$HOSTARCH/conf/SYZPILOT
 build_freebsd_on_$HOSTOS
 echo "done!"
