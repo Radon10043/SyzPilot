@@ -1,24 +1,26 @@
 # SyzPilot
 
-Thank you for browsing the SyzPilot repository. This document details steps about using SyzPilot to synthesize specifications and run fuzzing for Linux kernel, it also support [FreeBSD](docs/freebsd.md), [OpenBSD](docs/openbsd.md), and [NetBSD](docs/netbsd.md). Some commands in the document are only applicable during anonymous reviewing, which may differ from those in the release version.
+Thank you for visiting the SyzPilot repository. This document explains how to use SyzPilot to synthesize specifications and run fuzzing for the Linux kernel. SyzPilot also supports [FreeBSD](docs/freebsd.md), [OpenBSD](docs/openbsd.md), and [NetBSD](docs/netbsd.md). Some commands in this document apply only to anonymous review and may differ from those in the release version.
 
-**NOTE1:** Documents are still under improvement, some content may have typos. We are doing our best to review and fix them :)
+**NOTE1:** The documentation is still being improved, and some content may contain typos. We are doing our best to review and fix them :)
+
 **NOTE2:** "cloud" is an alias for SyzPilot. If "cloud" appears in the documentation, you can simply replace it with "SyzPilot".
-**NOTE3:** We are considering how to share all intermediate data (~30G, including LLM query records, fuzzing results, etc.), OneDrive or Google Drive might be good ideas.
 
-Please replace the following variables according to the actual situation:
-- `$SYZPILOT`: directory for saveing SyzPilot source.
-- `$KERNSRC`: directory for saving kernel source.
+**NOTE3:** We are considering how to share all intermediate data (~30 GB, including LLM query records, fuzzing results, etc.). OneDrive or Google Drive may be suitable options.
 
-## Build docker image
+Please replace the following variables according to your environment:
+- `$SYZPILOT`: directory for saving the SyzPilot source code.
+- `$KERNSRC`: directory for saving the kernel source code.
 
-We recommend running SyzPilot using docker, you can build the docker image via following command:
+## Build the Docker image
+
+We recommend running SyzPilot with Docker. You can build the Docker image with the following command:
 ```bash
 wget -O Dockerfile https://anonymous.4open.science/api/repo/SyzPilot/file/docker/Dockerfile?v=ed2d2c86&download=true
 docker build -t syzpilot:latest --network host -f ./Dockerfile .
 ```
 
-Let's start a container and setup SyzPilot:
+Start a container and setup SyzPilot:
 ```bash
 docker run \
     -d \
@@ -31,17 +33,17 @@ docker run \
 docker exec -it syzpilot-test bash
 ```
 
-I recommend download fuzzers, kernels, images, etc. to the mounted directory `/vol` for continuous storage :)
+We recommend downloading fuzzers, kernels, images, and other artifacts to the mounted `/vol` directory for continuous storage :)
 
-## Build & run SyzPilot
+## Build and run SyzPilot
 
-We next detail how to setup and use SyzPilot for syscall spec synthesis. Note that all commands below are executed in the container.
+This section explains how to setup and use SyzPilot for syscall spec synthesis. All commands below are executed inside the container.
 
-If you don't want to re-synthesize specs, you can also [reuse our synthesized specs](#reuse-synthesized-specs), they are also used in our evaluation.
+If you do not want to re-synthesize specs, you can [reuse our synthesized specs](#reuse-synthesized-specs), which are also used in our evaluation.
 
 ### Download SyzPilot
 
-Download SyzPilot and associated syzkaller:
+Download SyzPilot and the associated syzkaller checkout:
 ```bash
 # export SYZPILOT=/vol/SyzPilot
 mkdir /vol/SyzPilot && cd /vol/SyzPilot
@@ -53,7 +55,7 @@ cd syzkaller && git checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
 
 ### Build SyzPilot
 
-SyzPilot can be easily built via following commands:
+SyzPilot can be built with the following commands:
 ```bash
 cd $SYZPILOT
 make
@@ -61,7 +63,7 @@ make
 
 ### Analyze kernel
 
-We need analyze kernel and construct the corresponding knowledgebase, let's use linux v6.18 as an example:
+SyzPilot needs to analyze the kernel and construct the corresponding knowledge base. Here, we use Linux v6.18 as an example:
 ```bash
 # export KERNSRC=/vol/linux/v6.18
 git clone --depth 1 -b v6.18 https://github.com/torvalds/linux $KERNSRC
@@ -71,34 +73,34 @@ make CC="ccache clang" olddefconfig modules_prepare all -j16
 python3 scripts/clang-tools/gen_compile_commands.py
 ```
 
-Analyze kernel compile commands and construct knowledge base:
+Analyze the kernel compile commands and construct the knowledge base:
 ```bash
 cd $SYZPILOT
 ./bin/analyzer -i $KERNSRC/compile_commands.json -o data/database/linux.db -j 16 > logs/analyze.log 2>&1
 ```
 
-Flags for analyzer:
+Flags of `analyzer`:
 - `-i`: path to `compile_commands.json`
 - `-o`: path to the output database (default: ./data/kernel.db)
 - `-j`: number of parallel jobs (default: 1)
 
 ### Synthesize specs in an agentic manner
 
-setup .env file:
+Set up the `.env` file:
 ```bash
 cd $SYZPILOT
 echo "OPENAI_BASE_URL=[YOUR_BASE_URL]" > .env
 echo "OPENAI_API_KEY=[YOUR_API_KEY]" >> .env
 ```
 
-We need prepare a reference file for spec synthesis, let's use `dvb_frontend_fops` from Linux DVB subsystem as an example:
+Prepare a reference file for spec synthesis. Here, we use `dvb_frontend_fops` from the Linux DVB subsystem as an example:
 ```bash
 cd $SYZPILOT
 mkdir workdir
 echo "variable,dvb_frontend_fops" > workdir/ref.txt
 ```
 
-If you find it tedious to manually enumerate all syscall related elements, you can use the tool [minitask](#minitask) provided by SyzPilot to automatically filter related elements and list syscalls whose spec need to be synthesized.
+Manually enumerating all syscall related elements is too tedious, you can use SyzPilot's [minitask](#minitask) tool to automatically filter related elements and list the syscalls whose specs need to be synthesized.
 
 Generate syscall specs:
 ```bash
@@ -113,32 +115,32 @@ cd $SYZPILOT
     -jobs=4 > logs/generate.log 2>&1
 ```
 
-**CAUTION:** Please watch out the token costs during synthesis!
+**CAUTION:** Watch the token costs during synthesis!
 
-Description for flags of generator:
+Flags of `generator`:
 - required:
-    - `-model`: model to be queried, e.g. gemini-3-flash-preview
-    - `-db`: path to the kernel knowledge database, which is produced by following [Analyze kernel](#analyze-kernel) section
-    - `-outdir`: output path for saving specs synthesized by SyzPilot
-    - `-kernel`: path to kernel for spec validation
-    - `-os`: target OS type, currently support linux, freebsd, openbsd, and netbsd.
-    - `-ref`: path to file includes reference global variables or functions for spec synthesis.
+    - `-model`: model to query, e.g. gemini-3-flash-preview
+    - `-db`: path to the kernel knowledge database produced in the [Analyze kernel](#analyze-kernel) section
+    - `-outdir`: output path for specs synthesized by SyzPilot
+    - `-kernel`: path to the kernel used for spec validation
+    - `-os`: target OS type. Currently supported values are linux, freebsd, openbsd, and netbsd.
+    - `-ref`: path to the file containing reference global variables or functions for spec synthesis.
 - optional:
     - `-env`: path to the .env file (default: `$PWD/.env`)
     - `-extract-bin`: path to `syz-extract` (default: `$PWD/bin/syz-extract`)
     - `-check-bin`: path to `syz-check` (default: `$PWD/bin/syz-check`)
-    - `-sysdir`: path to directory like `syzkaller/sys`, SyzPilot will reuse specs under `-sysdir` to avoid duplicate synthesis of some common flags, syscalls, etc.. (default: `$PWD/syzkaller/sys`)
-    - `-resume`: whether resume previous progress (default: true)
-    - `-max-fix`: max attempts for fixing generated spec (default: 5)
-    - `-max-retry`: max attempts for performing outline-generate-fix, -1 means inifinity tries (default: 5)
+    - `-sysdir`: path to a directory such as `syzkaller/sys`. SyzPilot reuses specs under `-sysdir` to avoid duplicate synthesis of common flags, syscalls, and similar elements. (default: `$PWD/syzkaller/sys`)
+    - `-resume`: whether to resume previous progress (default: true)
+    - `-max-fix`: maximum number of attempts to fix a generated spec (default: 5)
+    - `-max-retry`: maximum number of outline-generate-fix attempts. `-1` means unlimited retries. (default: 5)
     - `-jobs`: number of parallel jobs (default: 1)
-    - `-otl-system-prompt`: path to file(s) for outline prompt, use comma to separate multiple files (default: `$PWD/data/prompts/outline/instruction.md,$PWD/data/prompts/outline/example_media.md,$PWD/data/prompts/outline/example_ppp.md`)
-    - `-gen-system-prompt`: path to file(s) for generate prompt, use comma to separate multiple files (default: `$PWD/data/prompts/generate/instruction.md,$PWD/data/prompts/generate/example_media.md,$PWD/data/prompts/generate/example_ppp.md`)
-    - `-fix-system-prompt`: path to file(s) for fix prompt, use comma to separate multiple files (default: `$PWD/data/prompts/fix/instruction.md,$PWD/data/prompts/fix/example_v4l2.md`)
+    - `-otl-system-prompt`: path to outline prompt file(s). Use commas to separate multiple files. (default: `$PWD/data/prompts/outline/instruction.md,$PWD/data/prompts/outline/example_media.md,$PWD/data/prompts/outline/example_ppp.md`)
+    - `-gen-system-prompt`: path to generation prompt file(s). Use commas to separate multiple files. (default: `$PWD/data/prompts/generate/instruction.md,$PWD/data/prompts/generate/example_media.md,$PWD/data/prompts/generate/example_ppp.md`)
+    - `-fix-system-prompt`: path to fix prompt file(s). Use commas to separate multiple files. (default: `$PWD/data/prompts/fix/instruction.md,$PWD/data/prompts/fix/example_v4l2.md`)
 
 ### Refactor synthesized specs
 
-Refactor synthesized specs, add unique suffix to each elements to avoid conflicts among syntheszied specs:
+Refactor synthesized specs by adding a unique suffix to each element to avoid conflicts:
 ```bash
 cd $SYZPILOT
 ./bin/refactor -indir=./workdir/specs -outdir=./workdir/refactored
@@ -149,19 +151,19 @@ cd $SYZPILOT
 sed -i '1i meta arches["amd64"]' workdir/refactored/*.txt
 ```
 
-**TODO:** Currently variable/function name is added as suffix to each spec elements, e.g. `iocrl$ABC` -> `ioctl$ABC_dvb_frontend_fops`, but such refactoring may inconvenient for subsystem fuzzing, we have to list the full names of all synthesized syscalls to distinguish them from syscalls of syzkaller. We are currently considering a more reasonable refactoring method.
+**TODO:** Currently, the variable or function name is added as a suffix to each spec element, e.g. `ioctl$ABC` -> `ioctl$ABC_dvb_frontend_fops`. However, this refactoring can be inconvenient for subsystem fuzzing since we have to list the full names of all synthesized syscalls to distinguish them from syzkaller's existing syscalls. We are considering a more suitable refactoring method.
 
-### Integrate synthesized specs to syzkaller
+### Integrate synthesized specs into syzkaller
 
-**NOTE:** During integration, some errors in the synthesized specs may need to fix manually, typically involves adjusting the order of include files and removing unused elements. [Several utility tools](#utility-tools) is provided by SyzPilot to help fix errors.
+**NOTE:** During integration, some errors in the synthesized specs may need to be fixed manually. This typically involves adjusting the order of include files and removing unused elements. SyzPilot provides [several utility tools](#utility-tools) to help fix these errors.
 
-Patch syzkaller to support some const value extraction:
+Patch syzkaller to support additional constant extraction:
 ```bash
 cd $SYZPILOT/syzkaller
 git apply ../patch/syzkaller/*
 ```
 
-Integrate specs with syzkaller:
+Integrate the specs with syzkaller:
 ```bash
 cd $SYZPILOT/syzkaller
 cp ../workdir/refactored/* sys/linux
@@ -172,7 +174,7 @@ make generate
 
 ### Fuzzing with synthesized specs
 
-Create a Debian bullseye image to support fuzzing:
+Create a Debian Bullseye image for fuzzing:
 ```bash
 mkdir -p /vol/images/Debian && cd /vol/images/Debian
 cp $SYZPILOT/scripts/linux/create-image.sh .
@@ -180,7 +182,7 @@ chmod +x ./create-image.sh
 ./create-image.sh
 ```
 
-Start fuzzing with synthesized specs:
+Start fuzzing with the synthesized specifications:
 ```bash
 cd $SYZPILOT
 cat <<__EOF__ > workdir/fuzz.cfg
@@ -211,20 +213,20 @@ __EOF__
 
 ### minitask
 
-`minitask` selects global variables that associated with syscalls by string matching and lists all syscalls that require specification. By utilizing it, we can avoid tedious of manually enumerate syscall related elements and avoid duplicate spec synthesis for the same syscall.
+`minitask` selects global variables associated with syscalls by using string matching, then lists all syscalls that require specifications. It helps avoid the tedious process of manually enumerating syscall related elements and prevents duplicate spec synthesis for the same syscall. **You can directly run `generator` based on the output of `minitask` for optimal efficiency.**
 
 Build:
 ```bash
 make minitask   # it will also be built via `make all`
 ```
 
-Setup .env file if you haven't already:
+Setup the `.env` file if you have not already done so:
 ```bash
 echo "OPENAI_BASE_URL=[YOUR_BASE_URL]" > .env
 echo "OPENAI_API_KEY=[YOUR_API_KEY]" >> .env
 ```
 
-Run minitask to select all syscall related elements and enumerate all unique syscalls requiring spec synthesis:
+Run `minitask` to select all syscall related elements and enumerate all unique syscalls that require spec synthesis:
 ```bash
 cd $SYZPILOT
 ./bin/minitask \
@@ -234,30 +236,30 @@ cd $SYZPILOT
     -model=gemini-3-flash-preview > logs/minitask.log 2>&1
 ```
 
-extract references:
+Extract references:
 ```bash
 ./scripts/reflist.sh ./workdir/minitask > ./workdir/minitask/ref.txt
 ```
 
 ### rmunused
 
-Remove unused elements inplace:
+Remove unused elements in place:
 ```bash
 $SYZPILOT/bin/rmunused -indir=$SYZPILOT/syzkaller/sys/linux
 ```
 
 ## Reuse synthesized specs
 
-Specifications used in our evaluation are saved under `$SYZPILOT/patch/specs-*`, feel free to reuse them to avoid duplicate synthesis. Remember to apply the patch to enable syzkaller to support fuzzing OpenBSD kernel on Linux.
+Specifications used in our evaluation are saved under `$SYZPILOT/patch/specs-*`. Feel free to reuse them to avoid duplicate synthesis. Remember to apply the patch that enables syzkaller to support fuzzing the OpenBSD kernel on Linux.
 
-`specs-kern` saves specs for full kernel fuzzing:
+`specs-kern` stores specs for full kernel fuzzing:
 ```bash
 cd $SYZPILOT/syzkaller
 git apply ../patch/syzkaller/*
 git apply ../patch/specs-kern/*
 ```
 
-`specs-subsys` save specs for subsystem fuzzing, we re-synthesize specs for those subsystems that already exist spec:
+`specs-subsys` stores specs for subsystem fuzzing. We re-synthesize specs for subsystems that already have existing specs:
 ```bash
 cd $SYZPILOT/syzkaller
 git apply ../patch/syzkaller/*
@@ -266,17 +268,17 @@ git apply ../patch/specs-subsystem/*
 
 ## Reproduce evaluation
 
-please follow [env-setup.md](experiment/docs/env-setup.md) to setup evaluation environment, and then you can reproduce our evaluation via [docker compose files](experiment/docs/docker-compose.md) easily.
+Please follow [env-setup.md](experiment/docs/env-setup.md) to setup the evaluation environment. You can then reproduce our evaluation using the [Docker Compose files](experiment/docs/docker-compose.md).
 
 ## Re-synthesize subsystem specs
 
-Please see [subsystem.md](docs/subsystem.md#how-to-re-generate-specs-for-other-subsystem) to check how to re-synthesize specs for a subsystem that already have specs.
+Please see [subsystem.md](docs/subsystem.md#how-to-re-generate-specs-for-other-subsystem) for instructions on re-synthesizing specs for a subsystem that already has specs.
 
 ## Trophies
 
 To ensure anonymity, we will release all links after the paper is accepted.
 
-**NOTE:** We will update trophies as soon as new specs synthesized by SyzPilot are merged into syzkaller repository or related issues are assigned CVEs.
+**NOTE:** We will update the trophies as soon as new specs synthesized by SyzPilot are merged into the syzkaller repository or related issues are assigned CVEs.
 
 ### Merged specifications
 
@@ -308,7 +310,7 @@ To ensure anonymity, we will release all links after the paper is accepted.
 - WARNING in exc_debug_kernel
 - general protection fault in dvb_device_open
 
-bugs related to our generated specification and reported by syzbot:
+Bugs related to our generated specifications and reported by syzbot:
 
 - CVE-0000-00000, BUG: corrupted list in io_poll_remove_entries
 - CVE-0000-00000, KMSAN: uninit-value in vidtv_ts_null_write_into
@@ -340,7 +342,7 @@ bugs related to our generated specification and reported by syzbot:
 - panic: _free(NUM): address ADDR(ADDR) has not been allocated
 - panic: mutex ACPI global lock owned at ../../../kern/kern_event.c:LINE
 
-test cases generated by SyzPilot are incorporated into FreeBSD's test suite:
+Test cases generated by SyzPilot have been incorporated into FreeBSD's test suite:
 
 - stress2: Added syzkaller reproducers. Update the exclude file
 
