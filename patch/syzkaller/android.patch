@@ -1,0 +1,56 @@
+diff --git a/vm/adb/adb.go b/vm/adb/adb.go
+index 6b546678ec..ac15a9777e 100644
+--- a/vm/adb/adb.go
++++ b/vm/adb/adb.go
+@@ -357,7 +357,10 @@ func (inst *instance) waitForBootCompletion() {
+ 	i := 0
+ 	for ; i < maxRetries; i++ {
+ 		time.Sleep(sleepDuration)
+-
++		if out, err := inst.adb("shell", "mount -t debugfs none /sys/kernel/debug"); err != nil {
++			log.Logf(0, "failed to mount debugfs: %s", out)
++			continue
++		}
+ 		if out, err := inst.adb("shell", "pgrep systemui | wc -l"); err == nil {
+ 			count := parseAdbOutToInt(out)
+ 			if count != 0 {
+diff --git a/vm/qemu/qemu.go b/vm/qemu/qemu.go
+index d5d10d66bf..ce42090b77 100644
+--- a/vm/qemu/qemu.go
++++ b/vm/qemu/qemu.go
+@@ -140,6 +140,25 @@ var archConfigs = map[string]*archConfig{
+ 			"console=ttyS0",
+ 		},
+ 	},
++	"android/amd64": {
++		Qemu: "qemu-system-x86_64",
++		QemuArgs: strings.Join([]string{
++			"-enable-kvm",
++			"-cpu host,migratable=off",
++			"-device nvme,drive=rootdisk,serial=debian-root",
++		}, " "),
++		// e1000e fails on recent Debian distros with:
++		// Initialization of device e1000e failed: failed to find romfile "efi-e1000e.rom
++		// But other arches don't use e1000e, e.g. arm64 uses virtio by default.
++		NetDev: "e1000",
++		RngDev: "virtio-rng-pci",
++		CmdLine: []string{
++			"root=/dev/nvme0n1",
++			"rootwait",
++			"console=ttyS0",
++			"net.ifnames=0",
++		},
++	},
+ 	"linux/386": {
+ 		Qemu:   "qemu-system-i386",
+ 		NetDev: "e1000",
+@@ -266,6 +285,9 @@ var archConfigs = map[string]*archConfig{
+ 
+ func ctor(env *vmimpl.Env) (vmimpl.Pool, error) {
+ 	archConfig := archConfigs[env.OS+"/"+env.Arch]
++	if env.Name == "android" {
++		archConfig = archConfigs["android/"+env.Arch]
++	}
+ 	cfg := &Config{
+ 		Count:       1,
+ 		CPU:         1,

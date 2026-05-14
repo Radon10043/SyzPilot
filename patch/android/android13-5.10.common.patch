@@ -1,0 +1,61 @@
+diff --git a/build.config.debian_image.x86_64 b/build.config.debian_image.x86_64
+new file mode 100644
+index 000000000..f6bec9fcd
+--- /dev/null
++++ b/build.config.debian_image.x86_64
+@@ -0,0 +1,21 @@
++if [ "${ARCH}" != "x86_64" ]; then
++  echo "ERROR: build.config.debian_image.x86_64 requires ARCH=x86_64." >&2
++  exit 1
++fi
++
++DEFCONFIG=debian_image_x86_64_defconfig
++FRAGMENT_CONFIG=${KERNEL_DIR}/kernel/configs/debian_image_x86_64.config
++
++PRE_DEFCONFIG_CMDS="KCONFIG_CONFIG=${ROOT_DIR}/${KERNEL_DIR}/arch/x86/configs/${DEFCONFIG} ${ROOT_DIR}/${KERNEL_DIR}/scripts/kconfig/merge_config.sh -m -r ${ROOT_DIR}/${KERNEL_DIR}/arch/x86/configs/gki_defconfig ${ROOT_DIR}/${FRAGMENT_CONFIG}"
++
++case "${POST_DEFCONFIG_CMDS}" in
++  "check_defconfig")
++    POST_DEFCONFIG_CMDS=""
++    ;;
++  "check_defconfig && "*)
++    POST_DEFCONFIG_CMDS="${POST_DEFCONFIG_CMDS#check_defconfig && }"
++    ;;
++esac
++
++append_cmd POST_DEFCONFIG_CMDS "rm -f ${ROOT_DIR}/${KERNEL_DIR}/arch/x86/configs/${DEFCONFIG}"
++
+diff --git a/build.config.gki_debian.x86_64 b/build.config.gki_debian.x86_64
+new file mode 100644
+index 000000000..9da0753a7
+--- /dev/null
++++ b/build.config.gki_debian.x86_64
+@@ -0,0 +1,3 @@
++. ${ROOT_DIR}/${KERNEL_DIR}/build.config.gki.x86_64
++. ${ROOT_DIR}/${KERNEL_DIR}/build.config.debian_image.x86_64
++
+diff --git a/build.config.gki_kasan_debian.x86_64 b/build.config.gki_kasan_debian.x86_64
+new file mode 100644
+index 000000000..f8e4de081
+--- /dev/null
++++ b/build.config.gki_kasan_debian.x86_64
+@@ -0,0 +1,3 @@
++. ${ROOT_DIR}/${KERNEL_DIR}/build.config.gki_kasan.x86_64
++. ${ROOT_DIR}/${KERNEL_DIR}/build.config.debian_image.x86_64
++
+diff --git a/kernel/configs/debian_image_x86_64.config b/kernel/configs/debian_image_x86_64.config
+new file mode 100644
+index 000000000..dddcd0871
+--- /dev/null
++++ b/kernel/configs/debian_image_x86_64.config
+@@ -0,0 +1,10 @@
++CONFIG_DEVTMPFS=y
++CONFIG_DEVTMPFS_MOUNT=y
++CONFIG_SERIAL_8250_RUNTIME_UARTS=4
++
++CONFIG_BLK_DEV_NVME=y
++CONFIG_EXT4_FS=y
++
++CONFIG_NET_VENDOR_INTEL=y
++CONFIG_E1000=y
++

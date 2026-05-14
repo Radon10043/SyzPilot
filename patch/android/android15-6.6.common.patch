@@ -1,0 +1,30 @@
+diff --git a/BUILD.bazel b/BUILD.bazel
+index 90f8a0664..a085408af 100644
+--- a/BUILD.bazel
++++ b/BUILD.bazel
+@@ -2599,3 +2599,9 @@ pkg_zip(
+     out = "test_mappings.zip",
+     visibility = ["//visibility:public"],
+ )
++
++filegroup(
++    name = "debian_image_x86_64_defconfig",
++    srcs = ["kernel/configs/debian_image_x86_64.config"],
++)
++
+diff --git a/kernel/configs/debian_image_x86_64.config b/kernel/configs/debian_image_x86_64.config
+new file mode 100644
+index 000000000..dddcd0871
+--- /dev/null
++++ b/kernel/configs/debian_image_x86_64.config
+@@ -0,0 +1,10 @@
++CONFIG_DEVTMPFS=y
++CONFIG_DEVTMPFS_MOUNT=y
++CONFIG_SERIAL_8250_RUNTIME_UARTS=4
++
++CONFIG_BLK_DEV_NVME=y
++CONFIG_EXT4_FS=y
++
++CONFIG_NET_VENDOR_INTEL=y
++CONFIG_E1000=y
++
