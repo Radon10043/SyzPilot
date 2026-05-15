@@ -2,11 +2,11 @@
 
 Thank you for visiting the SyzPilot repository. This document explains how to use SyzPilot to synthesize specifications and run fuzzing for the Linux kernel. SyzPilot also supports [FreeBSD](docs/freebsd.md), [OpenBSD](docs/openbsd.md), and [NetBSD](docs/netbsd.md). Some commands in this document apply only to anonymous review and may differ from those in the release version.
 
+We have uploaded all intermediate data (~30 GB, including LLM query records and fuzzing results) to [Google Drive](https://workspace.google.com/products/drive/). However, we cannot release the link currently since it may leak author information. We will release the link as soon as the paper is accepted.
+
 **NOTE1:** The documentation is still being improved, and some content may contain typos. We are doing our best to review and fix them :)
 
 **NOTE2:** "cloud" is an alias for SyzPilot. If "cloud" appears in the documentation, you can simply replace it with "SyzPilot".
-
-**NOTE3:** We are considering how to share all intermediate data (~30 GB, including LLM query records, fuzzing results, etc.). OneDrive or Google Drive may be suitable options.
 
 Please replace the following variables according to your environment:
 - `$SYZPILOT`: directory for saving the SyzPilot source code.
