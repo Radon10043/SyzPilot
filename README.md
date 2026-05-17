@@ -282,6 +282,7 @@ To ensure anonymity, we will release all links after the paper is accepted.
 
 ### Merged specifications
 
+- sys/netbsd: add and update descriptions for acpi, agp, hdaudio, etc.
 - sys/freebsd: generate headers for const extraction and add syscall descriptions
 - sys/openbsd: update wscons.txt and add dev_dri.txt
 - sys/freebsd: add descriptions for acpi, apm, and auditpipe devices
