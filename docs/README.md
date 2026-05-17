@@ -106,6 +106,7 @@ Some flags of generator:
 
 ## merged specifications
 
+- [PR#7277](https://github.com/google/syzkaller/pull/7277)
 - [PR#6961](https://github.com/google/syzkaller/pull/6961)
 - [PR#6943](https://github.com/google/syzkaller/pull/6943)
 - [PR#6922](https://github.com/google/syzkaller/pull/6922)
