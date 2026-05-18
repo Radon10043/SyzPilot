@@ -259,7 +259,7 @@ git apply ../patch/syzkaller/*
 git apply ../patch/specs-kern/*
 ```
 
-`specs-subsys` stores specs for subsystem fuzzing. We re-synthesize specs for subsystems that already have existing specs:
+`specs-subsys` stores specs for subsystem fuzzing. We re-synthesize specs for subsystems that already have specs:
 ```bash
 cd $SYZPILOT/syzkaller
 git apply ../patch/syzkaller/*
