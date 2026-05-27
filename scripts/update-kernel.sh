@@ -3,9 +3,48 @@
 # this script is used to update or clone kernel sources to align with the latest source tree
 #
 # usage:
-#   ./scripts/update-kernel.sh <KERNEL_DIR>
+#   ./scripts/update-kernel.sh -d <KERNEL_DIR>
 
 set -euo pipefail
+
+# required args
+KERNDIR=
+
+print_help() {
+    echo "usage: $0 [ARGS]"
+    echo "  args (required):"
+    echo "    -d, --dir <DIR>        path to the directory to store kernel sources"
+    echo "  args (optional):"
+    echo "    -h, --help             print help message"
+}
+
+# arg parsing
+while [[ $# -gt 0 ]]; do
+    case $1 in
+    -d | --dir)
+        # check if dir exists
+        if [[ -z "$2" ]] || [[ ! -d "$2" ]]; then
+            echo "Error: Directory '$2' does not exist."
+            exit 1
+        fi
+        KERNDIR=$(realpath "$2")
+        shift 2
+        ;;
+    -h | --help)
+        print_help
+        exit 0
+        ;;
+    *)
+        echo "unknown arg: $1"
+        exit 1
+        ;;
+    esac
+done
+
+if [[ -z "$KERNDIR" ]]; then
+    print_help
+    exit 1
+fi
 
 linux() {
     echo "updating linux/mainline ..."
@@ -49,13 +88,6 @@ netbsd() {
         git -C mainline pull
     fi
 }
-
-if [ $# -ne 1 ]; then
-    echo "Usage: $0 <KERNEL_DIR>"
-    exit 1
-fi
-
-KERNDIR=$1
 
 mkdir -p $KERNDIR/linux && cd $KERNDIR/linux
 linux
