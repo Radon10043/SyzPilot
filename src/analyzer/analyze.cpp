@@ -39,9 +39,8 @@ static cl::opt<int> ParallelJobs("j", cl::desc("number of parallel jobs (default
                                  cl::cat(MyToolCategory));
 static cl::opt<std::string> OutDBPath("o", cl::desc("path to output database (default: data/kernel.db)"),
                                       cl::init("data/kernel.db"), cl::value_desc("path"), cl::cat(MyToolCategory));
-static llvm::cl::list<std::string> ExtraIncludes("I", llvm::cl::desc("path to be included"),
-                                                 llvm::cl::value_desc("directory"), llvm::cl::Prefix,
-                                                 llvm::cl::ZeroOrMore);
+static cl::list<std::string> ExtraIncludes("I", cl::desc("additional include directories"), cl::value_desc("directory"),
+                                           cl::Prefix, cl::ZeroOrMore, cl::cat(MyToolCategory));
 
 struct AnalysisContext {
     std::vector<FuncInfo> funcs;
@@ -372,6 +371,32 @@ void workThread(const CompilationDatabase &compilations, std::vector<std::string
     });
 #endif
 
+#ifdef __ANDROID_PATCH__
+    /* adjust command line arguments to make them suitable for analyzing Android kernel code */
+    tool.appendArgumentsAdjuster([](const clang::tooling::CommandLineArguments &args, llvm::StringRef filename) {
+        std::vector<llvm::StringRef> skipOpts = {
+            "-Werror",
+            "-Wno-default-const-init-unsafe",
+            "-Wno-unterminated-string-initialization",
+            "-Wp,-MMD*", // currently only support prefix
+        };
+        clang::tooling::CommandLineArguments adjusted;
+        for (size_t i = 0; i < args.size(); ++i) {
+            llvm::StringRef arg = args[i];
+            bool skip = false;
+            for (const auto &opt : skipOpts) {
+                if (!arg.compare(opt) || (opt.back() == '*' && arg.starts_with(opt.substr(0, opt.size() - 1)))) {
+                    skip = true;
+                    break;
+                }
+            }
+            if (!skip)
+                adjusted.push_back(args[i]);
+        }
+        return adjusted;
+    });
+#endif
+
     tool.appendArgumentsAdjuster([](const clang::tooling::CommandLineArguments &args, llvm::StringRef filename) {
         clang::tooling::CommandLineArguments adjusted = args;
         for (const auto &inc : ExtraIncludes)
@@ -405,7 +430,7 @@ int main(int argc, const char **argv) {
     DBMgr = &mgr;
 
     /* make extra includes absolute */
-    for (auto& inc : ExtraIncludes) {
+    for (auto &inc : ExtraIncludes) {
         llvm::SmallString<256> path(inc);
         llvm::sys::fs::make_absolute(path);
         llvm::sys::path::remove_dots(path, true);
