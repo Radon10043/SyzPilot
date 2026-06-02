@@ -320,6 +320,7 @@ Bugs related to our generated specifications and reported by syzbot:
 - INFO: task hung in nilfs_transaction_begin
 - INFO: trying to register non-static key in as102_dvb_dmx_start_feed
 - KASAN: slab-use-after-free Read in dvb_frontend_release
+- KASAN: slab-use-after-free Read in dvb_frontend_open
 - KMSAN: uninit-value in dvbdmx_release_ts_feed
 - KMSAN: uninit-value in dvb_demux_read
 - WARNING in as102_dvb_dmx_start_feed media
