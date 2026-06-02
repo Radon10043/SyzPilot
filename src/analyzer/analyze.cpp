@@ -374,10 +374,12 @@ void workThread(const CompilationDatabase &compilations, std::vector<std::string
 #ifdef __ANDROID_PATCH__
     /* adjust command line arguments to make them suitable for analyzing Android kernel code */
     tool.appendArgumentsAdjuster([](const clang::tooling::CommandLineArguments &args, llvm::StringRef filename) {
+        /* Options that to be skipped to prevent errors, they are currently maintained manually. */
         std::vector<llvm::StringRef> skipOpts = {
             "-Werror",
             "-Wno-default-const-init-unsafe",
             "-Wno-unterminated-string-initialization",
+            "-enable-trivial-auto-var-init-zero-knowing-it-will-be-removed-from-clang",
             "-Wp,-MMD*", // currently only support prefix
         };
         clang::tooling::CommandLineArguments adjusted;
