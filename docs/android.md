@@ -111,7 +111,7 @@ cd $CLOUD && mkdir workdir
 cat <<__EOF__ > workdir/android.cfg
 {
 	"name": "android",
-	"target": "linux/amd64",
+	"target": "android/amd64",
 	"http": "127.0.0.1:56741",
 	"workdir": "$CLOUD/workdir",
 	"kernel_obj": "$GKI/dist",
