@@ -48,17 +48,17 @@ RUN mkdir /llvm-19 && tar -C /llvm-19 -xvf LLVM-19.1.7-Linux-X64.tar.xz --strip-
 RUN rm LLVM-19.1.7-Linux-X64.tar.xz
 
 # Install cuttlefish
+RUN groupadd --system kvm && \
+    groupadd --system cvdnetwork && \
+    groupadd --system render
+RUN usermod -aG kvm,cvdnetwork,render root
 RUN curl -fsSL https://us-apt.pkg.dev/doc/repo-signing-key.gpg \
     -o /etc/apt/trusted.gpg.d/artifact-registry.asc
 RUN chmod a+r /etc/apt/trusted.gpg.d/artifact-registry.asc
 RUN echo "deb https://us-apt.pkg.dev/projects/android-cuttlefish-artifacts android-cuttlefish main" \
     | tee -a /etc/apt/sources.list.d/artifact-registry.list
-RUN apt update
+RUN apt-get update
 RUN apt-get install -y cuttlefish-base cuttlefish-user cuttlefish-orchestration
-RUN groupadd --system kvm
-RUN groupadd --system cvdnetwork
-RUN groupadd --system render
-RUN usermod -aG kvm,cvdnetwork,render root
 
 # Use libncurses6 as libncurses5
 RUN ln -s /usr/lib/x86_64-linux-gnu/libncurses.so.6 /usr/lib/x86_64-linux-gnu/libncurses.so.5
