@@ -19,6 +19,8 @@ TARGETOS ?= $(shell go env GOOS)
 
 ifeq ($(shell echo $(TARGETOS) | tr '[:upper:]' '[:lower:]'),netbsd)
 	CXX_FLAGS += -D__NETBSD_PATCH__
+else ifeq ($(shell echo $(TARGETOS) | tr '[:upper:]' '[:lower:]'),android)
+	CXX_FLAGS += -D__ANDROID_PATCH__
 endif
 
 ifeq ("$(DEBUG)", "true")
