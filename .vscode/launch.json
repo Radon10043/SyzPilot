@@ -99,6 +99,23 @@
             ]
         },
         {
+            "name": "go: launch generator (android)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "github.com/Radon10043/cloud/src/generator",
+            "args": [
+                "-env=${workspaceFolder}/.env",
+                "-db=${workspaceFolder}/data/database/android.db",
+                "-os=android",
+                "-model=gemini-3-flash-preview",
+                "-kernel=${workspaceFolder}/../../kernel/android/common-android17-6.18",
+                "-outdir=${workspaceFolder}/workdir/debug/generator-android",
+                "-ref=${workspaceFolder}/data/refs/android/dm.txt",
+            ],
+            "preLaunchTask": "make generator syz-check syz-extract"
+        },
+        {
             "name": "go: launch generator (netbsd)",
             "type": "go",
             "request": "launch",
@@ -110,10 +127,10 @@
                 "-os=netbsd",
                 "-model=gemini-3-flash-preview",
                 "-kernel=/vol/netbsd/15e7fbc5",
-                "-outdir=${workspaceFolder}/workdir/minitask",
-                "-varlist=${workspaceFolder}/workdir/minitask/varlist.txt",
+                "-outdir=${workspaceFolder}/workdir/debug/generator-netbsd",
+                "-ref=${workspaceFolder}/data/refs/netbsd/hdaudio.txt",
             ],
-            "preLaunchTask": "make generator"
+            "preLaunchTask": "make generator syz-check syz-extract"
         },
         {
             "name": "go: launch minitask (netbsd)",
@@ -125,7 +142,7 @@
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/netbsd.db",
                 "-os=netbsd",
-                "-outdir=${workspaceFolder}/workdir/minitask",
+                "-outdir=${workspaceFolder}/workdir/debug/minitask-netbsd",
                 "-model=gemini-3-flash-preview",
             ],
             "preLaunchTask": "make minitask",
@@ -140,7 +157,7 @@
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/openbsd.db",
                 "-os=openbsd",
-                "-outdir=${workspaceFolder}/workdir/minitask",
+                "-outdir=${workspaceFolder}/workdir/debug/minitask-openbsd",
                 "-model=gemini-3-flash-preview",
             ],
             "preLaunchTask": "make minitask",
@@ -155,13 +172,13 @@
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/freebsd.db",
                 "-os=freebsd",
-                "-outdir=${workspaceFolder}/workdir/minitask",
+                "-outdir=${workspaceFolder}/workdir/debug/minitask-freebsd",
                 "-model=gemini-3-flash-preview",
             ],
             "preLaunchTask": "make minitask",
         },
         {
-            "name": "go: launch minitask",
+            "name": "go: launch minitask (linux)",
             "type": "go",
             "request": "launch",
             "mode": "auto",
@@ -170,7 +187,7 @@
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/linux.db",
                 "-os=linux",
-                "-outdir=${workspaceFolder}/workdir/minitask",
+                "-outdir=${workspaceFolder}/workdir/debug/minitask-linux",
                 "-model=gemini-3-flash-preview",
             ],
             "preLaunchTask": "make minitask"
@@ -187,11 +204,11 @@
                 "-os=linux",
                 "-model=gemini-3-flash-preview",
                 "-kernel=/vol/linux/v6.18/build",
-                "-outdir=${workspaceFolder}/workdir/debug",
+                "-outdir=${workspaceFolder}/workdir/debug/generator-linux",
                 "-ref=${workspaceFolder}/data/refs/linux/sg.txt",
                 "-sysdir=${workspaceFolder}/data/trimsys",
             ],
-            "preLaunchTask": "make generator"
+            "preLaunchTask": "make generator syz-check syz-extract"
         },
         {
             "name": "go: launch generator (2 jobs)",
@@ -205,12 +222,12 @@
                 "-os=linux",
                 "-model=gemini-3-flash-preview",
                 "-kernel=/vol/linux/v6.18",
-                "-outdir=${workspaceFolder}/workdir/debug",
-                "-ref=${workspaceFolder}/data/refs/linux/sg.txt",
+                "-outdir=${workspaceFolder}/workdir/debug/generator-linux-parallel",
+                "-ref=${workspaceFolder}/data/refs/linux/autofs.txt",
                 "-model=gemini-3-flash-preview",
                 "-jobs=2",
             ],
-            "preLaunchTask": "make generator"
+            "preLaunchTask": "make generator syz-check syz-extract"
         },
         {
             "name": "go: launch syz-manager",

@@ -4,9 +4,9 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "make generator",
+            "label": "make generator syz-check syz-extract",
             "type": "shell",
-            "command": "make generator"
+            "command": "make generator syz-check syz-extract"
         },
         {
             "label": "make minitask",
