@@ -125,7 +125,6 @@ Some flags of generator:
 - [CVE-2026-23252](https://lore.kernel.org/linux-cve-announce/2026031846-CVE-2026-23252-6bef@gregkh/), [general protection fault in alloc_file_pseudo](https://groups.google.com/g/syzkaller/c/CIKKUTDIRq4)
 - [CVE-2026-23223](https://lore.kernel.org/linux-cve-announce/2026021806-CVE-2026-23223-e3d3@gregkh/), [KASAN slab-use-after-free Read in xchk_btree_check_block_owner](https://groups.google.com/g/syzkaller/c/PdqG_MarO5Y/m/RR-4ffJuAgAJ)
 - [KASAN: slab-use-after-free Write in dvb_device_open](https://groups.google.com/g/syzkaller/c/gopfrRcxp4w/m/yBhPduWTAwAJ)
-- [KASAN: slab-use-after-free Read in dvb_frontend_open](https://syzkaller.appspot.com/bug?extid=40339ea82afa8184ad5d)
 - [KASAN: slab-use-after-free Read in dvb_frontend_thread](https://groups.google.com/g/syzkaller/c/gopfrRcxp4w/m/yBhPduWTAwAJ)
 - [KFENCE: use-after-free read in dvb_frontend_release](https://groups.google.com/g/syzkaller/c/gopfrRcxp4w/m/yBhPduWTAwAJ)
 - [WARNING: still has locks held in _dmxdev_lock](https://groups.google.com/g/syzkaller/c/gopfrRcxp4w/m/yBhPduWTAwAJ)
@@ -139,17 +138,17 @@ Some flags of generator:
 bugs related to our generated specification and reported by syzbot:
 
 - [CVE-2026-23253](https://lore.kernel.org/linux-cve-announce/2026031846-CVE-2026-23253-b1c6@gregkh/), [BUG: corrupted list in io_poll_remove_entries](https://syzkaller.appspot.com/bug?extid=ab12f0c08dd7ab8d057c)
-- [BUG: corrupted list in io_poll_remove_entries](https://syzkaller.appspot.com/bug?extid=ab12f0c08dd7ab8d057c)
+- [CVE-2026-31577](https://lore.kernel.org/linux-cve-announce/2026042410-CVE-2026-31577-5e81@gregkh/), [general protection fault in nilfs_mdt_save_to_shadow_map](https://syzkaller.appspot.com/bug?extid=4b4093b1f24ad789bf37)
+- [CVE-2026-31585](https://lore.kernel.org/linux-cve-announce/2026042413-CVE-2026-31585-b423@gregkh/), [memory leak in vidtv_psi_service_desc_init](https://syzkaller.appspot.com/bug?extid=639ebc6ec75e96674741)
+- [CVE-2026-43058](https://lore.kernel.org/linux-cve-announce/2026050254-CVE-2026-43058-4a86@gregkh/), [KMSAN: uninit-value in vidtv_ts_null_write_into](https://syzkaller.appspot.com/bug?extid=96f901260a0b2d29cd1a)
 - [KASAN: slab-use-after-free Read in dvb_frontend_release](https://syzkaller.appspot.com/bug?extid=ae466a728017ec940b41)
-- [KMSAN: uninit-value in vidtv_ts_null_write_into](https://syzkaller.appspot.com/bug?extid=96f901260a0b2d29cd1a)
+- [KASAN: slab-use-after-free Read in dvb_frontend_open](https://syzkaller.appspot.com/bug?extid=40339ea82afa8184ad5d)
 - [KMSAN: uninit-value in dvb_demux_read](https://syzkaller.appspot.com/bug?extid=bd7c90de4c9f1f8ab660)
 - [KMSAN: uninit-value in dvbdmx_release_ts_feed](https://syzkaller.appspot.com/bug?extid=01d4620886bee3db0e74)
 - [WARNING in nilfs_btree_mark](https://syzkaller.appspot.com/bug?extid=98a040252119df0506f8)
-- [general protection fault in nilfs_mdt_save_to_shadow_map](https://syzkaller.appspot.com/bug?extid=4b4093b1f24ad789bf37)
 - [general protection fault in bio_add_page](https://syzkaller.appspot.com/bug?extid=ed8bc247f231c1a48e21)
 - [general protection fault in bio_alloc_bioset](https://syzkaller.appspot.com/bug?extid=09ddb593eea76a158f42)
 - [memory leak in dvb_register_device](https://syzkaller.appspot.com/bug?extid=d37184d9d8cc34602616)
-- [memory leak in vidtv_psi_service_desc_init](https://syzkaller.appspot.com/bug?extid=639ebc6ec75e96674741)
 
 ## freebsd bugs
 
