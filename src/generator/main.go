@@ -117,6 +117,11 @@ func main() {
 		log.Fatalf("invalid configuration: %v\n", err)
 	}
 
+	// check validity of sysdir
+	if err := checkSysdir(cfg); err != nil {
+		log.Fatalf("invalid sysdir: %v\n", err)
+	}
+
 	// load environment variables from .env file
 	if err := godotenv.Load(cfg.Env); err != nil {
 		log.Fatal("Error loading .env file")
@@ -359,6 +364,40 @@ func checkConfig(cfg *ProgConfig) error {
 	return nil
 }
 
+// checkSysdir check whether syz-extract and syz-check can be successfully executed with the cfg.Sysdir
+func checkSysdir(cfg *ProgConfig) error {
+	logger := log.New(os.Stdout, "[dryrun] ", log.LstdFlags|log.Lmsgprefix)
+	logger.Printf("Checking validity of %v ...\n", cfg.Sysdir)
+	osType, err := osu.ParseOsType(cfg.Os)
+	if err != nil {
+		return fmt.Errorf("failed to parse OS type: %v", err)
+	}
+	workdir, err := os.MkdirTemp(os.TempDir(), "check-*")
+	if err != nil {
+		return fmt.Errorf("failed to create temporary workdir: %v", err)
+	}
+	kernelExtract, kernelCheck, err := duplicateKernel(workdir, cfg.Kernel, osType, logger)
+	sc := check.NewSpecCheck(
+		check.WithOs(osType),
+		check.WithSyzExtract(cfg.ExtractBin),
+		check.WithSyzCheck(cfg.CheckBin),
+		check.WithKernelForExtract(kernelExtract),
+		check.WithKernelForCheck(kernelCheck),
+		check.WithWorkdir(workdir),
+		check.WithSysdir(cfg.Sysdir),
+	)
+	sc.SetupWorkdir()
+	defer os.RemoveAll(workdir)
+	if stdout, stderr, valid := sc.ExtractConst(""); !valid {
+		return fmt.Errorf("failed to execute syz-extract with sysdir:\n\nstdout:\n%v\n\nstderr:\n%v", stdout, stderr)
+	}
+	if stdout, stderr, valid := sc.CheckValidity(); !valid {
+		return fmt.Errorf("failed to execute syz-check with sysdir:\n\nstdout:\n%v\n\nstderr:\n%v", stdout, stderr)
+	}
+	logger.Printf("%v is valid!\n", cfg.Sysdir)
+	return nil
+}
+
 type WriteJob struct {
 	Progress     string             // a prefix to indicate progress, e.g., "1/100"
 	Entry        database.Entry     // the database entry (variable or function) to write spec for
@@ -381,6 +420,14 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 		Err:   nil,
 	}
 
+	osType, err := osu.ParseOsType(cfg.Os)
+	if err != nil {
+		logger.Printf("failed to parse OS type: %v\n", err)
+		res.Err = err
+		wjr <- res
+		return
+	}
+
 	// create a SpecCheck instances
 	wd := filepath.Join(cfg.Outdir, "instance-"+strconv.Itoa(tid))
 	if _, err := os.Stat(wd); err == nil { // remove existing workdir and create a fresh one
@@ -391,30 +438,16 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 			return
 		}
 	}
+	// only copy necessary dirtecoties/files for extract/check to the workdir
 	if err := os.MkdirAll(wd, 0755); err != nil {
 		logger.Printf("failed to create workdir: %v\n", err)
 		res.Err = err
 		wjr <- res
 		return
 	}
-	logger.Printf("copying extract kernel to workdir (%s) ...\n", wd)
-	// TODO: run make distclean under kernel-extract first?
-	if err := copy.Copy(cfg.Kernel, filepath.Join(wd, "kernel-extract")); err != nil {
-		logger.Printf("failed to copy extract kernel: %v\n", err)
-		res.Err = err
-		wjr <- res
-		return
-	}
-	logger.Printf("copying check kernel to workdir (%s) ...\n", wd)
-	if err := copy.Copy(cfg.Kernel, filepath.Join(wd, "kernel-check")); err != nil {
-		logger.Printf("failed to copy check kernel: %v\n", err)
-		res.Err = err
-		wjr <- res
-		return
-	}
-	osType, err := osu.ParseOsType(cfg.Os)
+	kernelExtract, kernelCheck, err := duplicateKernel(wd, cfg.Kernel, osType, logger)
 	if err != nil {
-		logger.Printf("failed to parse OS type: %v\n", err)
+		logger.Printf("failed to duplicate kernel: %v\n", err)
 		res.Err = err
 		wjr <- res
 		return
@@ -423,8 +456,8 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 		check.WithOs(osType),
 		check.WithSyzExtract(cfg.ExtractBin),
 		check.WithSyzCheck(cfg.CheckBin),
-		check.WithKernelForExtract(filepath.Join(wd, "kernel-extract")),
-		check.WithKernelForCheck(filepath.Join(wd, "kernel-check")),
+		check.WithKernelForExtract(kernelExtract),
+		check.WithKernelForCheck(kernelCheck),
 		check.WithWorkdir(wd),
 		check.WithSysdir(cfg.Sysdir),
 	)
@@ -506,6 +539,33 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 		}
 		wjr <- res
 	}
+}
+
+// duplicateKernel duplicate kernel directories/files for extract/check to the workdir,
+// return extract kernel path, check kernel path, and error
+func duplicateKernel(prefix string, kernel string, osType osu.OsType, logger *log.Logger) (string, string, error) {
+	// duplicate kernel for extract
+	logger.Printf("copying extract kernel to workdir (%s) ...\n", prefix)
+	src := osType.KernExtractPath(kernel)
+	dst := filepath.Join(prefix, "kernel-extract")
+	if err := copy.Copy(src, dst); err != nil {
+		logger.Printf("failed to copy extract kernel: %v\n", err)
+		return "", "", err
+	}
+
+	// duplicate kernel for check
+	logger.Printf("copying check kernel to workdir (%s) ...\n", prefix)
+	src = osType.KernFilePath(kernel)
+	dst = osType.KernFilePath(filepath.Join(prefix, "kernel-check"))
+	if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		logger.Printf("failed to create directory for check kernel: %v\n", err)
+		return "", "", err
+	}
+	if err := copy.Copy(src, dst); err != nil {
+		logger.Printf("failed to copy check kernel: %v\n", err)
+		return "", "", err
+	}
+	return filepath.Join(prefix, "kernel-extract"), filepath.Join(prefix, "kernel-check"), nil
 }
 
 // writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a database entry,

@@ -142,14 +142,16 @@ func (sc *SpecCheck) AddSpec(spec string) (string, error) {
 // If fname is empty, extract constants for all specs under sc.Workdir/sys/$OS/*.txt
 func (sc *SpecCheck) ExtractConst(fname string) (*bytes.Buffer, *bytes.Buffer, bool) {
 	var stdout, stderr bytes.Buffer
-	cmd := exec.Command( // update command, only extract constants for one file
+	cmd := exec.Command( // default is extract constants for all specs
 		sc.SyzExtract,
 		"-build",
 		"-arch="+runtime.GOARCH,
 		"-sourcedir="+sc.KernelForExtract,
 		"-os="+sc.Os.String(),
-		fname,
 	)
+	if len(fname) > 0 { // only extract constants for the specific file if fname is provided
+		cmd.Args = append(cmd.Args, fname)
+	}
 	cmd.Dir = sc.Workdir
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
@@ -160,12 +162,30 @@ func (sc *SpecCheck) ExtractConst(fname string) (*bytes.Buffer, *bytes.Buffer, b
 // CheckValidity run syz-check to check validity of existing specs under sc.Workdir/sys/$OS/*.txt,
 // return stdout and stderr of the command, also validity of the spec
 func (sc *SpecCheck) CheckValidity() (*bytes.Buffer, *bytes.Buffer, bool) {
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command(
-		sc.SyzCheck,
-		"-obj-"+runtime.GOARCH+"="+sc.Os.KernFilePath(sc.KernelForCheck),
-		"-os="+sc.Os.String(),
+	var (
+		stdout bytes.Buffer
+		stderr bytes.Buffer
+		cmd    *exec.Cmd
 	)
+	switch sc.Os {
+	case osu.Android:
+		// Some Android kernels use DWARF5, which is not supported by current syz-check,
+		// let's disable DWARF parsing to make it work. It shouldn't impact validity check
+		// for syscall specs but may generate redundant warnings (sys/android/*.warn).
+		cmd = exec.Command(
+			sc.SyzCheck,
+			"-obj-"+runtime.GOARCH+"="+sc.Os.KernFilePath(sc.KernelForCheck),
+			"-os="+sc.Os.String(),
+			"-dwarf=0",
+		)
+	default:
+		cmd = exec.Command(
+			sc.SyzCheck,
+			"-obj-"+runtime.GOARCH+"="+sc.Os.KernFilePath(sc.KernelForCheck),
+			"-os="+sc.Os.String(),
+		)
+	}
+
 	cmd.Dir = sc.Workdir
 	cmd.Stderr = &stderr
 	cmd.Stdout = &stdout
