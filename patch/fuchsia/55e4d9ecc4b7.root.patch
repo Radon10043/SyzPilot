@@ -1,0 +1,683 @@
+diff --git a/src/testing/fuzzing/BUILD.gn b/src/testing/fuzzing/BUILD.gn
+index 0b9ea9a6d53..b9c7b762dcc 100644
+--- a/src/testing/fuzzing/BUILD.gn
++++ b/src/testing/fuzzing/BUILD.gn
+@@ -7,15 +7,12 @@ group("fuzzing") {
+   deps = [
+     ":tests",
+     "go",
++    "syzkaller",
+     "syzkaller/starnix:syzkaller_starnix",
+-
+-    # TODO(https://fxbug.dev/42151900): syzkaller needs to update ddk include paths.
+-    # "syzkaller",
+   ]
+ }
+ 
+ group("tests") {
+   testonly = true
+-  # TODO(https://fxbug.dev/42151900): syzkaller needs to update ddk include paths.
+-  # deps = [ "syzkaller:tests" ]
++  deps = [ "syzkaller:tests" ]
+ }
+diff --git a/src/testing/fuzzing/syzkaller/BUILD.gn b/src/testing/fuzzing/syzkaller/BUILD.gn
+index 66afd3f13a8..b54a394427e 100644
+--- a/src/testing/fuzzing/syzkaller/BUILD.gn
++++ b/src/testing/fuzzing/syzkaller/BUILD.gn
+@@ -3,11 +3,18 @@
+ # found in the LICENSE file.
+ 
+ import("//build/compiled_action.gni")
++import("//build/config/clang/clang_prefix.gni")
+ import("//build/components.gni")
+ import("//build/go/go_binary.gni")
+ import("//build/go/go_library.gni")
+ 
+-syzkaller_dir = "//third_party/syzkaller"
++declare_args() {
++  syzkaller_dir = "//third_party/syzkaller"
++}
++
++declare_args() {
++  syzkaller_git_dir = "${syzkaller_dir}/.git"
++}
+ 
+ group("syzkaller") {
+   testonly = true
+@@ -34,21 +41,23 @@ if (target_cpu == "x64") {
+ GOOS = "fuchsia"
+ HOSTGOOS = "linux"
+ 
+-# Like "git rev-parse HEAD", but without needing a Python script wrapper.
+-SYZKALLER_GIT_DIR = "//.git/modules/third_party%2fsyzkaller"
+-GIT_REVISION = read_file("${SYZKALLER_GIT_DIR}/HEAD", "trim string")
++GIT_REVISION = read_file("${syzkaller_git_dir}/HEAD", "trim string")
+ GIT_BRANCH = string_replace(GIT_REVISION, "ref: ", "", 1)
+ if (GIT_BRANCH != GIT_REVISION) {
+-  GIT_REVISION = read_file("${SYZKALLER_GIT_DIR}/${GIT_BRANCH}", "trim string")
++  GIT_REVISION = read_file("${syzkaller_git_dir}/${GIT_BRANCH}", "trim string")
+ }
++GIT_REVISION += "+"
+ 
+-compiled_action("generate-syscall-definitions") {
+-  tool = ":syz-sysgen"
++action("generate-syscall-definitions") {
++  script = "//build/gn_run_binary.sh"
++  inputs = [ "${syzkaller_dir}/bin/syz-sysgen" ]
+   outputs = [
+     "$target_gen_dir/sysgen/executor/defs.h",
+     "$target_gen_dir/sysgen/executor/syscalls.h",
+   ]
+   args = [
++    rebased_clang_prefix,
++    rebase_path("${syzkaller_dir}/bin/syz-sysgen", root_build_dir),
+     "--src",
+     src,
+     "--out",
+@@ -56,6 +65,19 @@ compiled_action("generate-syscall-definitions") {
+   ]
+ }
+ 
++copy("copy-executor-source") {
++  sources = [ "${syzkaller_dir}/executor/executor.cc" ]
++  outputs = [ "$target_gen_dir/sysgen/executor/{{source_file_part}}" ]
++}
++
++copy("copy-executor-overrides") {
++  sources = [
++    "files.h",
++    "subprocess.h",
++  ]
++  outputs = [ "$target_gen_dir/sysgen/executor/{{source_file_part}}" ]
++}
++
+ executable("syz-executor") {
+   sources = [
+     "${src}/executor/common.h",
+@@ -67,20 +89,24 @@ executable("syz-executor") {
+     "${src}/executor/common_test.h",
+     "${src}/executor/common_usb.h",
+     "${src}/executor/common_windows.h",
+-    "${src}/executor/executor.cc",
+     "${src}/executor/executor_bsd.h",
+     "${src}/executor/executor_fuchsia.h",
+     "${src}/executor/executor_linux.h",
+     "${src}/executor/executor_test.h",
+     "${src}/executor/executor_windows.h",
+-    "${src}/executor/kvm.S",
+-    "${src}/executor/kvm.S.h",
+     "${src}/executor/kvm.h",
+-    "${src}/executor/kvm_gen.cc",
+     "${src}/executor/nocover.h",
+     "${src}/executor/test.h",
+     "${src}/executor/test_linux.h",
+   ]
++  if (target_cpu == "x64") {
++    sources += [
++      "${src}/executor/kvm_amd64.S",
++      "${src}/executor/kvm_amd64.S.h",
++    ]
++  }
++  sources += get_target_outputs(":copy-executor-source")
++  sources += get_target_outputs(":copy-executor-overrides")
+   sources += get_target_outputs(":generate-syscall-definitions")
+   defines = [
+     "GOOS_${GOOS}=1",
+@@ -92,10 +118,20 @@ executable("syz-executor") {
+       rebase_path(
+           get_label_info(":generate-syscall-definitions", "target_gen_dir"),
+           root_build_dir)
+-  cflags = [ "-I$generated_syscalls_dir/sysgen/executor" ]
++  cflags = [
++    "-I$generated_syscalls_dir/sysgen/executor",
++    "-I" + rebase_path("compat", root_build_dir),
++    "-I${src}/executor",
++    "-I${src}",
++    "-I${src}/executor/_include",
++    "-include",
++    rebase_path("compat/fuchsia_syscall_compat.h", root_build_dir),
++  ]
+   configs -= [ "//build/config:default_warnings" ]
+   configs += [ ":warnings" ]
+   deps = [
++    ":copy-executor-overrides",
++    ":copy-executor-source",
+     ":generate-syscall-definitions",
+     "//sdk/lib/fdio",
+     "//src/devices/lib/driver",
+@@ -112,7 +148,10 @@ config("warnings") {
+     "-Wunused-const-variable",
+     "-Wframe-larger-than=16384",
+     "-Wunused-const-variable",
++    "-Wno-unused-but-set-variable",
+     "-Wno-deprecated",
++    "-Wno-unused-function",
++    "-Wno-unused-const-variable",
+   ]
+ }
+ 
+diff --git a/src/testing/fuzzing/syzkaller/README.md b/src/testing/fuzzing/syzkaller/README.md
+index 56a1627c3c5..fdf0c0e6780 100644
+--- a/src/testing/fuzzing/syzkaller/README.md
++++ b/src/testing/fuzzing/syzkaller/README.md
+@@ -1,9 +1,67 @@
+ This directory contains definitions needed to build and run
+ [syzkaller](https://github.com/google/syzkaller) against Fuchsia's system call
+-interfaces.
++interfaces with kernel sanitizer coverage.
+ 
+-- The top-level directory is relevant for Zircon fuzzing (currently on pause:
+-  https://fxbug.dev/296220035). Its BUILD.gn contains rules to build syzkaller's
+-  `syz-executor` component for Fuchsia.
++- The top-level directory is relevant for Zircon fuzzing. Its BUILD.gn contains
++  rules to build syzkaller's `syz-executor` component for Fuchsia.
+ 
+ - The `starnix` subdirectory is relevant for Starnix fuzzing (currently active).
++
++## Build
++
++Use a kernel sancov variant and include this package:
++
++```sh
++fx set core.x64 \
++  --variant=sancov \
++  --with //src/testing/fuzzing/syzkaller \
++  --with-base //bundles/tools
++fx build //src/testing/fuzzing/syzkaller
++```
++
++The build produces the target-side `syz-executor-pkg` package. Build the
++host-side syzkaller tools from the syzkaller checkout with:
++
++```sh
++cd third_party/syzkaller
++make TARGETOS=fuchsia TARGETARCH=amd64 TARGETVMARCH=amd64 manager execprog
++```
++
++## Run
++
++Start and package a Fuchsia image with `syz-executor-pkg` available, then use a
++manager config similar to:
++
++```json
++{
++  "name": "fuchsia-zircon",
++  "target": "fuchsia/amd64",
++  "http": "127.0.0.1:56741",
++  "workdir": "/tmp/syzkaller-fuchsia",
++  "kernel_obj": "$FUCHSIA_DIR/out/default/zircon.elf",
++  "kernel_src": "$FUCHSIA_DIR",
++  "syzkaller": "$FUCHSIA_DIR/third_party/syzkaller",
++  "procs": 4,
++  "cover": true,
++  "sandbox": "none",
++  "type": "qemu",
++  "vm": {
++    "count": 1,
++    "kernel": "$FUCHSIA_DIR/out/default/multiboot.bin",
++    "initrd": "$FUCHSIA_DIR/out/default/fuchsia.zbi",
++    "cpu": 4,
++    "mem": 4096,
++    "qemu_args": "-nographic"
++  }
++}
++```
++
++Then run:
++
++```sh
++third_party/syzkaller/bin/syz-manager -config /path/to/fuchsia.cfg
++```
++
++`syz-executor` runs in the target as the RPC runner. When coverage is enabled, it
++maps the kernel `sancov` and `sancov-counts` debugdata VMOs and reports newly hit
++PCs back to syzkaller so corpus mutation is coverage guided.
+diff --git a/src/testing/fuzzing/syzkaller/compat/fuchsia_syscall_compat.h b/src/testing/fuzzing/syzkaller/compat/fuchsia_syscall_compat.h
+new file mode 100644
+index 00000000000..e8b841c8060
+--- /dev/null
++++ b/src/testing/fuzzing/syzkaller/compat/fuchsia_syscall_compat.h
+@@ -0,0 +1,85 @@
++// Copyright 2026 The Fuchsia Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef SRC_TESTING_FUZZING_SYZKALLER_COMPAT_FUCHSIA_SYSCALL_COMPAT_H_
++#define SRC_TESTING_FUZZING_SYZKALLER_COMPAT_FUCHSIA_SYSCALL_COMPAT_H_
++
++#include <stdint.h>
++#include <dirent.h>
++#include <stdio.h>
++#include <string.h>
++#include <sys/stat.h>
++#include <unistd.h>
++#include <zircon/syscalls.h>
++#include <zircon/types.h>
++
++#define SYZKALLER_FUCHSIA_COMPAT_UNUSED __attribute__((unused))
++
++static void SYZKALLER_FUCHSIA_COMPAT_UNUSED remove_dir(const char* dir)
++{
++	DIR* dp = opendir(dir);
++	if (dp == nullptr) {
++		rmdir(dir);
++		return;
++	}
++	struct dirent* ep = nullptr;
++	while ((ep = readdir(dp)) != nullptr) {
++		if (!strcmp(ep->d_name, ".") || !strcmp(ep->d_name, ".."))
++			continue;
++		char filename[1024];
++		snprintf(filename, sizeof(filename), "%s/%s", dir, ep->d_name);
++		struct stat st;
++		if (lstat(filename, &st))
++			continue;
++		if (S_ISDIR(st.st_mode))
++			remove_dir(filename);
++		else
++			unlink(filename);
++	}
++	closedir(dp);
++	rmdir(dir);
++}
++
++static zx_handle_t SYZKALLER_FUCHSIA_COMPAT_UNUSED get_root_resource()
++{
++	return ZX_HANDLE_INVALID;
++}
++
++static zx_status_t SYZKALLER_FUCHSIA_COMPAT_UNUSED
++zx_framebuffer_get_info(zx_handle_t resource, int32_t* format, int32_t* width, int32_t* height,
++			int32_t* stride)
++{
++	return ZX_ERR_NOT_SUPPORTED;
++}
++
++static zx_status_t SYZKALLER_FUCHSIA_COMPAT_UNUSED
++zx_framebuffer_set_range(zx_handle_t resource, zx_handle_t vmo, int32_t length, int32_t format,
++			 int32_t width, int32_t height, int32_t stride)
++{
++	return ZX_ERR_NOT_SUPPORTED;
++}
++
++static zx_status_t SYZKALLER_FUCHSIA_COMPAT_UNUSED
++zx_ktrace_write(zx_handle_t resource, uint32_t id, uint32_t arg0, uint32_t arg1)
++{
++	return ZX_ERR_NOT_SUPPORTED;
++}
++
++static zx_status_t SYZKALLER_FUCHSIA_COMPAT_UNUSED
++zx_pager_query_dirty_ranges(zx_handle_t pager, zx_handle_t pager_vmo, uint64_t offset,
++			    uint64_t length, void* buffer, size_t buffer_size, uint64_t* actual,
++			    uint64_t* avail)
++{
++	return ZX_ERR_NOT_SUPPORTED;
++}
++
++static zx_status_t SYZKALLER_FUCHSIA_COMPAT_UNUSED
++zx_pc_firmware_tables(zx_handle_t handle, uint64_t* acpi_rsdp, uint64_t* smbios)
++{
++	return ZX_ERR_NOT_SUPPORTED;
++}
++
++#undef SYZKALLER_FUCHSIA_COMPAT_UNUSED
++
++#endif  // SRC_TESTING_FUZZING_SYZKALLER_COMPAT_FUCHSIA_SYSCALL_COMPAT_H_
+diff --git a/src/testing/fuzzing/syzkaller/compat/sys/resource.h b/src/testing/fuzzing/syzkaller/compat/sys/resource.h
+new file mode 100644
+index 00000000000..a4e7a45dc23
+--- /dev/null
++++ b/src/testing/fuzzing/syzkaller/compat/sys/resource.h
+@@ -0,0 +1,24 @@
++// Copyright 2026 The Fuchsia Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef SRC_TESTING_FUZZING_SYZKALLER_COMPAT_SYS_RESOURCE_H_
++#define SRC_TESTING_FUZZING_SYZKALLER_COMPAT_SYS_RESOURCE_H_
++
++#include <stdint.h>
++
++typedef uint64_t rlim_t;
++
++struct rlimit {
++	rlim_t rlim_cur;
++	rlim_t rlim_max;
++};
++
++#define RLIMIT_NOFILE 7
++
++static inline int __attribute__((unused)) setrlimit(int resource, const struct rlimit* rlim)
++{
++	return 0;
++}
++
++#endif  // SRC_TESTING_FUZZING_SYZKALLER_COMPAT_SYS_RESOURCE_H_
+diff --git a/src/testing/fuzzing/syzkaller/files.h b/src/testing/fuzzing/syzkaller/files.h
+new file mode 100644
+index 00000000000..297aab56f24
+--- /dev/null
++++ b/src/testing/fuzzing/syzkaller/files.h
+@@ -0,0 +1,98 @@
++// Copyright 2026 The Fuchsia Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#if !GOOS_fuchsia
++#include_next "files.h"
++#else
++
++#include <memory>
++#include <string>
++#include <utility>
++#include <vector>
++
++#include <dirent.h>
++#include <errno.h>
++#include <fcntl.h>
++#include <glob.h>
++#include <stdarg.h>
++#include <string.h>
++#include <unistd.h>
++
++static std::vector<std::string> Glob(const std::string& pattern)
++{
++	glob_t buf = {};
++	int res = glob(pattern.c_str(), GLOB_MARK | GLOB_NOSORT, nullptr, &buf);
++	if (res != 0 && res != GLOB_NOMATCH)
++		failmsg("glob failed", "pattern='%s' res=%d", pattern.c_str(), res);
++	std::vector<std::string> files;
++	for (size_t i = 0; i < buf.gl_pathc; i++) {
++		const char* file = buf.gl_pathv[i];
++		if (file[strlen(file) - 1] == '/')
++			continue;
++		files.push_back(file);
++	}
++	globfree(&buf);
++	debug("glob %s resolved to %zu files\n", pattern.c_str(), files.size());
++	return files;
++}
++
++static std::unique_ptr<rpc::FileInfoRawT> ReadFile(const std::string& file)
++{
++	auto info = std::make_unique<rpc::FileInfoRawT>();
++	info->name = file;
++	int fd = open(file.c_str(), O_RDONLY);
++	if (fd == -1) {
++		info->exists = errno != EEXIST && errno != ENOENT;
++		info->error = strerror(errno);
++	} else {
++		info->exists = true;
++		for (;;) {
++			constexpr size_t kChunk = 4 << 10;
++			info->data.resize(info->data.size() + kChunk);
++			ssize_t n = read(fd, info->data.data() + info->data.size() - kChunk, kChunk);
++			if (n < 0) {
++				info->error = strerror(errno);
++				break;
++			}
++			info->data.resize(info->data.size() - kChunk + n);
++			if (n == 0)
++				break;
++		}
++		close(fd);
++	}
++	debug("reading file %s: size=%zu exists=%d error=%s\n",
++	      info->name.c_str(), info->data.size(), info->exists, info->error.c_str());
++	return info;
++}
++
++static std::string ReadTextFile(const char* file_fmt, ...)
++{
++	char file[1024];
++	va_list args;
++	va_start(args, file_fmt);
++	vsnprintf(file, sizeof(file), file_fmt, args);
++	va_end(args);
++	file[sizeof(file) - 1] = 0;
++	auto data = ReadFile(file)->data;
++	std::string str(data.begin(), data.end());
++	while (!str.empty() && (str.back() == '\n' || str.back() == 0))
++		str.resize(str.size() - 1);
++	return str;
++}
++
++static std::vector<std::unique_ptr<rpc::FileInfoRawT>> ReadFiles(const std::vector<std::string>& files)
++{
++	std::vector<std::unique_ptr<rpc::FileInfoRawT>> results;
++	for (const auto& file : files) {
++		if (!strchr(file.c_str(), '*')) {
++			results.push_back(ReadFile(file));
++			continue;
++		}
++		for (const auto& match : Glob(file))
++			results.push_back(ReadFile(match));
++	}
++	return results;
++}
++
++#endif
+diff --git a/src/testing/fuzzing/syzkaller/subprocess.h b/src/testing/fuzzing/syzkaller/subprocess.h
+new file mode 100644
+index 00000000000..104aca727d4
+--- /dev/null
++++ b/src/testing/fuzzing/syzkaller/subprocess.h
+@@ -0,0 +1,108 @@
++// Copyright 2026 The Fuchsia Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#if !GOOS_fuchsia
++#include_next "subprocess.h"
++#else
++
++#include <lib/fdio/spawn.h>
++#include <signal.h>
++#include <string.h>
++#include <unistd.h>
++#include <zircon/syscalls.h>
++#include <zircon/syscalls/object.h>
++
++#include <string>
++#include <vector>
++
++class Subprocess
++{
++public:
++	Subprocess(const char** argv, const std::vector<std::pair<int, int>>& fds)
++	{
++		std::vector<fdio_spawn_action_t> actions;
++		actions.reserve(fds.size());
++		for (auto pair : fds) {
++			if (pair.first == -1)
++				continue;
++			fdio_spawn_action_t action = {};
++			action.action = FDIO_SPAWN_ACTION_CLONE_FD;
++			action.fd.local_fd = pair.first;
++			action.fd.target_fd = pair.second;
++			actions.push_back(action);
++		}
++
++		const char* child_envp[] = {
++		    "ASAN_OPTIONS=handle_segv=0 allow_user_segv_handler=1 detect_leaks=0",
++		    nullptr};
++
++		std::string path = argv[0];
++		if (strchr(path.c_str(), '/') == nullptr)
++			path = "/boot/bin/" + path;
++
++		char err_msg[FDIO_SPAWN_ERR_MSG_MAX_LENGTH] = {};
++		zx_status_t status = fdio_spawn_etc(
++		    ZX_HANDLE_INVALID,
++		    FDIO_SPAWN_CLONE_JOB | FDIO_SPAWN_DEFAULT_LDSVC |
++			FDIO_SPAWN_CLONE_NAMESPACE | FDIO_SPAWN_CLONE_UTC_CLOCK,
++		    path.c_str(), argv, child_envp, actions.size(), actions.data(),
++		    &process_, err_msg);
++		if (status != ZX_OK)
++			failmsg("fdio_spawn_etc failed", "status=%d msg=%s", status, err_msg);
++	}
++
++	~Subprocess()
++	{
++		if (process_ != ZX_HANDLE_INVALID)
++			KillAndWait();
++	}
++
++	int KillAndWait()
++	{
++		if (process_ == ZX_HANDLE_INVALID)
++			fail("subprocess hasn't started or already waited");
++		zx_task_kill(process_);
++		return Wait();
++	}
++
++	int WaitAndKill(uint64 timeout_ms)
++	{
++		if (process_ == ZX_HANDLE_INVALID)
++			fail("subprocess hasn't started or already waited");
++		uint64 start = current_time_ms();
++		for (;;) {
++			zx_status_t status = zx_object_wait_one(process_, ZX_PROCESS_TERMINATED,
++								ZX_TIME_INFINITE_PAST, nullptr);
++			if (status == ZX_OK)
++				return Wait();
++			if (current_time_ms() - start > timeout_ms)
++				zx_task_kill(process_);
++			sleep_ms(10);
++		}
++	}
++
++private:
++	zx_handle_t process_ = ZX_HANDLE_INVALID;
++
++	int Wait()
++	{
++		zx_status_t status = zx_object_wait_one(process_, ZX_PROCESS_TERMINATED,
++							ZX_TIME_INFINITE, nullptr);
++		if (status != ZX_OK)
++			failmsg("process wait failed", "status=%d", status);
++		zx_info_process_t info = {};
++		status = zx_object_get_info(process_, ZX_INFO_PROCESS, &info, sizeof(info), nullptr,
++					    nullptr);
++		zx_handle_close(process_);
++		process_ = ZX_HANDLE_INVALID;
++		if (status != ZX_OK)
++			failmsg("process info failed", "status=%d", status);
++		return static_cast<int>(info.return_code & 0xff);
++	}
++
++	Subprocess(const Subprocess&) = delete;
++	Subprocess& operator=(const Subprocess&) = delete;
++};
++
++#endif
+diff --git a/zircon/kernel/lib/instrumentation/BUILD.gn b/zircon/kernel/lib/instrumentation/BUILD.gn
+index 328ed13891a..86353265ebd 100644
+--- a/zircon/kernel/lib/instrumentation/BUILD.gn
++++ b/zircon/kernel/lib/instrumentation/BUILD.gn
+@@ -124,5 +124,15 @@ if (is_kernel) {
+     if (configs + _asan_config - _asan_config != configs) {
+       configs -= _asan_config
+     }
++
++    # sancov code shouldn't be instrumented by sancov itself.  The coverage
++    # callbacks run from very early boot and before the sancov VMOs exist.
++    if (configs + _sancov_config - _sancov_config != configs) {
++      configs -= _sancov_config
++    }
++
++    # The callbacks can run before the compiler ABI state (e.g., x86
++    # safe-stack/stack-protector TLS) is initialized.
++    configs += [ "//build/config:no-compiler-abi" ]
+   }
+ }
+diff --git a/zircon/kernel/lib/instrumentation/sancov.cc b/zircon/kernel/lib/instrumentation/sancov.cc
+index 45c9e8867f2..b0d984c97f4 100644
+--- a/zircon/kernel/lib/instrumentation/sancov.cc
++++ b/zircon/kernel/lib/instrumentation/sancov.cc
+@@ -17,7 +17,9 @@ InstrumentationDataVmo SancovGetCountsVmo() { return {}; }
+ 
+ #else  // HAVE_SANCOV
+ 
++#include <lib/instrumentation/debugdata.h>
+ #include <lib/instrumentation/kernel-mapped-vmo.h>
++#include <lib/page/size.h>
+ #include <stdint.h>
+ #include <zircon/assert.h>
+ 
+@@ -38,11 +40,11 @@ constexpr uint64_t kMagic64 = 0xC0BFFFFFFFFFFF64ULL;
+ 
+ constexpr uint64_t kCountsMagic = 0x0023766f436e6153ULL;  // "SanCov#" (LE)
+ 
+-// The sancov tool matches "<binaryname>" to "<binaryname>.%u.sancov".
+-constexpr ktl::string_view kPcVmoName = "data/vmzircon.1.sancov";
+-
+-// This follows the sancov PCs file name just for consistency.
+-constexpr ktl::string_view kCountsVmoName = "data/vmzircon.1.sancov-counts";
++constexpr ktl::string_view kModuleName = "vmzircon.1";
++constexpr ktl::string_view kPcSinkName = "sancov";
++constexpr ktl::string_view kPcSuffix = "sancov";
++constexpr ktl::string_view kCountsSinkName = "sancov-counts";
++constexpr ktl::string_view kCountsSuffix = "sancov-counts";
+ 
+ // Go back from the return address to the call site.
+ // Note this must exactly match the calculation in the sancov tool.
+@@ -63,6 +65,8 @@ extern "C" uint32_t __start___sancov_guards[], __stop___sancov_guards[];
+ 
+ [[gnu::const]] size_t DataSize() { return (GuardsCount() + 1) * sizeof(uint64_t); }
+ 
++[[gnu::const]] size_t VmoSize() { return RoundUpPageSize(DataSize()); }
++
+ // Instrumented code runs from the earliest point, before initialization.  The
+ // memory for storing the PCs and counts hasn't been set up.  However, code is
+ // running only on the boot CPU.  So in the pre-initialization period, we
+@@ -81,14 +85,14 @@ KernelMappedVmo gSancovPcVmo, gSancovCountsVmo;
+ 
+ void InitSancov(uint level) {
+   fbl::RefPtr<VmObjectPaged> vmo;
+-  zx_status_t status = VmObjectPaged::Create(PMM_ALLOC_FLAG_ANY, 0, DataSize(), &vmo);
++  zx_status_t status = VmObjectPaged::Create(PMM_ALLOC_FLAG_ANY, 0, VmoSize(), &vmo);
+   ZX_ASSERT(status == ZX_OK);
+-  status = gSancovPcVmo.Init(ktl::move(vmo), 0, DataSize(), "sancov-pc-table");
++  status = gSancovPcVmo.Init(ktl::move(vmo), 0, VmoSize(), "sancov-pc-table");
+   ZX_ASSERT(status == ZX_OK);
+ 
+-  status = VmObjectPaged::Create(PMM_ALLOC_FLAG_ANY, 0, DataSize(), &vmo);
++  status = VmObjectPaged::Create(PMM_ALLOC_FLAG_ANY, 0, VmoSize(), &vmo);
+   ZX_ASSERT(status == ZX_OK);
+-  status = gSancovCountsVmo.Init(ktl::move(vmo), 0, DataSize(), "sancov-pc-counts-table");
++  status = gSancovCountsVmo.Init(ktl::move(vmo), 0, VmoSize(), "sancov-pc-counts-table");
+   ZX_ASSERT(status == ZX_OK);
+ 
+   gSancovPcTable = reinterpret_cast<uint64_t*>(gSancovPcVmo.base_locking());
+@@ -164,22 +168,26 @@ void __sanitizer_cov_trace_pc_guard(uint32_t* guard_ptr) {
+ }  // extern "C"
+ 
+ InstrumentationDataVmo SancovGetPcVmo() {
++  auto vmo_name = instrumentation::DebugdataVmoName(kPcSinkName, kModuleName, kPcSuffix,
++                                                    /*is_static=*/false);
+   return {
+       .announce = "SanitizerCoverage",
+-      .sink_name = "sancov",
++      .sink_name = kPcSinkName,
+       .units = "PCs",
+       .scale = sizeof(gSancovPcTable[0]),
+-      .handle = gSancovPcVmo.Publish(kPcVmoName, DataSize()),
++      .handle = gSancovPcVmo.Publish(vmo_name, DataSize()),
+   };
+ }
+ 
+ InstrumentationDataVmo SancovGetCountsVmo() {
++  auto vmo_name = instrumentation::DebugdataVmoName(kCountsSinkName, kModuleName, kCountsSuffix,
++                                                    /*is_static=*/false);
+   return {
+       .announce = "SanitizerCoverage Counts",
+-      .sink_name = "sancov-counts",
++      .sink_name = kCountsSinkName,
+       .units = "counters",
+       .scale = sizeof(gSancovPcCounts[0]),
+-      .handle = gSancovCountsVmo.Publish(kCountsVmoName, DataSize()),
++      .handle = gSancovCountsVmo.Publish(vmo_name, DataSize()),
+   };
+ }
+ 
