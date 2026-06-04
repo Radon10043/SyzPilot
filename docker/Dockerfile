@@ -16,8 +16,9 @@ RUN apt-get install -y qemu-system-x86 xz-utils cmake gdb libdw-dev libssl-dev s
 RUN apt-get install -y rsync file devscripts equivs gnupg config-package-dev debhelper-compat dwarves
 RUN apt-get install -y unzip gettext ccache git-email cpio gawk lsb-release software-properties-common
 RUN apt-get install -y cloc openssh-server python3 python3-pip python3-dev language-pack-en-base jq
-RUN apt-get install -y pkg-config libzstd-dev libxml2-dev zlib1g-dev sshfs tmux repo adb lsd
-RUN apt-get install -y libncurses6 libtinfo6 ripgrep debian-archive-keyring bubblewrap
+RUN apt-get install -y pkg-config libzstd-dev libxml2-dev zlib1g-dev sshfs tmux repo adb lsd rename
+RUN apt-get install -y libncurses6 libtinfo6 ripgrep debian-archive-keyring pciutils iproute2
+RUN apt-get install -y bubblewrap net-tools
 
 RUN apt-get install -y bmake libarchive-tools libbsd-dev time libarchive-dev libarchive-tools libncurses5-dev
 
