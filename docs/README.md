@@ -106,6 +106,7 @@ Some flags of generator:
 
 ## merged specifications
 
+- [PR#7545](https://github.com/google/syzkaller/pull/7545)
 - [PR#7277](https://github.com/google/syzkaller/pull/7277)
 - [PR#6961](https://github.com/google/syzkaller/pull/6961)
 - [PR#6943](https://github.com/google/syzkaller/pull/6943)
@@ -141,14 +142,21 @@ bugs related to our generated specification and reported by syzbot:
 - [CVE-2026-31577](https://lore.kernel.org/linux-cve-announce/2026042410-CVE-2026-31577-5e81@gregkh/), [general protection fault in nilfs_mdt_save_to_shadow_map](https://syzkaller.appspot.com/bug?extid=4b4093b1f24ad789bf37)
 - [CVE-2026-31585](https://lore.kernel.org/linux-cve-announce/2026042413-CVE-2026-31585-b423@gregkh/), [memory leak in vidtv_psi_service_desc_init](https://syzkaller.appspot.com/bug?extid=639ebc6ec75e96674741)
 - [CVE-2026-43058](https://lore.kernel.org/linux-cve-announce/2026050254-CVE-2026-43058-4a86@gregkh/), [KMSAN: uninit-value in vidtv_ts_null_write_into](https://syzkaller.appspot.com/bug?extid=96f901260a0b2d29cd1a)
+- [CVE-2026-53320](https://lore.kernel.org/linux-cve-announce/2026062622-CVE-2026-53320-a56a@gregkh/), [WARNING in nilfs_btree_mark](https://syzkaller.appspot.com/bug?extid=98a040252119df0506f8)
+- [CVE-2026-53320](https://lore.kernel.org/linux-cve-announce/2026062622-CVE-2026-53320-a56a@gregkh/), [WARNING in nilfs_ioctl_prepare_clean_segments](https://syzkaller.appspot.com/bug?extid=466a45fcfb0562f5b9a0)
+- [BUG: corrupted list in nilfs_lookup_dirty_data_buffers](https://syzkaller.appspot.com/bug?extid=c37bed40868932d790e9)
+- [INFO: task hung in nilfs_transaction_begin](https://syzkaller.appspot.com/bug?extid=62f0f99d2f2bb8e3bbd7)
+- [INFO: trying to register non-static key in as102_dvb_dmx_start_feed](https://syzkaller.appspot.com/bug?extid=3f395d8da879a58fb019)
+- [KASAN: slab-use-after-free Read in dvb_device_open](https://syzkaller.appspot.com/bug?extid=1eb177ecc3943b883f0a)
 - [KASAN: slab-use-after-free Read in dvb_frontend_release](https://syzkaller.appspot.com/bug?extid=ae466a728017ec940b41)
 - [KASAN: slab-use-after-free Read in dvb_frontend_open](https://syzkaller.appspot.com/bug?extid=40339ea82afa8184ad5d)
-- [KMSAN: uninit-value in dvb_demux_read](https://syzkaller.appspot.com/bug?extid=bd7c90de4c9f1f8ab660)
 - [KMSAN: uninit-value in dvbdmx_release_ts_feed](https://syzkaller.appspot.com/bug?extid=01d4620886bee3db0e74)
-- [WARNING in nilfs_btree_mark](https://syzkaller.appspot.com/bug?extid=98a040252119df0506f8)
+- [KMSAN: uninit-value in dvb_demux_read](https://syzkaller.appspot.com/bug?extid=bd7c90de4c9f1f8ab660)
+- [WARNING in as102_dvb_dmx_start_feed media](https://syzkaller.appspot.com/bug?extid=3825a6102073c418fe41)
 - [general protection fault in bio_add_page](https://syzkaller.appspot.com/bug?extid=ed8bc247f231c1a48e21)
 - [general protection fault in bio_alloc_bioset](https://syzkaller.appspot.com/bug?extid=09ddb593eea76a158f42)
 - [memory leak in dvb_register_device](https://syzkaller.appspot.com/bug?extid=d37184d9d8cc34602616)
+- [memory leak in vidtv_psi_short_event_desc_init](https://syzkaller.appspot.com/bug?extid=afc686a471d70896c5d9)
 
 ## freebsd bugs
 
