@@ -282,6 +282,7 @@ To ensure anonymity, we will release all links after the paper is accepted.
 
 ### Merged specifications
 
+- sys/linux: add descriptions for mtd and tee subsystems
 - sys/netbsd: add and update descriptions for acpi, agp, hdaudio, etc.
 - sys/freebsd: generate headers for const extraction and add syscall descriptions
 - sys/openbsd: update wscons.txt and add dev_dri.txt
@@ -317,15 +318,17 @@ Bugs related to our generated specifications and reported by syzbot:
 - CVE-0000-00000, KMSAN: uninit-value in vidtv_ts_null_write_into
 - CVE-0000-00000, general protection fault in nilfs_mdt_save_to_shadow_map
 - CVE-0000-00000, memory leak in vidtv_psi_service_desc_init
+- CVE-0000-00000, WARNING in nilfs_btree_mark
+- CVE-0000-00000, WARNING in nilfs_ioctl_prepare_clean_segments
+- BUG: corrupted list in nilfs_lookup_dirty_data_buffers
 - INFO: task hung in nilfs_transaction_begin
 - INFO: trying to register non-static key in as102_dvb_dmx_start_feed
+- KASAN: slab-use-after-free Read in dvb_device_open
 - KASAN: slab-use-after-free Read in dvb_frontend_release
 - KASAN: slab-use-after-free Read in dvb_frontend_open
 - KMSAN: uninit-value in dvbdmx_release_ts_feed
 - KMSAN: uninit-value in dvb_demux_read
 - WARNING in as102_dvb_dmx_start_feed media
-- WARNING in nilfs_btree_mark
-- WARNING in nilfs_ioctl_prepare_clean_segments
 - general protection fault in bio_add_page
 - general protection fault in bio_alloc_bioset
 - memory leak in dvb_register_device
