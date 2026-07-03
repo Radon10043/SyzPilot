@@ -25,10 +25,64 @@ type Agent struct {
 	ToolCallHist []llms.ToolCall             // history of tool calls, used for checking repetition and whether agent is stucked
 }
 
+type agentOptions func(*Agent)
+
+// WithModel sets the core model of the agent
+func WithModel(model *openai.LLM) agentOptions {
+	return func(a *Agent) {
+		a.Model = model
+	}
+}
+
+// WithTemperature sets the temperature of the agent
+func WithTemperature(temperature float32) agentOptions {
+	return func(a *Agent) {
+		a.Temperature = temperature
+	}
+}
+
+// WithMaxTokens sets the maximum number of output tokens of the agent
+func WithMaxTokens(maxTokens int) agentOptions {
+	return func(a *Agent) {
+		a.MaxTokens = maxTokens
+	}
+}
+
+// WithToolMap sets the available tools for the agent
+func WithToolMap(toolMap map[string]myTools.ToolExec) agentOptions {
+	return func(a *Agent) {
+		a.ToolMap = toolMap
+	}
+}
+
+// WithToolHelper sets the ToolHelper field of the agent
+func WithToolHelper(toolHelper *myTools.ToolHelper) agentOptions {
+	return func(a *Agent) {
+		a.ToolHelper = toolHelper
+	}
+}
+
 // Purge purges the message history and tool call history of the agent
 func (a *Agent) Purge() {
 	a.Messages = []llms.MessageContent{}
 	a.ToolCallHist = []llms.ToolCall{}
+}
+
+// Clone returns a new agent that shares this agent's model, tools and helper but
+// starts with an empty message and tool call history. The shared fields (Model,
+// ToolMap, ToolHelper) are only read during a query, so clones can run independent
+// conversations concurrently without racing on the original's mutable state.
+func (a *Agent) Clone() *Agent {
+	return &Agent{
+		Ctx:          a.Ctx,
+		Model:        a.Model,
+		Messages:     []llms.MessageContent{},
+		Temperature:  a.Temperature,
+		MaxTokens:    a.MaxTokens,
+		ToolMap:      a.ToolMap,
+		ToolHelper:   a.ToolHelper,
+		ToolCallHist: []llms.ToolCall{},
+	}
 }
 
 // AddSystemMessage appends a system message to the agent's message history
@@ -185,6 +239,7 @@ func (a *Agent) repeatSameTool() bool {
 }
 
 // NewAgent creates a new agent with the given database and initializes the tool map
+// !!DEPRECATED!!
 func NewAgent(db *database.Database, llm *openai.LLM) *Agent {
 	// use all tools
 	toolMap := map[string]myTools.ToolExec{
@@ -247,8 +302,8 @@ func NewAgent(db *database.Database, llm *openai.LLM) *Agent {
 	}
 }
 
-// TODO: let's refactor these NewAgent funcs to NewAgent(opts...)
 // NewAgentWithTools creates a new agent with the given database and customized tool map
+// !!DEPRECATED!!
 func NewAgentWithTools(db *database.Database, llm *openai.LLM, toolMap map[string]myTools.ToolExec) *Agent {
 	toolHelper := &myTools.ToolHelper{
 		Db: db,
@@ -262,4 +317,20 @@ func NewAgentWithTools(db *database.Database, llm *openai.LLM, toolMap map[strin
 		ToolMap:     toolMap,
 		ToolHelper:  toolHelper,
 	}
+}
+
+// NewAgentWithOpts creates a new agent with the options provided by user
+// TODO: delete current NewAgent() and NewAgentWithTools(), rename this func to NewAgent()
+func NewAgentWithOpts(opts ...agentOptions) *Agent {
+	a := Agent{
+		Ctx:          context.Background(),
+		Messages:     []llms.MessageContent{},
+		Temperature:  0.2,
+		MaxTokens:    128 << 10,
+		ToolCallHist: []llms.ToolCall{},
+	}
+	for _, opt := range opts {
+		opt(&a)
+	}
+	return &a
 }

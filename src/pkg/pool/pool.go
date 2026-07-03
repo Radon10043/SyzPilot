@@ -184,11 +184,11 @@ func (s *SpecPool) Get(name string) (SpecElement, error) {
 }
 
 // Remove removes and returns an element from the SpecPool by name
-func (s *SpecPool) Remove(elem *SpecElement) error {
-	if !s.Exists(elem.Name) {
-		return fmt.Errorf("element not found: %s", elem.Name)
+func (s *SpecPool) Remove(name string) error {
+	if !s.Exists(name) {
+		return fmt.Errorf("element not found: %s", name)
 	}
-	delete(*s, elem.Name)
+	delete(*s, name)
 	return nil
 }
 
@@ -266,7 +266,11 @@ func (s SpecPool) sort() []SpecElement {
 		sorted = append(sorted, *elem)
 	}
 	slices.SortFunc(sorted, func(a, b SpecElement) int {
-		return cmp.Compare(priority[a.Type], priority[b.Type])
+		if c := cmp.Compare(priority[a.Type], priority[b.Type]); c != 0 {
+			return c
+		}
+		// break ties by name so the output order is deterministic
+		return cmp.Compare(a.Name, b.Name)
 	})
 	return sorted
 }
@@ -309,7 +313,8 @@ func (s *SpecPool) Syzlang(opts ...SyzlangOption) string {
 			syzl.WriteString(comment)
 		}
 		prevType = elem.Type
-		syzl.WriteString(elem.Code + "\n")
+		syzl.WriteString(elem.Code)
+		syzl.WriteString("\n")
 	}
 	return syzl.String()
 }

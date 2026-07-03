@@ -79,7 +79,8 @@ func RemoveLines(buf *bytes.Buffer, keywords []string) bytes.Buffer {
 		if FoundKeywords(line, keywords) {
 			continue
 		}
-		fbuf.WriteString(line + "\n")
+		fbuf.WriteString(line)
+		fbuf.WriteString("\n")
 	}
 	return fbuf
 }
@@ -91,7 +92,8 @@ func PreserveLines(buf *bytes.Buffer, keywords []string) bytes.Buffer {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if FoundKeywords(line, keywords) {
-			fbuf.WriteString(line + "\n")
+			fbuf.WriteString(line)
+			fbuf.WriteString("\n")
 		}
 	}
 	return fbuf

@@ -123,18 +123,31 @@ func (sc *SpecCheck) RestoreWorkdir() error {
 
 // AddSpec add a syscall spec to sc.Workdir/sys/$TARGETOS/ as a temporary file.
 // Return the path to spec file and error info.
-func (sc *SpecCheck) AddSpec(spec string) (string, error) {
-	sysDir := filepath.Join(sc.Workdir, "sys", sc.Os.String())
-	file, err := os.CreateTemp(sysDir, "spec-*.txt")
+func (sc *SpecCheck) AddSpec(syzl string) (string, error) {
+	specdir := filepath.Join(sc.Workdir, "sys", sc.Os.String())
+	file, err := os.CreateTemp(specdir, "spec-*.txt")
 	if err != nil {
 		return "", err
 	}
 	defer file.Close()
-	_, err = file.WriteString(spec)
+	_, err = file.WriteString(syzl)
 	if err != nil {
 		return "", err
 	}
 	return file.Name(), nil
+}
+
+// AddSpecWithName add a syscall spec to sc.Workdir/sys/$TARGETOS/ as a specific file.
+// Return the path to spec file and error info
+func (sc *SpecCheck) AddSpecWithName(syzl string, filename string) (string, error) {
+	path := filepath.Join(sc.Workdir, "sys", sc.Os.String(), filename)
+	if _, err := os.Stat(filepath.Join(path)); err == nil {
+		return "", fmt.Errorf("%v already exists", path)
+	}
+	if err := os.WriteFile(path, []byte(syzl), 0644); err != nil {
+		return "", fmt.Errorf("failed to write to %v: %v", path, err)
+	}
+	return path, nil
 }
 
 // ExtractConst run syz-extract to extract constants for a specific file (under sc.Workdir/sys/$OS/)

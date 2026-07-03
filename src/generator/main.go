@@ -45,7 +45,7 @@ type ProgConfig struct {
 	Kernel     string
 	Ref        string
 	Resume     bool
-	Prefix     string
+	Prefix     string // !DEPRECATED
 
 	// spec generation configs
 	Sysdir string
@@ -157,7 +157,8 @@ func main() {
 		for file := range files {
 			data, _ := os.ReadFile(file)
 			repdata := bytes.ReplaceAll(data, []byte("{OS}"), []byte(cfg.Os))
-			sb.WriteString(string(repdata) + "\n")
+			sb.WriteString(string(repdata))
+			sb.WriteString("\n")
 		}
 		sysPromptMap[key] = sb.String()
 	}
@@ -260,7 +261,7 @@ func setConfigs() *ProgConfig {
 	flag.StringVar(&cfg.Outdir, "outdir", "", "Path to the output directory")
 	flag.StringVar(&cfg.ExtractBin, "extract-bin", "./bin/syz-extract", "Path to the syz-extract binary")
 	flag.StringVar(&cfg.CheckBin, "check-bin", "./bin/syz-check", "Path to the syz-check binary")
-	flag.StringVar(&cfg.Kernel, "kernel", "", "Path to kernel used for spec extraction")
+	flag.StringVar(&cfg.Kernel, "kernel", "", "Path to kernel used for spec generation")
 	flag.StringVar(&cfg.Sysdir, "sysdir", "./syzkaller/sys/", "Path to the sys directory (syzkaller/sys like structure)")
 	flag.BoolVar(&cfg.Resume, "resume", true, "Whether to resume from previous interrupted run")
 	flag.StringVar(&cfg.Ref, "ref", "", "Path to the reference entries file")
@@ -389,10 +390,10 @@ func checkSysdir(cfg *ProgConfig) error {
 	sc.SetupWorkdir()
 	defer os.RemoveAll(workdir)
 	if stdout, stderr, valid := sc.ExtractConst(""); !valid {
-		return fmt.Errorf("failed to execute syz-extract with sysdir:\n\nstdout:\n%v\n\nstderr:\n%v", stdout, stderr)
+		return fmt.Errorf("failed to execute syz-extract with sysdir:\n\nstdout:\n%v\n\nstderr:\n%v\n", stdout, stderr)
 	}
 	if stdout, stderr, valid := sc.CheckValidity(); !valid {
-		return fmt.Errorf("failed to execute syz-check with sysdir:\n\nstdout:\n%v\n\nstderr:\n%v", stdout, stderr)
+		return fmt.Errorf("failed to execute syz-check with sysdir:\n\nstdout:\n%v\n\nstderr:\n%v\n", stdout, stderr)
 	}
 	logger.Printf("%v is valid!\n", cfg.Sysdir)
 	return nil

@@ -191,10 +191,12 @@ func createErrBlock(stdout *bytes.Buffer, stderr *bytes.Buffer, sh *StageHelper)
 	var errBlock strings.Builder
 	errBlock.WriteString("```\n")
 	for _, msg := range fmtStdout {
-		errBlock.WriteString(msg + "\n")
+		errBlock.WriteString(msg)
+		errBlock.WriteString("\n")
 	}
 	for _, msg := range fmtStderr {
-		errBlock.WriteString(msg + "\n")
+		errBlock.WriteString(msg)
+		errBlock.WriteString("\n")
 	}
 	errBlock.WriteString("```\n")
 
