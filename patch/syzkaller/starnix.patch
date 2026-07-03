@@ -1,0 +1,699 @@
+diff --git a/docs/starnix/README.md b/docs/starnix/README.md
+index f6900e994c..b22c79ca2a 100644
+--- a/docs/starnix/README.md
++++ b/docs/starnix/README.md
+@@ -15,9 +15,10 @@ export SOURCEDIR=/home/you/fuchsia
+ 
+ To build Fuchsia for qemu-x64, run:
+ ```
+-fx --dir "out/qemu-x64" set workstation_eng.qemu-x64 \
++fx --dir out/x64 set workbench_eng.x64 \
+   --with "//bundles/tools" \
+-  --with "//src/proc/bin/starnix"
++  --assembly-override //local:syzkaller_starnix \
++  --args=starnix_sancov=true
+ fx build
+ ```
+ 
+@@ -45,18 +46,24 @@ Create a manager config like the following, replacing the environment variables
+     "target": "linux/amd64",
+     "http": "127.0.0.1:56741",
+     "workdir": "$SYZKALLER/workdir",
+-    "kernel_obj": "$KERNEL",
++    "kernel_obj": "$SOURCEDIR/out/x64/exe.unstripped/starnix_kernel",
+     "kernel_src": "$SOURCEDIR",
+     "syzkaller": "$SYZKALLER",
+-    "procs": 8,
++    "procs": 1,
+     "type": "starnix",
+     "vm": {
+-        "count": 1
++        "count": 1,
++        "coverage_pcs": "/tmp/starnix-sancov/starnix_kernel.sancov",
++        "coverage_counts": "/tmp/starnix-sancov/starnix_kernel.sancov-counts"
+     },
+-    "cover": false
++    "cover": true
+ }
+ ```
+ 
++Coverage mode expects the live Starnix sancov PC table and counter table to be
++visible inside the Starnix container at the configured paths. The Linux executor
++uses these files instead of Linux KCOV.
++
+ ### Running
+ 
+ Lastly, just run the command below to start fuzzing.
+diff --git a/executor/executor.cc b/executor/executor.cc
+index d6bba7aa7d..2d0515eaf0 100644
+--- a/executor/executor.cc
++++ b/executor/executor.cc
+@@ -378,6 +378,10 @@ struct cover_t {
+ 	bool overflow;
+ 	// True if cover_enable() was called for this object.
+ 	bool enabled;
++#if GOOS_linux
++	uint64* starnix_counts_snapshot;
++	uint64 starnix_counts_words;
++#endif
+ };
+ 
+ struct thread_t {
+diff --git a/executor/executor_linux.h b/executor/executor_linux.h
+index bbc5dfff06..5e19d74b3a 100644
+--- a/executor/executor_linux.h
++++ b/executor/executor_linux.h
+@@ -5,9 +5,11 @@
+ #include <signal.h>
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <string.h>
+ #include <sys/ioctl.h>
+ #include <sys/mman.h>
+ #include <sys/prctl.h>
++#include <sys/stat.h>
+ #include <sys/syscall.h>
+ #include <unistd.h>
+ 
+@@ -52,6 +54,238 @@ static inline __u64 kcov_remote_handle(__u64 subsys, __u64 inst)
+ 	return subsys | inst;
+ }
+ 
++static const uint64 kStarnixSancovPcMagic = 0xc0bfffffffffff64ull;
++static const uint64 kStarnixSancovCountsMagic = 0x0023766f436e6153ull;
++static const int kStarnixSancovPcFd = kCoverFilterFd + 1;
++static const int kStarnixSancovCountsFd = kCoverFilterFd + 2;
++
++static bool starnix_sancov_enabled;
++static uint64* starnix_sancov_pcs;
++static uint64* starnix_sancov_counts;
++static uint64 starnix_sancov_words;
++static int starnix_sancov_counts_fd = -1;
++static int starnix_sancov_runner_pcs_fd = -1;
++static int starnix_sancov_runner_counts_fd = -1;
++static size_t starnix_sancov_counts_size;
++
++static const char* const starnix_sancov_pc_paths[] = {
++    "/tmp/starnix-sancov/starnix_kernel.sancov",
++    "/tmp/starnix-sancov/pcs",
++    "/debugdata/sancov/dynamic/data/starnix_kernel.sancov",
++    "/debugdata/sancov/dynamic/starnix_kernel.sancov",
++};
++static const char* const starnix_sancov_counts_paths[] = {
++    "/tmp/starnix-sancov/starnix_kernel.sancov-counts",
++    "/tmp/starnix-sancov/counts",
++    "/debugdata/sancov-counts/dynamic/data/starnix_kernel",
++    "/debugdata/sancov-counts/dynamic/data/starnix_kernel.sancov-counts",
++    "/debugdata/sancov-counts/dynamic/starnix_kernel",
++    "/debugdata/sancov-counts/dynamic/starnix_kernel.sancov-counts",
++};
++
++static bool starnix_sancov_requested()
++{
++	return getenv("SYZ_STARNIX_SANCOV") != NULL ||
++	       getenv("SYZ_STARNIX_COVER_PCS") != NULL ||
++	       getenv("SYZ_STARNIX_COVER_COUNTS") != NULL;
++}
++
++static bool starnix_runtime_detected()
++{
++	char buf[256];
++	int fd = open("/proc/version", O_RDONLY);
++	if (fd == -1)
++		return false;
++	ssize_t n = read(fd, buf, sizeof(buf) - 1);
++	close(fd);
++	if (n <= 0)
++		return false;
++	buf[n] = 0;
++	return strstr(buf, "starnix") != NULL || strstr(buf, "Starnix") != NULL;
++}
++
++static bool starnix_sancov_should_use()
++{
++	return starnix_sancov_requested() || starnix_runtime_detected();
++}
++
++static uint64* starnix_sancov_read_fd(int fd, const char* kind, size_t* size)
++{
++	size_t cap = 64 << 10;
++	size_t len = 0;
++	char* data = (char*)malloc(cap);
++	if (!data)
++		exitf("failed to allocate Starnix sancov read buffer");
++	if (lseek(fd, 0, SEEK_SET) < 0)
++		failmsg("failed to seek Starnix sancov data", "%s: %s", kind, strerror(errno));
++	for (;;) {
++		if (len == cap) {
++			cap *= 2;
++			char* new_data = (char*)realloc(data, cap);
++			if (!new_data)
++				exitf("failed to grow Starnix sancov read buffer");
++			data = new_data;
++		}
++		ssize_t n = read(fd, data + len, cap - len);
++		if (n < 0)
++			failmsg("failed to read Starnix sancov data", "%s: %s", kind, strerror(errno));
++		if (n == 0)
++			break;
++		len += n;
++	}
++	if (len < 2 * sizeof(uint64) || (len % sizeof(uint64)) != 0)
++		failmsg("bad Starnix sancov size", "%s size=%zu", kind, len);
++	*size = len;
++	return (uint64*)data;
++}
++
++static int starnix_sancov_try_open(const char* env_name, const char* const* paths, size_t count,
++				   const char* kind, const char** path_out)
++{
++	const char* env_path = getenv(env_name);
++	if (env_path && env_path[0] != 0) {
++		int fd = open(env_path, O_RDONLY);
++		if (fd != -1) {
++			debug("using Starnix sancov %s: %s\n", kind, env_path);
++			if (path_out)
++				*path_out = env_path;
++			return fd;
++		}
++		return -1;
++	}
++
++	for (size_t i = 0; i < count; i++) {
++		int fd = open(paths[i], O_RDONLY);
++		if (fd != -1) {
++			debug("using Starnix sancov %s: %s\n", kind, paths[i]);
++			if (path_out)
++				*path_out = paths[i];
++			return fd;
++		}
++	}
++	return -1;
++}
++
++static int starnix_sancov_open(const char* env_name, const char* const* paths, size_t count, const char* kind)
++{
++	const char* path = NULL;
++	int fd = starnix_sancov_try_open(env_name, paths, count, kind, &path);
++	if (fd != -1)
++		return fd;
++	const char* env_path = getenv(env_name);
++	if (env_path && env_path[0] != 0)
++		failmsg("failed to open Starnix sancov data", "%s=%s: %s", env_name, env_path, strerror(errno));
++	failmsg("failed to open Starnix sancov data", "%s: %s", kind, strerror(errno));
++}
++
++static uint64* starnix_sancov_read(const char* env_name, const char* const* paths, size_t path_count,
++				   const char* kind, size_t* size, int* fd_out)
++{
++	int fd = starnix_sancov_open(env_name, paths, path_count, kind);
++	uint64* data = starnix_sancov_read_fd(fd, kind, size);
++	if (fd_out)
++		*fd_out = fd;
++	else
++		close(fd);
++	return data;
++}
++
++static bool starnix_sancov_have_inherited_fds()
++{
++	return fcntl(kStarnixSancovPcFd, F_GETFD) != -1 &&
++	       fcntl(kStarnixSancovCountsFd, F_GETFD) != -1;
++}
++
++static int starnix_sancov_dup_for_runner(int fd, const char* kind)
++{
++	int dupfd = fcntl(fd, F_DUPFD_CLOEXEC, kStarnixSancovCountsFd + 1);
++	if (dupfd < 0)
++		dupfd = fcntl(fd, F_DUPFD, kStarnixSancovCountsFd + 1);
++	if (dupfd < 0)
++		failmsg("failed to dup Starnix sancov fd", "%s: %s", kind, strerror(errno));
++	close(fd);
++	return dupfd;
++}
++
++static void starnix_sancov_prepare_runner_fds()
++{
++	if (!starnix_sancov_should_use() || starnix_sancov_runner_pcs_fd != -1)
++		return;
++	for (int i = 0; i < 100; i++) {
++		int pcs_fd = starnix_sancov_try_open(
++		    "SYZ_STARNIX_COVER_PCS", starnix_sancov_pc_paths, ARRAY_SIZE(starnix_sancov_pc_paths), "PCs", NULL);
++		int counts_fd = starnix_sancov_try_open("SYZ_STARNIX_COVER_COUNTS", starnix_sancov_counts_paths,
++							ARRAY_SIZE(starnix_sancov_counts_paths), "counts", NULL);
++		if (pcs_fd != -1 && counts_fd != -1) {
++			starnix_sancov_runner_pcs_fd = starnix_sancov_dup_for_runner(pcs_fd, "PCs");
++			starnix_sancov_runner_counts_fd = starnix_sancov_dup_for_runner(counts_fd, "counts");
++			return;
++		}
++		if (pcs_fd != -1)
++			close(pcs_fd);
++		if (counts_fd != -1)
++			close(counts_fd);
++		usleep(100 * 1000);
++	}
++	int pcs_fd = starnix_sancov_open("SYZ_STARNIX_COVER_PCS", starnix_sancov_pc_paths,
++					 ARRAY_SIZE(starnix_sancov_pc_paths), "PCs");
++	close(pcs_fd);
++	int counts_fd = starnix_sancov_open("SYZ_STARNIX_COVER_COUNTS", starnix_sancov_counts_paths,
++					    ARRAY_SIZE(starnix_sancov_counts_paths), "counts");
++	close(counts_fd);
++}
++
++static int starnix_sancov_child_fd_max()
++{
++	if (starnix_sancov_runner_pcs_fd == -1)
++		return kCoverFilterFd;
++	return kStarnixSancovCountsFd;
++}
++
++static void starnix_sancov_refresh_counts()
++{
++	size_t counts_size = 0;
++	uint64* counts = starnix_sancov_read_fd(starnix_sancov_counts_fd, "counts", &counts_size);
++	if (counts_size != starnix_sancov_counts_size)
++		failmsg("changed Starnix sancov counts size", "was=%zu now=%zu",
++			starnix_sancov_counts_size, counts_size);
++	if (counts[0] != kStarnixSancovCountsMagic)
++		failmsg("bad Starnix sancov counts magic", "magic=0x%llx", counts[0]);
++	free(starnix_sancov_counts);
++	starnix_sancov_counts = counts;
++}
++
++static void starnix_sancov_init()
++{
++	if (starnix_sancov_counts)
++		return;
++
++	size_t pc_size = 0;
++	size_t counts_size = 0;
++	if (starnix_sancov_have_inherited_fds()) {
++		debug("using inherited Starnix sancov fds\n");
++		starnix_sancov_pcs = starnix_sancov_read_fd(kStarnixSancovPcFd, "PCs", &pc_size);
++		starnix_sancov_counts_fd = kStarnixSancovCountsFd;
++		starnix_sancov_counts = starnix_sancov_read_fd(starnix_sancov_counts_fd, "counts", &counts_size);
++	} else {
++		starnix_sancov_pcs = starnix_sancov_read("SYZ_STARNIX_COVER_PCS", starnix_sancov_pc_paths,
++							 ARRAY_SIZE(starnix_sancov_pc_paths), "PCs", &pc_size, NULL);
++		starnix_sancov_counts = starnix_sancov_read(
++		    "SYZ_STARNIX_COVER_COUNTS", starnix_sancov_counts_paths,
++		    ARRAY_SIZE(starnix_sancov_counts_paths), "counts", &counts_size, &starnix_sancov_counts_fd);
++	}
++	if (pc_size != counts_size)
++		failmsg("mismatching Starnix sancov sizes", "pcs=%zu counts=%zu", pc_size, counts_size);
++	if (starnix_sancov_pcs[0] != kStarnixSancovPcMagic)
++		failmsg("bad Starnix sancov PC magic", "magic=0x%llx", starnix_sancov_pcs[0]);
++	if (starnix_sancov_counts[0] != kStarnixSancovCountsMagic)
++		failmsg("bad Starnix sancov counts magic", "magic=0x%llx", starnix_sancov_counts[0]);
++	starnix_sancov_words = counts_size / sizeof(uint64);
++	starnix_sancov_counts_size = counts_size;
++	starnix_sancov_enabled = true;
++	debug("Starnix sancov loaded: %llu entries\n", starnix_sancov_words - 1);
++}
++
+ static void os_init(int argc, char** argv, char* data, size_t data_size)
+ {
+ 	prctl(PR_SET_PDEATHSIG, SIGKILL, 0, 0, 0);
+@@ -103,6 +337,14 @@ static intptr_t execute_syscall(const call_t* c, intptr_t a[kMaxArgs])
+ 
+ static void cover_open(cover_t* cov, bool extra)
+ {
++	if (starnix_sancov_should_use()) {
++		starnix_sancov_init();
++		cov->data_size = (extra ? kExtraCoverSize : flag_snapshot ? kSnapshotCoverSize
++									  : kCoverSize) *
++				 sizeof(uint64);
++		return;
++	}
++
+ 	int fd = open("/sys/kernel/debug/kcov", O_RDWR);
+ 	if (fd == -1)
+ 		fail("open of /sys/kernel/debug/kcov failed");
+@@ -121,6 +363,12 @@ static void cover_open(cover_t* cov, bool extra)
+ 
+ static void cover_close(cover_t* cov)
+ {
++	if (starnix_sancov_enabled) {
++		cov->enabled = false;
++		cov->fd = -1;
++		return;
++	}
++
+ 	if (cov->fd == -1)
+ 		fail("attempting to close an invalid cover fd");
+ 	if (cov->enabled) {
+@@ -150,6 +398,29 @@ static void cover_mmap(cover_t* cov)
+ 		fail("cover_mmap invoked on an already mmapped cover_t object");
+ 	if (cov->data_size == 0)
+ 		fail("cover_t structure is corrupted");
++	if (starnix_sancov_enabled) {
++		cov->mmap_alloc_size = cov->data_size;
++		cov->mmap_alloc_ptr = (char*)mmap(NULL, cov->mmap_alloc_size,
++						  PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
++		if (cov->mmap_alloc_ptr == MAP_FAILED)
++			exitf("failed to allocate Starnix coverage buffer");
++		cov->data = cov->mmap_alloc_ptr;
++		cov->data_end = cov->data + cov->data_size;
++		cov->data_offset = sizeof(uint64);
++		cov->pc_offset = 0;
++		cov->starnix_counts_words = starnix_sancov_words;
++		cov->starnix_counts_snapshot = (uint64*)malloc(starnix_sancov_words * sizeof(uint64));
++		if (!cov->starnix_counts_snapshot)
++			exitf("failed to allocate Starnix coverage snapshot");
++		starnix_sancov_refresh_counts();
++		memcpy(cov->starnix_counts_snapshot, starnix_sancov_counts,
++		       starnix_sancov_words * sizeof(uint64));
++		*(uint64*)cov->data = 0;
++		cov->size = 0;
++		cov->overflow = false;
++		return;
++	}
++
+ 	// Allocate kcov buffer plus two guard pages surrounding it.
+ 	cov->mmap_alloc_size = cov->data_size + 2 * SYZ_PAGE_SIZE;
+ 	cov->mmap_alloc_ptr = (char*)mmap(NULL, cov->mmap_alloc_size,
+@@ -177,10 +448,21 @@ static void cover_munmap(cover_t* cov)
+ 	if (munmap(cov->mmap_alloc_ptr, cov->mmap_alloc_size))
+ 		fail("cover_munmap failed");
+ 	cov->mmap_alloc_ptr = NULL;
++	if (cov->starnix_counts_snapshot) {
++		free(cov->starnix_counts_snapshot);
++		cov->starnix_counts_snapshot = NULL;
++		cov->starnix_counts_words = 0;
++	}
+ }
+ 
+ static void cover_enable(cover_t* cov, bool collect_comps, bool extra)
+ {
++	if (starnix_sancov_enabled) {
++		cov->collect_comps = false;
++		cov->enabled = true;
++		return;
++	}
++
+ 	unsigned int kcov_mode = collect_comps ? KCOV_TRACE_CMP : KCOV_TRACE_PC;
+ 	// The KCOV_ENABLE call should be fatal,
+ 	// but in practice ioctl fails with assorted errors (9, 14, 25),
+@@ -214,6 +496,18 @@ static void cover_reset(cover_t* cov)
+ 			fail("cover_reset: current_thread == 0");
+ 		cov = &current_thread->cov;
+ 	}
++	if (starnix_sancov_enabled) {
++		if (!cov->starnix_counts_snapshot)
++			fail("Starnix cover_reset on a non-mmapped cover_t object");
++		starnix_sancov_refresh_counts();
++		memcpy(cov->starnix_counts_snapshot, starnix_sancov_counts,
++		       starnix_sancov_words * sizeof(uint64));
++		*(uint64*)cov->data = 0;
++		cov->size = 0;
++		cov->overflow = false;
++		return;
++	}
++
+ 	if (flag_read_only_coverage) {
+ 		if (ioctl(cov->fd, KCOV_RESET_TRACE, 0))
+ 			fail("KCOV_RESET_TRACE failed");
+@@ -234,6 +528,33 @@ static void cover_collect_impl(cover_t* cov)
+ 
+ static void cover_collect(cover_t* cov)
+ {
++	if (starnix_sancov_enabled) {
++		if (!cov->starnix_counts_snapshot)
++			fail("Starnix cover_collect on a non-mmapped cover_t object");
++		starnix_sancov_refresh_counts();
++		uint64* out = (uint64*)cov->data;
++		uint64 max = cov->data_size / sizeof(uint64) - 1;
++		uint64 n = 0;
++
++		for (uint64 i = 1; i < starnix_sancov_words; i++) {
++			uint64 count = __atomic_load_n(&starnix_sancov_counts[i], __ATOMIC_RELAXED);
++			if (count == cov->starnix_counts_snapshot[i])
++				continue;
++			cov->starnix_counts_snapshot[i] = count;
++			uint64 pc = __atomic_load_n(&starnix_sancov_pcs[i], __ATOMIC_RELAXED);
++			if (pc == 0)
++				continue;
++			if (n == max) {
++				cov->overflow = true;
++				continue;
++			}
++			out[++n] = pc;
++		}
++		out[0] = n;
++		cov->size = n;
++		return;
++	}
++
+ 	if (is_kernel_64_bit)
+ 		cover_collect_impl<uint64>(cov);
+ 	else
+@@ -312,6 +633,9 @@ static const char* setup_devlink_pci()
+ 
+ static const char* setup_delay_kcov()
+ {
++	if (starnix_sancov_should_use())
++		return "Starnix sancov coverage does not use delayed kcov mmap";
++
+ 	int fd = open("/sys/kernel/debug/kcov", O_RDWR);
+ 	if (fd == -1)
+ 		return "open of /sys/kernel/debug/kcov failed";
+@@ -342,6 +666,9 @@ static const char* setup_delay_kcov()
+ 
+ static const char* setup_kcov_reset_ioctl()
+ {
++	if (starnix_sancov_should_use())
++		return "Starnix sancov coverage does not use KCOV_RESET_TRACE";
++
+ 	int fd = open("/sys/kernel/debug/kcov", O_RDWR);
+ 	if (fd == -1)
+ 		return "open of /sys/kernel/debug/kcov failed";
+diff --git a/executor/executor_runner.h b/executor/executor_runner.h
+index f26d446bfa..db7ae6a261 100644
+--- a/executor/executor_runner.h
++++ b/executor/executor_runner.h
+@@ -344,6 +344,12 @@ private:
+ 		    {max_signal_fd_, kMaxSignalFd},
+ 		    {cover_filter_fd_, kCoverFilterFd},
+ 		};
++#if GOOS_linux
++		if (starnix_sancov_runner_pcs_fd != -1) {
++			fds.push_back({starnix_sancov_runner_pcs_fd, kStarnixSancovPcFd});
++			fds.push_back({starnix_sancov_runner_counts_fd, kStarnixSancovCountsFd});
++		}
++#endif
+ 		const char* argv[] = {bin_, "exec", nullptr};
+ 		process_.emplace(argv, fds);
+ 
+@@ -1001,8 +1007,13 @@ static void runner(char** argv, int argc)
+ 	Connection conn(manager_addr, manager_port);
+ 
+ 	// This is required to make Subprocess fd remapping logic work.
+-	// kCoverFilterFd is the largest fd we set in the child processes.
+-	for (int fd = conn.FD(); fd < kCoverFilterFd;)
++	// Fill low fd numbers up to the largest fd we set in child processes.
++	int max_child_fd = kCoverFilterFd;
++#if GOOS_linux
++	starnix_sancov_prepare_runner_fds();
++	max_child_fd = starnix_sancov_child_fd_max();
++#endif
++	for (int fd = conn.FD(); fd < max_child_fd;)
+ 		fd = dup(fd);
+ 
+ 	Runner(conn, vm_index, argv[0]);
+diff --git a/pkg/build/starnix.go b/pkg/build/starnix.go
+index bd7fa06125..caac4c8996 100644
+--- a/pkg/build/starnix.go
++++ b/pkg/build/starnix.go
+@@ -75,6 +75,7 @@ func (st starnix) build(params Params) (ImageDetails, error) {
+ 		"scripts/fx", "--dir", buildSubdir,
+ 		"set", product,
+ 		"--debug",
++		"--args=starnix_sancov=true",
+ 		"--assembly-override", fmt.Sprintf("//products/workbench/*=//local:%s", overrideName),
+ 	); err != nil {
+ 		return ImageDetails{}, err
+diff --git a/pkg/cover/backend/modules.go b/pkg/cover/backend/modules.go
+index f44790e739..03ec3a5dec 100644
+--- a/pkg/cover/backend/modules.go
++++ b/pkg/cover/backend/modules.go
+@@ -8,6 +8,7 @@ import (
+ 	"debug/elf"
+ 	"fmt"
+ 	"io/fs"
++	"os"
+ 	"path/filepath"
+ 	"strings"
+ 
+@@ -18,8 +19,14 @@ import (
+ 
+ func DiscoverModules(target *targets.Target, objDir string, moduleObj []string) (
+ 	[]*vminfo.KernelModule, error) {
++	objPath := filepath.Join(objDir, target.KernelObject)
++	objIsFile := false
++	if st, err := os.Stat(objDir); err == nil && !st.IsDir() {
++		objPath = objDir
++		objIsFile = true
++	}
+ 	module := &vminfo.KernelModule{
+-		Path: filepath.Join(objDir, target.KernelObject),
++		Path: objPath,
+ 	}
+ 	textRange, err := elfReadTextSecRange(module)
+ 	if err != nil {
+@@ -32,7 +39,7 @@ func DiscoverModules(target *targets.Target, objDir string, moduleObj []string)
+ 			Size: textRange.End - textRange.Start,
+ 		},
+ 	}
+-	if target.OS == targets.Linux {
++	if target.OS == targets.Linux && !objIsFile {
+ 		modules1, err := discoverModulesLinux(append([]string{objDir}, moduleObj...))
+ 		if err != nil {
+ 			return nil, err
+diff --git a/pkg/vminfo/features.go b/pkg/vminfo/features.go
+index 6c4d6ae6d1..de5be67916 100644
+--- a/pkg/vminfo/features.go
++++ b/pkg/vminfo/features.go
+@@ -107,6 +107,19 @@ func (ctx *checkContext) finishFeatures(featureInfos []*flatrpc.FeatureInfo) (Fe
+ 			feat.Reason = feat.Reason[pos+len(executorPrefix):]
+ 		}
+ 		feat.Reason = strings.TrimSpace(outputReplacer.Replace(feat.Reason))
++		if ctx.cfg.VMType == "starnix" {
++			switch res.id {
++			case flatrpc.FeatureCoverage:
++				feat.Reason = "enabled via Starnix sancov"
++				feat.Enabled = true
++			case flatrpc.FeatureComparisons:
++				feat.Reason = "Starnix sancov does not provide comparisons"
++				feat.Enabled = false
++			case flatrpc.FeatureExtraCoverage:
++				feat.Reason = "Starnix sancov does not provide extra coverage"
++				feat.Enabled = false
++			}
++		}
+ 		features[res.id] = feat
+ 	}
+ 	if feat := features[flatrpc.FeatureSandboxNone]; !feat.Enabled {
+diff --git a/pkg/vminfo/linux_syscalls.go b/pkg/vminfo/linux_syscalls.go
+index 605b939d25..8cdba8f253 100644
+--- a/pkg/vminfo/linux_syscalls.go
++++ b/pkg/vminfo/linux_syscalls.go
+@@ -16,7 +16,10 @@ import (
+ 	"github.com/google/syzkaller/sys/targets"
+ )
+ 
+-func (linux) syscallCheck(ctx *checkContext, call *prog.Syscall) string {
++func (linux linux) syscallCheck(ctx *checkContext, call *prog.Syscall) string {
++	if reason := linux.starnixDisabledSyscall(call); reason != "" {
++		return reason
++	}
+ 	check := linuxSyscallChecks[call.CallName]
+ 	if check == nil {
+ 		check = func(ctx *checkContext, call *prog.Syscall) string {
+@@ -41,6 +44,18 @@ func (linux) syscallCheck(ctx *checkContext, call *prog.Syscall) string {
+ 	return linuxSupportedLSM(ctx, call)
+ }
+ 
++func (linux linux) starnixDisabledSyscall(call *prog.Syscall) string {
++	if linux.vmType != targets.Starnix {
++		return ""
++	}
++	switch call.CallName {
++	case "mlock", "mlock2", "mprotect", "munlock", "pkey_mprotect":
++		return "disabled on Starnix: zero-length ranges currently panic the Starnix kernel"
++	default:
++		return ""
++	}
++}
++
+ func linuxSupportedLSM(ctx *checkContext, call *prog.Syscall) string {
+ 	for _, lsm := range []string{"selinux", "apparmor", "smack"} {
+ 		if !strings.Contains(strings.ToLower(call.Name), lsm) {
+diff --git a/vm/starnix/starnix.go b/vm/starnix/starnix.go
+index e6da96dc03..edfc221f1b 100644
+--- a/vm/starnix/starnix.go
++++ b/vm/starnix/starnix.go
+@@ -36,6 +36,10 @@ func init() {
+ type Config struct {
+ 	// Number of VMs to run in parallel (1 by default).
+ 	Count int `json:"count"`
++	// Paths inside the Starnix container for the live sancov PC table and counter table.
++	// These are consumed by the Linux executor when coverage is enabled.
++	CoveragePCs    string `json:"coverage_pcs"`
++	CoverageCounts string `json:"coverage_counts"`
+ }
+ 
+ type Pool struct {
+@@ -70,6 +74,11 @@ type instance struct {
+ 
+ const targetDir = "/tmp"
+ 
++const (
++	defaultCoveragePCs    = "/tmp/starnix-sancov/starnix_kernel.sancov"
++	defaultCoverageCounts = "/tmp/starnix-sancov/starnix_kernel.sancov-counts"
++)
++
+ func ctor(env *vmimpl.Env) (vmimpl.Pool, error) {
+ 	cfg := &Config{}
+ 	if err := config.LoadData(env.Config, cfg); err != nil {
+@@ -78,6 +87,12 @@ func ctor(env *vmimpl.Env) (vmimpl.Pool, error) {
+ 	if cfg.Count < 1 || cfg.Count > 128 {
+ 		return nil, fmt.Errorf("invalid config param count: %v, want [1, 128]", cfg.Count)
+ 	}
++	if cfg.CoveragePCs == "" {
++		cfg.CoveragePCs = defaultCoveragePCs
++	}
++	if cfg.CoverageCounts == "" {
++		cfg.CoverageCounts = defaultCoverageCounts
++	}
+ 
+ 	ffxDir, err := os.MkdirTemp("", "syz-ffx")
+ 	if err != nil {
+@@ -481,7 +496,7 @@ func (inst *instance) Run(ctx context.Context, command string) (
+ 	sshArgs := vmimpl.SSHArgsForward(inst.debug, inst.sshPrivKey, inst.port, inst.forwardPort, useSystemSSHCfg)
+ 	sshCmd := []string{"ssh"}
+ 	sshCmd = append(sshCmd, sshArgs...)
+-	sshCmd = append(sshCmd, "root@localhost", "cd "+targetDir+" && ", command)
++	sshCmd = append(sshCmd, "root@localhost", inst.remoteCommand(command))
+ 	if inst.debug {
+ 		log.Logf(1, "instance %s: running command: %#v", inst.name, sshCmd)
+ 	}
+@@ -501,6 +516,19 @@ func (inst *instance) Run(ctx context.Context, command string) (
+ 	})
+ }
+ 
++func (inst *instance) remoteCommand(command string) string {
++	env := []string{
++		"SYZ_STARNIX_SANCOV=1",
++		"SYZ_STARNIX_COVER_PCS=" + shellQuote(inst.cfg.CoveragePCs),
++		"SYZ_STARNIX_COVER_COUNTS=" + shellQuote(inst.cfg.CoverageCounts),
++	}
++	return fmt.Sprintf("cd %s && %s %s", shellQuote(targetDir), strings.Join(env, " "), command)
++}
++
++func shellQuote(s string) string {
++	return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
++}
++
+ func (inst *instance) Info() ([]byte, error) {
+ 	info := fmt.Sprintf("%v\n%v", inst.version, "ffx")
+ 	return []byte(info), nil
+@@ -560,7 +588,18 @@ func GetToolPath(fuchsiaDir, toolName string) (string, error) {
+ 
+ 	for _, metadata := range metadataList {
+ 		if metadata.Name == toolName {
+-			return filepath.Join(buildDir, metadata.Path), nil
++			path := filepath.Join(buildDir, metadata.Path)
++			if _, err := os.Stat(path); err == nil {
++				return path, nil
++			}
++			break
++		}
++	}
++
++	for _, hostDir := range []string{"host_x64", "host_x64-novariant"} {
++		path := filepath.Join(buildDir, hostDir, toolName)
++		if _, err := os.Stat(path); err == nil {
++			return path, nil
+ 		}
+ 	}
+ 
