@@ -33,7 +33,7 @@ endif
 
 .PHONY: all clean
 
-all: analyzer generator minitask syz-check syz-extract pool2syz refactor rmunused
+all: analyzer generator minitask syz-utils pool2syz refactor rmunused
 
 clean:
 	rm -rf bin
@@ -50,16 +50,14 @@ analyzer: prepare
 
 generator: prepare
 	$(GO) build $(GOFLAGS) -o bin/generator github.com/Radon10043/cloud/src/generator/
+	$(GO) build $(GOFLAGS) -o bin/generator-fuchsia github.com/Radon10043/cloud/src/generator-fuchsia/
 
 minitask: prepare
 	$(GO) build $(GOFLAGS) -o bin/minitask github.com/Radon10043/cloud/src/minitask/
 
-syz-check: prepare
+syz-utils: prepare
 	cd syzkaller/ && \
-	$(GO) build $(GOFLAGS) -o $(PWD)/bin/syz-check $(PWD)/syzkaller/tools/syz-check/
-
-syz-extract: prepare
-	cd syzkaller/ && \
+	$(GO) build $(GOFLAGS) -o $(PWD)/bin/syz-check $(PWD)/syzkaller/tools/syz-check/ && \
 	$(GO) build $(GOFLAGS) -o $(PWD)/bin/syz-extract $(PWD)/syzkaller/sys/syz-extract/
 
 pool2syz: prepare
