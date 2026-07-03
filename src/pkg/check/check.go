@@ -184,7 +184,15 @@ func (sc *SpecCheck) CheckValidity() (*bytes.Buffer, *bytes.Buffer, bool) {
 			sc.SyzCheck,
 			"-obj-"+runtime.GOARCH+"="+sc.Os.KernFilePath(sc.KernelForCheck),
 			"-os="+sc.Os.String(),
-			"-dwarf=0",
+			"-dwarf=false",
+		)
+	case osu.Fuchsia:
+		cmd = exec.Command(
+			sc.SyzCheck,
+			"-obj-"+runtime.GOARCH+"="+sc.Os.KernFilePath(sc.KernelForCheck),
+			"-os="+sc.Os.String(),
+			"-dwarf=false",
+			"-netlink=false",
 		)
 	default:
 		cmd = exec.Command(

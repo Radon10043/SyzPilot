@@ -16,6 +16,7 @@ const (
 	OpenBSD
 	NetBSD
 	Android
+	Fuchsia
 )
 
 // String returns the string representation of OsType
@@ -31,6 +32,8 @@ func (o OsType) String() string {
 		return "netbsd"
 	case Android:
 		return "android"
+	case Fuchsia:
+		return "fuchsia"
 	default:
 		return "unknown"
 	}
@@ -59,6 +62,12 @@ func (o OsType) KernFilePath(prefix string) string {
 		return filepath.Join(prefix, "sys", "arch", runtime.GOARCH, "compile", "obj", "CLOUD", "netbsd.gdb")
 	case Android:
 		return filepath.Join(prefix, "dist", "vmlinux")
+	case Fuchsia:
+		fuchsiaArch := "x64"
+		if runtime.GOARCH != "amd64" {
+			fuchsiaArch = runtime.GOARCH
+		}
+		return filepath.Join(prefix, "out", fuchsiaArch, "kernel_"+fuchsiaArch+".lk_debug_level_0", "vmzircon")
 	default:
 		return ""
 	}
@@ -77,6 +86,8 @@ func ParseOsType(s string) (OsType, error) {
 		return NetBSD, nil
 	case "android":
 		return Android, nil
+	case "fuchsia":
+		return Fuchsia, nil
 	default:
 		return unknown, fmt.Errorf("unknown os type: %s", s)
 	}
