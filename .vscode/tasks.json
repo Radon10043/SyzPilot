@@ -4,14 +4,19 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "make syz-check syz-extract",
+            "label": "make generator syz-utils",
             "type": "shell",
-            "command": "make syz-check syz-extract"
+            "command": "make generator syz-utils DEBUG=true",
+        },
+        {
+            "label": "make syz-utils",
+            "type": "shell",
+            "command": "make syz-utils",
         },
         {
             "label": "make minitask",
             "type": "shell",
-            "command": "make minitask"
+            "command": "make minitask DEBUG=true"
         }
     ]
 }
