@@ -340,6 +340,216 @@ services:
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-kern /syzkaller/bin
         timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
+  android-17_6.18-kernel:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/android/common-android17-6.18
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debdroid/bullseye
+      KERNEL_NAME: android
+      KERNEL_VERSION: "17_6.18"
+      SUBSYSTEM: kernel
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-kern /syzkaller/bin
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
+
+  android-16_6.12-kernel:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/android/common-android16-6.12
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debdroid/bullseye
+      KERNEL_NAME: android
+      KERNEL_VERSION: "16_6.12"
+      SUBSYSTEM: kernel
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-kern /syzkaller/bin
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
+
+  android-15_6.6-kernel:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/android/common-android15-6.6
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debdroid/bullseye
+      KERNEL_NAME: android
+      KERNEL_VERSION: "15_6.6"
+      SUBSYSTEM: kernel
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-kern /syzkaller/bin
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
+
+  android-14_6.1-kernel:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/android/common-android14-6.1
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debdroid/bullseye
+      KERNEL_NAME: android
+      KERNEL_VERSION: "14_6.1"
+      SUBSYSTEM: kernel
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-kern /syzkaller/bin
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
+
+  android-14_5.15-kernel:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/android/common-android14-5.15
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debdroid/bullseye
+      KERNEL_NAME: android
+      KERNEL_VERSION: "14_5.15"
+      SUBSYSTEM: kernel
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-kern /syzkaller/bin
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
+
+  android-13_5.15-kernel:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/android/common-android13-5.15
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debdroid/bullseye
+      KERNEL_NAME: android
+      KERNEL_VERSION: "13_5.15"
+      SUBSYSTEM: kernel
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-kern /syzkaller/bin
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
+
+  android-13_5.10-kernel:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/android/common-android13-5.10
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debdroid/bullseye
+      KERNEL_NAME: android
+      KERNEL_VERSION: "13_5.10"
+      SUBSYSTEM: kernel
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-kern /syzkaller/bin
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
+
+  android-12_5.10-kernel:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/android/common-android12-5.10
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debdroid/bullseye
+      KERNEL_NAME: android
+      KERNEL_VERSION: "12_5.10"
+      SUBSYSTEM: kernel
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-kern /syzkaller/bin
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
+
+  android-12_5.4-kernel:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/android/common-android12-5.4
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debdroid/bullseye
+      KERNEL_NAME: android
+      KERNEL_VERSION: "12_5.4"
+      SUBSYSTEM: kernel
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-kern /syzkaller/bin
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
+
+  android-11_5.4-kernel:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/android/common-android11-5.4
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debdroid/bullseye
+      KERNEL_NAME: android
+      KERNEL_VERSION: "11_5.4"
+      SUBSYSTEM: kernel
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-kern /syzkaller/bin
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
+
 ##################
 ### Subsystems ###
 ##################
