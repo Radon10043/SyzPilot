@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<manifest>
+  <remote name="aosp" fetch="https://android.googlesource.com/" review="https://android.googlesource.com/" />
+
+  <default revision="master-kernel-build-2021" remote="aosp" sync-j="4" />
+
+  <superproject name="kernel/superproject" remote="aosp" revision="common-android12-5.10" />
+
+  <project path="build" name="kernel/build" revision="dbfab7e0de2e04316b526ef938b1140d7a5fd40d" />
+
+  <project path="hikey-modules" name="kernel/hikey-modules" revision="2e97927f068cd9d92a4b8039ef64c4467ca8985b" />
+
+  <project path="common" name="kernel/common" revision="eef5eb34b924d9646f65f7619e2833a420dc7638" />
+
+  <project path="kernel/tests" name="kernel/tests" revision="7b2005bacbf91c5c494abded85b3c7fea88862a8" />
+
+  <project path="kernel/configs" name="kernel/configs" revision="c10b7ea022edc356d37c092d7ca46bcb860f8a90" />
+
+  <project path="common-modules/virtual-device" name="kernel/common-modules/virtual-device" revision="a89e3169b6f22716d9b9c80fd1e0034bfd3fd492" />
+
+  <project path="prebuilts-master/clang/host/linux-x86" name="platform/prebuilts/clang/host/linux-x86" clone-depth="1" revision="6e3223f76384455acde43affde3df0ea9df66c0d" />
+
+  <project path="prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8" name="platform/prebuilts/gcc/linux-x86/host/x86_64-linux-glibc2.17-4.8" clone-depth="1" revision="4e6f66acf138d40d9a80be24b275abb9c6eed729" />
+
+  <project path="prebuilts/build-tools" name="platform/prebuilts/build-tools" clone-depth="1" revision="cfedc16ec3deb680fca6fe2aff44a1837a97b50d" />
+
+  <project path="prebuilts/kernel-build-tools" name="kernel/prebuilts/build-tools" clone-depth="1" revision="ca5b087f88c0302ff66f59a6f26be663e92baf15" />
+
+  <project path="prebuilts/tradefed" name="platform/tools/tradefederation/prebuilts" revision="52121d9a4653ff92b9bd225bd417b6a288c36b58" clone-depth="1" />
+
+  <project path="prebuilts/asuite" name="platform/prebuilts/asuite" revision="d90d0060aedfd80f2119c1db5339a093f2758926" clone-depth="1" />
+
+  <project path="tools/mkbootimg" name="platform/system/tools/mkbootimg" revision="34bc8bfb493401f7aadbd3b434f9fbfa521e9301" />
+</manifest>
+
+<!-- Download from https://ci.android.com/builds/submitted/14639493/kernel_aarch64/latest/manifest_14639493.xml -->

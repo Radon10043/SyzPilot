@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='UTF-8'?>
+
+<manifest>
+  <remote name="aosp" fetch="https://android.googlesource.com/" review="https://android.googlesource.com/" />
+
+  <default revision="master-kernel-build-2021" remote="aosp" sync-j="4" />
+
+  <superproject name="kernel/superproject" remote="aosp" revision="common-android11-5.4" />
+
+  <project path="build" name="kernel/build" revision="dbfab7e0de2e04316b526ef938b1140d7a5fd40d" />
+
+  <project path="common" name="kernel/common" revision="91d385eb2a413918a037a93089f8e29910fdf707" />
+
+  <project path="hikey-modules" name="kernel/hikey-modules" revision="33d4b7f884500689a297df156b1c0a29e1c525da" />
+
+  <project path="kernel/tests" name="kernel/tests" revision="7b2005bacbf91c5c494abded85b3c7fea88862a8" />
+
+  <project path="kernel/configs" name="kernel/configs" revision="c10b7ea022edc356d37c092d7ca46bcb860f8a90" />
+
+  <project path="common-modules/virtual-device" name="kernel/common-modules/virtual-device" revision="54d26bf8d508e70fe1b31d092f5c01bff1ebe860" />
+
+  <project path="prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9" name="platform/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9" clone-depth="1" revision="98dce673ad97a9640c5d90bbb1c718e75c21e071" />
+
+  <project path="prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9" name="platform/prebuilts/gcc/linux-x86/arm/arm-linux-androideabi-4.9" clone-depth="1" revision="3e1d1fd459f5bb401479602c44448764f54ffe57" />
+
+  <project path="prebuilts/gcc/linux-x86/x86/x86_64-linux-android-4.9" name="platform/prebuilts/gcc/linux-x86/x86/x86_64-linux-android-4.9" clone-depth="1" revision="dd785622390def5ed48e455030c2d1f235690961" />
+
+  <project path="prebuilts-master/clang/host/linux-x86" name="platform/prebuilts/clang/host/linux-x86" clone-depth="1" revision="6e3223f76384455acde43affde3df0ea9df66c0d" />
+
+  <project path="prebuilts/build-tools" name="platform/prebuilts/build-tools" clone-depth="1" revision="cfedc16ec3deb680fca6fe2aff44a1837a97b50d" />
+
+  <project path="prebuilts/kernel-build-tools" name="kernel/prebuilts/build-tools" clone-depth="1" revision="ca5b087f88c0302ff66f59a6f26be663e92baf15" />
+
+  <project path="prebuilts/tradefed" name="platform/tools/tradefederation/prebuilts" revision="52121d9a4653ff92b9bd225bd417b6a288c36b58" clone-depth="1" />
+
+  <project path="prebuilts/asuite" name="platform/prebuilts/asuite" revision="d90d0060aedfd80f2119c1db5339a093f2758926" clone-depth="1" />
+
+  <project path="tools/mkbootimg" name="platform/system/tools/mkbootimg" revision="34bc8bfb493401f7aadbd3b434f9fbfa521e9301" />
+</manifest>
+
+<!-- Download from https://ci.android.com/builds/submitted/14592195/kernel_aarch64/latest/manifest_14592195.xml -->
