@@ -229,6 +229,7 @@ pyrightconfig.json
 ### Custom ignores ###
 bin*
 workdir/
+.workdir/
 *.log
 *.db*
 .env
