@@ -35,7 +35,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: kernel
@@ -54,7 +54,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.17.13
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.17.13"
       SUBSYSTEM: kernel
@@ -73,7 +73,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.12.63
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.12.63"
       SUBSYSTEM: kernel
@@ -92,7 +92,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.6.119
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.6.119"
       SUBSYSTEM: kernel
@@ -111,7 +111,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.1.159
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.1.159"
       SUBSYSTEM: kernel
@@ -130,7 +130,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v5.15.197
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v5.15.197"
       SUBSYSTEM: kernel
@@ -324,7 +324,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: autofs
@@ -344,7 +344,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: ax25
@@ -364,7 +364,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: btrfs
@@ -384,7 +384,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: can
@@ -404,7 +404,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: comedi
@@ -424,7 +424,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: dri
@@ -444,7 +444,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: f2fs
@@ -464,7 +464,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: fuse
@@ -484,7 +484,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: i2c
@@ -504,7 +504,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: input
@@ -524,7 +524,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: kvm
@@ -544,7 +544,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: nilfs2
@@ -564,7 +564,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: ocfs2
@@ -584,7 +584,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: phonet
@@ -604,7 +604,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: ppp
@@ -624,7 +624,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: ptp
@@ -644,7 +644,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: rdma_cm
@@ -664,7 +664,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: sequencer
@@ -684,7 +684,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: sg
@@ -704,7 +704,7 @@ services:
     environment:
       <<: *env
       KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/linux/v6.18
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/Debian/bullseye
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/debian/bullseye
       KERNEL_NAME: linux
       KERNEL_VERSION: "v6.18"
       SUBSYSTEM: x25
