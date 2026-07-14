@@ -26,10 +26,12 @@ git submodule update --init --recursive
 
 - [setup kernel/linux](setup-kernel_linux.md)
 - [setup kernel/netbsd](setup-kernel_netbsd.md)
+- [setup kernel/android](setup-kernel_android.md)
 - [setup image/debian](setup-image_debian.md)
 - [setup image/freebsd](setup-image_freebsd.md)
 - [setup image/openbsd](setup-image_openbsd.md)
 - [setup image/netbsd](setup-image_netbsd.md)
+- [setup image/debdroid](setup-image_debdroid.md)
 - [setup fuzzer/cloud](setup-fuzzer_cloud.md)
 - [setup fuzzer/syzkaller](setup-fuzzer_syzkaller.md)
 - [setup fuzzer/KernelGPT](setup-fuzzer_KernelGPT.md)
