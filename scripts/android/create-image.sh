@@ -4,7 +4,7 @@
 
 # create-image.sh creates a minimal Debian Linux image suitable for syzkaller.
 
-# duplicate from syzkaller-4b25d554e5643186ba6a09429089ac0275f7573b
+# duplicate from syzkaller-4b25d554e5643186ba6a09429089ac0275f7573b, with some modifications
 
 set -eux
 
@@ -164,6 +164,23 @@ if [ $FOREIGN = "true" ]; then
     sudo chroot $DIR /bin/bash -c "/debootstrap/debootstrap --second-stage"
 fi
 
+# Android GKI enables the SELinux LSM before Debian userspace starts, but it
+# does not ship Debian's SELinux policy. Loading that policy causes Debian to
+# schedule a full root-filesystem relabel, while pre-labeling the image with
+# Debian contexts makes GKI reject /sbin/init before userspace can load policy.
+# Keep the tools installed for fuzzing, but boot this Debian userspace without
+# loading a policy or scheduling an autorelabel.
+sudo sed -i 's/^SELINUX=.*/SELINUX=disabled/' "$DIR/etc/selinux/config"
+sudo rm -f "$DIR/.autorelabel"
+sudo mkdir -p "$DIR/etc/systemd/system"
+for SELINUX_UNIT in \
+    selinux-autorelabel-mark.service \
+    selinux-autorelabel.service \
+    selinux-autorelabel.target
+do
+    sudo ln -sf /dev/null "$DIR/etc/systemd/system/$SELINUX_UNIT"
+done
+
 # Set some defaults and enable promtless ssh to the machine for root.
 sudo sed -i '/^root/ { s/:x:/::/ }' $DIR/etc/passwd
 echo 'T0:23:respawn:/sbin/getty -L ttyS0 115200 vt100' | sudo tee -a $DIR/etc/inittab
@@ -194,6 +211,8 @@ fi
 # Create a /dev/vim2m symlink for the device managed by the vim2m driver
 echo 'ATTR{name}=="vim2m", SYMLINK+="vim2m"' | sudo tee -a $DIR/etc/udev/rules.d/50-udev-default.rules
 
-# Build a disk image
-dd if=/dev/zero of=$RELEASE.img bs=1M seek=$SEEK count=1
-mkfs.ext4 -F -d $DIR $RELEASE.img
+# Build an intentionally unlabeled image. no_copy_xattrs also prevents labels
+# inherited from an SELinux-enabled build host from leaking into the image.
+dd if=/dev/zero of="$RELEASE.img" bs=1M seek="$SEEK" count=1
+mkfs.ext4 -q -F -E no_copy_xattrs -d "$DIR" "$RELEASE.img"
+e2fsck -fn "$RELEASE.img"
