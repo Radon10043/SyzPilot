@@ -20,7 +20,7 @@ make all -j16
 
 (host) start a freebsd vm, let's add `-snapshot` so that we can do whatever we want on vm:
 ```bash
-qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/images/freebsd/15.0.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host -snapshot
+qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/image/freebsd/15.0.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host -snapshot
 ```
 
 (vm) build needed binaries for cloud on freebsd vm:
@@ -169,7 +169,7 @@ make all -j16
 
 (host) start a freebsd vm, let's add `-snapshot` so that we can do whatever we want on vm:
 ```bash
-qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/images/freebsd/15.0.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host -snapshot
+qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/image/freebsd/15.0.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host -snapshot
 ```
 
 (vm) build needed binaries for cloud on freebsd vm:

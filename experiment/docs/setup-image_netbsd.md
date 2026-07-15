@@ -2,7 +2,7 @@
 
 (host) generate sshkey:
 ```bash
-mkdir -p $EXPERIMENT_ROOT/images/netbsd && cd $EXPERIMENT_ROOT/images/netbsd
+mkdir -p $EXPERIMENT_ROOT/image/netbsd && cd $EXPERIMENT_ROOT/image/netbsd
 ssh-keygen -t rsa -f netbsd.id_rsa -N ""
 ```
 
@@ -10,7 +10,7 @@ ssh-keygen -t rsa -f netbsd.id_rsa -N ""
 
 (host) download iso file and setup vm:
 ```bash
-cd $EXPERIMENT_ROOT/images/netbsd
+cd $EXPERIMENT_ROOT/image/netbsd
 wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.1/images/NetBSD-10.1-amd64.iso
 qemu-img create -f qcow2 2026.1-15e7fbc5.qcow2 100G
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2026.1-15e7fbc5.qcow2 -cdrom NetBSD-10.1-amd64.iso -boot d -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -display curses
@@ -46,7 +46,7 @@ reboot
 
 (host) copy the sshkey and built kernel to vm:
 ```bash
-cd $EXPERIMENT_ROOT/images/netbsd
+cd $EXPERIMENT_ROOT/image/netbsd
 ssh-copy-id -i ./netbsd.id_rsa.pub -p 6382 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 scp -P 6382 \
     -i ./netbsd.id_rsa \
@@ -72,7 +72,7 @@ poweroff
 
 (host) download iso file and setup vm:
 ```bash
-cd $EXPERIMENT_ROOT/images/netbsd
+cd $EXPERIMENT_ROOT/image/netbsd
 # wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.1/images/NetBSD-10.1-amd64.iso
 qemu-img create -f qcow2 2025.11-ceec3d80.qcow2 100G
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2025.11-ceec3d80.qcow2 -cdrom NetBSD-10.1-amd64.iso -boot d -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -display curses
@@ -108,7 +108,7 @@ reboot
 
 (host) copy the sshkey and built kernel to vm:
 ```bash
-cd $EXPERIMENT_ROOT/images/netbsd
+cd $EXPERIMENT_ROOT/image/netbsd
 ssh-copy-id -i ./netbsd.id_rsa.pub -p 6382 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 scp -P 6382 \
     -i ./netbsd.id_rsa \
@@ -134,8 +134,8 @@ poweroff
 
 (host) download iso file and setup vm:
 ```bash
-cd $EXPERIMENT_ROOT/images/netbsd
-wget https://cdn.netbsd.org/pub/NetBSD/images/10.1/NetBSD-10.1-amd64.iso
+cd $EXPERIMENT_ROOT/image/netbsd
+# wget https://cdn.netbsd.org/pub/NetBSD/images/10.1/NetBSD-10.1-amd64.iso
 qemu-img create -f qcow2 2025.10-3c0f56ea.qcow2 100G
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2025.10-3c0f56ea.qcow2 -cdrom NetBSD-10.1-amd64.iso -boot d -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -display curses
 ```
@@ -170,7 +170,7 @@ reboot
 
 (host) copy sshkey and built kernel to vm:
 ```bash
-cd $EXPERIMENT_ROOT/images/netbsd
+cd $EXPERIMENT_ROOT/image/netbsd
 ssh-copy-id -i ./netbsd.id_rsa.pub -p 6382 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 scp -P 6382 \
     -i ./netbsd.id_rsa \
@@ -196,8 +196,8 @@ poweroff
 
 (host) download iso file and setup vm:
 ```bash
-cd $EXPERIMENT_ROOT/images/netbsd
-wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.1/images/NetBSD-10.1-amd64.iso
+cd $EXPERIMENT_ROOT/image/netbsd
+# wget https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.1/images/NetBSD-10.1-amd64.iso
 qemu-img create -f qcow2 2026.1-15e7fbc5-tprof.qcow2 100G
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -hda 2026.1-15e7fbc5-tprof.qcow2 -cdrom NetBSD-10.1-amd64.iso -boot d -net nic,model=virtio -net user,hostfwd=tcp::6382-:22 -display curses
 ```
@@ -232,7 +232,7 @@ reboot
 
 (host) copy sshkey and built kernel to vm:
 ```bash
-cd $EXPERIMENT_ROOT/images/netbsd
+cd $EXPERIMENT_ROOT/image/netbsd
 ssh-copy-id -i ./netbsd.id_rsa.pub -p 6382 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 scp -P 6382 \
     -i ./netbsd.id_rsa \

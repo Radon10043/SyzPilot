@@ -2,7 +2,7 @@
 
 (host) generate an SSH key:
 ```bash
-mkdir -p $EXPERIMENT_ROOT/images/freebsd && cd $EXPERIMENT_ROOT/images/freebsd
+mkdir -p $EXPERIMENT_ROOT/image/freebsd && cd $EXPERIMENT_ROOT/image/freebsd
 ssh-keygen -t rsa -f ./freebsd.id_rsa -N ""
 ```
 
@@ -10,13 +10,13 @@ ssh-keygen -t rsa -f ./freebsd.id_rsa -N ""
 
 (host) download 15.0 image:
 ```bash
-cd $EXPERIMENT_ROOT/images/freebsd
-wget https://download.freebsd.org/snapshots/VM-IMAGES/15.0-STABLE/amd64/Latest/FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz
-unxz -k FreeBSD-15.0-STABLE-amd64-ufs.qcow2.xz
-mv FreeBSD-15.0-STABLE-amd64-ufs.qcow2 15.0.0.qcow2
+cd $EXPERIMENT_ROOT/image/freebsd
+wget https://download.freebsd.org/releases/VM-IMAGES/15.0-RELEASE/amd64/Latest/FreeBSD-15.0-RELEASE-amd64-ufs.qcow2.xz
+unxz -k FreeBSD-15.0-RELEASE-amd64-ufs.qcow2.xz
+mv FreeBSD-15.0-RELEASE-amd64-ufs.qcow2 15.0.0.qcow2
 qemu-img resize 15.0.0.qcow2 100G
 qemu-system-x86_64 -m 16G -smp 16 -hda ./15.0.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host
-# press 3, input press 3 and input `set console="comconsole"` and `boot`
+# press 3, input `set console="comconsole"` and `boot`
 ```
 
 (vm) install freebsd kernel 15.0.0:
@@ -59,7 +59,7 @@ reboot
 
 (host) install sshkey and verify kernel version:
 ```bash
-cd $EXPERIMENT_ROOT/images/freebsd
+cd $EXPERIMENT_ROOT/image/freebsd
 ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of the following command should look like:
@@ -74,15 +74,15 @@ poweroff
 
 ## 14.3.0
 
-(host) download 14.X image:
+(host) download 14.3 image:
 ```bash
-cd $EXPERIMENT_ROOT/images/freebsd
-wget https://download.freebsd.org/snapshots/VM-IMAGES/14.4-STABLE/amd64/Latest/FreeBSD-14.4-STABLE-amd64-ufs.qcow2.xz
-unxz -k FreeBSD-14.4-STABLE-amd64-ufs.qcow2.xz
-mv FreeBSD-14.4-STABLE-amd64-ufs.qcow2 14.3.0.qcow2
+cd $EXPERIMENT_ROOT/image/freebsd
+wget https://archive.freebsd.org/old-releases/VM-IMAGES/14.3-RELEASE/amd64/Latest/FreeBSD-14.3-RELEASE-amd64-ufs.qcow2.xz
+unxz -k FreeBSD-14.3-RELEASE-amd64-ufs.qcow2.xz
+mv FreeBSD-14.3-RELEASE-amd64-ufs.qcow2 14.3.0.qcow2
 qemu-img resize 14.3.0.qcow2 100G
 qemu-system-x86_64 -m 16G -smp 16 -hda ./14.3.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host
-# press 3, input press 3 and input `set console="comconsole"` and `boot`
+# press 3, input `set console="comconsole"` and `boot`
 ```
 
 (vm) install freebsd kernel 14.3.0:
@@ -125,7 +125,7 @@ reboot
 
 (host) install sshkey and verify kernel version:
 ```bash
-cd $EXPERIMENT_ROOT/images/freebsd
+cd $EXPERIMENT_ROOT/image/freebsd
 ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of the following command should look like:
@@ -140,15 +140,15 @@ poweroff
 
 ## 14.2.0
 
-(host) download 14.X image:
+(host) download 14.2 image:
 ```bash
-cd $EXPERIMENT_ROOT/images/freebsd
-wget https://download.freebsd.org/snapshots/VM-IMAGES/14.4-STABLE/amd64/Latest/FreeBSD-14.4-STABLE-amd64-ufs.qcow2.xz
-unxz -k FreeBSD-14.4-STABLE-amd64-ufs.qcow2.xz
-mv FreeBSD-14.4-STABLE-amd64-ufs.qcow2 14.2.0.qcow2
+cd $EXPERIMENT_ROOT/image/freebsd
+wget https://archive.freebsd.org/old-releases/VM-IMAGES/14.2-RELEASE/amd64/Latest/FreeBSD-14.2-RELEASE-amd64-ufs.qcow2.xz
+unxz -k FreeBSD-14.2-RELEASE-amd64-ufs.qcow2.xz
+mv FreeBSD-14.2-RELEASE-amd64-ufs.qcow2 14.2.0.qcow2
 qemu-img resize 14.2.0.qcow2 100G
 qemu-system-x86_64 -m 16G -smp 16 -hda ./14.2.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host
-# press 3, input press 3 and input `set console="comconsole"` and `boot`
+# press 3, input `set console="comconsole"` and `boot`
 ```
 
 (vm) install freebsd kernel 14.2.0:
@@ -191,7 +191,7 @@ reboot
 
 (host) install sshkey and verify kernel version:
 ```bash
-cd $EXPERIMENT_ROOT/images/freebsd
+cd $EXPERIMENT_ROOT/image/freebsd
 ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of the following command should look like:
