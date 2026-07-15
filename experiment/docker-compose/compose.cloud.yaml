@@ -155,8 +155,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/15.0.0.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/freebsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/15.0.0.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/freebsd.id_rsa
       KERNEL_NAME: freebsd
       KERNEL_VERSION: "15.0.0"
       SUBSYSTEM: kernel
@@ -176,8 +176,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/14.3.0.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/freebsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/14.3.0.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/freebsd.id_rsa
       KERNEL_NAME: freebsd
       KERNEL_VERSION: "14.3.0"
       SUBSYSTEM: kernel
@@ -197,8 +197,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/14.2.0.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/freebsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/14.2.0.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/freebsd.id_rsa
       KERNEL_NAME: freebsd
       KERNEL_VERSION: "14.2.0"
       SUBSYSTEM: kernel
@@ -218,8 +218,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/2025-23290a22.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/openbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/2025-23290a22.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/openbsd.id_rsa
       KERNEL_NAME: openbsd
       KERNEL_VERSION: "23290a22"
       SUBSYSTEM: kernel
@@ -239,8 +239,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/2025.11-6bf0f93a.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/openbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/2025.11-6bf0f93a.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/openbsd.id_rsa
       KERNEL_NAME: openbsd
       KERNEL_VERSION: "6bf0f93a"
       SUBSYSTEM: kernel
@@ -260,8 +260,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/2025.10-6dac8606.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/openbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/2025.10-6dac8606.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/openbsd.id_rsa
       KERNEL_NAME: openbsd
       KERNEL_VERSION: "6dac8606"
       SUBSYSTEM: kernel
@@ -281,8 +281,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/2026.1-15e7fbc5.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/netbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/2026.1-15e7fbc5.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/netbsd.id_rsa
       KERNEL_NAME: netbsd
       KERNEL_VERSION: "15e7fbc5"
       SUBSYSTEM: kernel
@@ -302,8 +302,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/2025.11-ceec3d80.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/netbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/2025.11-ceec3d80.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/netbsd.id_rsa
       KERNEL_NAME: netbsd
       KERNEL_VERSION: "ceec3d80"
       SUBSYSTEM: kernel
@@ -323,8 +323,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/2025.10-3c0f56ea.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/netbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/2025.10-3c0f56ea.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/netbsd.id_rsa
       KERNEL_NAME: netbsd
       KERNEL_VERSION: "3c0f56ea"
       SUBSYSTEM: kernel
@@ -788,8 +788,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/15.0.0.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/freebsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/15.0.0.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/freebsd.id_rsa
       KERNEL_NAME: freebsd
       KERNEL_VERSION: "15.0.0"
       SUBSYSTEM: bpf
@@ -810,8 +810,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/15.0.0.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/freebsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/15.0.0.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/freebsd.id_rsa
       KERNEL_NAME: freebsd
       KERNEL_VERSION: "15.0.0"
       SUBSYSTEM: evdev
@@ -832,8 +832,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/15.0.0.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/freebsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/15.0.0.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/freebsd.id_rsa
       KERNEL_NAME: freebsd
       KERNEL_VERSION: "15.0.0"
       SUBSYSTEM: inet_icmp
@@ -854,8 +854,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/15.0.0.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/freebsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/15.0.0.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/freebsd.id_rsa
       KERNEL_NAME: freebsd
       KERNEL_VERSION: "15.0.0"
       SUBSYSTEM: inet_tcp
@@ -876,8 +876,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/15.0.0.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/freebsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/15.0.0.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/freebsd.id_rsa
       KERNEL_NAME: freebsd
       KERNEL_VERSION: "15.0.0"
       SUBSYSTEM: inet_udp
@@ -898,8 +898,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/15.0.0.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/freebsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/15.0.0.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/freebsd.id_rsa
       KERNEL_NAME: freebsd
       KERNEL_VERSION: "15.0.0"
       SUBSYSTEM: kbd
@@ -920,8 +920,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/15.0.0.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/freebsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/15.0.0.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/freebsd.id_rsa
       KERNEL_NAME: freebsd
       KERNEL_VERSION: "15.0.0"
       SUBSYSTEM: md
@@ -942,8 +942,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/15.0.0.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/freebsd/freebsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/15.0.0.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/freebsd/freebsd.id_rsa
       KERNEL_NAME: freebsd
       KERNEL_VERSION: "15.0.0"
       SUBSYSTEM: unix
@@ -964,8 +964,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/2025-23290a22.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/openbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/2025-23290a22.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/openbsd.id_rsa
       KERNEL_NAME: openbsd
       KERNEL_VERSION: "23290a22"
       SUBSYSTEM: bpf
@@ -986,8 +986,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/2025-23290a22.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/openbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/2025-23290a22.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/openbsd.id_rsa
       KERNEL_NAME: openbsd
       KERNEL_VERSION: "23290a22"
       SUBSYSTEM: inet
@@ -1008,8 +1008,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/2025-23290a22.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/openbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/2025-23290a22.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/openbsd.id_rsa
       KERNEL_NAME: openbsd
       KERNEL_VERSION: "23290a22"
       SUBSYSTEM: inet6
@@ -1030,8 +1030,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/2025-23290a22.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/openbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/2025-23290a22.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/openbsd.id_rsa
       KERNEL_NAME: openbsd
       KERNEL_VERSION: "23290a22"
       SUBSYSTEM: pci
@@ -1052,8 +1052,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/2025-23290a22.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/openbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/2025-23290a22.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/openbsd.id_rsa
       KERNEL_NAME: openbsd
       KERNEL_VERSION: "23290a22"
       SUBSYSTEM: speaker
@@ -1074,8 +1074,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/2025-23290a22.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/openbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/2025-23290a22.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/openbsd.id_rsa
       KERNEL_NAME: openbsd
       KERNEL_VERSION: "23290a22"
       SUBSYSTEM: unix
@@ -1096,8 +1096,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/2025-23290a22.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/openbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/2025-23290a22.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/openbsd.id_rsa
       KERNEL_NAME: openbsd
       KERNEL_VERSION: "23290a22"
       SUBSYSTEM: vmm
@@ -1118,8 +1118,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/2025-23290a22.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/openbsd/openbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/2025-23290a22.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/openbsd/openbsd.id_rsa
       KERNEL_NAME: openbsd
       KERNEL_VERSION: "23290a22"
       SUBSYSTEM: vnd
@@ -1140,8 +1140,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/2026.1-15e7fbc5.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/netbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/2026.1-15e7fbc5.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/netbsd.id_rsa
       KERNEL_NAME: netbsd
       KERNEL_VERSION: "15e7fbc5"
       SUBSYSTEM: hdaudio
@@ -1162,8 +1162,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/2026.1-15e7fbc5.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/netbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/2026.1-15e7fbc5.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/netbsd.id_rsa
       KERNEL_NAME: netbsd
       KERNEL_VERSION: "15e7fbc5"
       SUBSYSTEM: inet
@@ -1184,8 +1184,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/2026.1-15e7fbc5.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/netbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/2026.1-15e7fbc5.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/netbsd.id_rsa
       KERNEL_NAME: netbsd
       KERNEL_VERSION: "15e7fbc5"
       SUBSYSTEM: inet6
@@ -1206,8 +1206,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/2026.1-15e7fbc5-tprof.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/netbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/2026.1-15e7fbc5-tprof.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/netbsd.id_rsa
       KERNEL_NAME: netbsd
       KERNEL_VERSION: "15e7fbc5"
       SUBSYSTEM: tprof
@@ -1228,8 +1228,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/2026.1-15e7fbc5.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/netbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/2026.1-15e7fbc5.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/netbsd.id_rsa
       KERNEL_NAME: netbsd
       KERNEL_VERSION: "15e7fbc5"
       SUBSYSTEM: unix
@@ -1250,8 +1250,8 @@ services:
     <<: *base
     environment:
       <<: *env
-      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/2026.1-15e7fbc5.qcow2
-      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/images/netbsd/netbsd.id_rsa
+      IMAGE: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/2026.1-15e7fbc5.qcow2
+      SSHKEY: ${EXPERIMENT_ROOT_CONTAINER}/image/netbsd/netbsd.id_rsa
       KERNEL_NAME: netbsd
       KERNEL_VERSION: "15e7fbc5"
       SUBSYSTEM: wscons
