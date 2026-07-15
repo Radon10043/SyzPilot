@@ -33,7 +33,7 @@ pip install -r requirements.txt
 build linux v6.18.
 ```bash
 cd $KernelGEM
-cp $CLOUD/configs/kernel/syzbot.config linux/.config
+cp $CLOUD/configs/kernel/linux.config linux/.config
 bear -- make CC=clang HOSTCC=clang olddefconfig all -j16
 ```
 
