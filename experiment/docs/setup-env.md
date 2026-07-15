@@ -12,7 +12,7 @@ Please replace the following variables according to the actual situation:
 prepare ~1T free space, start up a container based on SyzPilot image. In container, run:
 ```bash
 cd $EXPERIMENT_ROOT
-mkdir kernel fuzzer images
+mkdir kernel fuzzer image
 ```
 
 download SyzPilot first, many important artifacts are in this repository:

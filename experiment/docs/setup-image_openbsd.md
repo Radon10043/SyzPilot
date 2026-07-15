@@ -2,7 +2,7 @@
 
 (host) generate sshkey for openbsd images:
 ```bash
-mkdir -p $EXPERIMENT_ROOT/images/openbsd && cd $EXPERIMENT_ROOT/images/openbsd
+mkdir -p $EXPERIMENT_ROOT/image/openbsd && cd $EXPERIMENT_ROOT/image/openbsd
 ssh-keygen -t rsa -f openbsd.id_rsa -N ''
 ```
 
@@ -10,7 +10,7 @@ ssh-keygen -t rsa -f openbsd.id_rsa -N ''
 
 (host) download .iso file, init a qcow2 file:
 ```bash
-cd $EXPERIMENT_ROOT/images/openbsd
+cd $EXPERIMENT_ROOT/image/openbsd
 wget https://cdn.openbsd.org/pub/OpenBSD/7.8/amd64/install78.iso
 qemu-img create -f qcow2 2025-23290a22.qcow2 100G
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./2025-23290a22.qcow2,format=qcow2 -cdrom ./install78.iso -boot d -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
@@ -99,7 +99,7 @@ reboot
 
 (host) install sshkey and verify the kernel version:
 ```bash
-cd $EXPERIMENT_ROOT/images/openbsd
+cd $EXPERIMENT_ROOT/image/openbsd
 ssh-copy-id -i ./openbsd.id_rsa.pub -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of the following command should look like:
@@ -116,7 +116,7 @@ shutdown -p now
 
 (host) download .iso file, init a qcow2 file:
 ```bash
-cd $EXPERIMENT_ROOT/images/openbsd
+cd $EXPERIMENT_ROOT/image/openbsd
 # wget https://artfiles.org/openbsd/7.8/amd64/install78.iso
 qemu-img create -f qcow2 2025.11-6bf0f93a.qcow2 100G
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./2025.11-6bf0f93a.qcow2,format=qcow2 -cdrom ./install78.iso -boot d -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
@@ -205,7 +205,7 @@ reboot
 
 (host) install sshkey and verify the kernel version:
 ```bash
-cd $EXPERIMENT_ROOT/images/openbsd
+cd $EXPERIMENT_ROOT/image/openbsd
 ssh-copy-id -i ./openbsd.id_rsa.pub -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of the following command should look like:
@@ -222,7 +222,7 @@ shutdown -p now
 
 (host) download .iso file, init a qcow2 file:
 ```bash
-cd $EXPERIMENT_ROOT/images/openbsd
+cd $EXPERIMENT_ROOT/image/openbsd
 # wget https://artfiles.org/openbsd/7.4/amd64/install78.iso
 qemu-img create -f qcow2 2025.10-6dac8606.qcow2 100G
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./2025.10-6dac8606.qcow2,format=qcow2 -cdrom ./install78.iso -boot d -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
@@ -311,7 +311,7 @@ reboot
 
 (host) install sshkey and verify the kernel version:
 ```bash
-cd $EXPERIMENT_ROOT/images/openbsd
+cd $EXPERIMENT_ROOT/image/openbsd
 ssh-copy-id -i ./openbsd.id_rsa.pub -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of the following command should look like:
