@@ -195,7 +195,8 @@ func main() {
 		for file := range files {
 			data, _ := os.ReadFile(file)
 			repdata := bytes.ReplaceAll(data, []byte("{OS}"), []byte(cfg.Os))
-			sb.WriteString(string(repdata) + "\n")
+			sb.WriteString(string(repdata))
+			sb.WriteString("\n")
 		}
 		sysPromptMap[key] = sb.String()
 	}
@@ -518,18 +519,14 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 	defer os.RemoveAll(wd)
 
 	// create an agent
-	llm, err := openai.New(
-		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
-		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
-		openai.WithModel(cfg.Model),
-	)
+	kAgent, err := createAgent(cfg, db, availableTools)
 	if err != nil {
-		logger.Printf("failed to create llm instance: %v\n", err)
+		logger.Printf("failed to create agent: %v\n", err)
 		res.Err = err
 		wjr <- res
 		return
 	}
-	kAgent := agent.NewAgentWithTools(db, llm, availableTools)
+
 	logger.Printf("number of tools for agent: %v\n", len(kAgent.ToolMap))
 
 	for wj := range wjs {
@@ -593,6 +590,29 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 		}
 		wjr <- res
 	}
+}
+
+// createAgent creates an agent instance with the given configuration and database, return the agent instance and error
+func createAgent(cfg *ProgConfig, db *database.Database, availableTools map[string]myTools.ToolExec) (*agent.Agent, error) {
+	llm, err := openai.New(
+		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
+		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
+		openai.WithModel(cfg.Model),
+	)
+	if err != nil {
+		return nil, err
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: db,
+	}
+	kAgent := agent.NewAgent(
+		agent.WithModel(llm),
+		agent.WithMaxTokens(128<<10),
+		agent.WithTemperature(0.2),
+		agent.WithToolHelper(toolHelper),
+		agent.WithToolMap(availableTools),
+	)
+	return kAgent, nil
 }
 
 // writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a database entry,

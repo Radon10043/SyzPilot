@@ -26,6 +26,7 @@ import (
 	"github.com/Radon10043/cloud/src/pkg/database"
 	"github.com/Radon10043/cloud/src/pkg/pool"
 	"github.com/Radon10043/cloud/src/pkg/stage"
+	myTools "github.com/Radon10043/cloud/src/pkg/tools"
 	"github.com/Radon10043/cloud/src/pkg/utils"
 	"github.com/joho/godotenv"
 	"github.com/tmc/langchaingo/llms"
@@ -425,8 +426,11 @@ func execWriteStep(
 	// we dont exit program if retrieve failed, instead, we check agent's message to extract related elements
 	logger.Printf("Retrieving related elements ...\n")
 	var relaElems strings.Builder
-	kAgent := agent.NewAgent(db, llm)
-	err := retrieveRelaElems(kAgent, entry, logger)
+	kAgent, err := createAgent(llm, db)
+	if err != nil {
+		return "", fmt.Errorf("failed to create agent: %v", err)
+	}
+	err = retrieveRelaElems(kAgent, entry, logger)
 	if err != nil {
 		fmt.Printf("error occured during retrieving related elements: %v\n", err)
 	}
@@ -434,7 +438,8 @@ func execWriteStep(
 		if msg.Role != "tool" {
 			continue
 		}
-		relaElems.WriteString(msg.Parts[0].(llms.ToolCallResponse).Content + "\n\n")
+		relaElems.WriteString(msg.Parts[0].(llms.ToolCallResponse).Content)
+		relaElems.WriteString("\n\n")
 	}
 	if err = sh.SaveQueryMessages(kAgent, "retrieve-"); err != nil {
 		return "", fmt.Errorf("failed to save query messages after retrieving related elements: %v", err)
@@ -443,7 +448,10 @@ func execWriteStep(
 
 	// prompt LLM to generate spec based on retrieved elements
 	logger.Printf("Generating spec based on retrieved related elements ...\n")
-	kAgent = agent.NewAgentWithTools(nil, llm, nil)
+	kAgent, err = createAgent(llm, db)
+	if err != nil {
+		return "", fmt.Errorf("failed to create agent: %v", err)
+	}
 	prompt := fmt.Sprintf("Please generate syzlang spec based on following related elements. The specification should be enclosed in code fences and the language should be syzlang.:\n```c\n%s\n\n%s\n```\n", entry.GetCode(), relaElems.String())
 	kAgent.AddHumanMessage(prompt)
 	resp, err := kAgent.Query()
@@ -462,6 +470,67 @@ func execWriteStep(
 	}
 
 	return spec, nil
+}
+
+// createAgent creates an agent instance with the given configuration and database, return the agent instance and error
+func createAgent(llm *openai.LLM, db *database.Database) (*agent.Agent, error) {
+	toolMap := map[string]myTools.ToolExec{
+		myTools.GetFuncCodeByNameTool.Function.Name: {
+			Tool: myTools.GetFuncCodeByNameTool,
+			Exec: myTools.ExecGetFuncCodeByName,
+		},
+		myTools.GetEnumCodeByEnumeratorTool.Function.Name: {
+			Tool: myTools.GetEnumCodeByEnumeratorTool,
+			Exec: myTools.ExecGetEnumCodeByEnumerator,
+		},
+		myTools.GetEnumCodeBySpecifierTool.Function.Name: {
+			Tool: myTools.GetEnumCodeBySpecifierTool,
+			Exec: myTools.ExecGetEnumCodeBySpecifier,
+		},
+		myTools.GetStructCodeByNameTool.Function.Name: {
+			Tool: myTools.GetStructCodeByNameTool,
+			Exec: myTools.ExecGetStructCodeByName,
+		},
+		myTools.GetUnionCodeByNameTool.Function.Name: {
+			Tool: myTools.GetUnionCodeByNameTool,
+			Exec: myTools.ExecGetUnionCodeByName,
+		},
+		myTools.GetGlobalVarCodeByNameTool.Function.Name: {
+			Tool: myTools.GetGlobalVarCodeByNameTool,
+			Exec: myTools.ExecGetGlobalVarCodeByName,
+		},
+		myTools.GetTypedefCodeByDefineTool.Function.Name: {
+			Tool: myTools.GetTypedefCodeByDefineTool,
+			Exec: myTools.ExecGetTypedefCodeByDefine,
+		},
+		myTools.GetTypedefTypeByDefineTool.Function.Name: {
+			Tool: myTools.GetTypedefTypeByDefineTool,
+			Exec: myTools.ExecGetTypedefTypeByDefine,
+		},
+		myTools.GetMacroDefCodeByNameTool.Function.Name: {
+			Tool: myTools.GetMacroDefCodeByNameTool,
+			Exec: myTools.ExecGetMacroDefCodeByName,
+		},
+		myTools.GetMacroDefCodesByPatternTool.Function.Name: {
+			Tool: myTools.GetMacroDefCodesByPatternTool,
+			Exec: myTools.ExecGetMacroDefCodesByPattern,
+		},
+		myTools.GetMacroDefLocByNameTool.Function.Name: {
+			Tool: myTools.GetMacroDefLocByNameTool,
+			Exec: myTools.ExecGetMacroDefLocByName,
+		},
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: db,
+	}
+	kAgent := agent.NewAgent(
+		agent.WithModel(llm),
+		agent.WithMaxTokens(128<<10),
+		agent.WithTemperature(0.2),
+		agent.WithToolHelper(toolHelper),
+		agent.WithToolMap(toolMap),
+	)
+	return kAgent, nil
 }
 
 func retrieveRelaElems(kAgent *agent.Agent, entry database.Entry, logger *log.Logger) error {

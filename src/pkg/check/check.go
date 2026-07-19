@@ -90,11 +90,6 @@ func WithSysdir(path string) Option {
 }
 
 // SetupWorkdir setup sc.Workdir by copy sc.Sysdir to sc.Workdir/
-// TODO: It is very possible that new generated specs will conflict to existing specs.
-// To solve such conflicts, there are two ways:
-//  1. if current element existed in syzkaller, dont re-generate it.
-//  2. create a minimal set of specs which will not impact spec generation. We can caluclate
-//     dependency from sys/linux/sys.txt, and only copy the necessary specs to workdir.
 func (sc *SpecCheck) SetupWorkdir() error {
 	src := sc.Sysdir
 	dst := filepath.Join(sc.Workdir, "sys")

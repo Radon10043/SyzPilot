@@ -110,7 +110,8 @@ func main() {
 		files := strings.SplitSeq(filesWithComma, ",")
 		var absFiles strings.Builder
 		for f := range files {
-			absFiles.WriteString(stap.toAbsPath(f) + ",")
+			absFiles.WriteString(stap.toAbsPath(f))
+			absFiles.WriteString(",")
 		}
 		return strings.TrimRight(absFiles.String(), ",")
 	}
@@ -169,7 +170,8 @@ func main() {
 		for file := range files {
 			data, _ := os.ReadFile(file)
 			repdata := bytes.ReplaceAll(data, []byte("{OS}"), []byte(cfg.Os))
-			sb.WriteString(string(repdata) + "\n")
+			sb.WriteString(string(repdata))
+			sb.WriteString("\n")
 		}
 		sysPromptMap[key] = sb.String()
 	}
@@ -420,18 +422,13 @@ func writeJob(tid int, cfg *ProgConfig, wjs <-chan WriteJob, wjr chan<- WriteJob
 	defer os.RemoveAll(wd)
 
 	// create an agent
-	llm, err := openai.New(
-		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
-		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
-		openai.WithModel(cfg.Model),
-	)
+	kAgent, err := createAgent(cfg)
 	if err != nil {
-		logger.Printf("failed to create llm instance: %v\n", err)
+		logger.Printf("failed to create agent: %v\n", err)
 		res.Err = err
 		wjr <- res
 		return
 	}
-	kAgent := agent.NewAgentWithTools(nil, llm, map[string]myTools.ToolExec{})
 
 	for wj := range wjs {
 		var (
@@ -494,6 +491,28 @@ func writeJob(tid int, cfg *ProgConfig, wjs <-chan WriteJob, wjr chan<- WriteJob
 		}
 		wjr <- res
 	}
+}
+
+// createAgent creates an agent instance with the given configuration and database, return the agent instance and error
+func createAgent(cfg *ProgConfig) (*agent.Agent, error) {
+	llm, err := openai.New(
+		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
+		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
+		openai.WithModel(cfg.Model),
+	)
+	if err != nil {
+		return nil, err
+	}
+	toolMap := map[string]myTools.ToolExec{}
+	toolHelper := &myTools.ToolHelper{}
+	kAgent := agent.NewAgent(
+		agent.WithModel(llm),
+		agent.WithMaxTokens(128<<10),
+		agent.WithTemperature(0.2),
+		agent.WithToolHelper(toolHelper),
+		agent.WithToolMap(toolMap),
+	)
+	return kAgent, nil
 }
 
 // writeSpec start prompting agent to outline todo tasks, generate specs, and fix specs for a database entry,

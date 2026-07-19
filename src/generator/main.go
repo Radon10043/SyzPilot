@@ -8,6 +8,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -20,6 +21,7 @@ import (
 	osu "github.com/Radon10043/cloud/src/pkg/osutil"
 	"github.com/Radon10043/cloud/src/pkg/pool"
 	"github.com/Radon10043/cloud/src/pkg/stage"
+	myTools "github.com/Radon10043/cloud/src/pkg/tools"
 	"github.com/joho/godotenv"
 	"github.com/otiai10/copy"
 	"github.com/tmc/langchaingo/llms/openai"
@@ -466,18 +468,13 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 	defer os.RemoveAll(wd)
 
 	// create an agent
-	llm, err := openai.New(
-		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
-		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
-		openai.WithModel(cfg.Model),
-	)
+	kAgent, err := createAgent(cfg, db)
 	if err != nil {
-		logger.Printf("failed to create llm instance: %v\n", err)
+		logger.Printf("failed to create agent instance: %v\n", err)
 		res.Err = err
 		wjr <- res
 		return
 	}
-	kAgent := agent.NewAgent(db, llm)
 
 	for wj := range wjs {
 		var (
@@ -542,6 +539,75 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 	}
 }
 
+// createAgent creates an agent instance with the given configuration and database, return the agent instance and error
+func createAgent(cfg *ProgConfig, db *database.Database) (*agent.Agent, error) {
+	llm, err := openai.New(
+		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
+		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
+		openai.WithModel(cfg.Model),
+	)
+	if err != nil {
+		return nil, err
+	}
+	toolMap := map[string]myTools.ToolExec{
+		myTools.GetFuncCodeByNameTool.Function.Name: {
+			Tool: myTools.GetFuncCodeByNameTool,
+			Exec: myTools.ExecGetFuncCodeByName,
+		},
+		myTools.GetEnumCodeByEnumeratorTool.Function.Name: {
+			Tool: myTools.GetEnumCodeByEnumeratorTool,
+			Exec: myTools.ExecGetEnumCodeByEnumerator,
+		},
+		myTools.GetEnumCodeBySpecifierTool.Function.Name: {
+			Tool: myTools.GetEnumCodeBySpecifierTool,
+			Exec: myTools.ExecGetEnumCodeBySpecifier,
+		},
+		myTools.GetStructCodeByNameTool.Function.Name: {
+			Tool: myTools.GetStructCodeByNameTool,
+			Exec: myTools.ExecGetStructCodeByName,
+		},
+		myTools.GetUnionCodeByNameTool.Function.Name: {
+			Tool: myTools.GetUnionCodeByNameTool,
+			Exec: myTools.ExecGetUnionCodeByName,
+		},
+		myTools.GetGlobalVarCodeByNameTool.Function.Name: {
+			Tool: myTools.GetGlobalVarCodeByNameTool,
+			Exec: myTools.ExecGetGlobalVarCodeByName,
+		},
+		myTools.GetTypedefCodeByDefineTool.Function.Name: {
+			Tool: myTools.GetTypedefCodeByDefineTool,
+			Exec: myTools.ExecGetTypedefCodeByDefine,
+		},
+		myTools.GetTypedefTypeByDefineTool.Function.Name: {
+			Tool: myTools.GetTypedefTypeByDefineTool,
+			Exec: myTools.ExecGetTypedefTypeByDefine,
+		},
+		myTools.GetMacroDefCodeByNameTool.Function.Name: {
+			Tool: myTools.GetMacroDefCodeByNameTool,
+			Exec: myTools.ExecGetMacroDefCodeByName,
+		},
+		myTools.GetMacroDefCodesByPatternTool.Function.Name: {
+			Tool: myTools.GetMacroDefCodesByPatternTool,
+			Exec: myTools.ExecGetMacroDefCodesByPattern,
+		},
+		myTools.GetMacroDefLocByNameTool.Function.Name: {
+			Tool: myTools.GetMacroDefLocByNameTool,
+			Exec: myTools.ExecGetMacroDefLocByName,
+		},
+	}
+	toolHelper := &myTools.ToolHelper{
+		Db: db,
+	}
+	kAgent := agent.NewAgent(
+		agent.WithModel(llm),
+		agent.WithMaxTokens(128<<10),
+		agent.WithTemperature(0.2),
+		agent.WithToolHelper(toolHelper),
+		agent.WithToolMap(toolMap),
+	)
+	return kAgent, nil
+}
+
 // duplicateKernel duplicate kernel directories/files for extract/check to the workdir,
 // return extract kernel path, check kernel path, and error
 func duplicateKernel(prefix string, kernel string, osType osu.OsType, logger *log.Logger) (string, string, error) {
@@ -551,6 +617,17 @@ func duplicateKernel(prefix string, kernel string, osType osu.OsType, logger *lo
 	dst := filepath.Join(prefix, "kernel-extract")
 	if err := copy.Copy(src, dst); err != nil {
 		logger.Printf("failed to copy extract kernel: %v\n", err)
+		return "", "", err
+	}
+
+	// run "make distclean" under kernel-extract to clean up the kernel source tree
+	var stdout, stderr bytes.Buffer
+	cmd := exec.Command("make", "distclean")
+	cmd.Dir = filepath.Join(prefix, "kernel-extract")
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		logger.Printf("failed to run 'make distclean' under kernel-extract: %v\nstdout:\n%s\nstderr:\n%s\n", err, stdout.String(), stderr.String())
 		return "", "", err
 	}
 
