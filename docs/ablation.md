@@ -14,8 +14,8 @@ generator-nodb: disable kernel database, only rely on LLM's inherent knowledge.
     -db=./data/database/linux.db \
     -kernel=$KERNSRC \
     -model=gemini-3-flash-preview \
-    -outdir=./workdir/ablation/nodb \
-    -ref=./workdir/ablation/ref.txt \
+    -outdir=./.workdir/ablation/nodb \
+    -ref=./.workdir/ablation/ref.txt \
     -sysdir=./data/trimsys \
     -jobs=4
 ```
@@ -25,8 +25,8 @@ generator-noiter: disable iteration, directly let LLM to generate syscall specs.
 ./bin/generator-noiter \
     -db=./data/database/linux.db \
     -model=gemini-3-flash-preview \
-    -outdir=./workdir/ablation/noiter \
-    -ref=./workdir/ablation/ref.txt \
+    -outdir=./.workdir/ablation/noiter \
+    -ref=./.workdir/ablation/ref.txt \
     -sysdir=./data/trimsys \
     -jobs=4
 ```
@@ -35,14 +35,28 @@ generator-trimtool: disable available tool(s) in spec generation.
 ```bash
 ./bin/generator-trimtool \
     -db=./data/database/linux.db \
-    -kernel=/vol/linux/v6.18/build \
+    -kernel=$KERNSRC \
     -os=linux \
     -model=gemini-3-flash-preview \
-    -outdir=./workdir/ablation/trimtool \
+    -outdir=./.workdir/ablation/trimtool \
     -ref=./data/refs/linux/sg.txt \
     -sysdir=./data/trimsys \
     -disable=get_func_code_by_name \
     -jobs=4
+```
+
+generator-openllm: reuse generator but write open weight llm settings in environment file:
+```bash
+./bin/generator \
+    -env=./qwen.env \
+    -db=./data/database/linux.db \
+    -outdir=./.workdir/ablation/qwen3 \
+    -kernel=$KERNSRC \
+    -model=qwen3-235b-a22b-instruct-2507 \
+    -ref=./data/refs/linux/autofs.txt \
+    -sysdir=./data/trimsys \
+    -os=linux \
+    -jobs=2 > logs/autofs.log 2>&1 &
 ```
 
 available tools:

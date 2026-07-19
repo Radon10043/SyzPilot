@@ -5,8 +5,8 @@ linux:
 cd $CLOUD
 nohup ./bin/generator \
     -db=./data/database/linux.db \
-    -outdir=./workdir/specs/linux-v6.18-subsystems-gemini-3-flash-preview \
-    -kernel=/vol/linux/v6.18/build \
+    -outdir=./.workdir/specs/linux-v6.18-subsystems-gemini-3-flash-preview \
+    -kernel=$KERNSRC \
     -model=gemini-3-flash-preview \
     -ref=./data/refs/linux/can.txt \
     -sysdir=./data/trimsys \
@@ -19,8 +19,8 @@ freebsd:
 cd $CLOUD
 nohup ./bin/generator \
     -db=./data/database/freebsd.db \
-    -outdir=./workdir/specs/freebsd-15.0.0-inet_icmp-gemini-3-flash-preview \
-    -kernel=/root/freebsd/15.0.0/build \
+    -outdir=./.workdir/specs/freebsd-15.0.0-inet_icmp-gemini-3-flash-preview \
+    -kernel=$KERNSRC \
     -model=gemini-3-flash-preview \
     -ref=./data/refs/freebsd/inet_icmp.txt \
     -sysdir=./data/trimsys \
@@ -33,8 +33,8 @@ openbsd:
 cd $CLOUD
 nohup ./bin/generator \
     -db=./data/database/openbsd.db \
-    -outdir=./workdir/specs/openbsd-23290a22-vnd-gemini-3-flash-preview \
-    -kernel=/root/openbsd/23290a22/build \
+    -outdir=./.workdir/specs/openbsd-23290a22-vnd-gemini-3-flash-preview \
+    -kernel=$KERNSRC \
     -model=gemini-3-flash-preview \
     -ref=./data/refs/openbsd/vnd.txt \
     -sysdir=./data/trimsys \
@@ -47,8 +47,8 @@ netbsd:
 cd $CLOUD
 nohup ./bin/generator \
     -db=./data/database/netbsd.db \
-    -outdir=./workdir/specs/netbsd-15e7fbc5-tprof-gemini-3-flash-preview \
-    -kernel=../netbsd/15e7fbc5/src \
+    -outdir=./.workdir/specs/netbsd-15e7fbc5-tprof-gemini-3-flash-preview \
+    -kernel=$KERNSRC \
     -model=gemini-3-flash-preview \
     -ref=./data/refs/netbsd/tprof.txt \
     -sysdir=./data/trimsys \
