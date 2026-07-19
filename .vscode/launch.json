@@ -24,10 +24,10 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "-db=${workspaceFolder}/data/database/linux.db",
-                "-kernel=/vol/linux/v6.18/build",
+                "-kernel=${workspaceFolder}/../../kernel/linux/v6.18/build",
                 "-os=linux",
                 "-model=gemini-3-flash-preview",
-                "-outdir=${workspaceFolder}/workdir/ablation/trimtool",
+                "-outdir=${workspaceFolder}/.workdir/ablation/trimtool",
                 "-ref=${workspaceFolder}/data/refs/linux/sg.txt",
                 "-sysdir=${workspaceFolder}/data/trimsys",
                 "-disable=get_func_code_by_name",
@@ -44,7 +44,7 @@
             "args": [
                 "-db=${workspaceFolder}/data/database/linux.db",
                 "-model=gemini-3-flash-preview",
-                "-outdir=${workspaceFolder}/workdir/ablation/noiter",
+                "-outdir=${workspaceFolder}/.workdir/ablation/noiter",
                 "-ref=${workspaceFolder}/data/refs/linux/sg.txt",
                 "-jobs=1"
             ],
@@ -58,9 +58,9 @@
             "cwd": "${workspaceFolder}",
             "args": [
                 "-db=${workspaceFolder}/data/database/linux.db",
-                "-kernel=/vol/linux/v6.18/build",
+                "-kernel=${workspaceFolder}/../../kernel/linux/v6.18/build",
                 "-model=gemini-3-flash-preview",
-                "-outdir=${workspaceFolder}/workdir/ablation/nodb",
+                "-outdir=${workspaceFolder}/.workdir/ablation/nodb",
                 "-ref=${workspaceFolder}/data/refs/linux/sg.txt",
                 "-sysdir=${workspaceFolder}/data/trimsys",
                 "-jobs=1"
@@ -73,7 +73,7 @@
             "mode": "debug",
             "program": "${workspaceFolder}/experiment/viz/align/main.go",
             "args": [
-                "-input=${workspaceFolder}/workdir/acc/align.csv",
+                "-input=${workspaceFolder}/.workdir/acc/align.csv",
             ],
         },
         {
@@ -83,7 +83,7 @@
             "mode": "debug",
             "program": "${workspaceFolder}/experiment/viz/fuzz/main.go",
             "args": [
-                "-expdir=${workspaceFolder}/workdir/experiment",
+                "-expdir=${workspaceFolder}/.workdir/experiment",
                 "-master=cloud",
             ],
         },
@@ -94,8 +94,8 @@
             "mode": "auto",
             "program": "github.com/Radon10043/cloud/src/refactor",
             "args": [
-                "-indir=${workspaceFolder}/workdir/specs/linux-v6.18-kernel-gemini-3-flash-preview/specs",
-                "-outdir=${workspaceFolder}/workdir/specs/linux-v6.18-kernel-gemini-3-flash-preview/refactor",
+                "-indir=${workspaceFolder}/.workdir/specs/linux-v6.18-kernel-gemini-3-flash-preview/specs",
+                "-outdir=${workspaceFolder}/.workdir/specs/linux-v6.18-kernel-gemini-3-flash-preview/refactor",
             ]
         },
         {
@@ -110,10 +110,10 @@
                 "-os=android",
                 "-model=gemini-3-flash-preview",
                 "-kernel=${workspaceFolder}/../../kernel/android/common-android17-6.18",
-                "-outdir=${workspaceFolder}/workdir/debug/generator-android",
+                "-outdir=${workspaceFolder}/.workdir/debug/generator-android",
                 "-ref=${workspaceFolder}/data/refs/android/dm.txt",
             ],
-            "preLaunchTask": "make generator syz-check syz-extract"
+            "preLaunchTask": "make syz-check syz-extract"
         },
         {
             "name": "go: launch generator (netbsd)",
@@ -126,11 +126,65 @@
                 "-db=${workspaceFolder}/data/database/netbsd.db",
                 "-os=netbsd",
                 "-model=gemini-3-flash-preview",
-                "-kernel=/vol/netbsd/15e7fbc5",
-                "-outdir=${workspaceFolder}/workdir/debug/generator-netbsd",
+                "-kernel=${workspaceFolder}/../../kernel/netbsd/15e7fbc5",
+                "-outdir=${workspaceFolder}/.workdir/debug/generator-netbsd",
                 "-ref=${workspaceFolder}/data/refs/netbsd/hdaudio.txt",
             ],
-            "preLaunchTask": "make generator syz-check syz-extract"
+            "preLaunchTask": "make syz-check syz-extract"
+        },
+        {
+            "name": "go: launch generator (linux)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "github.com/Radon10043/cloud/src/generator",
+            "args": [
+                "-env=${workspaceFolder}/.env",
+                "-db=${workspaceFolder}/data/database/linux.db",
+                "-os=linux",
+                "-model=gemini-3-flash-preview",
+                "-kernel=${workspaceFolder}/../../kernel/linux/v6.18/build",
+                "-outdir=${workspaceFolder}/.workdir/debug/generator-linux",
+                "-ref=${workspaceFolder}/data/refs/linux/sg.txt",
+                "-sysdir=${workspaceFolder}/data/trimsys",
+            ],
+            "preLaunchTask": "make syz-check syz-extract"
+        },
+        {
+            "name": "go: launch generator (linux, 2 jobs)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "github.com/Radon10043/cloud/src/generator",
+            "args": [
+                "-env=${workspaceFolder}/.env",
+                "-db=${workspaceFolder}/data/database/linux.db",
+                "-os=linux",
+                "-model=gemini-3-flash-preview",
+                "-kernel=${workspaceFolder}/../../kernel/linux/v6.18/build",
+                "-outdir=${workspaceFolder}/.workdir/debug/generator-linux-parallel",
+                "-ref=${workspaceFolder}/data/refs/linux/autofs.txt",
+                "-jobs=2",
+            ],
+            "preLaunchTask": "make syz-check syz-extract"
+        },
+        {
+            "name": "go: launch generator (linux, qwen3)",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "github.com/Radon10043/cloud/src/generator",
+            "args": [
+                "-env=${workspaceFolder}/qwen.env",
+                "-db=${workspaceFolder}/data/database/linux.db",
+                "-os=linux",
+                "-model=qwen3-235b-a22b-instruct-2507",
+                "-kernel=${workspaceFolder}/../../kernel/linux/v6.18/build",
+                "-outdir=${workspaceFolder}/.workdir/debug/generator-linux-qwen3",
+                "-ref=${workspaceFolder}/data/refs/linux/autofs.txt",
+                "-jobs=1",
+            ],
+            "preLaunchTask": "make syz-check syz-extract"
         },
         {
             "name": "go: launch minitask (netbsd)",
@@ -142,7 +196,7 @@
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/netbsd.db",
                 "-os=netbsd",
-                "-outdir=${workspaceFolder}/workdir/debug/minitask-netbsd",
+                "-outdir=${workspaceFolder}/.workdir/debug/minitask-netbsd",
                 "-model=gemini-3-flash-preview",
             ],
             "preLaunchTask": "make minitask",
@@ -157,7 +211,7 @@
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/openbsd.db",
                 "-os=openbsd",
-                "-outdir=${workspaceFolder}/workdir/debug/minitask-openbsd",
+                "-outdir=${workspaceFolder}/.workdir/debug/minitask-openbsd",
                 "-model=gemini-3-flash-preview",
             ],
             "preLaunchTask": "make minitask",
@@ -172,7 +226,7 @@
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/freebsd.db",
                 "-os=freebsd",
-                "-outdir=${workspaceFolder}/workdir/debug/minitask-freebsd",
+                "-outdir=${workspaceFolder}/.workdir/debug/minitask-freebsd",
                 "-model=gemini-3-flash-preview",
             ],
             "preLaunchTask": "make minitask",
@@ -187,47 +241,10 @@
                 "-env=${workspaceFolder}/.env",
                 "-db=${workspaceFolder}/data/database/linux.db",
                 "-os=linux",
-                "-outdir=${workspaceFolder}/workdir/debug/minitask-linux",
+                "-outdir=${workspaceFolder}/.workdir/debug/minitask-linux",
                 "-model=gemini-3-flash-preview",
             ],
             "preLaunchTask": "make minitask"
-        },
-        {
-            "name": "go: launch generator",
-            "type": "go",
-            "request": "launch",
-            "mode": "auto",
-            "program": "github.com/Radon10043/cloud/src/generator",
-            "args": [
-                "-env=${workspaceFolder}/.env",
-                "-db=${workspaceFolder}/data/database/linux.db",
-                "-os=linux",
-                "-model=gemini-3-flash-preview",
-                "-kernel=/vol/linux/v6.18/build",
-                "-outdir=${workspaceFolder}/workdir/debug/generator-linux",
-                "-ref=${workspaceFolder}/data/refs/linux/sg.txt",
-                "-sysdir=${workspaceFolder}/data/trimsys",
-            ],
-            "preLaunchTask": "make generator syz-check syz-extract"
-        },
-        {
-            "name": "go: launch generator (2 jobs)",
-            "type": "go",
-            "request": "launch",
-            "mode": "auto",
-            "program": "github.com/Radon10043/cloud/src/generator",
-            "args": [
-                "-env=${workspaceFolder}/.env",
-                "-db=${workspaceFolder}/data/database/linux.db",
-                "-os=linux",
-                "-model=gemini-3-flash-preview",
-                "-kernel=/vol/linux/v6.18",
-                "-outdir=${workspaceFolder}/workdir/debug/generator-linux-parallel",
-                "-ref=${workspaceFolder}/data/refs/linux/autofs.txt",
-                "-model=gemini-3-flash-preview",
-                "-jobs=2",
-            ],
-            "preLaunchTask": "make generator syz-check syz-extract"
         },
         {
             "name": "go: launch syz-manager",
@@ -236,7 +253,7 @@
             "mode": "exec",
             "program": "${workspaceFolder}/syzkaller/bin/syz-manager",
             "args": [
-                "-config=${workspaceFolder}/workdir/fuzz/test.cfg"
+                "-config=${workspaceFolder}/.workdir/fuzz/test.cfg"
             ]
         }
     ]
