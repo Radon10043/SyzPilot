@@ -24,10 +24,10 @@ RUN apt-get install -y gcc-powerpc64le-linux-gnu gcc-riscv64-linux-gnu gcc-s390x
 
 RUN pip install compiledb
 
-# Install golang-1.24.4
-RUN wget https://go.dev/dl/go1.24.4.linux-amd64.tar.gz
-RUN tar -C /usr/local -xzf go1.24.4.linux-amd64.tar.gz && \
-    rm go1.24.4.linux-amd64.tar.gz
+# Install golang-1.25.12
+RUN wget https://go.dev/dl/go1.25.12.linux-amd64.tar.gz
+RUN tar -C /usr/local -xzf go1.25.12.linux-amd64.tar.gz && \
+    rm go1.25.12.linux-amd64.tar.gz
 
 # Install flatbuffers-23.5.26
 RUN wget https://github.com/google/flatbuffers/archive/refs/tags/v23.5.26.tar.gz
