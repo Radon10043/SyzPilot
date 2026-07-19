@@ -2,9 +2,10 @@ FROM ubuntu:24.04
 
 SHELL [ "/bin/bash", "-c" ]
 
-ENV GOPATH=/usr/local/go/bin
+ENV GOROOT=/usr/local/go
+ENV GOPATH=/root/go
 ENV LLVM_HOME=/llvm-19
-ENV PATH=$GOPATH:$LLVM_HOME/bin:$PATH
+ENV PATH=$GOROOT/bin:$GOPATH/bin:$LLVM_HOME/bin:$PATH
 ENV TZ=Asia/Shanghai
 
 # Install basic packages
