@@ -232,6 +232,6 @@ workdir/
 .workdir/
 *.log
 *.db*
-.env
+*.env
 !go.mod
 __debug*
