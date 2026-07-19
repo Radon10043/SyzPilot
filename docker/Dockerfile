@@ -24,8 +24,6 @@ RUN apt-get install -y bmake libarchive-tools libbsd-dev time libarchive-dev lib
 RUN apt-get install -y gcc-arm-linux-gnueabi gcc-aarch64-linux-gnu gcc-mips64el-linux-gnuabi64
 RUN apt-get install -y gcc-powerpc64le-linux-gnu gcc-riscv64-linux-gnu gcc-s390x-linux-gnu
 
-RUN echo "alias ls=lsd" >> /root/.bashrc
-
 RUN pip install --break-system-packages compiledb
 
 # Install golang-1.25.12
