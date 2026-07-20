@@ -18,3 +18,8 @@ e.g.
 ```bash
 docker compose --env-file ./compose.env -f ./docker-compose/compose.syzkaller.yaml up linux-v6.18-kernel --scale linux-v6.18-kernel=5 -d
 ```
+
+schedule tasks:
+```bash
+echo "docker compose --env-file ./compose.env -f ./docker-compose/compose.syzkaller.yaml up linux-v6.18-kernel --scale linux-v6.18-kernel=5 -d" | at 18:00 7/20/2026
+```
