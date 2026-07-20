@@ -159,7 +159,7 @@ mv syzkaller/bin bin-kern
 (host) build cloud/syzkaller for linux subsystems:
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
-git checkout . && git clean -fdx
+git reset --hard HEAD && git checkout . && git clean -fdx
 git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-subsys/*
 make all -j$JOBS
@@ -238,38 +238,50 @@ mv syzkaller/bin bin-subsys
 
 ## setup binaries for ablation fuzzing
 
-### nodb variant
+### fuzzer/cloud/bin-nodb
 
 (host):
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
-git checkout . && git clean -fdx
+git reset --hard HEAD && git checkout . && git clean -fdx
 git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-ablation/specs-syzkaller-ac3c71e7-linux-v6.18-subsystem-nodb-gemini-3-flash-preview.patch
 make all -j$JOBS
 mv bin ../bin-nodb
 ```
 
-### noiter variant
+### fuzzer/cloud/bin-noiter
 
 (host):
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
-git checkout . && git clean -fdx
+git reset --hard HEAD && git checkout . && git clean -fdx
 git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-ablation/specs-syzkaller-ac3c71e7-linux-v6.18-subsystem-noiter-gemini-3-flash-preview.patch
 make all -j$JOBS
 mv bin ../bin-noiter
 ```
 
-### openllm variant
+### fuzzer/cloud/bin-openllm
 
 (host):
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
-git checkout . && git clean -fdx
+git reset --hard HEAD && git checkout . && git clean -fdx
 git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-ablation/specs-syzkaller-ac3c71e7-linux-v6.18-subsystem-openllm-qwen3-235b-a22b-instruct-2507.patch
 make all -j$JOBS
 mv bin ../bin-openllm
+```
+
+### fuzzer/cloud/bin-codex
+
+(host):
+```bash
+cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+git reset --hard HEAD && git checkout . && git clean -fdx
+git apply -3 ../patch/syzkaller/*
+git apply ../patch/specs-ablation/specs-syzkaller-ac3c71e7-linux-v6.18-subsystem-codex-gpt-5.5-xhigh.patch
+make all -j$JOBS
+mv bin ../bin-codex
 ```
