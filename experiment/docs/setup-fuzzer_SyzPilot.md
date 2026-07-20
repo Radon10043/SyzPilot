@@ -9,7 +9,7 @@
 cd $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller
 git apply ../patch/syzkaller/*
 git apply ../patch/specs-kern/*
-make all -j16
+make all -j$JOBS
 ```
 
 ### freebsd binaries
@@ -113,7 +113,8 @@ cd /root/SyzPilot && unzip src.zip && rm src.zip
 git clone https://github.com/google/syzkaller
 cd syzkaller && git checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
 
-git apply ../patch/syzkaller/*
+cd syzkaller
+git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-kern/*
 gmake target
 ```
@@ -156,9 +157,9 @@ mv syzkaller/bin bin-kern
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller
 git checkout . && git clean -fdx
-git apply ../patch/syzkaller/*
+git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-subsys/*
-make all -j16
+make all -j$JOBS
 ```
 
 ### freebsd binaries
@@ -171,7 +172,7 @@ qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/image/freebsd/15.0.0.qco
 (vm) build needed binaries for SyzPilot on freebsd vm:
 ```sh
 cd /root/SyzPilot/syzkaller
-git apply ../patch/syzkaller/*
+git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-subsys/*
 gmake target
 ```
@@ -195,7 +196,7 @@ qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./dev.qcow2,
 (vm) build the needed binaries on the OpenBSD vm:
 ```sh
 cd /root/SyzPilot/syzkaller
-git apply ../patch/syzkaller/*
+git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-subsys/*
 gmake target
 ```

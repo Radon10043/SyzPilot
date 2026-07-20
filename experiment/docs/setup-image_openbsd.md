@@ -305,7 +305,7 @@ git checkout 6dac8606
 cp /root/SyzPilot/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
 cd sys/arch/amd64/conf && config SYZPILOT
 cd ../compile/SYZPILOT
-make depend && make -j16 && make install
+make depend && make -j$JOBS && make install
 reboot
 ```
 

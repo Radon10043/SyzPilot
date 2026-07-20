@@ -57,7 +57,7 @@ cp /root/SyzPilot/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
 cd sys/amd64/conf && config SYZPILOT
 cd ../compile/SYZPILOT
 make cleandepend && make depend
-make -j16 && make install
+make -j$JOBS && make install
 reboot
 ```
 
@@ -127,7 +127,7 @@ cp /root/SyzPilot/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
 cd sys/amd64/conf && config SYZPILOT
 cd ../compile/SYZPILOT
 make cleandepend && make depend
-make -j16 && make install
+make -j$JOBS && make install
 reboot
 ```
 
@@ -197,7 +197,7 @@ cp /root/SyzPilot/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
 cd sys/amd64/conf && config SYZPILOT
 cd ../compile/SYZPILOT
 make cleandepend && make depend
-make -j16 && make install
+make -j$JOBS && make install
 reboot
 ```
 
