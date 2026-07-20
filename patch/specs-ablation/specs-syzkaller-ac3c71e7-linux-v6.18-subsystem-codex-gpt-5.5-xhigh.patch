@@ -1,0 +1,3656 @@
+diff --git a/sys/linux/codex_autofs.txt b/sys/linux/codex_autofs.txt
+new file mode 100644
+index 0000000000..1368d5710b
+--- /dev/null
++++ b/sys/linux/codex_autofs.txt
+@@ -0,0 +1,156 @@
++meta arches["amd64"]
++# SPDX-License-Identifier: Apache-2.0
++
++include <uapi/asm/ioctl.h>
++include <uapi/linux/auto_fs.h>
++include <uapi/linux/auto_dev-ioctl.h>
++include <uapi/linux/fcntl.h>
++
++resource fd_codex_autofs[fd]
++
++openat$__CODEX_autofs_dev(fd const[AT_FDCWD], file ptr[in, string["/dev/autofs"]], flags flags[open_flags], mode const[0]) fd_codex_autofs
++
++# autofs mount-point ioctls.  These operate on a directory/file fd that belongs
++# to an autofs mount, so the fd is intentionally generic.
++ioctl$__CODEX_AUTOFS_IOC_READY(fd fd, cmd const[AUTOFS_IOC_READY], token intptr)
++ioctl$__CODEX_AUTOFS_IOC_FAIL(fd fd, cmd const[AUTOFS_IOC_FAIL], token intptr)
++ioctl$__CODEX_AUTOFS_IOC_CATATONIC(fd fd, cmd const[AUTOFS_IOC_CATATONIC], arg const[0])
++ioctl$__CODEX_AUTOFS_IOC_PROTOVER(fd fd, cmd const[AUTOFS_IOC_PROTOVER], arg ptr[out, int32])
++ioctl$__CODEX_AUTOFS_IOC_PROTOSUBVER(fd fd, cmd const[AUTOFS_IOC_PROTOSUBVER], arg ptr[out, int32])
++ioctl$__CODEX_AUTOFS_IOC_SETTIMEOUT32(fd fd, cmd const[CODEX_AUTOFS_IOC_SETTIMEOUT32], arg ptr[inout, int32])
++ioctl$__CODEX_AUTOFS_IOC_SETTIMEOUT(fd fd, cmd const[AUTOFS_IOC_SETTIMEOUT], arg ptr[inout, intptr])
++ioctl$__CODEX_AUTOFS_IOC_EXPIRE(fd fd, cmd const[AUTOFS_IOC_EXPIRE], arg ptr[out, codex_autofs_packet_expire])
++ioctl$__CODEX_AUTOFS_IOC_EXPIRE_MULTI(fd fd, cmd const[AUTOFS_IOC_EXPIRE_MULTI], arg ptr[inout, int32])
++ioctl$__CODEX_AUTOFS_IOC_ASKUMOUNT(fd fd, cmd const[AUTOFS_IOC_ASKUMOUNT], arg ptr[out, int32])
++
++# /dev/autofs misc-device ioctls.  The kernel requires a versioned header and
++# command-specific union payload.
++ioctl$__CODEX_AUTOFS_DEV_IOCTL_VERSION(fd fd_codex_autofs, cmd const[AUTOFS_DEV_IOCTL_VERSION], arg ptr[inout, codex_autofs_dev_ioctl])
++ioctl$__CODEX_AUTOFS_DEV_IOCTL_PROTOVER(fd fd_codex_autofs, cmd const[AUTOFS_DEV_IOCTL_PROTOVER], arg ptr[inout, codex_autofs_dev_ioctl])
++ioctl$__CODEX_AUTOFS_DEV_IOCTL_PROTOSUBVER(fd fd_codex_autofs, cmd const[AUTOFS_DEV_IOCTL_PROTOSUBVER], arg ptr[inout, codex_autofs_dev_ioctl])
++ioctl$__CODEX_AUTOFS_DEV_IOCTL_OPENMOUNT(fd fd_codex_autofs, cmd const[AUTOFS_DEV_IOCTL_OPENMOUNT], arg ptr[inout, codex_autofs_dev_ioctl_openmount])
++ioctl$__CODEX_AUTOFS_DEV_IOCTL_CLOSEMOUNT(fd fd_codex_autofs, cmd const[AUTOFS_DEV_IOCTL_CLOSEMOUNT], arg ptr[inout, codex_autofs_dev_ioctl_fd])
++ioctl$__CODEX_AUTOFS_DEV_IOCTL_READY(fd fd_codex_autofs, cmd const[AUTOFS_DEV_IOCTL_READY], arg ptr[inout, codex_autofs_dev_ioctl_token])
++ioctl$__CODEX_AUTOFS_DEV_IOCTL_FAIL(fd fd_codex_autofs, cmd const[AUTOFS_DEV_IOCTL_FAIL], arg ptr[inout, codex_autofs_dev_ioctl_status])
++ioctl$__CODEX_AUTOFS_DEV_IOCTL_SETPIPEFD(fd fd_codex_autofs, cmd const[AUTOFS_DEV_IOCTL_SETPIPEFD], arg ptr[inout, codex_autofs_dev_ioctl_pipefd])
++ioctl$__CODEX_AUTOFS_DEV_IOCTL_CATATONIC(fd fd_codex_autofs, cmd const[AUTOFS_DEV_IOCTL_CATATONIC], arg ptr[inout, codex_autofs_dev_ioctl_fd])
++ioctl$__CODEX_AUTOFS_DEV_IOCTL_TIMEOUT(fd fd_codex_autofs, cmd const[AUTOFS_DEV_IOCTL_TIMEOUT], arg ptr[inout, codex_autofs_dev_ioctl_timeout])
++ioctl$__CODEX_AUTOFS_DEV_IOCTL_REQUESTER(fd fd_codex_autofs, cmd const[AUTOFS_DEV_IOCTL_REQUESTER], arg ptr[inout, codex_autofs_dev_ioctl_requester])
++ioctl$__CODEX_AUTOFS_DEV_IOCTL_EXPIRE(fd fd_codex_autofs, cmd const[AUTOFS_DEV_IOCTL_EXPIRE], arg ptr[inout, codex_autofs_dev_ioctl_expire])
++ioctl$__CODEX_AUTOFS_DEV_IOCTL_ASKUMOUNT(fd fd_codex_autofs, cmd const[AUTOFS_DEV_IOCTL_ASKUMOUNT], arg ptr[inout, codex_autofs_dev_ioctl_askumount])
++ioctl$__CODEX_AUTOFS_DEV_IOCTL_ISMOUNTPOINT(fd fd_codex_autofs, cmd const[AUTOFS_DEV_IOCTL_ISMOUNTPOINT], arg ptr[inout, codex_autofs_dev_ioctl_ismountpoint])
++
++codex_autofs_packet_hdr {
++	proto_version	int32
++	type		int32
++}
++
++codex_autofs_packet_expire {
++	hdr	codex_autofs_packet_hdr
++	len	int32
++	name	array[int8, 256]
++}
++
++codex_autofs_dev_ioctl {
++	ver_major	const[AUTOFS_DEV_IOCTL_VERSION_MAJOR, int32]
++	ver_minor	const[AUTOFS_DEV_IOCTL_VERSION_MINOR, int32]
++	size		int32[24:4096]
++	ioctlfd		fd
++	arg		array[int8, 16]
++}
++
++codex_autofs_dev_ioctl_fd {
++	ver_major	const[AUTOFS_DEV_IOCTL_VERSION_MAJOR, int32]
++	ver_minor	const[AUTOFS_DEV_IOCTL_VERSION_MINOR, int32]
++	size		int32[24:4096]
++	ioctlfd		fd
++	arg		array[int8, 16]
++}
++
++codex_autofs_dev_ioctl_openmount {
++	ver_major	const[AUTOFS_DEV_IOCTL_VERSION_MAJOR, int32]
++	ver_minor	const[AUTOFS_DEV_IOCTL_VERSION_MINOR, int32]
++	size		int32[24:4096]
++	ioctlfd		fd
++	devid		int64
++	path		array[int8, 0:255]
++}
++
++codex_autofs_dev_ioctl_token {
++	ver_major	const[AUTOFS_DEV_IOCTL_VERSION_MAJOR, int32]
++	ver_minor	const[AUTOFS_DEV_IOCTL_VERSION_MINOR, int32]
++	size		int32[24:4096]
++	ioctlfd		fd
++	token		int64
++}
++
++codex_autofs_dev_ioctl_status {
++	ver_major	const[AUTOFS_DEV_IOCTL_VERSION_MAJOR, int32]
++	ver_minor	const[AUTOFS_DEV_IOCTL_VERSION_MINOR, int32]
++	size		int32[24:4096]
++	ioctlfd		fd
++	token		int64
++	status		int32
++	pad		int32
++}
++
++codex_autofs_dev_ioctl_pipefd {
++	ver_major	const[AUTOFS_DEV_IOCTL_VERSION_MAJOR, int32]
++	ver_minor	const[AUTOFS_DEV_IOCTL_VERSION_MINOR, int32]
++	size		int32[24:4096]
++	ioctlfd		fd
++	pipefd		fd
++	pad		int32
++}
++
++codex_autofs_dev_ioctl_timeout {
++	ver_major	const[AUTOFS_DEV_IOCTL_VERSION_MAJOR, int32]
++	ver_minor	const[AUTOFS_DEV_IOCTL_VERSION_MINOR, int32]
++	size		int32[24:4096]
++	ioctlfd		fd
++	timeout		int64
++}
++
++codex_autofs_dev_ioctl_requester {
++	ver_major	const[AUTOFS_DEV_IOCTL_VERSION_MAJOR, int32]
++	ver_minor	const[AUTOFS_DEV_IOCTL_VERSION_MINOR, int32]
++	size		int32[24:4096]
++	ioctlfd		fd
++	uid		int32
++	gid		int32
++}
++
++codex_autofs_dev_ioctl_expire {
++	ver_major	const[AUTOFS_DEV_IOCTL_VERSION_MAJOR, int32]
++	ver_minor	const[AUTOFS_DEV_IOCTL_VERSION_MINOR, int32]
++	size		int32[24:4096]
++	ioctlfd		fd
++	how		flags[codex_autofs_expire_flags, int32]
++	pad		int32
++	path		array[int8, 0:255]
++}
++
++codex_autofs_dev_ioctl_askumount {
++	ver_major	const[AUTOFS_DEV_IOCTL_VERSION_MAJOR, int32]
++	ver_minor	const[AUTOFS_DEV_IOCTL_VERSION_MINOR, int32]
++	size		int32[24:4096]
++	ioctlfd		fd
++	may_umount	int32
++	pad		int32
++}
++
++codex_autofs_dev_ioctl_ismountpoint {
++	ver_major	const[AUTOFS_DEV_IOCTL_VERSION_MAJOR, int32]
++	ver_minor	const[AUTOFS_DEV_IOCTL_VERSION_MINOR, int32]
++	size		int32[24:4096]
++	ioctlfd		fd
++	type		int32
++	devid		int64
++	magic		int32
++	pad		int32
++	path		array[int8, 0:255]
++}
++
++codex_autofs_expire_flags = AUTOFS_EXP_NORMAL, AUTOFS_EXP_IMMEDIATE, AUTOFS_EXP_LEAVES, AUTOFS_EXP_FORCED
++
++define CODEX_AUTOFS_IOC_SETTIMEOUT32	_IOWR(AUTOFS_IOCTL, AUTOFS_IOC_SETTIMEOUT_CMD, char[4])
+diff --git a/sys/linux/codex_autofs.txt.const b/sys/linux/codex_autofs.txt.const
+new file mode 100644
+index 0000000000..431979e1ee
+--- /dev/null
++++ b/sys/linux/codex_autofs.txt.const
+@@ -0,0 +1,35 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++AUTOFS_DEV_IOCTL_ASKUMOUNT = amd64:3222836093
++AUTOFS_DEV_IOCTL_CATATONIC = amd64:3222836089
++AUTOFS_DEV_IOCTL_CLOSEMOUNT = amd64:3222836085
++AUTOFS_DEV_IOCTL_EXPIRE = amd64:3222836092
++AUTOFS_DEV_IOCTL_FAIL = amd64:3222836087
++AUTOFS_DEV_IOCTL_ISMOUNTPOINT = amd64:3222836094
++AUTOFS_DEV_IOCTL_OPENMOUNT = amd64:3222836084
++AUTOFS_DEV_IOCTL_PROTOSUBVER = amd64:3222836083
++AUTOFS_DEV_IOCTL_PROTOVER = amd64:3222836082
++AUTOFS_DEV_IOCTL_READY = amd64:3222836086
++AUTOFS_DEV_IOCTL_REQUESTER = amd64:3222836091
++AUTOFS_DEV_IOCTL_SETPIPEFD = amd64:3222836088
++AUTOFS_DEV_IOCTL_TIMEOUT = amd64:3222836090
++AUTOFS_DEV_IOCTL_VERSION = amd64:3222836081
++AUTOFS_DEV_IOCTL_VERSION_MAJOR = amd64:1
++AUTOFS_DEV_IOCTL_VERSION_MINOR = amd64:1
++AUTOFS_EXP_FORCED = amd64:4
++AUTOFS_EXP_IMMEDIATE = amd64:1
++AUTOFS_EXP_LEAVES = amd64:2
++AUTOFS_EXP_NORMAL = amd64:0
++AUTOFS_IOC_ASKUMOUNT = amd64:2147783536
++AUTOFS_IOC_CATATONIC = amd64:37730
++AUTOFS_IOC_EXPIRE = amd64:2165085029
++AUTOFS_IOC_EXPIRE_MULTI = amd64:1074041702
++AUTOFS_IOC_FAIL = amd64:37729
++AUTOFS_IOC_PROTOSUBVER = amd64:2147783527
++AUTOFS_IOC_PROTOVER = amd64:2147783523
++AUTOFS_IOC_READY = amd64:37728
++AUTOFS_IOC_SETTIMEOUT = amd64:3221787492
++CODEX_AUTOFS_IOC_SETTIMEOUT32 = amd64:3221525348
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
+diff --git a/sys/linux/codex_can_ax25_x25_phonet.txt b/sys/linux/codex_can_ax25_x25_phonet.txt
+new file mode 100644
+index 0000000000..05c45f5bb8
+--- /dev/null
++++ b/sys/linux/codex_can_ax25_x25_phonet.txt
+@@ -0,0 +1,325 @@
++meta arches["amd64"]
++# SPDX-License-Identifier: Apache-2.0
++
++include <linux/net.h>
++include <linux/socket.h>
++include <uapi/linux/ax25.h>
++include <uapi/linux/can.h>
++include <uapi/linux/can/bcm.h>
++include <uapi/linux/can/isotp.h>
++include <uapi/linux/can/j1939.h>
++include <uapi/linux/can/raw.h>
++include <uapi/linux/if.h>
++include <uapi/linux/if_phonet.h>
++include <uapi/linux/phonet.h>
++include <uapi/linux/x25.h>
++
++resource sock_codex_can[sock]
++resource sock_codex_ax25[sock]
++resource sock_codex_x25[sock]
++resource sock_codex_phonet[sock]
++
++socket$__CODEX_CAN_RAW(domain const[AF_CAN], type const[SOCK_RAW], proto const[CAN_RAW]) sock_codex_can
++socket$__CODEX_CAN_BCM(domain const[AF_CAN], type const[SOCK_DGRAM], proto const[CAN_BCM]) sock_codex_can
++socket$__CODEX_CAN_ISOTP(domain const[AF_CAN], type const[SOCK_DGRAM], proto const[CAN_ISOTP]) sock_codex_can
++socket$__CODEX_CAN_J1939(domain const[AF_CAN], type const[SOCK_DGRAM], proto const[CAN_J1939]) sock_codex_can
++bind$__CODEX_CAN(fd sock_codex_can, addr ptr[in, codex_sockaddr_can], addrlen len[addr])
++connect$__CODEX_CAN(fd sock_codex_can, addr ptr[in, codex_sockaddr_can], addrlen len[addr])
++sendto$__CODEX_CAN(fd sock_codex_can, buf ptr[in, codex_can_payload], len bytesize[buf], f flags[send_flags], addr ptr[in, codex_sockaddr_can, opt], addrlen len[addr])
++recvfrom$__CODEX_CAN(fd sock_codex_can, buf ptr[out, codex_can_payload], len bytesize[buf], f flags[recv_flags], addr ptr[out, codex_sockaddr_can, opt], addrlen ptr[inout, len[addr, int32]])
++
++setsockopt$__CODEX_CAN_RAW_FILTER(fd sock_codex_can, level const[SOL_CAN_RAW], optname const[CAN_RAW_FILTER], optval ptr[in, array[codex_can_filter, 0:16]], optlen bytesize[optval])
++setsockopt$__CODEX_CAN_RAW_ERR_FILTER(fd sock_codex_can, level const[SOL_CAN_RAW], optname const[CAN_RAW_ERR_FILTER], optval ptr[in, flags[codex_can_id_flags, int32]], optlen bytesize[optval])
++setsockopt$__CODEX_CAN_RAW_LOOPBACK(fd sock_codex_can, level const[SOL_CAN_RAW], optname const[CAN_RAW_LOOPBACK], optval ptr[in, bool32], optlen bytesize[optval])
++setsockopt$__CODEX_CAN_RAW_RECV_OWN_MSGS(fd sock_codex_can, level const[SOL_CAN_RAW], optname const[CAN_RAW_RECV_OWN_MSGS], optval ptr[in, bool32], optlen bytesize[optval])
++setsockopt$__CODEX_CAN_RAW_FD_FRAMES(fd sock_codex_can, level const[SOL_CAN_RAW], optname const[CAN_RAW_FD_FRAMES], optval ptr[in, bool32], optlen bytesize[optval])
++setsockopt$__CODEX_CAN_RAW_JOIN_FILTERS(fd sock_codex_can, level const[SOL_CAN_RAW], optname const[CAN_RAW_JOIN_FILTERS], optval ptr[in, bool32], optlen bytesize[optval])
++setsockopt$__CODEX_CAN_RAW_XL_FRAMES(fd sock_codex_can, level const[SOL_CAN_RAW], optname const[CAN_RAW_XL_FRAMES], optval ptr[in, bool32], optlen bytesize[optval])
++setsockopt$__CODEX_CAN_RAW_XL_VCID_OPTS(fd sock_codex_can, level const[SOL_CAN_RAW], optname const[CAN_RAW_XL_VCID_OPTS], optval ptr[in, codex_can_raw_vcid_options], optlen bytesize[optval])
++
++setsockopt$__CODEX_CAN_ISOTP_OPTS(fd sock_codex_can, level const[SOL_CAN_ISOTP], optname const[CAN_ISOTP_OPTS], optval ptr[in, codex_can_isotp_options], optlen bytesize[optval])
++setsockopt$__CODEX_CAN_ISOTP_RECV_FC(fd sock_codex_can, level const[SOL_CAN_ISOTP], optname const[CAN_ISOTP_RECV_FC], optval ptr[in, codex_can_isotp_fc_options], optlen bytesize[optval])
++setsockopt$__CODEX_CAN_ISOTP_TX_STMIN(fd sock_codex_can, level const[SOL_CAN_ISOTP], optname const[CAN_ISOTP_TX_STMIN], optval ptr[in, int32], optlen bytesize[optval])
++setsockopt$__CODEX_CAN_ISOTP_RX_STMIN(fd sock_codex_can, level const[SOL_CAN_ISOTP], optname const[CAN_ISOTP_RX_STMIN], optval ptr[in, int32], optlen bytesize[optval])
++setsockopt$__CODEX_CAN_ISOTP_LL_OPTS(fd sock_codex_can, level const[SOL_CAN_ISOTP], optname const[CAN_ISOTP_LL_OPTS], optval ptr[in, codex_can_isotp_ll_options], optlen bytesize[optval])
++
++setsockopt$__CODEX_CAN_J1939_FILTER(fd sock_codex_can, level const[SOL_CAN_J1939], optname const[SO_J1939_FILTER], optval ptr[in, array[codex_j1939_filter, 0:8]], optlen bytesize[optval])
++setsockopt$__CODEX_CAN_J1939_PROMISC(fd sock_codex_can, level const[SOL_CAN_J1939], optname const[SO_J1939_PROMISC], optval ptr[in, bool32], optlen bytesize[optval])
++setsockopt$__CODEX_CAN_J1939_SEND_PRIO(fd sock_codex_can, level const[SOL_CAN_J1939], optname const[SO_J1939_SEND_PRIO], optval ptr[in, int32[0:7]], optlen bytesize[optval])
++setsockopt$__CODEX_CAN_J1939_ERRQUEUE(fd sock_codex_can, level const[SOL_CAN_J1939], optname const[SO_J1939_ERRQUEUE], optval ptr[in, bool32], optlen bytesize[optval])
++
++socket$__CODEX_AX25_SEQPACKET(domain const[AF_AX25], type const[SOCK_SEQPACKET], proto const[0]) sock_codex_ax25
++socket$__CODEX_AX25_DGRAM(domain const[AF_AX25], type const[SOCK_DGRAM], proto const[0]) sock_codex_ax25
++bind$__CODEX_AX25(fd sock_codex_ax25, addr ptr[in, codex_sockaddr_ax25_full], addrlen bytesize[addr])
++connect$__CODEX_AX25(fd sock_codex_ax25, addr ptr[in, codex_sockaddr_ax25_full], addrlen bytesize[addr])
++sendto$__CODEX_AX25(fd sock_codex_ax25, buf buffer[in], len len[buf], f flags[send_flags], addr ptr[in, codex_sockaddr_ax25_full, opt], addrlen bytesize[addr])
++recvfrom$__CODEX_AX25(fd sock_codex_ax25, buf buffer[out], len len[buf], f flags[recv_flags], addr ptr[out, codex_sockaddr_ax25_full, opt], addrlen ptr[inout, len[addr, int32]])
++setsockopt$__CODEX_AX25_WINDOW(fd sock_codex_ax25, level const[SOL_AX25], optname const[AX25_WINDOW], optval ptr[in, int32], optlen bytesize[optval])
++setsockopt$__CODEX_AX25_T1(fd sock_codex_ax25, level const[SOL_AX25], optname const[AX25_T1], optval ptr[in, int32], optlen bytesize[optval])
++setsockopt$__CODEX_AX25_T2(fd sock_codex_ax25, level const[SOL_AX25], optname const[AX25_T2], optval ptr[in, int32], optlen bytesize[optval])
++setsockopt$__CODEX_AX25_T3(fd sock_codex_ax25, level const[SOL_AX25], optname const[AX25_T3], optval ptr[in, int32], optlen bytesize[optval])
++setsockopt$__CODEX_AX25_N2(fd sock_codex_ax25, level const[SOL_AX25], optname const[AX25_N2], optval ptr[in, int32], optlen bytesize[optval])
++setsockopt$__CODEX_AX25_BACKOFF(fd sock_codex_ax25, level const[SOL_AX25], optname const[AX25_BACKOFF], optval ptr[in, int32], optlen bytesize[optval])
++setsockopt$__CODEX_AX25_EXTSEQ(fd sock_codex_ax25, level const[SOL_AX25], optname const[AX25_EXTSEQ], optval ptr[in, int32], optlen bytesize[optval])
++setsockopt$__CODEX_AX25_PIDINCL(fd sock_codex_ax25, level const[SOL_AX25], optname const[AX25_PIDINCL], optval ptr[in, int32], optlen bytesize[optval])
++setsockopt$__CODEX_AX25_IDLE(fd sock_codex_ax25, level const[SOL_AX25], optname const[AX25_IDLE], optval ptr[in, int32], optlen bytesize[optval])
++setsockopt$__CODEX_AX25_PACLEN(fd sock_codex_ax25, level const[SOL_AX25], optname const[AX25_PACLEN], optval ptr[in, int32], optlen bytesize[optval])
++setsockopt$__CODEX_AX25_IAMDIGI(fd sock_codex_ax25, level const[SOL_AX25], optname const[AX25_IAMDIGI], optval ptr[in, int32], optlen bytesize[optval])
++setsockopt$__CODEX_AX25_KILL(fd sock_codex_ax25, level const[SOL_AX25], optname const[AX25_KILL], optval ptr[in, int32], optlen bytesize[optval])
++ioctl$__CODEX_SIOCAX25GETUID(fd sock_codex_ax25, cmd const[SIOCAX25GETUID], arg ptr[inout, codex_sockaddr_ax25])
++ioctl$__CODEX_SIOCAX25ADDUID(fd sock_codex_ax25, cmd const[SIOCAX25ADDUID], arg ptr[in, codex_sockaddr_ax25])
++ioctl$__CODEX_SIOCAX25DELUID(fd sock_codex_ax25, cmd const[SIOCAX25DELUID], arg ptr[in, codex_sockaddr_ax25])
++ioctl$__CODEX_SIOCAX25NOUID(fd sock_codex_ax25, cmd const[SIOCAX25NOUID], arg ptr[inout, intptr])
++ioctl$__CODEX_SIOCAX25OPTRT(fd sock_codex_ax25, cmd const[SIOCAX25OPTRT], arg ptr[in, codex_ax25_route_opt])
++ioctl$__CODEX_SIOCAX25CTLCON(fd sock_codex_ax25, cmd const[SIOCAX25CTLCON], arg ptr[in, codex_ax25_ctl])
++ioctl$__CODEX_SIOCAX25GETINFO(fd sock_codex_ax25, cmd const[SIOCAX25GETINFO], arg ptr[out, codex_ax25_info])
++ioctl$__CODEX_SIOCAX25ADDFWD(fd sock_codex_ax25, cmd const[SIOCAX25ADDFWD], arg ptr[in, codex_ax25_fwd])
++ioctl$__CODEX_SIOCAX25DELFWD(fd sock_codex_ax25, cmd const[SIOCAX25DELFWD], arg ptr[in, codex_ax25_fwd])
++
++socket$__CODEX_X25_SEQPACKET(domain const[AF_X25], type const[SOCK_SEQPACKET], proto const[0]) sock_codex_x25
++bind$__CODEX_X25(fd sock_codex_x25, addr ptr[in, codex_sockaddr_x25], addrlen bytesize[addr])
++connect$__CODEX_X25(fd sock_codex_x25, addr ptr[in, codex_sockaddr_x25], addrlen bytesize[addr])
++sendto$__CODEX_X25(fd sock_codex_x25, buf buffer[in], len len[buf], f flags[send_flags], addr ptr[in, codex_sockaddr_x25, opt], addrlen bytesize[addr])
++recvfrom$__CODEX_X25(fd sock_codex_x25, buf buffer[out], len len[buf], f flags[recv_flags], addr ptr[out, codex_sockaddr_x25, opt], addrlen ptr[inout, len[addr, int32]])
++setsockopt$__CODEX_X25_QBITINCL(fd sock_codex_x25, level const[SOL_X25], optname const[X25_QBITINCL], optval ptr[in, int32], optlen bytesize[optval])
++ioctl$__CODEX_SIOCX25GSUBSCRIP(fd sock_codex_x25, cmd const[SIOCX25GSUBSCRIP], arg ptr[inout, codex_x25_subscrip])
++ioctl$__CODEX_SIOCX25SSUBSCRIP(fd sock_codex_x25, cmd const[SIOCX25SSUBSCRIP], arg ptr[in, codex_x25_subscrip])
++ioctl$__CODEX_SIOCX25GFACILITIES(fd sock_codex_x25, cmd const[SIOCX25GFACILITIES], arg ptr[out, codex_x25_facilities])
++ioctl$__CODEX_SIOCX25SFACILITIES(fd sock_codex_x25, cmd const[SIOCX25SFACILITIES], arg ptr[in, codex_x25_facilities])
++ioctl$__CODEX_SIOCX25GCALLUSERDATA(fd sock_codex_x25, cmd const[SIOCX25GCALLUSERDATA], arg ptr[out, codex_x25_calluserdata])
++ioctl$__CODEX_SIOCX25SCALLUSERDATA(fd sock_codex_x25, cmd const[SIOCX25SCALLUSERDATA], arg ptr[in, codex_x25_calluserdata])
++ioctl$__CODEX_SIOCX25GCAUSEDIAG(fd sock_codex_x25, cmd const[SIOCX25GCAUSEDIAG], arg ptr[out, codex_x25_causediag])
++ioctl$__CODEX_SIOCX25SCAUSEDIAG(fd sock_codex_x25, cmd const[SIOCX25SCAUSEDIAG], arg ptr[in, codex_x25_causediag])
++ioctl$__CODEX_SIOCX25SCUDMATCHLEN(fd sock_codex_x25, cmd const[SIOCX25SCUDMATCHLEN], arg ptr[in, int32])
++ioctl$__CODEX_SIOCX25CALLACCPTAPPRV(fd sock_codex_x25, cmd const[SIOCX25CALLACCPTAPPRV], arg const[0])
++ioctl$__CODEX_SIOCX25SENDCALLACCPT(fd sock_codex_x25, cmd const[SIOCX25SENDCALLACCPT], arg const[0])
++ioctl$__CODEX_SIOCX25GDTEFACILITIES(fd sock_codex_x25, cmd const[SIOCX25GDTEFACILITIES], arg ptr[out, codex_x25_dte_facilities])
++ioctl$__CODEX_SIOCX25SDTEFACILITIES(fd sock_codex_x25, cmd const[SIOCX25SDTEFACILITIES], arg ptr[in, codex_x25_dte_facilities])
++
++socket$__CODEX_PHONET_DGRAM(domain const[AF_PHONET], type const[SOCK_DGRAM], proto const[0]) sock_codex_phonet
++socket$__CODEX_PHONET_SEQPACKET(domain const[AF_PHONET], type const[SOCK_SEQPACKET], proto const[0]) sock_codex_phonet
++bind$__CODEX_PHONET(fd sock_codex_phonet, addr ptr[in, codex_sockaddr_pn], addrlen bytesize[addr])
++connect$__CODEX_PHONET(fd sock_codex_phonet, addr ptr[in, codex_sockaddr_pn], addrlen bytesize[addr])
++sendto$__CODEX_PHONET(fd sock_codex_phonet, buf buffer[in], len len[buf], f flags[send_flags], addr ptr[in, codex_sockaddr_pn, opt], addrlen bytesize[addr])
++recvfrom$__CODEX_PHONET(fd sock_codex_phonet, buf buffer[out], len len[buf], f flags[recv_flags], addr ptr[out, codex_sockaddr_pn, opt], addrlen ptr[inout, len[addr, int32]])
++ioctl$__CODEX_SIOCPNGETOBJECT(fd sock_codex_phonet, cmd const[SIOCPNGETOBJECT], arg ptr[out, codex_ifreq_phonet])
++ioctl$__CODEX_SIOCPNADDRESOURCE(fd sock_codex_phonet, cmd const[SIOCPNADDRESOURCE], arg ptr[in, codex_ifreq_phonet])
++ioctl$__CODEX_SIOCPNDELRESOURCE(fd sock_codex_phonet, cmd const[SIOCPNDELRESOURCE], arg ptr[in, codex_ifreq_phonet])
++
++codex_sockaddr_can {
++	family	const[AF_CAN, int16]
++	ifindex	ifindex
++	addr	array[int8, 24]
++} [size[32]]
++
++codex_can_frame {
++	can_id		flags[codex_can_id_flags, int32]
++	len		int8[0:8]
++	__pad		int8
++	__res0		int8
++	len8_dlc	int8
++	data		array[int8, 8]
++} [align[8]]
++
++codex_canfd_frame {
++	can_id	flags[codex_can_id_flags, int32]
++	len	int8[0:64]
++	flags	flags[codex_canfd_flags, int8]
++	__res0	int8
++	__res1	int8
++	data	array[int8, 64]
++} [align[8]]
++
++codex_canxl_frame {
++	prio	flags[codex_can_id_flags, int32]
++	flags	int8
++	sdt	int8
++	len	int16[1:2048]
++	af	int32
++	data	array[int8, 1:2048]
++} [align[8]]
++
++codex_can_payload [
++	classic	codex_can_frame
++	fd	codex_canfd_frame
++	xl	codex_canxl_frame
++	bcm	codex_bcm_msg
++] [varlen]
++
++codex_can_filter {
++	can_id		flags[codex_can_id_flags, int32]
++	can_mask	flags[codex_can_id_flags, int32]
++}
++
++codex_bcm_msg {
++	opcode	flags[codex_bcm_opcode, int32]
++	flags	flags[codex_bcm_flags, int32]
++	count	int32
++	ival1	timespec
++	ival2	timespec
++	can_id	flags[codex_can_id_flags, int32]
++	nframes	len[frames, int32]
++	frames	array[codex_can_frame, 0:8]
++}
++
++codex_can_raw_vcid_options {
++	flags		flags[codex_can_raw_vcid_flags, int32]
++	tx_vcid		int8
++	rx_vcid		int8
++	rx_vcid_mask	int8
++	pad		int8
++}
++
++codex_can_isotp_options {
++	flags		flags[codex_can_isotp_flags, int32]
++	frame_txtime	int32
++	ext_address	int8
++	txpad_content	int8
++	rxpad_content	int8
++	rx_ext_address	int8
++}
++
++codex_can_isotp_fc_options {
++	bs	int8
++	stmin	int8
++	wftmax	int8
++}
++
++codex_can_isotp_ll_options {
++	mtu		int8
++	tx_dl		int8
++	tx_flags	int8
++}
++
++codex_j1939_filter {
++	name		int64
++	name_mask	int64
++	pgn		int32
++	pgn_mask	int32
++	addr		int8
++	addr_mask	int8
++}
++
++codex_ax25_address {
++	ax25_call	array[int8, 7]
++}
++
++codex_sockaddr_ax25 {
++	family	const[AF_AX25, int16]
++	call	codex_ax25_address
++	ndigis	int32[0:8]
++}
++
++codex_sockaddr_ax25_full {
++	family	const[AF_AX25, int16]
++	call	codex_ax25_address
++	ndigis	int32[0:8]
++	digis	array[codex_ax25_address, 8]
++} [size[72]]
++
++codex_ax25_route_opt {
++	port_addr	codex_ax25_address
++	dest_addr	codex_ax25_address
++	cmd		int32
++	arg		int32
++}
++
++codex_ax25_ctl {
++	port_addr	codex_ax25_address
++	source_addr	codex_ax25_address
++	dest_addr	codex_ax25_address
++	cmd		int32
++	arg		int32
++}
++
++codex_ax25_info {
++	n2		int32
++	n2count		int32
++	t1		int32
++	t1timer		int32
++	t2		int32
++	t2timer		int32
++	t3		int32
++	t3timer		int32
++	idle		int32
++	idletimer	int32
++	state		int32
++	rcv_q		int32
++	snd_q		int32
++	vs		int32
++	vr		int32
++	va		int32
++	vs_max		int32
++	paclen		int32
++	window		int32
++}
++
++codex_ax25_fwd {
++	port_from	codex_ax25_address
++	port_to		codex_ax25_address
++}
++
++codex_x25_address {
++	x25_addr	array[int8, 16]
++}
++
++codex_sockaddr_x25 {
++	family	const[AF_X25, int16]
++	addr	codex_x25_address
++}
++
++codex_x25_subscrip {
++	device			array[int8, IFNAMSIZ]
++	global_facil_mask	int32
++	extended		int32
++}
++
++codex_x25_facilities {
++	winsize_in	int32
++	winsize_out	int32
++	pacsize_in	flags[codex_x25_packet_size, int32]
++	pacsize_out	flags[codex_x25_packet_size, int32]
++	throughput	int32
++	reverse		int32
++}
++
++codex_x25_dte_facilities {
++	calling_len	int16
++	called_len	int16
++	calling_ae	array[int8, 20]
++	called_ae	array[int8, 20]
++}
++
++codex_x25_calluserdata {
++	cudlength	int32[0:128]
++	cuddata		array[int8, 128]
++}
++
++codex_x25_causediag {
++	cause		int8
++	diagnostic	int8
++}
++
++codex_sockaddr_pn {
++	family		const[AF_PHONET, int16]
++	obj		int8
++	dev		int8
++	pn_resource	int8
++	zero		int8
++}
++
++codex_ifreq_phonet {
++	ifr_name	array[int8, IFNAMSIZ]
++	pn_resource	int32
++}
++
++codex_can_id_flags = CAN_EFF_FLAG, CAN_RTR_FLAG, CAN_ERR_FLAG, CAN_SFF_MASK, CAN_EFF_MASK, CAN_ERR_MASK
++codex_canfd_flags = CANFD_BRS, CANFD_ESI, CANFD_FDF
++codex_bcm_opcode = TX_SETUP, TX_DELETE, TX_READ, TX_SEND, RX_SETUP, RX_DELETE, RX_READ
++codex_bcm_flags = SETTIMER, STARTTIMER, TX_COUNTEVT, TX_ANNOUNCE, TX_CP_CAN_ID, RX_FILTER_ID, RX_CHECK_DLC, RX_NO_AUTOTIMER, RX_ANNOUNCE_RESUME, TX_RESET_MULTI_IDX, RX_RTR_FRAME, CAN_FD_FRAME
++codex_can_raw_vcid_flags = CAN_RAW_XL_VCID_TX_SET, CAN_RAW_XL_VCID_TX_PASS, CAN_RAW_XL_VCID_RX_FILTER
++codex_can_isotp_flags = CAN_ISOTP_LISTEN_MODE, CAN_ISOTP_EXTEND_ADDR, CAN_ISOTP_TX_PADDING, CAN_ISOTP_RX_PADDING, CAN_ISOTP_CHK_PAD_LEN, CAN_ISOTP_CHK_PAD_DATA, CAN_ISOTP_HALF_DUPLEX, CAN_ISOTP_FORCE_TXSTMIN, CAN_ISOTP_FORCE_RXSTMIN, CAN_ISOTP_RX_EXT_ADDR, CAN_ISOTP_WAIT_TX_DONE, CAN_ISOTP_SF_BROADCAST, CAN_ISOTP_CF_BROADCAST, CAN_ISOTP_DYN_FC_PARMS
++codex_x25_packet_size = X25_PS16, X25_PS32, X25_PS64, X25_PS128, X25_PS256, X25_PS512, X25_PS1024, X25_PS2048, X25_PS4096
++
++define SOL_AX25	257
++define SOL_X25	262
+diff --git a/sys/linux/codex_can_ax25_x25_phonet.txt.const b/sys/linux/codex_can_ax25_x25_phonet.txt.const
+new file mode 100644
+index 0000000000..4a3e35762e
+--- /dev/null
++++ b/sys/linux/codex_can_ax25_x25_phonet.txt.const
+@@ -0,0 +1,135 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AF_AX25 = amd64:3
++AF_CAN = amd64:29
++AF_PHONET = amd64:35
++AF_X25 = amd64:9
++AX25_BACKOFF = amd64:6
++AX25_EXTSEQ = amd64:7
++AX25_IAMDIGI = amd64:12
++AX25_IDLE = amd64:9
++AX25_KILL = amd64:99
++AX25_N2 = amd64:3
++AX25_PACLEN = amd64:10
++AX25_PIDINCL = amd64:8
++AX25_T1 = amd64:2
++AX25_T2 = amd64:5
++AX25_T3 = amd64:4
++AX25_WINDOW = amd64:1
++CANFD_BRS = amd64:1
++CANFD_ESI = amd64:2
++CANFD_FDF = amd64:4
++CAN_BCM = amd64:2
++CAN_EFF_FLAG = amd64:2147483648
++CAN_EFF_MASK = amd64:536870911
++CAN_ERR_FLAG = amd64:536870912
++CAN_ERR_MASK = amd64:536870911
++CAN_FD_FRAME = amd64:2048
++CAN_ISOTP = amd64:6
++CAN_ISOTP_CF_BROADCAST = amd64:4096
++CAN_ISOTP_CHK_PAD_DATA = amd64:32
++CAN_ISOTP_CHK_PAD_LEN = amd64:16
++CAN_ISOTP_DYN_FC_PARMS = amd64:8192
++CAN_ISOTP_EXTEND_ADDR = amd64:2
++CAN_ISOTP_FORCE_RXSTMIN = amd64:256
++CAN_ISOTP_FORCE_TXSTMIN = amd64:128
++CAN_ISOTP_HALF_DUPLEX = amd64:64
++CAN_ISOTP_LISTEN_MODE = amd64:1
++CAN_ISOTP_LL_OPTS = amd64:5
++CAN_ISOTP_OPTS = amd64:1
++CAN_ISOTP_RECV_FC = amd64:2
++CAN_ISOTP_RX_EXT_ADDR = amd64:512
++CAN_ISOTP_RX_PADDING = amd64:8
++CAN_ISOTP_RX_STMIN = amd64:4
++CAN_ISOTP_SF_BROADCAST = amd64:2048
++CAN_ISOTP_TX_PADDING = amd64:4
++CAN_ISOTP_TX_STMIN = amd64:3
++CAN_ISOTP_WAIT_TX_DONE = amd64:1024
++CAN_J1939 = amd64:7
++CAN_RAW = amd64:1
++CAN_RAW_ERR_FILTER = amd64:2
++CAN_RAW_FD_FRAMES = amd64:5
++CAN_RAW_FILTER = amd64:1
++CAN_RAW_JOIN_FILTERS = amd64:6
++CAN_RAW_LOOPBACK = amd64:3
++CAN_RAW_RECV_OWN_MSGS = amd64:4
++CAN_RAW_XL_FRAMES = amd64:7
++CAN_RAW_XL_VCID_OPTS = amd64:8
++CAN_RAW_XL_VCID_RX_FILTER = amd64:4
++CAN_RAW_XL_VCID_TX_PASS = amd64:2
++CAN_RAW_XL_VCID_TX_SET = amd64:1
++CAN_RTR_FLAG = amd64:1073741824
++CAN_SFF_MASK = amd64:2047
++IFNAMSIZ = amd64:16
++RX_ANNOUNCE_RESUME = amd64:256
++RX_CHECK_DLC = amd64:64
++RX_DELETE = amd64:6
++RX_FILTER_ID = amd64:32
++RX_NO_AUTOTIMER = amd64:128
++RX_READ = amd64:7
++RX_RTR_FRAME = amd64:1024
++RX_SETUP = amd64:5
++SETTIMER = amd64:1
++SIOCAX25ADDFWD = amd64:35306
++SIOCAX25ADDUID = amd64:35297
++SIOCAX25CTLCON = amd64:35304
++SIOCAX25DELFWD = amd64:35307
++SIOCAX25DELUID = amd64:35298
++SIOCAX25GETINFO = amd64:35309
++SIOCAX25GETUID = amd64:35296
++SIOCAX25NOUID = amd64:35299
++SIOCAX25OPTRT = amd64:35303
++SIOCPNADDRESOURCE = amd64:35310
++SIOCPNDELRESOURCE = amd64:35311
++SIOCPNGETOBJECT = amd64:35296
++SIOCX25CALLACCPTAPPRV = amd64:35304
++SIOCX25GCALLUSERDATA = amd64:35300
++SIOCX25GCAUSEDIAG = amd64:35302
++SIOCX25GDTEFACILITIES = amd64:35306
++SIOCX25GFACILITIES = amd64:35298
++SIOCX25GSUBSCRIP = amd64:35296
++SIOCX25SCALLUSERDATA = amd64:35301
++SIOCX25SCAUSEDIAG = amd64:35308
++SIOCX25SCUDMATCHLEN = amd64:35303
++SIOCX25SDTEFACILITIES = amd64:35307
++SIOCX25SENDCALLACCPT = amd64:35305
++SIOCX25SFACILITIES = amd64:35299
++SIOCX25SSUBSCRIP = amd64:35297
++SOCK_DGRAM = amd64:2
++SOCK_RAW = amd64:3
++SOCK_SEQPACKET = amd64:5
++SOL_AX25 = amd64:257
++SOL_CAN_ISOTP = amd64:106
++SOL_CAN_J1939 = amd64:107
++SOL_CAN_RAW = amd64:101
++SOL_X25 = amd64:262
++SO_J1939_ERRQUEUE = amd64:4
++SO_J1939_FILTER = amd64:1
++SO_J1939_PROMISC = amd64:2
++SO_J1939_SEND_PRIO = amd64:3
++STARTTIMER = amd64:2
++TX_ANNOUNCE = amd64:8
++TX_COUNTEVT = amd64:4
++TX_CP_CAN_ID = amd64:16
++TX_DELETE = amd64:2
++TX_READ = amd64:3
++TX_RESET_MULTI_IDX = amd64:512
++TX_SEND = amd64:4
++TX_SETUP = amd64:1
++X25_PS1024 = amd64:10
++X25_PS128 = amd64:7
++X25_PS16 = amd64:4
++X25_PS2048 = amd64:11
++X25_PS256 = amd64:8
++X25_PS32 = amd64:5
++X25_PS4096 = amd64:12
++X25_PS512 = amd64:9
++X25_PS64 = amd64:6
++X25_QBITINCL = amd64:1
++__NR_bind = amd64:49
++__NR_connect = amd64:42
++__NR_ioctl = amd64:16
++__NR_recvfrom = amd64:45
++__NR_sendto = amd64:44
++__NR_setsockopt = amd64:54
++__NR_socket = amd64:41
+diff --git a/sys/linux/codex_comedi.txt b/sys/linux/codex_comedi.txt
+new file mode 100644
+index 0000000000..fd292959d5
+--- /dev/null
++++ b/sys/linux/codex_comedi.txt
+@@ -0,0 +1,140 @@
++meta arches["amd64"]
++# SPDX-License-Identifier: Apache-2.0
++
++include <uapi/asm/ioctl.h>
++include <linux/compiler_types.h>
++include <uapi/linux/comedi.h>
++include <uapi/linux/fcntl.h>
++
++resource fd_codex_comedi[fd]
++
++syz_open_dev$__CODEX_comedi(dev ptr[in, string["/dev/comedi#"]], id intptr, flags flags[open_flags]) fd_codex_comedi
++openat$__CODEX_comedi0(fd const[AT_FDCWD], file ptr[in, string["/dev/comedi0"]], flags flags[open_flags], mode const[0]) fd_codex_comedi
++read$__CODEX_comedi(fd fd_codex_comedi, data buffer[out], len len[data])
++write$__CODEX_comedi(fd fd_codex_comedi, data buffer[in], len len[data])
++
++ioctl$__CODEX_COMEDI_DEVCONFIG(fd fd_codex_comedi, cmd const[COMEDI_DEVCONFIG], arg ptr[inout, codex_comedi_devconfig])
++ioctl$__CODEX_COMEDI_DEVINFO(fd fd_codex_comedi, cmd const[COMEDI_DEVINFO], arg ptr[out, codex_comedi_devinfo])
++ioctl$__CODEX_COMEDI_SUBDINFO(fd fd_codex_comedi, cmd const[COMEDI_SUBDINFO], arg ptr[inout, array[codex_comedi_subdinfo, 1:16]])
++ioctl$__CODEX_COMEDI_CHANINFO(fd fd_codex_comedi, cmd const[COMEDI_CHANINFO], arg ptr[inout, codex_comedi_chaninfo])
++ioctl$__CODEX_COMEDI_LOCK(fd fd_codex_comedi, cmd const[COMEDI_LOCK], arg ptr[in, int32])
++ioctl$__CODEX_COMEDI_UNLOCK(fd fd_codex_comedi, cmd const[COMEDI_UNLOCK], arg ptr[in, int32])
++ioctl$__CODEX_COMEDI_CANCEL(fd fd_codex_comedi, cmd const[COMEDI_CANCEL], arg ptr[in, int32])
++ioctl$__CODEX_COMEDI_RANGEINFO(fd fd_codex_comedi, cmd const[COMEDI_RANGEINFO], arg ptr[inout, codex_comedi_rangeinfo])
++ioctl$__CODEX_COMEDI_CMD(fd fd_codex_comedi, cmd const[COMEDI_CMD], arg ptr[inout, codex_comedi_cmd])
++ioctl$__CODEX_COMEDI_CMDTEST(fd fd_codex_comedi, cmd const[COMEDI_CMDTEST], arg ptr[inout, codex_comedi_cmd])
++ioctl$__CODEX_COMEDI_INSNLIST(fd fd_codex_comedi, cmd const[COMEDI_INSNLIST], arg ptr[inout, codex_comedi_insnlist])
++ioctl$__CODEX_COMEDI_INSN(fd fd_codex_comedi, cmd const[COMEDI_INSN], arg ptr[inout, codex_comedi_insn])
++ioctl$__CODEX_COMEDI_BUFCONFIG(fd fd_codex_comedi, cmd const[COMEDI_BUFCONFIG], arg ptr[inout, codex_comedi_bufconfig])
++ioctl$__CODEX_COMEDI_BUFINFO(fd fd_codex_comedi, cmd const[COMEDI_BUFINFO], arg ptr[inout, codex_comedi_bufinfo])
++ioctl$__CODEX_COMEDI_POLL(fd fd_codex_comedi, cmd const[COMEDI_POLL], arg ptr[in, int32])
++ioctl$__CODEX_COMEDI_SETRSUBD(fd fd_codex_comedi, cmd const[COMEDI_SETRSUBD], arg ptr[in, int32])
++ioctl$__CODEX_COMEDI_SETWSUBD(fd fd_codex_comedi, cmd const[COMEDI_SETWSUBD], arg ptr[in, int32])
++
++codex_comedi_insn {
++	insn		flags[codex_comedi_insn_type, int32]
++	n		len[data, int32]
++	data		ptr[inout, array[int32, 0:64]]
++	subdev		int32
++	chanspec	int32
++	unused		array[int32, 3]
++}
++
++codex_comedi_insnlist {
++	n_insns	len[insns, int32]
++	insns	ptr[inout, array[codex_comedi_insn, 0:32]]
++}
++
++codex_comedi_cmd {
++	subdev		int32
++	flags		flags[codex_comedi_cmd_flags, int32]
++	start_src	flags[codex_comedi_trig_flags, int32]
++	start_arg	int32
++	scan_begin_src	flags[codex_comedi_trig_flags, int32]
++	scan_begin_arg	int32
++	convert_src	flags[codex_comedi_trig_flags, int32]
++	convert_arg	int32
++	scan_end_src	flags[codex_comedi_trig_flags, int32]
++	scan_end_arg	int32
++	stop_src	flags[codex_comedi_trig_flags, int32]
++	stop_arg	int32
++	chanlist	ptr[in, array[int32, 0:64]]
++	chanlist_len	len[chanlist, int32]
++	data		ptr[inout, array[int16, 0:1024]]
++	data_len	bytesize[data, int32]
++}
++
++codex_comedi_chaninfo {
++	subdev		int32
++	maxdata_list	ptr[out, array[int32, 0:128]]
++	flaglist	ptr[out, array[int32, 0:128]]
++	rangelist	ptr[out, array[int32, 0:128]]
++	unused		array[int32, 4]
++}
++
++codex_comedi_rangeinfo {
++	range_type	int32
++	range_ptr	ptr[out, array[codex_comedi_krange, 0:128]]
++}
++
++codex_comedi_krange {
++	min	int32
++	max	int32
++	flags	int32
++}
++
++codex_comedi_subdinfo {
++	type			int32
++	n_chan			int32
++	subd_flags		flags[codex_comedi_subd_flags, int32]
++	timer_type		int32
++	len_chanlist		int32
++	maxdata			int32
++	flags			int32
++	range_type		int32
++	settling_time_0		int32
++	insn_bits_support	int32
++	unused			array[int32, 8]
++}
++
++codex_comedi_devinfo {
++	version_code	int32
++	n_subdevs	int32
++	read_subdevice	int32
++	write_subdevice	int32
++	unused		array[int32, 30]
++	board_name	array[int8, COMEDI_NAMELEN]
++	driver_name	array[int8, COMEDI_NAMELEN]
++}
++
++codex_comedi_devconfig {
++	board_name	array[int8, COMEDI_NAMELEN]
++	options		array[int32, COMEDI_NDEVCONFOPTS]
++}
++
++codex_comedi_bufconfig {
++	subdevice	int32
++	flags		int32
++	max_size	int32
++	size		int32
++	unused		array[int32, 4]
++}
++
++codex_comedi_bufinfo {
++	subdevice		int32
++	bytes_read		int32
++	buf_write_ptr		int32
++	buf_read_ptr		int32
++	buf_write_count		int32
++	buf_read_count		int32
++	bytes_written		int32
++	buf_read_alloc_count	int32
++	ptr			int32
++	size			int32
++	unused			array[int32, 4]
++}
++
++codex_comedi_insn_type = INSN_READ, INSN_WRITE, INSN_BITS, INSN_CONFIG, INSN_GTOD, INSN_WAIT, INSN_INTTRIG
++codex_comedi_cmd_flags = CMDF_WRITE, CMDF_RAWDATA, CMDF_ROUND_NEAREST, CMDF_ROUND_DOWN, CMDF_ROUND_UP, CMDF_ROUND_UP_NEXT, CMDF_WAKE_EOS, CMDF_PRIORITY
++codex_comedi_trig_flags = TRIG_NONE, TRIG_NOW, TRIG_FOLLOW, TRIG_TIME, TRIG_TIMER, TRIG_COUNT, TRIG_EXT, TRIG_INT, TRIG_OTHER
++codex_comedi_subd_flags = SDF_BUSY, SDF_BUSY_OWNER, SDF_LOCKED, SDF_LOCK_OWNER, SDF_MAXDATA, SDF_FLAGS, SDF_RANGETYPE, SDF_CMD, SDF_SOFT_CALIBRATED, SDF_READABLE, SDF_WRITABLE, SDF_INTERNAL, SDF_GROUND, SDF_COMMON, SDF_DIFF, SDF_OTHER, SDF_DITHER, SDF_DEGLITCH, SDF_MMAP, SDF_RUNNING
+diff --git a/sys/linux/codex_comedi.txt.const b/sys/linux/codex_comedi.txt.const
+new file mode 100644
+index 0000000000..2ac3c64eae
+--- /dev/null
++++ b/sys/linux/codex_comedi.txt.const
+@@ -0,0 +1,70 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++CMDF_PRIORITY = amd64:8
++CMDF_RAWDATA = amd64:128
++CMDF_ROUND_DOWN = amd64:65536
++CMDF_ROUND_NEAREST = amd64:0
++CMDF_ROUND_UP = amd64:131072
++CMDF_ROUND_UP_NEXT = amd64:196608
++CMDF_WAKE_EOS = amd64:32
++CMDF_WRITE = amd64:64
++COMEDI_BUFCONFIG = amd64:2149606413
++COMEDI_BUFINFO = amd64:3224134670
++COMEDI_CANCEL = amd64:25607
++COMEDI_CHANINFO = amd64:2150654979
++COMEDI_CMD = amd64:2152752137
++COMEDI_CMDTEST = amd64:2152752138
++COMEDI_DEVCONFIG = amd64:1083466752
++COMEDI_DEVINFO = amd64:2159043585
++COMEDI_INSN = amd64:2150130700
++COMEDI_INSNLIST = amd64:2148557835
++COMEDI_LOCK = amd64:25605
++COMEDI_NAMELEN = amd64:20
++COMEDI_NDEVCONFOPTS = amd64:32
++COMEDI_POLL = amd64:25615
++COMEDI_RANGEINFO = amd64:2148557832
++COMEDI_SETRSUBD = amd64:25616
++COMEDI_SETWSUBD = amd64:25617
++COMEDI_SUBDINFO = amd64:2152227842
++COMEDI_UNLOCK = amd64:25606
++INSN_BITS = amd64:201326594
++INSN_CONFIG = amd64:201326595
++INSN_GTOD = amd64:100663300
++INSN_INTTRIG = amd64:167772166
++INSN_READ = amd64:67108864
++INSN_WAIT = amd64:167772165
++INSN_WRITE = amd64:134217729
++SDF_BUSY = amd64:1
++SDF_BUSY_OWNER = amd64:2
++SDF_CMD = amd64:4096
++SDF_COMMON = amd64:2097152
++SDF_DEGLITCH = amd64:33554432
++SDF_DIFF = amd64:4194304
++SDF_DITHER = amd64:16777216
++SDF_FLAGS = amd64:32
++SDF_GROUND = amd64:1048576
++SDF_INTERNAL = amd64:262144
++SDF_LOCKED = amd64:4
++SDF_LOCK_OWNER = amd64:8
++SDF_MAXDATA = amd64:16
++SDF_MMAP = amd64:67108864
++SDF_OTHER = amd64:8388608
++SDF_RANGETYPE = amd64:64
++SDF_READABLE = amd64:65536
++SDF_RUNNING = amd64:134217728
++SDF_SOFT_CALIBRATED = amd64:8192
++SDF_WRITABLE = amd64:131072
++TRIG_COUNT = amd64:32
++TRIG_EXT = amd64:64
++TRIG_FOLLOW = amd64:4
++TRIG_INT = amd64:128
++TRIG_NONE = amd64:1
++TRIG_NOW = amd64:2
++TRIG_OTHER = amd64:256
++TRIG_TIME = amd64:8
++TRIG_TIMER = amd64:16
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
++__NR_read = amd64:0
++__NR_write = amd64:1
+diff --git a/sys/linux/codex_dri.txt b/sys/linux/codex_dri.txt
+new file mode 100644
+index 0000000000..c7768ec765
+--- /dev/null
++++ b/sys/linux/codex_dri.txt
+@@ -0,0 +1,212 @@
++meta arches["amd64"]
++# SPDX-License-Identifier: Apache-2.0
++
++include <uapi/asm/ioctl.h>
++include <uapi/drm/drm.h>
++include <uapi/drm/drm_mode.h>
++include <uapi/linux/fcntl.h>
++
++resource fd_codex_drm[fd]
++
++openat$__CODEX_dri_card(fd const[AT_FDCWD], file ptr[in, string[codex_dri_card_path]], flags flags[open_flags], mode const[0]) fd_codex_drm
++openat$__CODEX_dri_render(fd const[AT_FDCWD], file ptr[in, string[codex_dri_render_path]], flags flags[open_flags], mode const[0]) fd_codex_drm
++read$__CODEX_dri(fd fd_codex_drm, data buffer[out], len len[data])
++mmap$__CODEX_dri(addr vma, len len[addr], prot flags[mmap_prot], flags flags[mmap_flags], fd fd_codex_drm, offset intptr)
++
++ioctl$__CODEX_DRM_IOCTL_VERSION(fd fd_codex_drm, cmd const[DRM_IOCTL_VERSION], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_GET_UNIQUE(fd fd_codex_drm, cmd const[DRM_IOCTL_GET_UNIQUE], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_GET_MAGIC(fd fd_codex_drm, cmd const[DRM_IOCTL_GET_MAGIC], arg ptr[out, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_IRQ_BUSID(fd fd_codex_drm, cmd const[DRM_IOCTL_IRQ_BUSID], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_GET_MAP(fd fd_codex_drm, cmd const[DRM_IOCTL_GET_MAP], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_GET_CLIENT(fd fd_codex_drm, cmd const[DRM_IOCTL_GET_CLIENT], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_GET_STATS(fd fd_codex_drm, cmd const[DRM_IOCTL_GET_STATS], arg ptr[out, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_SET_VERSION(fd fd_codex_drm, cmd const[DRM_IOCTL_SET_VERSION], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODESET_CTL(fd fd_codex_drm, cmd const[DRM_IOCTL_MODESET_CTL], arg ptr[in, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_GEM_CLOSE(fd fd_codex_drm, cmd const[DRM_IOCTL_GEM_CLOSE], arg ptr[in, codex_drm_gem_close])
++ioctl$__CODEX_DRM_IOCTL_GEM_FLINK(fd fd_codex_drm, cmd const[DRM_IOCTL_GEM_FLINK], arg ptr[inout, codex_drm_gem_flink])
++ioctl$__CODEX_DRM_IOCTL_GEM_OPEN(fd fd_codex_drm, cmd const[DRM_IOCTL_GEM_OPEN], arg ptr[inout, codex_drm_gem_open])
++ioctl$__CODEX_DRM_IOCTL_GET_CAP(fd fd_codex_drm, cmd const[DRM_IOCTL_GET_CAP], arg ptr[inout, codex_drm_get_cap])
++ioctl$__CODEX_DRM_IOCTL_SET_CLIENT_CAP(fd fd_codex_drm, cmd const[DRM_IOCTL_SET_CLIENT_CAP], arg ptr[in, codex_drm_set_client_cap])
++ioctl$__CODEX_DRM_IOCTL_SET_UNIQUE(fd fd_codex_drm, cmd const[DRM_IOCTL_SET_UNIQUE], arg ptr[in, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_AUTH_MAGIC(fd fd_codex_drm, cmd const[DRM_IOCTL_AUTH_MAGIC], arg ptr[in, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_BLOCK(fd fd_codex_drm, cmd const[DRM_IOCTL_BLOCK], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_UNBLOCK(fd fd_codex_drm, cmd const[DRM_IOCTL_UNBLOCK], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_CONTROL(fd fd_codex_drm, cmd const[DRM_IOCTL_CONTROL], arg ptr[in, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_ADD_MAP(fd fd_codex_drm, cmd const[DRM_IOCTL_ADD_MAP], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_ADD_BUFS(fd fd_codex_drm, cmd const[DRM_IOCTL_ADD_BUFS], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MARK_BUFS(fd fd_codex_drm, cmd const[DRM_IOCTL_MARK_BUFS], arg ptr[in, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_INFO_BUFS(fd fd_codex_drm, cmd const[DRM_IOCTL_INFO_BUFS], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MAP_BUFS(fd fd_codex_drm, cmd const[DRM_IOCTL_MAP_BUFS], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_FREE_BUFS(fd fd_codex_drm, cmd const[DRM_IOCTL_FREE_BUFS], arg ptr[in, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_RM_MAP(fd fd_codex_drm, cmd const[DRM_IOCTL_RM_MAP], arg ptr[in, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_SET_SAREA_CTX(fd fd_codex_drm, cmd const[DRM_IOCTL_SET_SAREA_CTX], arg ptr[in, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_GET_SAREA_CTX(fd fd_codex_drm, cmd const[DRM_IOCTL_GET_SAREA_CTX], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_SET_MASTER(fd fd_codex_drm, cmd const[DRM_IOCTL_SET_MASTER], arg const[0])
++ioctl$__CODEX_DRM_IOCTL_DROP_MASTER(fd fd_codex_drm, cmd const[DRM_IOCTL_DROP_MASTER], arg const[0])
++ioctl$__CODEX_DRM_IOCTL_ADD_CTX(fd fd_codex_drm, cmd const[DRM_IOCTL_ADD_CTX], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_RM_CTX(fd fd_codex_drm, cmd const[DRM_IOCTL_RM_CTX], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MOD_CTX(fd fd_codex_drm, cmd const[DRM_IOCTL_MOD_CTX], arg ptr[in, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_GET_CTX(fd fd_codex_drm, cmd const[DRM_IOCTL_GET_CTX], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_SWITCH_CTX(fd fd_codex_drm, cmd const[DRM_IOCTL_SWITCH_CTX], arg ptr[in, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_NEW_CTX(fd fd_codex_drm, cmd const[DRM_IOCTL_NEW_CTX], arg ptr[in, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_RES_CTX(fd fd_codex_drm, cmd const[DRM_IOCTL_RES_CTX], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_ADD_DRAW(fd fd_codex_drm, cmd const[DRM_IOCTL_ADD_DRAW], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_RM_DRAW(fd fd_codex_drm, cmd const[DRM_IOCTL_RM_DRAW], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_DMA(fd fd_codex_drm, cmd const[DRM_IOCTL_DMA], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_LOCK(fd fd_codex_drm, cmd const[DRM_IOCTL_LOCK], arg ptr[in, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_UNLOCK(fd fd_codex_drm, cmd const[DRM_IOCTL_UNLOCK], arg ptr[in, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_FINISH(fd fd_codex_drm, cmd const[DRM_IOCTL_FINISH], arg ptr[in, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_PRIME_HANDLE_TO_FD(fd fd_codex_drm, cmd const[DRM_IOCTL_PRIME_HANDLE_TO_FD], arg ptr[inout, codex_drm_prime_handle])
++ioctl$__CODEX_DRM_IOCTL_PRIME_FD_TO_HANDLE(fd fd_codex_drm, cmd const[DRM_IOCTL_PRIME_FD_TO_HANDLE], arg ptr[inout, codex_drm_prime_handle])
++ioctl$__CODEX_DRM_IOCTL_WAIT_VBLANK(fd fd_codex_drm, cmd const[DRM_IOCTL_WAIT_VBLANK], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_CRTC_GET_SEQUENCE(fd fd_codex_drm, cmd const[DRM_IOCTL_CRTC_GET_SEQUENCE], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_CRTC_QUEUE_SEQUENCE(fd fd_codex_drm, cmd const[DRM_IOCTL_CRTC_QUEUE_SEQUENCE], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_UPDATE_DRAW(fd fd_codex_drm, cmd const[DRM_IOCTL_UPDATE_DRAW], arg ptr[in, codex_drm_ioctl_buf])
++
++ioctl$__CODEX_DRM_IOCTL_MODE_GETRESOURCES(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_GETRESOURCES], arg ptr[inout, codex_drm_mode_card_res])
++ioctl$__CODEX_DRM_IOCTL_MODE_GETCRTC(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_GETCRTC], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_SETCRTC(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_SETCRTC], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_CURSOR(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_CURSOR], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_GETGAMMA(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_GETGAMMA], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_SETGAMMA(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_SETGAMMA], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_GETENCODER(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_GETENCODER], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_GETCONNECTOR(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_GETCONNECTOR], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_GETPROPERTY(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_GETPROPERTY], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_SETPROPERTY(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_SETPROPERTY], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_GETPROPBLOB(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_GETPROPBLOB], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_GETFB(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_GETFB], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_ADDFB(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_ADDFB], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_RMFB(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_RMFB], arg ptr[inout, int32])
++ioctl$__CODEX_DRM_IOCTL_MODE_PAGE_FLIP(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_PAGE_FLIP], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_DIRTYFB(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_DIRTYFB], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_CREATE_DUMB(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_CREATE_DUMB], arg ptr[inout, codex_drm_mode_create_dumb])
++ioctl$__CODEX_DRM_IOCTL_MODE_MAP_DUMB(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_MAP_DUMB], arg ptr[inout, codex_drm_mode_map_dumb])
++ioctl$__CODEX_DRM_IOCTL_MODE_DESTROY_DUMB(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_DESTROY_DUMB], arg ptr[inout, codex_drm_mode_destroy_dumb])
++ioctl$__CODEX_DRM_IOCTL_MODE_GETPLANERESOURCES(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_GETPLANERESOURCES], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_GETPLANE(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_GETPLANE], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_SETPLANE(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_SETPLANE], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_ADDFB2(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_ADDFB2], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_OBJ_GETPROPERTIES(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_OBJ_GETPROPERTIES], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_OBJ_SETPROPERTY(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_OBJ_SETPROPERTY], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_CURSOR2(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_CURSOR2], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_ATOMIC(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_ATOMIC], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_CREATEPROPBLOB(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_CREATEPROPBLOB], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_DESTROYPROPBLOB(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_DESTROYPROPBLOB], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_CREATE_LEASE(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_CREATE_LEASE], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_LIST_LESSEES(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_LIST_LESSEES], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_GET_LEASE(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_GET_LEASE], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_REVOKE_LEASE(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_REVOKE_LEASE], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_GETFB2(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_GETFB2], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_MODE_CLOSEFB(fd fd_codex_drm, cmd const[DRM_IOCTL_MODE_CLOSEFB], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_SET_CLIENT_NAME(fd fd_codex_drm, cmd const[DRM_IOCTL_SET_CLIENT_NAME], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_GEM_CHANGE_HANDLE(fd fd_codex_drm, cmd const[DRM_IOCTL_GEM_CHANGE_HANDLE], arg ptr[inout, codex_drm_ioctl_buf])
++
++ioctl$__CODEX_DRM_IOCTL_SYNCOBJ_CREATE(fd fd_codex_drm, cmd const[DRM_IOCTL_SYNCOBJ_CREATE], arg ptr[inout, codex_drm_syncobj_create])
++ioctl$__CODEX_DRM_IOCTL_SYNCOBJ_DESTROY(fd fd_codex_drm, cmd const[DRM_IOCTL_SYNCOBJ_DESTROY], arg ptr[inout, codex_drm_syncobj_destroy])
++ioctl$__CODEX_DRM_IOCTL_SYNCOBJ_HANDLE_TO_FD(fd fd_codex_drm, cmd const[DRM_IOCTL_SYNCOBJ_HANDLE_TO_FD], arg ptr[inout, codex_drm_syncobj_handle])
++ioctl$__CODEX_DRM_IOCTL_SYNCOBJ_FD_TO_HANDLE(fd fd_codex_drm, cmd const[DRM_IOCTL_SYNCOBJ_FD_TO_HANDLE], arg ptr[inout, codex_drm_syncobj_handle])
++ioctl$__CODEX_DRM_IOCTL_SYNCOBJ_WAIT(fd fd_codex_drm, cmd const[DRM_IOCTL_SYNCOBJ_WAIT], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_SYNCOBJ_RESET(fd fd_codex_drm, cmd const[DRM_IOCTL_SYNCOBJ_RESET], arg ptr[inout, codex_drm_syncobj_array])
++ioctl$__CODEX_DRM_IOCTL_SYNCOBJ_SIGNAL(fd fd_codex_drm, cmd const[DRM_IOCTL_SYNCOBJ_SIGNAL], arg ptr[inout, codex_drm_syncobj_array])
++ioctl$__CODEX_DRM_IOCTL_SYNCOBJ_TIMELINE_WAIT(fd fd_codex_drm, cmd const[DRM_IOCTL_SYNCOBJ_TIMELINE_WAIT], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_SYNCOBJ_QUERY(fd fd_codex_drm, cmd const[DRM_IOCTL_SYNCOBJ_QUERY], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_SYNCOBJ_TRANSFER(fd fd_codex_drm, cmd const[DRM_IOCTL_SYNCOBJ_TRANSFER], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_SYNCOBJ_TIMELINE_SIGNAL(fd fd_codex_drm, cmd const[DRM_IOCTL_SYNCOBJ_TIMELINE_SIGNAL], arg ptr[inout, codex_drm_ioctl_buf])
++ioctl$__CODEX_DRM_IOCTL_SYNCOBJ_EVENTFD(fd fd_codex_drm, cmd const[DRM_IOCTL_SYNCOBJ_EVENTFD], arg ptr[inout, codex_drm_ioctl_buf])
++
++codex_drm_ioctl_buf {
++	data	array[int8, 0:4096]
++}
++
++codex_drm_gem_close {
++	handle	int32
++	pad	int32
++}
++
++codex_drm_gem_flink {
++	handle	int32
++	name	int32
++}
++
++codex_drm_gem_open {
++	name	int32
++	handle	int32
++	size	int64
++}
++
++codex_drm_get_cap {
++	capability	int64
++	value		int64
++}
++
++codex_drm_set_client_cap {
++	capability	int64
++	value		int64
++}
++
++codex_drm_prime_handle {
++	handle	int32
++	flags	flags[open_flags, int32]
++	fd	fd
++}
++
++codex_drm_mode_card_res {
++	fb_id_ptr		ptr64[inout, array[int32, 0:32]]
++	crtc_id_ptr		ptr64[inout, array[int32, 0:32]]
++	connector_id_ptr	ptr64[inout, array[int32, 0:32]]
++	encoder_id_ptr		ptr64[inout, array[int32, 0:32]]
++	count_fbs		int32
++	count_crtcs		int32
++	count_connectors	int32
++	count_encoders		int32
++	min_width		int32
++	max_width		int32
++	min_height		int32
++	max_height		int32
++}
++
++codex_drm_mode_create_dumb {
++	height	int32[0:8192]
++	width	int32[0:8192]
++	bpp	int32[0:128]
++	flags	int32
++	handle	int32
++	pitch	int32
++	size	int64
++}
++
++codex_drm_mode_map_dumb {
++	handle	int32
++	pad	int32
++	offset	int64
++}
++
++codex_drm_mode_destroy_dumb {
++	handle	int32
++}
++
++codex_drm_syncobj_create {
++	handle	int32
++	flags	int32
++}
++
++codex_drm_syncobj_destroy {
++	handle	int32
++	pad	int32
++}
++
++codex_drm_syncobj_handle {
++	handle	int32
++	flags	int32
++	fd	fd
++	pad	int32
++}
++
++codex_drm_syncobj_array {
++	handles		ptr64[inout, array[int32, 0:64]]
++	count_handles	int32
++	pad		int32
++}
++
++codex_dri_card_path = "/dev/dri/card0", "/dev/dri/card1", "/dev/dri/controlD64"
++codex_dri_render_path = "/dev/dri/renderD128", "/dev/dri/renderD129"
+diff --git a/sys/linux/codex_dri.txt.const b/sys/linux/codex_dri.txt.const
+new file mode 100644
+index 0000000000..2283dd161b
+--- /dev/null
++++ b/sys/linux/codex_dri.txt.const
+@@ -0,0 +1,105 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++DRM_IOCTL_ADD_BUFS = amd64:3223348246
++DRM_IOCTL_ADD_CTX = amd64:3221775392
++DRM_IOCTL_ADD_DRAW = amd64:3221513255
++DRM_IOCTL_ADD_MAP = amd64:3223872533
++DRM_IOCTL_AUTH_MAGIC = amd64:1074029585
++DRM_IOCTL_BLOCK = amd64:3221513234
++DRM_IOCTL_CONTROL = amd64:1074291732
++DRM_IOCTL_CRTC_GET_SEQUENCE = amd64:3222823995
++DRM_IOCTL_CRTC_QUEUE_SEQUENCE = amd64:3222823996
++DRM_IOCTL_DMA = amd64:3225445417
++DRM_IOCTL_DROP_MASTER = amd64:25631
++DRM_IOCTL_FINISH = amd64:1074291756
++DRM_IOCTL_FREE_BUFS = amd64:1074816026
++DRM_IOCTL_GEM_CHANGE_HANDLE = amd64:3221775570
++DRM_IOCTL_GEM_CLOSE = amd64:1074291721
++DRM_IOCTL_GEM_FLINK = amd64:3221775370
++DRM_IOCTL_GEM_OPEN = amd64:3222299659
++DRM_IOCTL_GET_CAP = amd64:3222299660
++DRM_IOCTL_GET_CLIENT = amd64:3223872517
++DRM_IOCTL_GET_CTX = amd64:3221775395
++DRM_IOCTL_GET_MAGIC = amd64:2147771394
++DRM_IOCTL_GET_MAP = amd64:3223872516
++DRM_IOCTL_GET_SAREA_CTX = amd64:3222299677
++DRM_IOCTL_GET_STATS = amd64:2163762182
++DRM_IOCTL_GET_UNIQUE = amd64:3222299649
++DRM_IOCTL_INFO_BUFS = amd64:3222299672
++DRM_IOCTL_IRQ_BUSID = amd64:3222299651
++DRM_IOCTL_LOCK = amd64:1074291754
++DRM_IOCTL_MAP_BUFS = amd64:3222823961
++DRM_IOCTL_MARK_BUFS = amd64:1075864599
++DRM_IOCTL_MODESET_CTL = amd64:1074291720
++DRM_IOCTL_MODE_ADDFB = amd64:3223086254
++DRM_IOCTL_MODE_ADDFB2 = amd64:3228067000
++DRM_IOCTL_MODE_ATOMIC = amd64:3224921276
++DRM_IOCTL_MODE_CLOSEFB = amd64:3221775568
++DRM_IOCTL_MODE_CREATEPROPBLOB = amd64:3222299837
++DRM_IOCTL_MODE_CREATE_DUMB = amd64:3223348402
++DRM_IOCTL_MODE_CREATE_LEASE = amd64:3222824134
++DRM_IOCTL_MODE_CURSOR = amd64:3223086243
++DRM_IOCTL_MODE_CURSOR2 = amd64:3223610555
++DRM_IOCTL_MODE_DESTROYPROPBLOB = amd64:3221513406
++DRM_IOCTL_MODE_DESTROY_DUMB = amd64:3221513396
++DRM_IOCTL_MODE_DIRTYFB = amd64:3222824113
++DRM_IOCTL_MODE_GETCONNECTOR = amd64:3226494119
++DRM_IOCTL_MODE_GETCRTC = amd64:3228066977
++DRM_IOCTL_MODE_GETENCODER = amd64:3222561958
++DRM_IOCTL_MODE_GETFB = amd64:3223086253
++DRM_IOCTL_MODE_GETFB2 = amd64:3228067022
++DRM_IOCTL_MODE_GETGAMMA = amd64:3223348388
++DRM_IOCTL_MODE_GETPLANE = amd64:3223348406
++DRM_IOCTL_MODE_GETPLANERESOURCES = amd64:3222299829
++DRM_IOCTL_MODE_GETPROPBLOB = amd64:3222299820
++DRM_IOCTL_MODE_GETPROPERTY = amd64:3225445546
++DRM_IOCTL_MODE_GETRESOURCES = amd64:3225445536
++DRM_IOCTL_MODE_GET_LEASE = amd64:3222299848
++DRM_IOCTL_MODE_LIST_LESSEES = amd64:3222299847
++DRM_IOCTL_MODE_MAP_DUMB = amd64:3222299827
++DRM_IOCTL_MODE_OBJ_GETPROPERTIES = amd64:3223348409
++DRM_IOCTL_MODE_OBJ_SETPROPERTY = amd64:3222824122
++DRM_IOCTL_MODE_PAGE_FLIP = amd64:3222824112
++DRM_IOCTL_MODE_REVOKE_LEASE = amd64:3221513417
++DRM_IOCTL_MODE_RMFB = amd64:3221513391
++DRM_IOCTL_MODE_SETCRTC = amd64:3228066978
++DRM_IOCTL_MODE_SETGAMMA = amd64:3223348389
++DRM_IOCTL_MODE_SETPLANE = amd64:3224396983
++DRM_IOCTL_MODE_SETPROPERTY = amd64:3222299819
++DRM_IOCTL_MOD_CTX = amd64:1074291746
++DRM_IOCTL_NEW_CTX = amd64:1074291749
++DRM_IOCTL_PRIME_FD_TO_HANDLE = amd64:3222037550
++DRM_IOCTL_PRIME_HANDLE_TO_FD = amd64:3222037549
++DRM_IOCTL_RES_CTX = amd64:3222299686
++DRM_IOCTL_RM_CTX = amd64:3221775393
++DRM_IOCTL_RM_DRAW = amd64:3221513256
++DRM_IOCTL_RM_MAP = amd64:1076388891
++DRM_IOCTL_SET_CLIENT_CAP = amd64:1074816013
++DRM_IOCTL_SET_CLIENT_NAME = amd64:3222299857
++DRM_IOCTL_SET_MASTER = amd64:25630
++DRM_IOCTL_SET_SAREA_CTX = amd64:1074816028
++DRM_IOCTL_SET_UNIQUE = amd64:1074816016
++DRM_IOCTL_SET_VERSION = amd64:3222299655
++DRM_IOCTL_SWITCH_CTX = amd64:1074291748
++DRM_IOCTL_SYNCOBJ_CREATE = amd64:3221775551
++DRM_IOCTL_SYNCOBJ_DESTROY = amd64:3221775552
++DRM_IOCTL_SYNCOBJ_EVENTFD = amd64:3222824143
++DRM_IOCTL_SYNCOBJ_FD_TO_HANDLE = amd64:3222824130
++DRM_IOCTL_SYNCOBJ_HANDLE_TO_FD = amd64:3222824129
++DRM_IOCTL_SYNCOBJ_QUERY = amd64:3222824139
++DRM_IOCTL_SYNCOBJ_RESET = amd64:3222299844
++DRM_IOCTL_SYNCOBJ_SIGNAL = amd64:3222299845
++DRM_IOCTL_SYNCOBJ_TIMELINE_SIGNAL = amd64:3222824141
++DRM_IOCTL_SYNCOBJ_TIMELINE_WAIT = amd64:3224397002
++DRM_IOCTL_SYNCOBJ_TRANSFER = amd64:3223348428
++DRM_IOCTL_SYNCOBJ_WAIT = amd64:3223872707
++DRM_IOCTL_UNBLOCK = amd64:3221513235
++DRM_IOCTL_UNLOCK = amd64:1074291755
++DRM_IOCTL_UPDATE_DRAW = amd64:1075340351
++DRM_IOCTL_VERSION = amd64:3225445376
++DRM_IOCTL_WAIT_VBLANK = amd64:3222823994
++__NR_ioctl = amd64:16
++__NR_mmap = amd64:9
++__NR_openat = amd64:257
++__NR_read = amd64:0
+diff --git a/sys/linux/codex_filesystems.txt b/sys/linux/codex_filesystems.txt
+new file mode 100644
+index 0000000000..773d0a74fd
+--- /dev/null
++++ b/sys/linux/codex_filesystems.txt
+@@ -0,0 +1,321 @@
++meta arches["amd64"]
++# SPDX-License-Identifier: Apache-2.0
++
++include <uapi/asm/ioctl.h>
++include <uapi/linux/btrfs.h>
++include <uapi/linux/f2fs.h>
++include <uapi/linux/fs.h>
++include <uapi/linux/nilfs2_api.h>
++
++# Extra __CODEX_-prefixed mount-image entry points for requested filesystems.
++syz_mount_image$__CODEX_btrfs(fs ptr[in, string["btrfs"]], dir ptr[in, filename], flags flags[mount_flags], opts ptr[in, fs_options[btrfs_options]], chdir bool8, size len[img], img ptr[in, compressed_image]) fd_dir (timeout[4000], no_generate, no_minimize, fsck["btrfsck --readonly"])
++syz_mount_image$__CODEX_f2fs(fs ptr[in, string["f2fs"]], dir ptr[in, filename], flags flags[mount_flags], opts ptr[in, fs_options[f2fs_options]], chdir bool8, size len[img], img ptr[in, compressed_image]) fd_dir (timeout[4000], no_generate, no_minimize, fsck["fsck.f2fs"])
++syz_mount_image$__CODEX_nilfs2(fs ptr[in, string["nilfs2"]], dir ptr[in, filename], flags flags[mount_flags], opts ptr[in, fs_options[nilfs2_options]], chdir bool8, size len[img], img ptr[in, compressed_image]) fd_dir (timeout[4000], no_generate, no_minimize)
++syz_mount_image$__CODEX_ocfs2(fs ptr[in, string["ocfs2"]], dir ptr[in, filename], flags flags[mount_flags], opts ptr[in, fs_options[ocfs2_options]], chdir bool8, size len[img], img ptr[in, compressed_image]) fd_dir (timeout[4000], no_generate, no_minimize, fsck["fsck.ocfs2 -n"])
++syz_mount_image$__CODEX_fuse(fs ptr[in, string["fuse"]], dir ptr[in, filename], flags flags[mount_flags], opts ptr[in, fs_options[stringnoz]], chdir bool8, size len[img], img ptr[in, compressed_image]) fd_dir (timeout[4000], no_generate, no_minimize)
++
++# btrfs file/subvolume/control ioctls.
++ioctl$__CODEX_BTRFS_IOC_SNAP_CREATE(fd fd, cmd const[BTRFS_IOC_SNAP_CREATE], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_DEFRAG(fd fd, cmd const[BTRFS_IOC_DEFRAG], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_RESIZE(fd fd, cmd const[BTRFS_IOC_RESIZE], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_SCAN_DEV(fd fd, cmd const[BTRFS_IOC_SCAN_DEV], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_FORGET_DEV(fd fd, cmd const[BTRFS_IOC_FORGET_DEV], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_TRANS_START(fd fd, cmd const[BTRFS_IOC_TRANS_START], arg const[0])
++ioctl$__CODEX_BTRFS_IOC_TRANS_END(fd fd, cmd const[BTRFS_IOC_TRANS_END], arg const[0])
++ioctl$__CODEX_BTRFS_IOC_SYNC(fd fd, cmd const[BTRFS_IOC_SYNC], arg const[0])
++ioctl$__CODEX_BTRFS_IOC_CLONE(fd fd, cmd const[BTRFS_IOC_CLONE], arg fd)
++ioctl$__CODEX_BTRFS_IOC_ADD_DEV(fd fd, cmd const[BTRFS_IOC_ADD_DEV], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_RM_DEV(fd fd, cmd const[BTRFS_IOC_RM_DEV], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_BALANCE(fd fd, cmd const[BTRFS_IOC_BALANCE], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_CLONE_RANGE(fd fd, cmd const[BTRFS_IOC_CLONE_RANGE], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_SUBVOL_CREATE(fd fd, cmd const[BTRFS_IOC_SUBVOL_CREATE], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_SNAP_DESTROY(fd fd, cmd const[BTRFS_IOC_SNAP_DESTROY], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_DEFRAG_RANGE(fd fd, cmd const[BTRFS_IOC_DEFRAG_RANGE], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_TREE_SEARCH(fd fd, cmd const[BTRFS_IOC_TREE_SEARCH], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_TREE_SEARCH_V2(fd fd, cmd const[BTRFS_IOC_TREE_SEARCH_V2], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_INO_LOOKUP(fd fd, cmd const[BTRFS_IOC_INO_LOOKUP], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_DEFAULT_SUBVOL(fd fd, cmd const[BTRFS_IOC_DEFAULT_SUBVOL], arg ptr[in, int64])
++ioctl$__CODEX_BTRFS_IOC_SPACE_INFO(fd fd, cmd const[BTRFS_IOC_SPACE_INFO], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_START_SYNC(fd fd, cmd const[BTRFS_IOC_START_SYNC], arg ptr[out, int64])
++ioctl$__CODEX_BTRFS_IOC_WAIT_SYNC(fd fd, cmd const[BTRFS_IOC_WAIT_SYNC], arg ptr[in, int64])
++ioctl$__CODEX_BTRFS_IOC_SNAP_CREATE_V2(fd fd, cmd const[BTRFS_IOC_SNAP_CREATE_V2], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_SUBVOL_CREATE_V2(fd fd, cmd const[BTRFS_IOC_SUBVOL_CREATE_V2], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_SUBVOL_GETFLAGS(fd fd, cmd const[BTRFS_IOC_SUBVOL_GETFLAGS], arg ptr[out, int64])
++ioctl$__CODEX_BTRFS_IOC_SUBVOL_SETFLAGS(fd fd, cmd const[BTRFS_IOC_SUBVOL_SETFLAGS], arg ptr[in, int64])
++ioctl$__CODEX_BTRFS_IOC_SCRUB(fd fd, cmd const[BTRFS_IOC_SCRUB], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_SCRUB_CANCEL(fd fd, cmd const[BTRFS_IOC_SCRUB_CANCEL], arg const[0])
++ioctl$__CODEX_BTRFS_IOC_SCRUB_PROGRESS(fd fd, cmd const[BTRFS_IOC_SCRUB_PROGRESS], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_DEV_INFO(fd fd, cmd const[BTRFS_IOC_DEV_INFO], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_FS_INFO(fd fd, cmd const[BTRFS_IOC_FS_INFO], arg ptr[out, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_BALANCE_V2(fd fd, cmd const[BTRFS_IOC_BALANCE_V2], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_BALANCE_CTL(fd fd, cmd const[BTRFS_IOC_BALANCE_CTL], arg ptr[in, int32])
++ioctl$__CODEX_BTRFS_IOC_BALANCE_PROGRESS(fd fd, cmd const[BTRFS_IOC_BALANCE_PROGRESS], arg ptr[out, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_INO_PATHS(fd fd, cmd const[BTRFS_IOC_INO_PATHS], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_LOGICAL_INO(fd fd, cmd const[BTRFS_IOC_LOGICAL_INO], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_SET_RECEIVED_SUBVOL(fd fd, cmd const[BTRFS_IOC_SET_RECEIVED_SUBVOL], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_SEND(fd fd, cmd const[BTRFS_IOC_SEND], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_DEVICES_READY(fd fd, cmd const[BTRFS_IOC_DEVICES_READY], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_QUOTA_CTL(fd fd, cmd const[BTRFS_IOC_QUOTA_CTL], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_QGROUP_ASSIGN(fd fd, cmd const[BTRFS_IOC_QGROUP_ASSIGN], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_QGROUP_CREATE(fd fd, cmd const[BTRFS_IOC_QGROUP_CREATE], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_QGROUP_LIMIT(fd fd, cmd const[BTRFS_IOC_QGROUP_LIMIT], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_QUOTA_RESCAN(fd fd, cmd const[BTRFS_IOC_QUOTA_RESCAN], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_QUOTA_RESCAN_STATUS(fd fd, cmd const[BTRFS_IOC_QUOTA_RESCAN_STATUS], arg ptr[out, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_QUOTA_RESCAN_WAIT(fd fd, cmd const[BTRFS_IOC_QUOTA_RESCAN_WAIT], arg const[0])
++ioctl$__CODEX_BTRFS_IOC_GET_FSLABEL(fd fd, cmd const[BTRFS_IOC_GET_FSLABEL], arg ptr[out, array[int8, 256]])
++ioctl$__CODEX_BTRFS_IOC_SET_FSLABEL(fd fd, cmd const[BTRFS_IOC_SET_FSLABEL], arg ptr[in, array[int8, 0:256]])
++ioctl$__CODEX_BTRFS_IOC_GET_DEV_STATS(fd fd, cmd const[BTRFS_IOC_GET_DEV_STATS], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_DEV_REPLACE(fd fd, cmd const[BTRFS_IOC_DEV_REPLACE], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_FILE_EXTENT_SAME(fd fd, cmd const[BTRFS_IOC_FILE_EXTENT_SAME], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_GET_FEATURES(fd fd, cmd const[BTRFS_IOC_GET_FEATURES], arg ptr[out, codex_btrfs_ioctl_feature_flags])
++ioctl$__CODEX_BTRFS_IOC_SET_FEATURES(fd fd, cmd const[BTRFS_IOC_SET_FEATURES], arg ptr[in, codex_btrfs_ioctl_feature_flags])
++ioctl$__CODEX_BTRFS_IOC_GET_SUPPORTED_FEATURES(fd fd, cmd const[BTRFS_IOC_GET_SUPPORTED_FEATURES], arg ptr[out, codex_btrfs_ioctl_feature_flags])
++ioctl$__CODEX_BTRFS_IOC_RM_DEV_V2(fd fd, cmd const[BTRFS_IOC_RM_DEV_V2], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_LOGICAL_INO_V2(fd fd, cmd const[BTRFS_IOC_LOGICAL_INO_V2], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_GET_SUBVOL_INFO(fd fd, cmd const[BTRFS_IOC_GET_SUBVOL_INFO], arg ptr[out, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_GET_SUBVOL_ROOTREF(fd fd, cmd const[BTRFS_IOC_GET_SUBVOL_ROOTREF], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_INO_LOOKUP_USER(fd fd, cmd const[BTRFS_IOC_INO_LOOKUP_USER], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_SNAP_DESTROY_V2(fd fd, cmd const[BTRFS_IOC_SNAP_DESTROY_V2], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_ENCODED_READ(fd fd, cmd const[BTRFS_IOC_ENCODED_READ], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_ENCODED_WRITE(fd fd, cmd const[BTRFS_IOC_ENCODED_WRITE], arg ptr[inout, codex_fs_ioctl_buf])
++ioctl$__CODEX_BTRFS_IOC_SUBVOL_SYNC_WAIT(fd fd, cmd const[BTRFS_IOC_SUBVOL_SYNC_WAIT], arg ptr[inout, codex_fs_ioctl_buf])
++
++# f2fs ioctls.
++ioctl$__CODEX_F2FS_IOC_START_ATOMIC_WRITE(fd fd, cmd const[F2FS_IOC_START_ATOMIC_WRITE], arg const[0])
++ioctl$__CODEX_F2FS_IOC_COMMIT_ATOMIC_WRITE(fd fd, cmd const[F2FS_IOC_COMMIT_ATOMIC_WRITE], arg const[0])
++ioctl$__CODEX_F2FS_IOC_START_VOLATILE_WRITE(fd fd, cmd const[F2FS_IOC_START_VOLATILE_WRITE], arg const[0])
++ioctl$__CODEX_F2FS_IOC_RELEASE_VOLATILE_WRITE(fd fd, cmd const[F2FS_IOC_RELEASE_VOLATILE_WRITE], arg const[0])
++ioctl$__CODEX_F2FS_IOC_ABORT_ATOMIC_WRITE(fd fd, cmd const[F2FS_IOC_ABORT_ATOMIC_WRITE], arg const[0])
++ioctl$__CODEX_F2FS_IOC_GARBAGE_COLLECT(fd fd, cmd const[F2FS_IOC_GARBAGE_COLLECT], arg ptr[in, int32])
++ioctl$__CODEX_F2FS_IOC_WRITE_CHECKPOINT(fd fd, cmd const[F2FS_IOC_WRITE_CHECKPOINT], arg const[0])
++ioctl$__CODEX_F2FS_IOC_DEFRAGMENT(fd fd, cmd const[F2FS_IOC_DEFRAGMENT], arg ptr[inout, codex_f2fs_defragment])
++ioctl$__CODEX_F2FS_IOC_MOVE_RANGE(fd fd, cmd const[F2FS_IOC_MOVE_RANGE], arg ptr[inout, codex_f2fs_move_range])
++ioctl$__CODEX_F2FS_IOC_FLUSH_DEVICE(fd fd, cmd const[F2FS_IOC_FLUSH_DEVICE], arg ptr[in, codex_f2fs_flush_device])
++ioctl$__CODEX_F2FS_IOC_GARBAGE_COLLECT_RANGE(fd fd, cmd const[F2FS_IOC_GARBAGE_COLLECT_RANGE], arg ptr[in, codex_f2fs_gc_range])
++ioctl$__CODEX_F2FS_IOC_GET_FEATURES(fd fd, cmd const[F2FS_IOC_GET_FEATURES], arg ptr[out, int32])
++ioctl$__CODEX_F2FS_IOC_SET_PIN_FILE(fd fd, cmd const[F2FS_IOC_SET_PIN_FILE], arg ptr[in, int32])
++ioctl$__CODEX_F2FS_IOC_GET_PIN_FILE(fd fd, cmd const[F2FS_IOC_GET_PIN_FILE], arg ptr[out, int32])
++ioctl$__CODEX_F2FS_IOC_PRECACHE_EXTENTS(fd fd, cmd const[F2FS_IOC_PRECACHE_EXTENTS], arg const[0])
++ioctl$__CODEX_F2FS_IOC_RESIZE_FS(fd fd, cmd const[F2FS_IOC_RESIZE_FS], arg ptr[in, int64])
++ioctl$__CODEX_F2FS_IOC_GET_COMPRESS_BLOCKS(fd fd, cmd const[F2FS_IOC_GET_COMPRESS_BLOCKS], arg ptr[out, int64])
++ioctl$__CODEX_F2FS_IOC_RELEASE_COMPRESS_BLOCKS(fd fd, cmd const[F2FS_IOC_RELEASE_COMPRESS_BLOCKS], arg ptr[out, int64])
++ioctl$__CODEX_F2FS_IOC_RESERVE_COMPRESS_BLOCKS(fd fd, cmd const[F2FS_IOC_RESERVE_COMPRESS_BLOCKS], arg ptr[out, int64])
++ioctl$__CODEX_F2FS_IOC_SEC_TRIM_FILE(fd fd, cmd const[F2FS_IOC_SEC_TRIM_FILE], arg ptr[in, codex_f2fs_sectrim_range])
++ioctl$__CODEX_F2FS_IOC_GET_COMPRESS_OPTION(fd fd, cmd const[F2FS_IOC_GET_COMPRESS_OPTION], arg ptr[out, codex_f2fs_comp_option])
++ioctl$__CODEX_F2FS_IOC_SET_COMPRESS_OPTION(fd fd, cmd const[F2FS_IOC_SET_COMPRESS_OPTION], arg ptr[in, codex_f2fs_comp_option])
++ioctl$__CODEX_F2FS_IOC_DECOMPRESS_FILE(fd fd, cmd const[F2FS_IOC_DECOMPRESS_FILE], arg const[0])
++ioctl$__CODEX_F2FS_IOC_COMPRESS_FILE(fd fd, cmd const[F2FS_IOC_COMPRESS_FILE], arg const[0])
++ioctl$__CODEX_F2FS_IOC_START_ATOMIC_REPLACE(fd fd, cmd const[F2FS_IOC_START_ATOMIC_REPLACE], arg const[0])
++ioctl$__CODEX_F2FS_IOC_GET_DEV_ALIAS_FILE(fd fd, cmd const[F2FS_IOC_GET_DEV_ALIAS_FILE], arg ptr[out, int32])
++ioctl$__CODEX_F2FS_IOC_IO_PRIO(fd fd, cmd const[F2FS_IOC_IO_PRIO], arg ptr[in, int32])
++ioctl$__CODEX_F2FS_IOC_SHUTDOWN(fd fd, cmd const[F2FS_IOC_SHUTDOWN], arg ptr[in, flags[codex_f2fs_shutdown_flags, int32]])
++
++# nilfs2 ioctls.
++ioctl$__CODEX_NILFS_IOCTL_CHANGE_CPMODE(fd fd, cmd const[NILFS_IOCTL_CHANGE_CPMODE], arg ptr[in, codex_nilfs_cpmode])
++ioctl$__CODEX_NILFS_IOCTL_DELETE_CHECKPOINT(fd fd, cmd const[NILFS_IOCTL_DELETE_CHECKPOINT], arg ptr[in, int64])
++ioctl$__CODEX_NILFS_IOCTL_GET_CPINFO(fd fd, cmd const[NILFS_IOCTL_GET_CPINFO], arg ptr[inout, codex_nilfs_argv])
++ioctl$__CODEX_NILFS_IOCTL_GET_CPSTAT(fd fd, cmd const[NILFS_IOCTL_GET_CPSTAT], arg ptr[out, codex_nilfs_cpstat])
++ioctl$__CODEX_NILFS_IOCTL_GET_SUINFO(fd fd, cmd const[NILFS_IOCTL_GET_SUINFO], arg ptr[inout, codex_nilfs_argv])
++ioctl$__CODEX_NILFS_IOCTL_GET_SUSTAT(fd fd, cmd const[NILFS_IOCTL_GET_SUSTAT], arg ptr[out, codex_nilfs_sustat])
++ioctl$__CODEX_NILFS_IOCTL_GET_VINFO(fd fd, cmd const[NILFS_IOCTL_GET_VINFO], arg ptr[inout, codex_nilfs_argv])
++ioctl$__CODEX_NILFS_IOCTL_GET_BDESCS(fd fd, cmd const[NILFS_IOCTL_GET_BDESCS], arg ptr[inout, codex_nilfs_argv])
++ioctl$__CODEX_NILFS_IOCTL_CLEAN_SEGMENTS(fd fd, cmd const[NILFS_IOCTL_CLEAN_SEGMENTS], arg ptr[inout, array[codex_nilfs_argv, 5]])
++ioctl$__CODEX_NILFS_IOCTL_SYNC(fd fd, cmd const[NILFS_IOCTL_SYNC], arg ptr[out, int64])
++ioctl$__CODEX_NILFS_IOCTL_RESIZE(fd fd, cmd const[NILFS_IOCTL_RESIZE], arg ptr[in, int64])
++ioctl$__CODEX_NILFS_IOCTL_SET_ALLOC_RANGE(fd fd, cmd const[NILFS_IOCTL_SET_ALLOC_RANGE], arg ptr[in, codex_nilfs_period])
++ioctl$__CODEX_NILFS_IOCTL_SET_SUINFO(fd fd, cmd const[NILFS_IOCTL_SET_SUINFO], arg ptr[inout, codex_nilfs_argv])
++
++# ocfs2 ioctls; constants are defined below to avoid relying on the non-UAPI
++# fs/ocfs2 header in syz-extract.
++ioctl$__CODEX_OCFS2_IOC_ALLOCSP(fd fd, cmd const[OCFS2_IOC_ALLOCSP], arg ptr[in, codex_ocfs2_space_resv])
++ioctl$__CODEX_OCFS2_IOC_FREESP(fd fd, cmd const[OCFS2_IOC_FREESP], arg ptr[in, codex_ocfs2_space_resv])
++ioctl$__CODEX_OCFS2_IOC_RESVSP(fd fd, cmd const[OCFS2_IOC_RESVSP], arg ptr[in, codex_ocfs2_space_resv])
++ioctl$__CODEX_OCFS2_IOC_UNRESVSP(fd fd, cmd const[OCFS2_IOC_UNRESVSP], arg ptr[in, codex_ocfs2_space_resv])
++ioctl$__CODEX_OCFS2_IOC_ALLOCSP64(fd fd, cmd const[OCFS2_IOC_ALLOCSP64], arg ptr[in, codex_ocfs2_space_resv])
++ioctl$__CODEX_OCFS2_IOC_FREESP64(fd fd, cmd const[OCFS2_IOC_FREESP64], arg ptr[in, codex_ocfs2_space_resv])
++ioctl$__CODEX_OCFS2_IOC_RESVSP64(fd fd, cmd const[OCFS2_IOC_RESVSP64], arg ptr[in, codex_ocfs2_space_resv])
++ioctl$__CODEX_OCFS2_IOC_UNRESVSP64(fd fd, cmd const[OCFS2_IOC_UNRESVSP64], arg ptr[in, codex_ocfs2_space_resv])
++ioctl$__CODEX_OCFS2_IOC_GROUP_EXTEND(fd fd, cmd const[OCFS2_IOC_GROUP_EXTEND], arg ptr[in, int32])
++ioctl$__CODEX_OCFS2_IOC_GROUP_ADD(fd fd, cmd const[OCFS2_IOC_GROUP_ADD], arg ptr[in, codex_ocfs2_new_group_input])
++ioctl$__CODEX_OCFS2_IOC_GROUP_ADD64(fd fd, cmd const[OCFS2_IOC_GROUP_ADD64], arg ptr[in, codex_ocfs2_new_group_input])
++ioctl$__CODEX_OCFS2_IOC_REFLINK(fd fd, cmd const[OCFS2_IOC_REFLINK], arg ptr[in, codex_ocfs2_reflink_arguments])
++ioctl$__CODEX_OCFS2_IOC_INFO(fd fd, cmd const[OCFS2_IOC_INFO], arg ptr[out, codex_ocfs2_info])
++ioctl$__CODEX_OCFS2_IOC_MOVE_EXT(fd fd, cmd const[OCFS2_IOC_MOVE_EXT], arg ptr[inout, codex_ocfs2_move_extents])
++
++resource fd_codex_ocfs2_control[fd]
++
++openat$__CODEX_ocfs2_control(fd const[AT_FDCWD], file ptr[in, string["/dev/ocfs2_control"]], flags flags[open_flags], mode const[0]) fd_codex_ocfs2_control
++read$__CODEX_ocfs2_control(fd fd_codex_ocfs2_control, data buffer[out], len len[data])
++write$__CODEX_ocfs2_control(fd fd_codex_ocfs2_control, data ptr[in, codex_ocfs2_control_msg], len bytesize[data])
++
++codex_fs_ioctl_buf {
++	data	array[int8, 0:8192]
++}
++
++codex_btrfs_ioctl_feature_flags {
++	compat_flags	int64
++	compat_ro_flags	int64
++	incompat_flags	int64
++}
++
++codex_f2fs_gc_range {
++	sync	int32
++	start	int64
++	len	int64
++}
++
++codex_f2fs_defragment {
++	start	int64
++	len	int64
++}
++
++codex_f2fs_move_range {
++	dst_fd	fd
++	pos_in	int64
++	pos_out	int64
++	len	int64
++}
++
++codex_f2fs_flush_device {
++	dev_num		int32
++	segments	int32
++}
++
++codex_f2fs_sectrim_range {
++	start	int64
++	len	int64
++	flags	flags[codex_f2fs_trim_flags, int64]
++}
++
++codex_f2fs_comp_option {
++	algorithm		int8
++	log_cluster_size	int8
++}
++
++codex_nilfs_argv {
++	v_base		ptr64[inout, array[int8, 0:4096]]
++	v_nmembs	int32[0:128]
++	v_size		int16[0:4096]
++	v_flags		int16
++	v_index		int64
++}
++
++codex_nilfs_cpmode {
++	cm_cno	int64
++	cm_mode	flags[codex_nilfs_cp_mode, int32]
++	cm_pad	int32
++}
++
++codex_nilfs_period {
++	p_start	int64
++	p_end	int64
++}
++
++codex_nilfs_cpstat {
++	cs_cno	int64
++	cs_ncps	int64
++	cs_nsss	int64
++}
++
++codex_nilfs_sustat {
++	ss_nsegs	int64
++	ss_ncleansegs	int64
++	ss_ndirtysegs	int64
++	ss_ctime	int64
++	ss_nongc_ctime	int64
++	ss_prot_seq	int64
++}
++
++codex_ocfs2_space_resv {
++	l_type		int16
++	l_whence	int16
++	l_start		int64
++	l_len		int64
++	l_sysid		int32
++	l_pid		int32
++	l_pad		array[int32, 4]
++}
++
++codex_ocfs2_new_group_input {
++	group		int64
++	clusters	int32
++	frees		int32
++	chain		int16
++	reserved1	int16
++	reserved2	int32
++}
++
++codex_ocfs2_reflink_arguments {
++	old_path	ptr64[in, filename]
++	new_path	ptr64[in, filename]
++	preserve	int64
++}
++
++codex_ocfs2_info {
++	oi_requests	ptr64[inout, array[ptr64[inout, codex_fs_ioctl_buf], 0:50]]
++	oi_count	len[oi_requests, int32]
++	oi_pad		int32
++}
++
++codex_ocfs2_move_extents {
++	me_start	int64
++	me_len		int64
++	me_goal		int64
++	me_threshold	int64
++	me_flags	flags[codex_ocfs2_move_ext_flags, int64]
++	me_moved_len	int64
++	me_new_offset	int64
++	me_reserved	array[int32, 2]
++}
++
++codex_ocfs2_control_msg [
++	proto	string["T01\n"]
++	setn	codex_ocfs2_control_setn
++	setv	codex_ocfs2_control_setv
++	down	codex_ocfs2_control_down
++] [varlen]
++
++codex_ocfs2_control_setn {
++	prefix	stringnoz["SETN "]
++	node	array[int8, 8]
++	nl	const[10, int8]
++} [packed]
++
++codex_ocfs2_control_setv {
++	prefix	stringnoz["SETV "]
++	major	array[int8, 2]
++	sp	const[' ', int8]
++	minor	array[int8, 2]
++	nl	const[10, int8]
++} [packed]
++
++codex_ocfs2_control_down {
++	prefix	stringnoz["DOWN "]
++	uuid	array[int8, 32]
++	sp	const[' ', int8]
++	node	array[int8, 8]
++	nl	const[10, int8]
++} [packed]
++
++codex_f2fs_shutdown_flags = F2FS_GOING_DOWN_FULLSYNC, F2FS_GOING_DOWN_METASYNC, F2FS_GOING_DOWN_NOSYNC, F2FS_GOING_DOWN_METAFLUSH, F2FS_GOING_DOWN_NEED_FSCK
++codex_f2fs_trim_flags = F2FS_TRIM_FILE_DISCARD, F2FS_TRIM_FILE_ZEROOUT
++codex_nilfs_cp_mode = NILFS_CHECKPOINT, NILFS_SNAPSHOT
++codex_ocfs2_move_ext_flags = OCFS2_MOVE_EXT_FL_AUTO_DEFRAG, OCFS2_MOVE_EXT_FL_PART_DEFRAG, OCFS2_MOVE_EXT_FL_COMPLETE
++
++define OCFS2_IOC_ALLOCSP	_IOW('X', 10, char[48])
++define OCFS2_IOC_FREESP	_IOW('X', 11, char[48])
++define OCFS2_IOC_RESVSP	_IOW('X', 40, char[48])
++define OCFS2_IOC_UNRESVSP	_IOW('X', 41, char[48])
++define OCFS2_IOC_ALLOCSP64	_IOW('X', 36, char[48])
++define OCFS2_IOC_FREESP64	_IOW('X', 37, char[48])
++define OCFS2_IOC_RESVSP64	_IOW('X', 42, char[48])
++define OCFS2_IOC_UNRESVSP64	_IOW('X', 43, char[48])
++define OCFS2_IOC_GROUP_EXTEND	_IOW('o', 1, int)
++define OCFS2_IOC_GROUP_ADD	_IOW('o', 2, char[24])
++define OCFS2_IOC_GROUP_ADD64	_IOW('o', 3, char[24])
++define OCFS2_IOC_REFLINK	_IOW('o', 4, char[24])
++define OCFS2_IOC_INFO	_IOR('o', 5, char[16])
++define OCFS2_IOC_MOVE_EXT	_IOW('o', 6, char[64])
++define OCFS2_MOVE_EXT_FL_AUTO_DEFRAG	0x1
++define OCFS2_MOVE_EXT_FL_PART_DEFRAG	0x2
++define OCFS2_MOVE_EXT_FL_COMPLETE	0x4
+diff --git a/sys/linux/codex_filesystems.txt.const b/sys/linux/codex_filesystems.txt.const
+new file mode 100644
+index 0000000000..8baa90eb72
+--- /dev/null
++++ b/sys/linux/codex_filesystems.txt.const
+@@ -0,0 +1,138 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++BTRFS_IOC_ADD_DEV = amd64:1342215178
++BTRFS_IOC_BALANCE = amd64:1342215180
++BTRFS_IOC_BALANCE_CTL = amd64:1074041889
++BTRFS_IOC_BALANCE_PROGRESS = amd64:2214630434
++BTRFS_IOC_BALANCE_V2 = amd64:3288372256
++BTRFS_IOC_CLONE = amd64:1074041865
++BTRFS_IOC_CLONE_RANGE = amd64:1075876877
++BTRFS_IOC_DEFAULT_SUBVOL = amd64:1074304019
++BTRFS_IOC_DEFRAG = amd64:1342215170
++BTRFS_IOC_DEFRAG_RANGE = amd64:1076925456
++BTRFS_IOC_DEVICES_READY = amd64:2415957031
++BTRFS_IOC_DEV_INFO = amd64:3489698846
++BTRFS_IOC_DEV_REPLACE = amd64:3391657013
++BTRFS_IOC_ENCODED_READ = amd64:2155910208
++BTRFS_IOC_ENCODED_WRITE = amd64:1082168384
++BTRFS_IOC_FILE_EXTENT_SAME = amd64:3222836278
++BTRFS_IOC_FORGET_DEV = amd64:1342215173
++BTRFS_IOC_FS_INFO = amd64:2214630431
++BTRFS_IOC_GET_DEV_STATS = amd64:3288896564
++BTRFS_IOC_GET_FEATURES = amd64:2149094457
++BTRFS_IOC_GET_FSLABEL = amd64:2164298801
++BTRFS_IOC_GET_SUBVOL_INFO = amd64:2180551740
++BTRFS_IOC_GET_SUBVOL_ROOTREF = amd64:3489698877
++BTRFS_IOC_GET_SUPPORTED_FEATURES = amd64:2152240185
++BTRFS_IOC_INO_LOOKUP = amd64:3489698834
++BTRFS_IOC_INO_LOOKUP_USER = amd64:3489698878
++BTRFS_IOC_INO_PATHS = amd64:3224933411
++BTRFS_IOC_LOGICAL_INO = amd64:3224933412
++BTRFS_IOC_LOGICAL_INO_V2 = amd64:3224933435
++BTRFS_IOC_QGROUP_ASSIGN = amd64:1075352617
++BTRFS_IOC_QGROUP_CREATE = amd64:1074828330
++BTRFS_IOC_QGROUP_LIMIT = amd64:2150667307
++BTRFS_IOC_QUOTA_CTL = amd64:3222311976
++BTRFS_IOC_QUOTA_RESCAN = amd64:1077974060
++BTRFS_IOC_QUOTA_RESCAN_STATUS = amd64:2151715885
++BTRFS_IOC_QUOTA_RESCAN_WAIT = amd64:37934
++BTRFS_IOC_RESIZE = amd64:1342215171
++BTRFS_IOC_RM_DEV = amd64:1342215179
++BTRFS_IOC_RM_DEV_V2 = amd64:1342215226
++BTRFS_IOC_SCAN_DEV = amd64:1342215172
++BTRFS_IOC_SCRUB = amd64:3288372251
++BTRFS_IOC_SCRUB_CANCEL = amd64:37916
++BTRFS_IOC_SCRUB_PROGRESS = amd64:3288372253
++BTRFS_IOC_SEND = amd64:1078498342
++BTRFS_IOC_SET_FEATURES = amd64:1076925497
++BTRFS_IOC_SET_FSLABEL = amd64:1090556978
++BTRFS_IOC_SET_RECEIVED_SUBVOL = amd64:3234370597
++BTRFS_IOC_SNAP_CREATE = amd64:1342215169
++BTRFS_IOC_SNAP_CREATE_V2 = amd64:1342215191
++BTRFS_IOC_SNAP_DESTROY = amd64:1342215183
++BTRFS_IOC_SNAP_DESTROY_V2 = amd64:1342215231
++BTRFS_IOC_SPACE_INFO = amd64:3222311956
++BTRFS_IOC_START_SYNC = amd64:2148045848
++BTRFS_IOC_SUBVOL_CREATE = amd64:1342215182
++BTRFS_IOC_SUBVOL_CREATE_V2 = amd64:1342215192
++BTRFS_IOC_SUBVOL_GETFLAGS = amd64:2148045849
++BTRFS_IOC_SUBVOL_SETFLAGS = amd64:1074304026
++BTRFS_IOC_SUBVOL_SYNC_WAIT = amd64:1074828353
++BTRFS_IOC_SYNC = amd64:37896
++BTRFS_IOC_TRANS_END = amd64:37895
++BTRFS_IOC_TRANS_START = amd64:37894
++BTRFS_IOC_TREE_SEARCH = amd64:3489698833
++BTRFS_IOC_TREE_SEARCH_V2 = amd64:3228603409
++BTRFS_IOC_WAIT_SYNC = amd64:1074304022
++F2FS_GOING_DOWN_FULLSYNC = amd64:0
++F2FS_GOING_DOWN_METAFLUSH = amd64:3
++F2FS_GOING_DOWN_METASYNC = amd64:1
++F2FS_GOING_DOWN_NEED_FSCK = amd64:4
++F2FS_GOING_DOWN_NOSYNC = amd64:2
++F2FS_IOC_ABORT_ATOMIC_WRITE = amd64:62725
++F2FS_IOC_COMMIT_ATOMIC_WRITE = amd64:62722
++F2FS_IOC_COMPRESS_FILE = amd64:62744
++F2FS_IOC_DECOMPRESS_FILE = amd64:62743
++F2FS_IOC_DEFRAGMENT = amd64:3222336776
++F2FS_IOC_FLUSH_DEVICE = amd64:1074328842
++F2FS_IOC_GARBAGE_COLLECT = amd64:1074066694
++F2FS_IOC_GARBAGE_COLLECT_RANGE = amd64:1075377419
++F2FS_IOC_GET_COMPRESS_BLOCKS = amd64:2148070673
++F2FS_IOC_GET_COMPRESS_OPTION = amd64:2147677461
++F2FS_IOC_GET_DEV_ALIAS_FILE = amd64:2147808538
++F2FS_IOC_GET_FEATURES = amd64:2147808524
++F2FS_IOC_GET_PIN_FILE = amd64:2147808526
++F2FS_IOC_IO_PRIO = amd64:1074066715
++F2FS_IOC_MOVE_RANGE = amd64:3223385353
++F2FS_IOC_PRECACHE_EXTENTS = amd64:62735
++F2FS_IOC_RELEASE_COMPRESS_BLOCKS = amd64:2148070674
++F2FS_IOC_RELEASE_VOLATILE_WRITE = amd64:62724
++F2FS_IOC_RESERVE_COMPRESS_BLOCKS = amd64:2148070675
++F2FS_IOC_RESIZE_FS = amd64:1074328848
++F2FS_IOC_SEC_TRIM_FILE = amd64:1075377428
++F2FS_IOC_SET_COMPRESS_OPTION = amd64:1073935638
++F2FS_IOC_SET_PIN_FILE = amd64:1074066701
++F2FS_IOC_SHUTDOWN = amd64:2147768445
++F2FS_IOC_START_ATOMIC_REPLACE = amd64:62745
++F2FS_IOC_START_ATOMIC_WRITE = amd64:62721
++F2FS_IOC_START_VOLATILE_WRITE = amd64:62723
++F2FS_IOC_WRITE_CHECKPOINT = amd64:62727
++F2FS_TRIM_FILE_DISCARD = amd64:1
++F2FS_TRIM_FILE_ZEROOUT = amd64:2
++NILFS_CHECKPOINT = amd64:0
++NILFS_IOCTL_CHANGE_CPMODE = amd64:1074818688
++NILFS_IOCTL_CLEAN_SEGMENTS = amd64:1081634440
++NILFS_IOCTL_DELETE_CHECKPOINT = amd64:1074294401
++NILFS_IOCTL_GET_BDESCS = amd64:3222826631
++NILFS_IOCTL_GET_CPINFO = amd64:2149084802
++NILFS_IOCTL_GET_CPSTAT = amd64:2149084803
++NILFS_IOCTL_GET_SUINFO = amd64:2149084804
++NILFS_IOCTL_GET_SUSTAT = amd64:2150657669
++NILFS_IOCTL_GET_VINFO = amd64:3222826630
++NILFS_IOCTL_RESIZE = amd64:1074294411
++NILFS_IOCTL_SET_ALLOC_RANGE = amd64:1074818700
++NILFS_IOCTL_SET_SUINFO = amd64:1075342989
++NILFS_IOCTL_SYNC = amd64:2148036234
++NILFS_SNAPSHOT = amd64:1
++OCFS2_IOC_ALLOCSP = amd64:1076910090
++OCFS2_IOC_ALLOCSP64 = amd64:1076910116
++OCFS2_IOC_FREESP = amd64:1076910091
++OCFS2_IOC_FREESP64 = amd64:1076910117
++OCFS2_IOC_GROUP_ADD = amd64:1075343106
++OCFS2_IOC_GROUP_ADD64 = amd64:1075343107
++OCFS2_IOC_GROUP_EXTEND = amd64:1074032385
++OCFS2_IOC_INFO = amd64:2148560645
++OCFS2_IOC_MOVE_EXT = amd64:1077964550
++OCFS2_IOC_REFLINK = amd64:1075343108
++OCFS2_IOC_RESVSP = amd64:1076910120
++OCFS2_IOC_RESVSP64 = amd64:1076910122
++OCFS2_IOC_UNRESVSP = amd64:1076910121
++OCFS2_IOC_UNRESVSP64 = amd64:1076910123
++OCFS2_MOVE_EXT_FL_AUTO_DEFRAG = amd64:1
++OCFS2_MOVE_EXT_FL_COMPLETE = amd64:4
++OCFS2_MOVE_EXT_FL_PART_DEFRAG = amd64:2
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
++__NR_read = amd64:0
++__NR_write = amd64:1
+diff --git a/sys/linux/codex_fuse.txt b/sys/linux/codex_fuse.txt
+new file mode 100644
+index 0000000000..a8831e5290
+--- /dev/null
++++ b/sys/linux/codex_fuse.txt
+@@ -0,0 +1,44 @@
++meta arches["amd64"]
++# SPDX-License-Identifier: Apache-2.0
++
++include <uapi/asm/ioctl.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/fuse.h>
++
++resource fd_codex_fuse[fd]
++
++openat$__CODEX_fuse(fd const[AT_FDCWD], file ptr[in, string["/dev/fuse"]], flags flags[open_flags], mode const[0]) fd_codex_fuse
++openat$__CODEX_cuse(fd const[AT_FDCWD], file ptr[in, string["/dev/cuse"]], flags flags[open_flags], mode const[0]) fd_codex_fuse
++read$__CODEX_fuse(fd fd_codex_fuse, data ptr[out, codex_fuse_in], len bytesize[data])
++write$__CODEX_fuse(fd fd_codex_fuse, data ptr[in, codex_fuse_out], len bytesize[data])
++ioctl$__CODEX_FUSE_DEV_IOC_CLONE(fd fd_codex_fuse, cmd const[FUSE_DEV_IOC_CLONE], arg ptr[out, int32])
++ioctl$__CODEX_FUSE_DEV_IOC_BACKING_OPEN(fd fd_codex_fuse, cmd const[FUSE_DEV_IOC_BACKING_OPEN], arg ptr[inout, codex_fuse_backing_map])
++ioctl$__CODEX_FUSE_DEV_IOC_BACKING_CLOSE(fd fd_codex_fuse, cmd const[FUSE_DEV_IOC_BACKING_CLOSE], arg ptr[in, int32])
++ioctl$__CODEX_FUSE_DEV_IOC_SYNC_INIT(fd fd_codex_fuse, cmd const[FUSE_DEV_IOC_SYNC_INIT], arg const[0])
++
++codex_fuse_in {
++	len	bytesize[parent, int32]
++	opcode	flags[codex_fuse_opcode, int32]
++	unique	int64
++	nodeid	int64
++	uid	int32
++	gid	int32
++	pid	int32
++	padding	int32
++	payload	array[int8, 0:4096]
++}
++
++codex_fuse_out {
++	len	bytesize[parent, int32]
++	error	int32
++	unique	int64
++	payload	array[int8, 0:4096]
++}
++
++codex_fuse_backing_map {
++	fd	fd
++	flags	int32
++	padding	int64
++}
++
++codex_fuse_opcode = FUSE_LOOKUP, FUSE_FORGET, FUSE_GETATTR, FUSE_SETATTR, FUSE_READLINK, FUSE_SYMLINK, FUSE_MKNOD, FUSE_MKDIR, FUSE_UNLINK, FUSE_RMDIR, FUSE_RENAME, FUSE_LINK, FUSE_OPEN, FUSE_READ, FUSE_WRITE, FUSE_STATFS, FUSE_RELEASE, FUSE_FSYNC, FUSE_SETXATTR, FUSE_GETXATTR, FUSE_LISTXATTR, FUSE_REMOVEXATTR, FUSE_FLUSH, FUSE_INIT, FUSE_OPENDIR, FUSE_READDIR, FUSE_RELEASEDIR, FUSE_FSYNCDIR, FUSE_GETLK, FUSE_SETLK, FUSE_SETLKW, FUSE_ACCESS, FUSE_CREATE, FUSE_INTERRUPT, FUSE_BMAP, FUSE_DESTROY, FUSE_IOCTL, FUSE_POLL, FUSE_NOTIFY_REPLY, FUSE_BATCH_FORGET, FUSE_FALLOCATE, FUSE_READDIRPLUS, FUSE_RENAME2, FUSE_LSEEK, FUSE_COPY_FILE_RANGE, FUSE_SETUPMAPPING, FUSE_REMOVEMAPPING, FUSE_SYNCFS, FUSE_TMPFILE, FUSE_STATX
+diff --git a/sys/linux/codex_fuse.txt.const b/sys/linux/codex_fuse.txt.const
+new file mode 100644
+index 0000000000..70fcd9827e
+--- /dev/null
++++ b/sys/linux/codex_fuse.txt.const
+@@ -0,0 +1,61 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++FUSE_ACCESS = amd64:34
++FUSE_BATCH_FORGET = amd64:42
++FUSE_BMAP = amd64:37
++FUSE_COPY_FILE_RANGE = amd64:47
++FUSE_CREATE = amd64:35
++FUSE_DESTROY = amd64:38
++FUSE_DEV_IOC_BACKING_CLOSE = amd64:1074062594
++FUSE_DEV_IOC_BACKING_OPEN = amd64:1074849025
++FUSE_DEV_IOC_CLONE = amd64:2147804416
++FUSE_DEV_IOC_SYNC_INIT = amd64:58627
++FUSE_FALLOCATE = amd64:43
++FUSE_FLUSH = amd64:25
++FUSE_FORGET = amd64:2
++FUSE_FSYNC = amd64:20
++FUSE_FSYNCDIR = amd64:30
++FUSE_GETATTR = amd64:3
++FUSE_GETLK = amd64:31
++FUSE_GETXATTR = amd64:22
++FUSE_INIT = amd64:26
++FUSE_INTERRUPT = amd64:36
++FUSE_IOCTL = amd64:39
++FUSE_LINK = amd64:13
++FUSE_LISTXATTR = amd64:23
++FUSE_LOOKUP = amd64:1
++FUSE_LSEEK = amd64:46
++FUSE_MKDIR = amd64:9
++FUSE_MKNOD = amd64:8
++FUSE_NOTIFY_REPLY = amd64:41
++FUSE_OPEN = amd64:14
++FUSE_OPENDIR = amd64:27
++FUSE_POLL = amd64:40
++FUSE_READ = amd64:15
++FUSE_READDIR = amd64:28
++FUSE_READDIRPLUS = amd64:44
++FUSE_READLINK = amd64:5
++FUSE_RELEASE = amd64:18
++FUSE_RELEASEDIR = amd64:29
++FUSE_REMOVEMAPPING = amd64:49
++FUSE_REMOVEXATTR = amd64:24
++FUSE_RENAME = amd64:12
++FUSE_RENAME2 = amd64:45
++FUSE_RMDIR = amd64:11
++FUSE_SETATTR = amd64:4
++FUSE_SETLK = amd64:32
++FUSE_SETLKW = amd64:33
++FUSE_SETUPMAPPING = amd64:48
++FUSE_SETXATTR = amd64:21
++FUSE_STATFS = amd64:17
++FUSE_STATX = amd64:52
++FUSE_SYMLINK = amd64:6
++FUSE_SYNCFS = amd64:50
++FUSE_TMPFILE = amd64:51
++FUSE_UNLINK = amd64:10
++FUSE_WRITE = amd64:16
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
++__NR_read = amd64:0
++__NR_write = amd64:1
+diff --git a/sys/linux/codex_i2c.txt b/sys/linux/codex_i2c.txt
+new file mode 100644
+index 0000000000..172dfd0d7b
+--- /dev/null
++++ b/sys/linux/codex_i2c.txt
+@@ -0,0 +1,59 @@
++meta arches["amd64"]
++# SPDX-License-Identifier: Apache-2.0
++
++include <uapi/asm/ioctl.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/i2c.h>
++include <uapi/linux/i2c-dev.h>
++
++resource fd_codex_i2c[fd]
++
++syz_open_dev$__CODEX_i2c(dev ptr[in, string["/dev/i2c-#"]], id intptr, flags flags[open_flags]) fd_codex_i2c
++openat$__CODEX_i2c0(fd const[AT_FDCWD], file ptr[in, string["/dev/i2c-0"]], flags flags[open_flags], mode const[0]) fd_codex_i2c
++read$__CODEX_i2c(fd fd_codex_i2c, data buffer[out], len len[data])
++write$__CODEX_i2c(fd fd_codex_i2c, data buffer[in], len len[data])
++
++ioctl$__CODEX_I2C_RETRIES(fd fd_codex_i2c, cmd const[I2C_RETRIES], arg intptr)
++ioctl$__CODEX_I2C_TIMEOUT(fd fd_codex_i2c, cmd const[I2C_TIMEOUT], arg intptr)
++ioctl$__CODEX_I2C_SLAVE(fd fd_codex_i2c, cmd const[I2C_SLAVE], addr intptr)
++ioctl$__CODEX_I2C_SLAVE_FORCE(fd fd_codex_i2c, cmd const[I2C_SLAVE_FORCE], addr intptr)
++ioctl$__CODEX_I2C_TENBIT(fd fd_codex_i2c, cmd const[I2C_TENBIT], enable intptr)
++ioctl$__CODEX_I2C_FUNCS(fd fd_codex_i2c, cmd const[I2C_FUNCS], arg ptr[out, flags[codex_i2c_func_flags, int64]])
++ioctl$__CODEX_I2C_RDWR(fd fd_codex_i2c, cmd const[I2C_RDWR], arg ptr[inout, codex_i2c_rdwr_ioctl_data])
++ioctl$__CODEX_I2C_PEC(fd fd_codex_i2c, cmd const[I2C_PEC], enable intptr)
++ioctl$__CODEX_I2C_SMBUS(fd fd_codex_i2c, cmd const[I2C_SMBUS], arg ptr[inout, codex_i2c_smbus_ioctl_data])
++
++codex_i2c_msg {
++	addr	int16
++	flags	flags[codex_i2c_msg_flags, int16]
++	len	bytesize[buf, int16]
++	buf	ptr[inout, array[int8, 0:256]]
++}
++
++codex_i2c_rdwr_ioctl_data {
++	msgs	ptr[inout, array[codex_i2c_msg, 0:I2C_RDWR_IOCTL_MAX_MSGS]]
++	nmsgs	len[msgs, int32]
++}
++
++codex_i2c_smbus_ioctl_data {
++	read_write	flags[codex_i2c_smbus_rw, int8]
++	command		int8
++	size		flags[codex_i2c_smbus_size, int32]
++	data		ptr[inout, codex_i2c_smbus_data]
++}
++
++codex_i2c_smbus_data [
++	byte	int8
++	word	int16
++	block	codex_i2c_smbus_block
++]
++
++codex_i2c_smbus_block {
++	len	int8[0:32]
++	data	array[int8, 34]
++}
++
++codex_i2c_msg_flags = I2C_M_RD, I2C_M_TEN, I2C_M_DMA_SAFE, I2C_M_RECV_LEN, I2C_M_NO_RD_ACK, I2C_M_IGNORE_NAK, I2C_M_REV_DIR_ADDR, I2C_M_NOSTART, I2C_M_STOP
++codex_i2c_smbus_rw = I2C_SMBUS_READ, I2C_SMBUS_WRITE
++codex_i2c_smbus_size = I2C_SMBUS_QUICK, I2C_SMBUS_BYTE, I2C_SMBUS_BYTE_DATA, I2C_SMBUS_WORD_DATA, I2C_SMBUS_PROC_CALL, I2C_SMBUS_BLOCK_DATA, I2C_SMBUS_I2C_BLOCK_BROKEN, I2C_SMBUS_BLOCK_PROC_CALL, I2C_SMBUS_I2C_BLOCK_DATA
++codex_i2c_func_flags = I2C_FUNC_I2C, I2C_FUNC_10BIT_ADDR, I2C_FUNC_PROTOCOL_MANGLING, I2C_FUNC_SMBUS_PEC, I2C_FUNC_NOSTART, I2C_FUNC_SLAVE, I2C_FUNC_SMBUS_BLOCK_PROC_CALL, I2C_FUNC_SMBUS_QUICK, I2C_FUNC_SMBUS_READ_BYTE, I2C_FUNC_SMBUS_WRITE_BYTE, I2C_FUNC_SMBUS_READ_BYTE_DATA, I2C_FUNC_SMBUS_WRITE_BYTE_DATA, I2C_FUNC_SMBUS_READ_WORD_DATA, I2C_FUNC_SMBUS_WRITE_WORD_DATA, I2C_FUNC_SMBUS_PROC_CALL, I2C_FUNC_SMBUS_READ_BLOCK_DATA, I2C_FUNC_SMBUS_WRITE_BLOCK_DATA, I2C_FUNC_SMBUS_READ_I2C_BLOCK, I2C_FUNC_SMBUS_WRITE_I2C_BLOCK
+diff --git a/sys/linux/codex_i2c.txt.const b/sys/linux/codex_i2c.txt.const
+new file mode 100644
+index 0000000000..840a127adf
+--- /dev/null
++++ b/sys/linux/codex_i2c.txt.const
+@@ -0,0 +1,56 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++I2C_FUNCS = amd64:1797
++I2C_FUNC_10BIT_ADDR = amd64:2
++I2C_FUNC_I2C = amd64:1
++I2C_FUNC_NOSTART = amd64:16
++I2C_FUNC_PROTOCOL_MANGLING = amd64:4
++I2C_FUNC_SLAVE = amd64:32
++I2C_FUNC_SMBUS_BLOCK_PROC_CALL = amd64:32768
++I2C_FUNC_SMBUS_PEC = amd64:8
++I2C_FUNC_SMBUS_PROC_CALL = amd64:8388608
++I2C_FUNC_SMBUS_QUICK = amd64:65536
++I2C_FUNC_SMBUS_READ_BLOCK_DATA = amd64:16777216
++I2C_FUNC_SMBUS_READ_BYTE = amd64:131072
++I2C_FUNC_SMBUS_READ_BYTE_DATA = amd64:524288
++I2C_FUNC_SMBUS_READ_I2C_BLOCK = amd64:67108864
++I2C_FUNC_SMBUS_READ_WORD_DATA = amd64:2097152
++I2C_FUNC_SMBUS_WRITE_BLOCK_DATA = amd64:33554432
++I2C_FUNC_SMBUS_WRITE_BYTE = amd64:262144
++I2C_FUNC_SMBUS_WRITE_BYTE_DATA = amd64:1048576
++I2C_FUNC_SMBUS_WRITE_I2C_BLOCK = amd64:134217728
++I2C_FUNC_SMBUS_WRITE_WORD_DATA = amd64:4194304
++I2C_M_DMA_SAFE = amd64:512
++I2C_M_IGNORE_NAK = amd64:4096
++I2C_M_NOSTART = amd64:16384
++I2C_M_NO_RD_ACK = amd64:2048
++I2C_M_RD = amd64:1
++I2C_M_RECV_LEN = amd64:1024
++I2C_M_REV_DIR_ADDR = amd64:8192
++I2C_M_STOP = amd64:32768
++I2C_M_TEN = amd64:16
++I2C_PEC = amd64:1800
++I2C_RDWR = amd64:1799
++I2C_RDWR_IOCTL_MAX_MSGS = amd64:42
++I2C_RETRIES = amd64:1793
++I2C_SLAVE = amd64:1795
++I2C_SLAVE_FORCE = amd64:1798
++I2C_SMBUS = amd64:1824
++I2C_SMBUS_BLOCK_DATA = amd64:5
++I2C_SMBUS_BLOCK_PROC_CALL = amd64:7
++I2C_SMBUS_BYTE = amd64:1
++I2C_SMBUS_BYTE_DATA = amd64:2
++I2C_SMBUS_I2C_BLOCK_BROKEN = amd64:6
++I2C_SMBUS_I2C_BLOCK_DATA = amd64:8
++I2C_SMBUS_PROC_CALL = amd64:4
++I2C_SMBUS_QUICK = amd64:0
++I2C_SMBUS_READ = amd64:1
++I2C_SMBUS_WORD_DATA = amd64:3
++I2C_SMBUS_WRITE = amd64:0
++I2C_TENBIT = amd64:1796
++I2C_TIMEOUT = amd64:1794
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
++__NR_read = amd64:0
++__NR_write = amd64:1
+diff --git a/sys/linux/codex_input.txt b/sys/linux/codex_input.txt
+new file mode 100644
+index 0000000000..36903733d2
+--- /dev/null
++++ b/sys/linux/codex_input.txt
+@@ -0,0 +1,123 @@
++meta arches["amd64"]
++# SPDX-License-Identifier: Apache-2.0
++
++include <uapi/asm/ioctl.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/input.h>
++include <uapi/linux/input-event-codes.h>
++
++resource fd_codex_input[fd]
++
++syz_open_dev$__CODEX_input_event(dev ptr[in, string["/dev/input/event#"]], id intptr, flags flags[open_flags]) fd_codex_input
++openat$__CODEX_input_event0(fd const[AT_FDCWD], file ptr[in, string["/dev/input/event0"]], flags flags[open_flags], mode const[0]) fd_codex_input
++read$__CODEX_input_event(fd fd_codex_input, events ptr[out, array[codex_input_event, 0:64]], len bytesize[events])
++write$__CODEX_input_event(fd fd_codex_input, events ptr[in, array[codex_input_event, 0:64]], len bytesize[events])
++
++ioctl$__CODEX_EVIOCGVERSION(fd fd_codex_input, cmd const[EVIOCGVERSION], arg ptr[out, int32])
++ioctl$__CODEX_EVIOCGID(fd fd_codex_input, cmd const[EVIOCGID], arg ptr[out, codex_input_id])
++ioctl$__CODEX_EVIOCGREP(fd fd_codex_input, cmd const[EVIOCGREP], arg ptr[out, array[int32, 2]])
++ioctl$__CODEX_EVIOCSREP(fd fd_codex_input, cmd const[EVIOCSREP], arg ptr[in, array[int32, 2]])
++ioctl$__CODEX_EVIOCGKEYCODE(fd fd_codex_input, cmd const[EVIOCGKEYCODE], arg ptr[inout, array[int32, 2]])
++ioctl$__CODEX_EVIOCGKEYCODE_V2(fd fd_codex_input, cmd const[EVIOCGKEYCODE_V2], arg ptr[inout, codex_input_keymap_entry])
++ioctl$__CODEX_EVIOCSKEYCODE(fd fd_codex_input, cmd const[EVIOCSKEYCODE], arg ptr[in, array[int32, 2]])
++ioctl$__CODEX_EVIOCSKEYCODE_V2(fd fd_codex_input, cmd const[EVIOCSKEYCODE_V2], arg ptr[in, codex_input_keymap_entry])
++ioctl$__CODEX_EVIOCGNAME_256(fd fd_codex_input, cmd const[CODEX_EVIOCGNAME_256], arg ptr[out, array[int8, 256]])
++ioctl$__CODEX_EVIOCGPHYS_256(fd fd_codex_input, cmd const[CODEX_EVIOCGPHYS_256], arg ptr[out, array[int8, 256]])
++ioctl$__CODEX_EVIOCGUNIQ_256(fd fd_codex_input, cmd const[CODEX_EVIOCGUNIQ_256], arg ptr[out, array[int8, 256]])
++ioctl$__CODEX_EVIOCGPROP_256(fd fd_codex_input, cmd const[CODEX_EVIOCGPROP_256], arg ptr[out, array[int8, 256]])
++ioctl$__CODEX_EVIOCGMTSLOTS_256(fd fd_codex_input, cmd const[CODEX_EVIOCGMTSLOTS_256], arg ptr[inout, array[int32, 64]])
++ioctl$__CODEX_EVIOCGKEY_256(fd fd_codex_input, cmd const[CODEX_EVIOCGKEY_256], arg ptr[out, array[int8, 256]])
++ioctl$__CODEX_EVIOCGLED_256(fd fd_codex_input, cmd const[CODEX_EVIOCGLED_256], arg ptr[out, array[int8, 256]])
++ioctl$__CODEX_EVIOCGSND_256(fd fd_codex_input, cmd const[CODEX_EVIOCGSND_256], arg ptr[out, array[int8, 256]])
++ioctl$__CODEX_EVIOCGSW_256(fd fd_codex_input, cmd const[CODEX_EVIOCGSW_256], arg ptr[out, array[int8, 256]])
++ioctl$__CODEX_EVIOCGBIT_EV_256(fd fd_codex_input, cmd const[CODEX_EVIOCGBIT_EV_256], arg ptr[out, array[int8, 256]])
++ioctl$__CODEX_EVIOCGBIT_KEY_256(fd fd_codex_input, cmd const[CODEX_EVIOCGBIT_KEY_256], arg ptr[out, array[int8, 256]])
++ioctl$__CODEX_EVIOCGBIT_ABS_256(fd fd_codex_input, cmd const[CODEX_EVIOCGBIT_ABS_256], arg ptr[out, array[int8, 256]])
++ioctl$__CODEX_EVIOCGBIT_REL_256(fd fd_codex_input, cmd const[CODEX_EVIOCGBIT_REL_256], arg ptr[out, array[int8, 256]])
++ioctl$__CODEX_EVIOCGABS_X(fd fd_codex_input, cmd const[CODEX_EVIOCGABS_X], arg ptr[out, codex_input_absinfo])
++ioctl$__CODEX_EVIOCSABS_X(fd fd_codex_input, cmd const[CODEX_EVIOCSABS_X], arg ptr[in, codex_input_absinfo])
++ioctl$__CODEX_EVIOCGABS_Y(fd fd_codex_input, cmd const[CODEX_EVIOCGABS_Y], arg ptr[out, codex_input_absinfo])
++ioctl$__CODEX_EVIOCSABS_Y(fd fd_codex_input, cmd const[CODEX_EVIOCSABS_Y], arg ptr[in, codex_input_absinfo])
++ioctl$__CODEX_EVIOCGABS_MT_POSITION_X(fd fd_codex_input, cmd const[CODEX_EVIOCGABS_MT_POSITION_X], arg ptr[out, codex_input_absinfo])
++ioctl$__CODEX_EVIOCSABS_MT_POSITION_X(fd fd_codex_input, cmd const[CODEX_EVIOCSABS_MT_POSITION_X], arg ptr[in, codex_input_absinfo])
++ioctl$__CODEX_EVIOCGABS_MT_POSITION_Y(fd fd_codex_input, cmd const[CODEX_EVIOCGABS_MT_POSITION_Y], arg ptr[out, codex_input_absinfo])
++ioctl$__CODEX_EVIOCSABS_MT_POSITION_Y(fd fd_codex_input, cmd const[CODEX_EVIOCSABS_MT_POSITION_Y], arg ptr[in, codex_input_absinfo])
++ioctl$__CODEX_EVIOCSFF(fd fd_codex_input, cmd const[EVIOCSFF], arg ptr[inout, codex_ff_effect])
++ioctl$__CODEX_EVIOCRMFF(fd fd_codex_input, cmd const[EVIOCRMFF], arg ptr[in, int32])
++ioctl$__CODEX_EVIOCGEFFECTS(fd fd_codex_input, cmd const[EVIOCGEFFECTS], arg ptr[out, int32])
++ioctl$__CODEX_EVIOCGRAB(fd fd_codex_input, cmd const[EVIOCGRAB], arg ptr[in, intptr])
++ioctl$__CODEX_EVIOCREVOKE(fd fd_codex_input, cmd const[EVIOCREVOKE], arg ptr[in, intptr])
++ioctl$__CODEX_EVIOCGMASK(fd fd_codex_input, cmd const[EVIOCGMASK], arg ptr[inout, codex_input_mask])
++ioctl$__CODEX_EVIOCSMASK(fd fd_codex_input, cmd const[EVIOCSMASK], arg ptr[in, codex_input_mask])
++ioctl$__CODEX_EVIOCSCLOCKID(fd fd_codex_input, cmd const[EVIOCSCLOCKID], arg ptr[in, int32])
++
++codex_input_event {
++	sec	intptr
++	usec	intptr
++	type	flags[codex_ev_types, int16]
++	code	int16
++	value	int32
++}
++
++codex_input_id {
++	bustype	int16
++	vendor	int16
++	product	int16
++	version	int16
++}
++
++codex_input_absinfo {
++	value		int32
++	minimum		int32
++	maximum		int32
++	fuzz		int32
++	flat		int32
++	resolution	int32
++}
++
++codex_input_keymap_entry {
++	flags		int8
++	len		int8[0:32]
++	index		int16
++	keycode		int32
++	scancode	array[int8, 32]
++}
++
++codex_input_mask {
++	type		flags[codex_ev_types, int32]
++	codes_size	bytesize[codes_ptr, int32]
++	codes_ptr	ptr64[inout, array[int8, 0:256]]
++}
++
++codex_ff_effect {
++	type		int16
++	id		int16
++	direction	int16
++	trigger		array[int8, 4]
++	replay		array[int8, 4]
++	u		array[int8, 64]
++}
++
++codex_ev_types = EV_SYN, EV_KEY, EV_REL, EV_ABS, EV_MSC, EV_SW, EV_LED, EV_SND, EV_REP, EV_FF, EV_PWR, EV_FF_STATUS
++
++define CODEX_EVIOCGNAME_256	EVIOCGNAME(256)
++define CODEX_EVIOCGPHYS_256	EVIOCGPHYS(256)
++define CODEX_EVIOCGUNIQ_256	EVIOCGUNIQ(256)
++define CODEX_EVIOCGPROP_256	EVIOCGPROP(256)
++define CODEX_EVIOCGMTSLOTS_256	EVIOCGMTSLOTS(256)
++define CODEX_EVIOCGKEY_256	EVIOCGKEY(256)
++define CODEX_EVIOCGLED_256	EVIOCGLED(256)
++define CODEX_EVIOCGSND_256	EVIOCGSND(256)
++define CODEX_EVIOCGSW_256	EVIOCGSW(256)
++define CODEX_EVIOCGBIT_EV_256	EVIOCGBIT(EV_SYN, 256)
++define CODEX_EVIOCGBIT_KEY_256	EVIOCGBIT(EV_KEY, 256)
++define CODEX_EVIOCGBIT_ABS_256	EVIOCGBIT(EV_ABS, 256)
++define CODEX_EVIOCGBIT_REL_256	EVIOCGBIT(EV_REL, 256)
++define CODEX_EVIOCGABS_X	EVIOCGABS(ABS_X)
++define CODEX_EVIOCSABS_X	EVIOCSABS(ABS_X)
++define CODEX_EVIOCGABS_Y	EVIOCGABS(ABS_Y)
++define CODEX_EVIOCSABS_Y	EVIOCSABS(ABS_Y)
++define CODEX_EVIOCGABS_MT_POSITION_X	EVIOCGABS(ABS_MT_POSITION_X)
++define CODEX_EVIOCSABS_MT_POSITION_X	EVIOCSABS(ABS_MT_POSITION_X)
++define CODEX_EVIOCGABS_MT_POSITION_Y	EVIOCGABS(ABS_MT_POSITION_Y)
++define CODEX_EVIOCSABS_MT_POSITION_Y	EVIOCSABS(ABS_MT_POSITION_Y)
+diff --git a/sys/linux/codex_input.txt.const b/sys/linux/codex_input.txt.const
+new file mode 100644
+index 0000000000..3889f3c252
+--- /dev/null
++++ b/sys/linux/codex_input.txt.const
+@@ -0,0 +1,56 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++CODEX_EVIOCGABS_MT_POSITION_X = amd64:2149074293
++CODEX_EVIOCGABS_MT_POSITION_Y = amd64:2149074294
++CODEX_EVIOCGABS_X = amd64:2149074240
++CODEX_EVIOCGABS_Y = amd64:2149074241
++CODEX_EVIOCGBIT_ABS_256 = amd64:2164278563
++CODEX_EVIOCGBIT_EV_256 = amd64:2164278560
++CODEX_EVIOCGBIT_KEY_256 = amd64:2164278561
++CODEX_EVIOCGBIT_REL_256 = amd64:2164278562
++CODEX_EVIOCGKEY_256 = amd64:2164278552
++CODEX_EVIOCGLED_256 = amd64:2164278553
++CODEX_EVIOCGMTSLOTS_256 = amd64:2164278538
++CODEX_EVIOCGNAME_256 = amd64:2164278534
++CODEX_EVIOCGPHYS_256 = amd64:2164278535
++CODEX_EVIOCGPROP_256 = amd64:2164278537
++CODEX_EVIOCGSND_256 = amd64:2164278554
++CODEX_EVIOCGSW_256 = amd64:2164278555
++CODEX_EVIOCGUNIQ_256 = amd64:2164278536
++CODEX_EVIOCSABS_MT_POSITION_X = amd64:1075332597
++CODEX_EVIOCSABS_MT_POSITION_Y = amd64:1075332598
++CODEX_EVIOCSABS_X = amd64:1075332544
++CODEX_EVIOCSABS_Y = amd64:1075332545
++EVIOCGEFFECTS = amd64:2147763588
++EVIOCGID = amd64:2148025602
++EVIOCGKEYCODE = amd64:2148025604
++EVIOCGKEYCODE_V2 = amd64:2150122756
++EVIOCGMASK = amd64:2148550034
++EVIOCGRAB = amd64:1074021776
++EVIOCGREP = amd64:2148025603
++EVIOCGVERSION = amd64:2147763457
++EVIOCREVOKE = amd64:1074021777
++EVIOCRMFF = amd64:1074021761
++EVIOCSCLOCKID = amd64:1074021792
++EVIOCSFF = amd64:1076905344
++EVIOCSKEYCODE = amd64:1074283780
++EVIOCSKEYCODE_V2 = amd64:1076380932
++EVIOCSMASK = amd64:1074808211
++EVIOCSREP = amd64:1074283779
++EV_ABS = amd64:3
++EV_FF = amd64:21
++EV_FF_STATUS = amd64:23
++EV_KEY = amd64:1
++EV_LED = amd64:17
++EV_MSC = amd64:4
++EV_PWR = amd64:22
++EV_REL = amd64:2
++EV_REP = amd64:20
++EV_SND = amd64:18
++EV_SW = amd64:5
++EV_SYN = amd64:0
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
++__NR_read = amd64:0
++__NR_write = amd64:1
+diff --git a/sys/linux/codex_kvm.txt b/sys/linux/codex_kvm.txt
+new file mode 100644
+index 0000000000..930e19e558
+--- /dev/null
++++ b/sys/linux/codex_kvm.txt
+@@ -0,0 +1,312 @@
++meta arches["amd64"]
++# SPDX-License-Identifier: Apache-2.0
++
++include <uapi/asm/ioctl.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/kvm.h>
++
++resource fd_codex_kvm[fd]
++resource fd_codex_kvm_vm[fd]
++resource fd_codex_kvm_vcpu[fd]
++resource fd_codex_kvm_device[fd]
++
++openat$__CODEX_kvm(fd const[AT_FDCWD], file ptr[in, string["/dev/kvm"]], flags flags[open_flags], mode const[0]) fd_codex_kvm
++
++ioctl$__CODEX_KVM_GET_API_VERSION(fd fd_codex_kvm, cmd const[KVM_GET_API_VERSION], arg const[0])
++ioctl$__CODEX_KVM_CREATE_VM(fd fd_codex_kvm, cmd const[KVM_CREATE_VM], machine_type intptr) fd_codex_kvm_vm
++ioctl$__CODEX_KVM_GET_MSR_INDEX_LIST(fd fd_codex_kvm, cmd const[KVM_GET_MSR_INDEX_LIST], arg ptr[inout, codex_kvm_msr_list])
++ioctl$__CODEX_KVM_CHECK_EXTENSION(fd fd_codex_kvm, cmd const[KVM_CHECK_EXTENSION], cap flags[codex_kvm_caps])
++ioctl$__CODEX_KVM_GET_VCPU_MMAP_SIZE(fd fd_codex_kvm, cmd const[KVM_GET_VCPU_MMAP_SIZE], arg const[0])
++ioctl$__CODEX_KVM_GET_SUPPORTED_CPUID(fd fd_codex_kvm, cmd const[KVM_GET_SUPPORTED_CPUID], arg ptr[inout, codex_kvm_cpuid2])
++ioctl$__CODEX_KVM_GET_EMULATED_CPUID(fd fd_codex_kvm, cmd const[KVM_GET_EMULATED_CPUID], arg ptr[inout, codex_kvm_cpuid2])
++ioctl$__CODEX_KVM_GET_MSR_FEATURE_INDEX_LIST(fd fd_codex_kvm, cmd const[KVM_GET_MSR_FEATURE_INDEX_LIST], arg ptr[inout, codex_kvm_msr_list])
++ioctl$__CODEX_KVM_GET_SUPPORTED_HV_CPUID(fd fd_codex_kvm, cmd const[KVM_GET_SUPPORTED_HV_CPUID], arg ptr[inout, codex_kvm_cpuid2])
++ioctl$__CODEX_KVM_X86_GET_MCE_CAP_SUPPORTED(fd fd_codex_kvm, cmd const[KVM_X86_GET_MCE_CAP_SUPPORTED], arg ptr[out, array[int64, 16]])
++
++ioctl$__CODEX_KVM_CREATE_VCPU(fd fd_codex_kvm_vm, cmd const[KVM_CREATE_VCPU], vcpu_id intptr) fd_codex_kvm_vcpu
++ioctl$__CODEX_KVM_SET_USER_MEMORY_REGION(fd fd_codex_kvm_vm, cmd const[KVM_SET_USER_MEMORY_REGION], arg ptr[in, codex_kvm_userspace_memory_region])
++ioctl$__CODEX_KVM_SET_USER_MEMORY_REGION2(fd fd_codex_kvm_vm, cmd const[KVM_SET_USER_MEMORY_REGION2], arg ptr[in, codex_kvm_userspace_memory_region2])
++ioctl$__CODEX_KVM_GET_DIRTY_LOG(fd fd_codex_kvm_vm, cmd const[KVM_GET_DIRTY_LOG], arg ptr[inout, codex_kvm_dirty_log])
++ioctl$__CODEX_KVM_CLEAR_DIRTY_LOG(fd fd_codex_kvm_vm, cmd const[KVM_CLEAR_DIRTY_LOG], arg ptr[inout, codex_kvm_clear_dirty_log])
++ioctl$__CODEX_KVM_SET_NR_MMU_PAGES(fd fd_codex_kvm_vm, cmd const[KVM_SET_NR_MMU_PAGES], pages intptr)
++ioctl$__CODEX_KVM_GET_NR_MMU_PAGES(fd fd_codex_kvm_vm, cmd const[KVM_GET_NR_MMU_PAGES], arg const[0])
++ioctl$__CODEX_KVM_SET_TSS_ADDR(fd fd_codex_kvm_vm, cmd const[KVM_SET_TSS_ADDR], addr intptr)
++ioctl$__CODEX_KVM_SET_IDENTITY_MAP_ADDR(fd fd_codex_kvm_vm, cmd const[KVM_SET_IDENTITY_MAP_ADDR], arg ptr[in, int64])
++ioctl$__CODEX_KVM_CREATE_IRQCHIP(fd fd_codex_kvm_vm, cmd const[KVM_CREATE_IRQCHIP], arg const[0])
++ioctl$__CODEX_KVM_IRQ_LINE(fd fd_codex_kvm_vm, cmd const[KVM_IRQ_LINE], arg ptr[in, codex_kvm_irq_level])
++ioctl$__CODEX_KVM_IRQ_LINE_STATUS(fd fd_codex_kvm_vm, cmd const[KVM_IRQ_LINE_STATUS], arg ptr[inout, codex_kvm_irq_level])
++ioctl$__CODEX_KVM_GET_IRQCHIP(fd fd_codex_kvm_vm, cmd const[KVM_GET_IRQCHIP], arg ptr[inout, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_SET_IRQCHIP(fd fd_codex_kvm_vm, cmd const[KVM_SET_IRQCHIP], arg ptr[in, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_CREATE_PIT(fd fd_codex_kvm_vm, cmd const[KVM_CREATE_PIT], arg const[0])
++ioctl$__CODEX_KVM_CREATE_PIT2(fd fd_codex_kvm_vm, cmd const[KVM_CREATE_PIT2], arg ptr[in, codex_kvm_pit_config])
++ioctl$__CODEX_KVM_GET_PIT(fd fd_codex_kvm_vm, cmd const[KVM_GET_PIT], arg ptr[out, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_SET_PIT(fd fd_codex_kvm_vm, cmd const[KVM_SET_PIT], arg ptr[in, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_GET_PIT2(fd fd_codex_kvm_vm, cmd const[KVM_GET_PIT2], arg ptr[out, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_SET_PIT2(fd fd_codex_kvm_vm, cmd const[KVM_SET_PIT2], arg ptr[in, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_SET_GSI_ROUTING(fd fd_codex_kvm_vm, cmd const[KVM_SET_GSI_ROUTING], arg ptr[inout, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_REINJECT_CONTROL(fd fd_codex_kvm_vm, cmd const[KVM_REINJECT_CONTROL], arg ptr[in, codex_kvm_reinject_control])
++ioctl$__CODEX_KVM_IRQFD(fd fd_codex_kvm_vm, cmd const[KVM_IRQFD], arg ptr[in, codex_kvm_irqfd])
++ioctl$__CODEX_KVM_SET_BOOT_CPU_ID(fd fd_codex_kvm_vm, cmd const[KVM_SET_BOOT_CPU_ID], cpu_id intptr)
++ioctl$__CODEX_KVM_IOEVENTFD(fd fd_codex_kvm_vm, cmd const[KVM_IOEVENTFD], arg ptr[in, codex_kvm_ioeventfd])
++ioctl$__CODEX_KVM_SET_CLOCK(fd fd_codex_kvm_vm, cmd const[KVM_SET_CLOCK], arg ptr[inout, codex_kvm_clock_data])
++ioctl$__CODEX_KVM_GET_CLOCK(fd fd_codex_kvm_vm, cmd const[KVM_GET_CLOCK], arg ptr[out, codex_kvm_clock_data])
++ioctl$__CODEX_KVM_SET_TSC_KHZ(fd fd_codex_kvm_vm, cmd const[KVM_SET_TSC_KHZ], khz intptr)
++ioctl$__CODEX_KVM_GET_TSC_KHZ(fd fd_codex_kvm_vm, cmd const[KVM_GET_TSC_KHZ], arg const[0])
++ioctl$__CODEX_KVM_SIGNAL_MSI(fd fd_codex_kvm_vm, cmd const[KVM_SIGNAL_MSI], arg ptr[in, codex_kvm_msi])
++ioctl$__CODEX_KVM_CREATE_DEVICE(fd fd_codex_kvm_vm, cmd const[KVM_CREATE_DEVICE], arg ptr[inout, codex_kvm_create_device]) fd_codex_kvm_device
++ioctl$__CODEX_KVM_VM_SET_DEVICE_ATTR(fd fd_codex_kvm_vm, cmd const[KVM_SET_DEVICE_ATTR], arg ptr[in, codex_kvm_device_attr])
++ioctl$__CODEX_KVM_VM_GET_DEVICE_ATTR(fd fd_codex_kvm_vm, cmd const[KVM_GET_DEVICE_ATTR], arg ptr[inout, codex_kvm_device_attr])
++ioctl$__CODEX_KVM_VM_HAS_DEVICE_ATTR(fd fd_codex_kvm_vm, cmd const[KVM_HAS_DEVICE_ATTR], arg ptr[inout, codex_kvm_device_attr])
++ioctl$__CODEX_KVM_VM_ENABLE_CAP(fd fd_codex_kvm_vm, cmd const[KVM_ENABLE_CAP], arg ptr[in, codex_kvm_enable_cap])
++ioctl$__CODEX_KVM_X86_SET_MSR_FILTER(fd fd_codex_kvm_vm, cmd const[KVM_X86_SET_MSR_FILTER], arg ptr[inout, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_RESET_DIRTY_RINGS(fd fd_codex_kvm_vm, cmd const[KVM_RESET_DIRTY_RINGS], arg const[0])
++ioctl$__CODEX_KVM_GET_STATS_FD(fd fd_codex_kvm_vm, cmd const[KVM_GET_STATS_FD], arg const[0]) fd
++ioctl$__CODEX_KVM_SET_MEMORY_ATTRIBUTES(fd fd_codex_kvm_vm, cmd const[KVM_SET_MEMORY_ATTRIBUTES], arg ptr[in, codex_kvm_memory_attributes])
++ioctl$__CODEX_KVM_CREATE_GUEST_MEMFD(fd fd_codex_kvm_vm, cmd const[KVM_CREATE_GUEST_MEMFD], arg ptr[inout, codex_kvm_create_guest_memfd]) fd
++ioctl$__CODEX_KVM_PRE_FAULT_MEMORY(fd fd_codex_kvm_vm, cmd const[KVM_PRE_FAULT_MEMORY], arg ptr[inout, codex_kvm_pre_fault_memory])
++
++mmap$__CODEX_KVM_VCPU(addr vma, len len[addr], prot flags[mmap_prot], flags flags[mmap_flags], fd fd_codex_kvm_vcpu, offset intptr)
++ioctl$__CODEX_KVM_RUN(fd fd_codex_kvm_vcpu, cmd const[KVM_RUN], arg const[0])
++ioctl$__CODEX_KVM_GET_REGS(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_REGS], arg ptr[out, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_SET_REGS(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_REGS], arg ptr[in, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_GET_SREGS(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_SREGS], arg ptr[out, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_SET_SREGS(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_SREGS], arg ptr[in, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_TRANSLATE(fd fd_codex_kvm_vcpu, cmd const[KVM_TRANSLATE], arg ptr[inout, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_INTERRUPT(fd fd_codex_kvm_vcpu, cmd const[KVM_INTERRUPT], arg ptr[in, codex_kvm_interrupt])
++ioctl$__CODEX_KVM_GET_MSRS(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_MSRS], arg ptr[inout, codex_kvm_msrs])
++ioctl$__CODEX_KVM_SET_MSRS(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_MSRS], arg ptr[inout, codex_kvm_msrs])
++ioctl$__CODEX_KVM_SET_CPUID(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_CPUID], arg ptr[in, codex_kvm_cpuid])
++ioctl$__CODEX_KVM_SET_SIGNAL_MASK(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_SIGNAL_MASK], arg ptr[inout, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_GET_FPU(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_FPU], arg ptr[out, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_SET_FPU(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_FPU], arg ptr[in, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_GET_LAPIC(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_LAPIC], arg ptr[out, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_SET_LAPIC(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_LAPIC], arg ptr[in, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_SET_CPUID2(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_CPUID2], arg ptr[in, codex_kvm_cpuid2])
++ioctl$__CODEX_KVM_GET_CPUID2(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_CPUID2], arg ptr[inout, codex_kvm_cpuid2])
++ioctl$__CODEX_KVM_TPR_ACCESS_REPORTING(fd fd_codex_kvm_vcpu, cmd const[KVM_TPR_ACCESS_REPORTING], arg ptr[inout, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_SET_VAPIC_ADDR(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_VAPIC_ADDR], addr intptr)
++ioctl$__CODEX_KVM_GET_MP_STATE(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_MP_STATE], arg ptr[out, codex_kvm_mp_state])
++ioctl$__CODEX_KVM_SET_MP_STATE(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_MP_STATE], arg ptr[in, codex_kvm_mp_state])
++ioctl$__CODEX_KVM_NMI(fd fd_codex_kvm_vcpu, cmd const[KVM_NMI], arg const[0])
++ioctl$__CODEX_KVM_SET_GUEST_DEBUG(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_GUEST_DEBUG], arg ptr[inout, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_X86_SETUP_MCE(fd fd_codex_kvm_vcpu, cmd const[KVM_X86_SETUP_MCE], arg ptr[in, int64])
++ioctl$__CODEX_KVM_X86_SET_MCE(fd fd_codex_kvm_vcpu, cmd const[KVM_X86_SET_MCE], arg ptr[in, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_GET_VCPU_EVENTS(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_VCPU_EVENTS], arg ptr[out, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_SET_VCPU_EVENTS(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_VCPU_EVENTS], arg ptr[in, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_GET_DEBUGREGS(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_DEBUGREGS], arg ptr[out, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_SET_DEBUGREGS(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_DEBUGREGS], arg ptr[in, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_VCPU_ENABLE_CAP(fd fd_codex_kvm_vcpu, cmd const[KVM_ENABLE_CAP], arg ptr[in, codex_kvm_enable_cap])
++ioctl$__CODEX_KVM_GET_XSAVE(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_XSAVE], arg ptr[out, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_SET_XSAVE(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_XSAVE], arg ptr[in, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_GET_XCRS(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_XCRS], arg ptr[out, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_SET_XCRS(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_XCRS], arg ptr[in, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_GET_ONE_REG(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_ONE_REG], arg ptr[inout, codex_kvm_one_reg])
++ioctl$__CODEX_KVM_SET_ONE_REG(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_ONE_REG], arg ptr[in, codex_kvm_one_reg])
++ioctl$__CODEX_KVM_KVMCLOCK_CTRL(fd fd_codex_kvm_vcpu, cmd const[KVM_KVMCLOCK_CTRL], arg const[0])
++ioctl$__CODEX_KVM_GET_REG_LIST(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_REG_LIST], arg ptr[inout, codex_kvm_reg_list])
++ioctl$__CODEX_KVM_SMI(fd fd_codex_kvm_vcpu, cmd const[KVM_SMI], arg const[0])
++ioctl$__CODEX_KVM_GET_SREGS2(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_SREGS2], arg ptr[out, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_SET_SREGS2(fd fd_codex_kvm_vcpu, cmd const[KVM_SET_SREGS2], arg ptr[in, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_GET_XSAVE2(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_XSAVE2], arg ptr[out, codex_kvm_ioctl_buf])
++ioctl$__CODEX_KVM_VCPU_GET_STATS_FD(fd fd_codex_kvm_vcpu, cmd const[KVM_GET_STATS_FD], arg const[0]) fd
++
++ioctl$__CODEX_KVM_DEV_SET_DEVICE_ATTR(fd fd_codex_kvm_device, cmd const[KVM_SET_DEVICE_ATTR], arg ptr[in, codex_kvm_device_attr])
++ioctl$__CODEX_KVM_DEV_GET_DEVICE_ATTR(fd fd_codex_kvm_device, cmd const[KVM_GET_DEVICE_ATTR], arg ptr[inout, codex_kvm_device_attr])
++ioctl$__CODEX_KVM_DEV_HAS_DEVICE_ATTR(fd fd_codex_kvm_device, cmd const[KVM_HAS_DEVICE_ATTR], arg ptr[inout, codex_kvm_device_attr])
++
++codex_kvm_ioctl_buf {
++	data	array[int8, 0:8192]
++}
++
++codex_kvm_msr_list {
++	nmsrs	len[indices, int32]
++	indices	array[int32, 0:256]
++}
++
++codex_kvm_cpuid {
++	nent	len[entries, int32]
++	padding	int32
++	entries	array[codex_kvm_cpuid_entry, 0:64]
++}
++
++codex_kvm_cpuid_entry {
++	function	int32
++	eax		int32
++	ebx		int32
++	ecx		int32
++	edx		int32
++	padding		int32
++}
++
++codex_kvm_cpuid2 {
++	nent	len[entries, int32]
++	padding	int32
++	entries	array[codex_kvm_cpuid_entry2, 0:64]
++}
++
++codex_kvm_cpuid_entry2 {
++	function	int32
++	index		int32
++	flags		int32
++	eax		int32
++	ebx		int32
++	ecx		int32
++	edx		int32
++	padding		array[int32, 3]
++}
++
++codex_kvm_msrs {
++	nmsrs	len[entries, int32]
++	pad	int32
++	entries	array[codex_kvm_msr_entry, 0:64]
++}
++
++codex_kvm_msr_entry {
++	index		int32
++	reserved	int32
++	data		int64
++}
++
++codex_kvm_userspace_memory_region {
++	slot		int32
++	flags		flags[codex_kvm_mem_flags, int32]
++	guest_phys_addr	int64
++	memory_size	bytesize[userspace_addr, int64]
++	userspace_addr	ptr64[inout, array[int8, 0:4096]]
++}
++
++codex_kvm_userspace_memory_region2 {
++	slot			int32
++	flags			flags[codex_kvm_mem_flags, int32]
++	guest_phys_addr		int64
++	memory_size		bytesize[userspace_addr, int64]
++	userspace_addr		ptr64[inout, array[int8, 0:4096]]
++	guest_memfd_offset	int64
++	guest_memfd		fd
++	pad1			int32
++	pad2			array[int64, 14]
++}
++
++codex_kvm_dirty_log {
++	slot		int32
++	padding		int32
++	dirty_bitmap	ptr64[out, array[int64, 0:128]]
++}
++
++codex_kvm_clear_dirty_log {
++	slot		int32
++	num_pages	int32
++	first_page	int64
++	dirty_bitmap	ptr64[in, array[int64, 0:128]]
++}
++
++codex_kvm_irq_level {
++	irq	int32
++	level	int32
++}
++
++codex_kvm_pit_config {
++	flags	flags[codex_kvm_pit_flags, int32]
++	pad	array[int32, 15]
++}
++
++codex_kvm_reinject_control {
++	pit_reinject	bool8
++}
++
++codex_kvm_irqfd {
++	fd		fd
++	gsi		int32
++	flags		int32
++	resamplefd	fd
++	pad		array[int8, 16]
++}
++
++codex_kvm_ioeventfd {
++	datamatch	int64
++	addr		int64
++	len		int32[0:8]
++	fd		fd
++	flags		flags[codex_kvm_ioeventfd_flags, int32]
++	pad		array[int8, 36]
++}
++
++codex_kvm_clock_data {
++	clock	int64
++	flags	int32
++	pad	array[int32, 9]
++}
++
++codex_kvm_msi {
++	address_lo	int32
++	address_hi	int32
++	data		int32
++	flags		int32
++	devid		int32
++	pad		array[int8, 12]
++}
++
++codex_kvm_create_device {
++	type	int32
++	fd	fd
++	flags	int32
++}
++
++codex_kvm_device_attr {
++	flags	int32
++	group	int32
++	attr	int64
++	addr	ptr64[inout, array[int8, 0:4096]]
++}
++
++codex_kvm_enable_cap {
++	cap	flags[codex_kvm_caps, int32]
++	flags	int32
++	args	array[int64, 4]
++	pad	array[int8, 64]
++}
++
++codex_kvm_memory_attributes {
++	address		int64
++	size		int64
++	attributes	flags[codex_kvm_memory_attribute_flags, int64]
++	flags		int64
++}
++
++codex_kvm_create_guest_memfd {
++	size		int64
++	flags		int64
++	reserved	array[int64, 6]
++}
++
++codex_kvm_pre_fault_memory {
++	gpa	int64
++	size	int64
++	flags	int64
++	padding	array[int64, 5]
++}
++
++codex_kvm_interrupt {
++	irq	int32
++}
++
++codex_kvm_mp_state {
++	mp_state	flags[codex_kvm_mp_states, int32]
++}
++
++codex_kvm_one_reg {
++	id	int64
++	addr	ptr64[inout, array[int8, 0:256]]
++}
++
++codex_kvm_reg_list {
++	n	len[reg, int64]
++	reg	array[int64, 0:128]
++}
++
++codex_kvm_mem_flags = KVM_MEM_LOG_DIRTY_PAGES, KVM_MEM_READONLY, KVM_MEM_GUEST_MEMFD
++codex_kvm_pit_flags = KVM_PIT_SPEAKER_DUMMY
++codex_kvm_ioeventfd_flags = KVM_IOEVENTFD_FLAG_DATAMATCH, KVM_IOEVENTFD_FLAG_PIO, KVM_IOEVENTFD_FLAG_DEASSIGN, KVM_IOEVENTFD_FLAG_VIRTIO_CCW_NOTIFY
++codex_kvm_memory_attribute_flags = KVM_MEMORY_ATTRIBUTE_PRIVATE
++codex_kvm_mp_states = KVM_MP_STATE_RUNNABLE, KVM_MP_STATE_UNINITIALIZED, KVM_MP_STATE_INIT_RECEIVED, KVM_MP_STATE_HALTED, KVM_MP_STATE_SIPI_RECEIVED, KVM_MP_STATE_STOPPED, KVM_MP_STATE_CHECK_STOP, KVM_MP_STATE_OPERATING, KVM_MP_STATE_LOAD, KVM_MP_STATE_AP_RESET_HOLD, KVM_MP_STATE_SUSPENDED
++codex_kvm_caps = KVM_CAP_IRQCHIP, KVM_CAP_HLT, KVM_CAP_MMU_SHADOW_CACHE_CONTROL, KVM_CAP_USER_MEMORY, KVM_CAP_SET_TSS_ADDR, KVM_CAP_VAPIC, KVM_CAP_EXT_CPUID, KVM_CAP_CLOCKSOURCE, KVM_CAP_NR_VCPUS, KVM_CAP_NR_MEMSLOTS, KVM_CAP_PIT, KVM_CAP_MP_STATE, KVM_CAP_REINJECT_CONTROL, KVM_CAP_IRQFD, KVM_CAP_PIT2, KVM_CAP_SET_BOOT_CPU_ID, KVM_CAP_IOEVENTFD, KVM_CAP_SET_IDENTITY_MAP_ADDR, KVM_CAP_ADJUST_CLOCK, KVM_CAP_VCPU_EVENTS, KVM_CAP_ENABLE_CAP, KVM_CAP_XSAVE, KVM_CAP_XCRS, KVM_CAP_ONE_REG, KVM_CAP_DEVICE_CTRL, KVM_CAP_ENABLE_CAP_VM, KVM_CAP_CHECK_EXTENSION_VM, KVM_CAP_X86_SMM, KVM_CAP_SPLIT_IRQCHIP, KVM_CAP_HYPERV_CPUID, KVM_CAP_SREGS2, KVM_CAP_XSAVE2
+diff --git a/sys/linux/codex_kvm.txt.const b/sys/linux/codex_kvm.txt.const
+new file mode 100644
+index 0000000000..79f632f14d
+--- /dev/null
++++ b/sys/linux/codex_kvm.txt.const
+@@ -0,0 +1,150 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++KVM_CAP_ADJUST_CLOCK = amd64:39
++KVM_CAP_CHECK_EXTENSION_VM = amd64:105
++KVM_CAP_CLOCKSOURCE = amd64:8
++KVM_CAP_DEVICE_CTRL = amd64:89
++KVM_CAP_ENABLE_CAP = amd64:54
++KVM_CAP_ENABLE_CAP_VM = amd64:98
++KVM_CAP_EXT_CPUID = amd64:7
++KVM_CAP_HLT = amd64:1
++KVM_CAP_HYPERV_CPUID = amd64:167
++KVM_CAP_IOEVENTFD = amd64:36
++KVM_CAP_IRQCHIP = amd64:0
++KVM_CAP_IRQFD = amd64:32
++KVM_CAP_MMU_SHADOW_CACHE_CONTROL = amd64:2
++KVM_CAP_MP_STATE = amd64:14
++KVM_CAP_NR_MEMSLOTS = amd64:10
++KVM_CAP_NR_VCPUS = amd64:9
++KVM_CAP_ONE_REG = amd64:70
++KVM_CAP_PIT = amd64:11
++KVM_CAP_PIT2 = amd64:33
++KVM_CAP_REINJECT_CONTROL = amd64:24
++KVM_CAP_SET_BOOT_CPU_ID = amd64:34
++KVM_CAP_SET_IDENTITY_MAP_ADDR = amd64:37
++KVM_CAP_SET_TSS_ADDR = amd64:4
++KVM_CAP_SPLIT_IRQCHIP = amd64:121
++KVM_CAP_SREGS2 = amd64:200
++KVM_CAP_USER_MEMORY = amd64:3
++KVM_CAP_VAPIC = amd64:6
++KVM_CAP_VCPU_EVENTS = amd64:41
++KVM_CAP_X86_SMM = amd64:117
++KVM_CAP_XCRS = amd64:56
++KVM_CAP_XSAVE = amd64:55
++KVM_CAP_XSAVE2 = amd64:208
++KVM_CHECK_EXTENSION = amd64:44547
++KVM_CLEAR_DIRTY_LOG = amd64:3222843072
++KVM_CREATE_DEVICE = amd64:3222056672
++KVM_CREATE_GUEST_MEMFD = amd64:3225464532
++KVM_CREATE_IRQCHIP = amd64:44640
++KVM_CREATE_PIT = amd64:44644
++KVM_CREATE_PIT2 = amd64:1077980791
++KVM_CREATE_VCPU = amd64:44609
++KVM_CREATE_VM = amd64:44545
++KVM_ENABLE_CAP = amd64:1080602275
++KVM_GET_API_VERSION = amd64:44544
++KVM_GET_CLOCK = amd64:2150674044
++KVM_GET_CPUID2 = amd64:3221794449
++KVM_GET_DEBUGREGS = amd64:2155916961
++KVM_GET_DEVICE_ATTR = amd64:1075359458
++KVM_GET_DIRTY_LOG = amd64:1074835010
++KVM_GET_EMULATED_CPUID = amd64:3221794313
++KVM_GET_FPU = amd64:2174791308
++KVM_GET_IRQCHIP = amd64:3255348834
++KVM_GET_LAPIC = amd64:2214637198
++KVM_GET_MP_STATE = amd64:2147790488
++KVM_GET_MSRS = amd64:3221794440
++KVM_GET_MSR_FEATURE_INDEX_LIST = amd64:3221532170
++KVM_GET_MSR_INDEX_LIST = amd64:3221532162
++KVM_GET_NR_MMU_PAGES = amd64:44613
++KVM_GET_ONE_REG = amd64:1074835115
++KVM_GET_PIT = amd64:3225988709
++KVM_GET_PIT2 = amd64:2154868383
++KVM_GET_REGS = amd64:2156965505
++KVM_GET_REG_LIST = amd64:3221794480
++KVM_GET_SREGS = amd64:2167975555
++KVM_GET_SREGS2 = amd64:2168499916
++KVM_GET_STATS_FD = amd64:44750
++KVM_GET_SUPPORTED_CPUID = amd64:3221794309
++KVM_GET_SUPPORTED_HV_CPUID = amd64:3221794497
++KVM_GET_TSC_KHZ = amd64:44707
++KVM_GET_VCPU_EVENTS = amd64:2151722655
++KVM_GET_VCPU_MMAP_SIZE = amd64:44548
++KVM_GET_XCRS = amd64:2173218470
++KVM_GET_XSAVE = amd64:2415963812
++KVM_GET_XSAVE2 = amd64:2415963855
++KVM_HAS_DEVICE_ATTR = amd64:1075359459
++KVM_INTERRUPT = amd64:1074048646
++KVM_IOEVENTFD = amd64:1077980793
++KVM_IOEVENTFD_FLAG_DATAMATCH = amd64:1
++KVM_IOEVENTFD_FLAG_DEASSIGN = amd64:4
++KVM_IOEVENTFD_FLAG_PIO = amd64:2
++KVM_IOEVENTFD_FLAG_VIRTIO_CCW_NOTIFY = amd64:8
++KVM_IRQFD = amd64:1075883638
++KVM_IRQ_LINE = amd64:1074310753
++KVM_IRQ_LINE_STATUS = amd64:3221794407
++KVM_KVMCLOCK_CTRL = amd64:44717
++KVM_MEMORY_ATTRIBUTE_PRIVATE = amd64:8
++KVM_MEM_GUEST_MEMFD = amd64:4
++KVM_MEM_LOG_DIRTY_PAGES = amd64:1
++KVM_MEM_READONLY = amd64:2
++KVM_MP_STATE_AP_RESET_HOLD = amd64:9
++KVM_MP_STATE_CHECK_STOP = amd64:6
++KVM_MP_STATE_HALTED = amd64:3
++KVM_MP_STATE_INIT_RECEIVED = amd64:2
++KVM_MP_STATE_LOAD = amd64:8
++KVM_MP_STATE_OPERATING = amd64:7
++KVM_MP_STATE_RUNNABLE = amd64:0
++KVM_MP_STATE_SIPI_RECEIVED = amd64:4
++KVM_MP_STATE_STOPPED = amd64:5
++KVM_MP_STATE_SUSPENDED = amd64:10
++KVM_MP_STATE_UNINITIALIZED = amd64:1
++KVM_NMI = amd64:44698
++KVM_PIT_SPEAKER_DUMMY = amd64:1
++KVM_PRE_FAULT_MEMORY = amd64:3225464533
++KVM_REINJECT_CONTROL = amd64:44657
++KVM_RESET_DIRTY_RINGS = amd64:44743
++KVM_RUN = amd64:44672
++KVM_SET_BOOT_CPU_ID = amd64:44664
++KVM_SET_CLOCK = amd64:1076932219
++KVM_SET_CPUID = amd64:1074310794
++KVM_SET_CPUID2 = amd64:1074310800
++KVM_SET_DEBUGREGS = amd64:1082175138
++KVM_SET_DEVICE_ATTR = amd64:1075359457
++KVM_SET_FPU = amd64:1101049485
++KVM_SET_GSI_ROUTING = amd64:1074310762
++KVM_SET_GUEST_DEBUG = amd64:1078505115
++KVM_SET_IDENTITY_MAP_ADDR = amd64:1074310728
++KVM_SET_IRQCHIP = amd64:2181607011
++KVM_SET_LAPIC = amd64:1140895375
++KVM_SET_MEMORY_ATTRIBUTES = amd64:1075883730
++KVM_SET_MP_STATE = amd64:1074048665
++KVM_SET_MSRS = amd64:1074310793
++KVM_SET_NR_MMU_PAGES = amd64:44612
++KVM_SET_ONE_REG = amd64:1074835116
++KVM_SET_PIT = amd64:2152246886
++KVM_SET_PIT2 = amd64:1081126560
++KVM_SET_REGS = amd64:1083223682
++KVM_SET_SIGNAL_MASK = amd64:1074048651
++KVM_SET_SREGS = amd64:1094233732
++KVM_SET_SREGS2 = amd64:1094758093
++KVM_SET_TSC_KHZ = amd64:44706
++KVM_SET_TSS_ADDR = amd64:44615
++KVM_SET_USER_MEMORY_REGION = amd64:1075883590
++KVM_SET_USER_MEMORY_REGION2 = amd64:1084272201
++KVM_SET_VAPIC_ADDR = amd64:1074310803
++KVM_SET_VCPU_EVENTS = amd64:1077980832
++KVM_SET_XCRS = amd64:1099476647
++KVM_SET_XSAVE = amd64:1342221989
++KVM_SIGNAL_MSI = amd64:1075883685
++KVM_SMI = amd64:44727
++KVM_TPR_ACCESS_REPORTING = amd64:3223891602
++KVM_TRANSLATE = amd64:3222843013
++KVM_X86_GET_MCE_CAP_SUPPORTED = amd64:2148052637
++KVM_X86_SETUP_MCE = amd64:1074310812
++KVM_X86_SET_MCE = amd64:1077980830
++KVM_X86_SET_MSR_FILTER = amd64:1099476678
++__NR_ioctl = amd64:16
++__NR_mmap = amd64:9
++__NR_openat = amd64:257
+diff --git a/sys/linux/codex_ppp.txt b/sys/linux/codex_ppp.txt
+new file mode 100644
+index 0000000000..3f36e006d0
+--- /dev/null
++++ b/sys/linux/codex_ppp.txt
+@@ -0,0 +1,138 @@
++meta arches["amd64"]
++# SPDX-License-Identifier: Apache-2.0
++
++include <uapi/asm/ioctl.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/filter.h>
++include <uapi/linux/if_ppp.h>
++include <uapi/linux/ppp-ioctl.h>
++include <uapi/linux/ppp_defs.h>
++include <uapi/linux/sockios.h>
++
++resource fd_codex_ppp[fd]
++
++openat$__CODEX_ppp(fd const[AT_FDCWD], file ptr[in, string["/dev/ppp"]], flags flags[open_flags], mode const[0]) fd_codex_ppp
++read$__CODEX_ppp(fd fd_codex_ppp, data buffer[out], len len[data])
++write$__CODEX_ppp(fd fd_codex_ppp, data buffer[in], len len[data])
++
++ioctl$__CODEX_PPPIOCGFLAGS(fd fd_codex_ppp, cmd const[PPPIOCGFLAGS], arg ptr[out, flags[codex_ppp_flags, int32]])
++ioctl$__CODEX_PPPIOCSFLAGS(fd fd_codex_ppp, cmd const[PPPIOCSFLAGS], arg ptr[in, flags[codex_ppp_flags, int32]])
++ioctl$__CODEX_PPPIOCGASYNCMAP(fd fd_codex_ppp, cmd const[PPPIOCGASYNCMAP], arg ptr[out, int32])
++ioctl$__CODEX_PPPIOCSASYNCMAP(fd fd_codex_ppp, cmd const[PPPIOCSASYNCMAP], arg ptr[in, int32])
++ioctl$__CODEX_PPPIOCGUNIT(fd fd_codex_ppp, cmd const[PPPIOCGUNIT], arg ptr[out, int32])
++ioctl$__CODEX_PPPIOCGRASYNCMAP(fd fd_codex_ppp, cmd const[PPPIOCGRASYNCMAP], arg ptr[out, int32])
++ioctl$__CODEX_PPPIOCSRASYNCMAP(fd fd_codex_ppp, cmd const[PPPIOCSRASYNCMAP], arg ptr[in, int32])
++ioctl$__CODEX_PPPIOCGMRU(fd fd_codex_ppp, cmd const[PPPIOCGMRU], arg ptr[out, int32])
++ioctl$__CODEX_PPPIOCSMRU(fd fd_codex_ppp, cmd const[PPPIOCSMRU], arg ptr[in, int32])
++ioctl$__CODEX_PPPIOCSMAXCID(fd fd_codex_ppp, cmd const[PPPIOCSMAXCID], arg ptr[in, int32])
++ioctl$__CODEX_PPPIOCGXASYNCMAP(fd fd_codex_ppp, cmd const[PPPIOCGXASYNCMAP], arg ptr[out, array[int32, 8]])
++ioctl$__CODEX_PPPIOCSXASYNCMAP(fd fd_codex_ppp, cmd const[PPPIOCSXASYNCMAP], arg ptr[in, array[int32, 8]])
++ioctl$__CODEX_PPPIOCXFERUNIT(fd fd_codex_ppp, cmd const[PPPIOCXFERUNIT], arg const[0])
++ioctl$__CODEX_PPPIOCSCOMPRESS(fd fd_codex_ppp, cmd const[PPPIOCSCOMPRESS], arg ptr[in, codex_ppp_option_data])
++ioctl$__CODEX_PPPIOCGNPMODE(fd fd_codex_ppp, cmd const[PPPIOCGNPMODE], arg ptr[inout, codex_ppp_npioctl])
++ioctl$__CODEX_PPPIOCSNPMODE(fd fd_codex_ppp, cmd const[PPPIOCSNPMODE], arg ptr[in, codex_ppp_npioctl])
++ioctl$__CODEX_PPPIOCSPASS(fd fd_codex_ppp, cmd const[PPPIOCSPASS], arg ptr[in, codex_ppp_option_data])
++ioctl$__CODEX_PPPIOCSACTIVE(fd fd_codex_ppp, cmd const[PPPIOCSACTIVE], arg ptr[in, codex_ppp_option_data])
++ioctl$__CODEX_PPPIOCGDEBUG(fd fd_codex_ppp, cmd const[PPPIOCGDEBUG], arg ptr[out, int32])
++ioctl$__CODEX_PPPIOCSDEBUG(fd fd_codex_ppp, cmd const[PPPIOCSDEBUG], arg ptr[in, int32])
++ioctl$__CODEX_PPPIOCGIDLE32(fd fd_codex_ppp, cmd const[PPPIOCGIDLE32], arg ptr[out, codex_ppp_idle32])
++ioctl$__CODEX_PPPIOCGIDLE64(fd fd_codex_ppp, cmd const[PPPIOCGIDLE64], arg ptr[out, codex_ppp_idle64])
++ioctl$__CODEX_PPPIOCNEWUNIT(fd fd_codex_ppp, cmd const[PPPIOCNEWUNIT], arg ptr[inout, int32])
++ioctl$__CODEX_PPPIOCATTACH(fd fd_codex_ppp, cmd const[PPPIOCATTACH], arg ptr[in, int32])
++ioctl$__CODEX_PPPIOCDETACH(fd fd_codex_ppp, cmd const[PPPIOCDETACH], arg const[0])
++ioctl$__CODEX_PPPIOCSMRRU(fd fd_codex_ppp, cmd const[PPPIOCSMRRU], arg ptr[in, int32])
++ioctl$__CODEX_PPPIOCCONNECT(fd fd_codex_ppp, cmd const[PPPIOCCONNECT], arg ptr[in, int32])
++ioctl$__CODEX_PPPIOCDISCONN(fd fd_codex_ppp, cmd const[PPPIOCDISCONN], arg const[0])
++ioctl$__CODEX_PPPIOCATTCHAN(fd fd_codex_ppp, cmd const[PPPIOCATTCHAN], arg ptr[in, int32])
++ioctl$__CODEX_PPPIOCGCHAN(fd fd_codex_ppp, cmd const[PPPIOCGCHAN], arg ptr[out, int32])
++ioctl$__CODEX_PPPIOCGL2TPSTATS(fd fd_codex_ppp, cmd const[PPPIOCGL2TPSTATS], arg ptr[out, codex_pppol2tp_ioc_stats])
++ioctl$__CODEX_PPPIOCBRIDGECHAN(fd fd_codex_ppp, cmd const[PPPIOCBRIDGECHAN], arg ptr[in, int32])
++ioctl$__CODEX_PPPIOCUNBRIDGECHAN(fd fd_codex_ppp, cmd const[PPPIOCUNBRIDGECHAN], arg const[0])
++ioctl$__CODEX_SIOCGPPPSTATS(fd fd_codex_ppp, cmd const[SIOCGPPPSTATS], arg ptr[out, codex_ppp_stats])
++ioctl$__CODEX_SIOCGPPPVER(fd fd_codex_ppp, cmd const[SIOCGPPPVER], arg ptr[out, array[int8, 32]])
++ioctl$__CODEX_SIOCGPPPCSTATS(fd fd_codex_ppp, cmd const[SIOCGPPPCSTATS], arg ptr[out, codex_ppp_comp_stats])
++
++codex_ppp_option_data {
++	ptr		ptr64[in, array[int8, 0:512]]
++	length		bytesize[ptr, int32]
++	transmit	bool32
++}
++
++codex_ppp_npioctl {
++	protocol	int32
++	mode		flags[codex_ppp_np_modes, int32]
++}
++
++codex_ppp_idle32 {
++	xmit_idle	int32
++	recv_idle	int32
++}
++
++codex_ppp_idle64 {
++	xmit_idle	int64
++	recv_idle	int64
++}
++
++codex_pppol2tp_ioc_stats {
++	tunnel_id	int16
++	session_id	int16
++	using_ipsec	int32
++	tx_packets	int64
++	tx_bytes	int64
++	tx_errors	int64
++	rx_packets	int64
++	rx_bytes	int64
++	rx_seq_discards	int64
++	rx_oos_packets	int64
++	rx_errors	int64
++}
++
++codex_ppp_stats {
++	p	codex_pppstat
++	vj	codex_vjstat
++}
++
++codex_ppp_comp_stats {
++	c	codex_compstat
++	d	codex_compstat
++}
++
++codex_pppstat {
++	ppp_discards	int32
++	ppp_ibytes	int32
++	ppp_ioctects	int32
++	ppp_ipackets	int32
++	ppp_ierrors	int32
++	ppp_ilqrs	int32
++	ppp_obytes	int32
++	ppp_ooctects	int32
++	ppp_opackets	int32
++	ppp_oerrors	int32
++	ppp_olqrs	int32
++}
++
++codex_vjstat {
++	vjs_packets		int32
++	vjs_compressed		int32
++	vjs_searches		int32
++	vjs_misses		int32
++	vjs_uncompressedin	int32
++	vjs_compressedin	int32
++	vjs_errorin		int32
++	vjs_tossed		int32
++}
++
++codex_compstat {
++	unc_bytes	int32
++	unc_packets	int32
++	comp_bytes	int32
++	comp_packets	int32
++	inc_bytes	int32
++	inc_packets	int32
++	in_count	int32
++	bytes_out	int32
++	ratio		int64
++}
++
++codex_ppp_np_modes = NPMODE_PASS, NPMODE_DROP, NPMODE_ERROR, NPMODE_QUEUE
++codex_ppp_flags = SC_COMP_PROT, SC_COMP_AC, SC_COMP_TCP, SC_NO_TCP_CCID, SC_REJ_COMP_AC, SC_REJ_COMP_TCP, SC_CCP_OPEN, SC_CCP_UP, SC_ENABLE_IP, SC_LOOP_TRAFFIC, SC_MULTILINK, SC_MP_SHORTSEQ, SC_COMP_RUN, SC_DECOMP_RUN, SC_MP_XSHORTSEQ, SC_DEBUG
+diff --git a/sys/linux/codex_ppp.txt.const b/sys/linux/codex_ppp.txt.const
+new file mode 100644
+index 0000000000..f9b47958f5
+--- /dev/null
++++ b/sys/linux/codex_ppp.txt.const
+@@ -0,0 +1,63 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++NPMODE_DROP = amd64:1
++NPMODE_ERROR = amd64:2
++NPMODE_PASS = amd64:0
++NPMODE_QUEUE = amd64:3
++PPPIOCATTACH = amd64:1074033725
++PPPIOCATTCHAN = amd64:1074033720
++PPPIOCBRIDGECHAN = amd64:1074033717
++PPPIOCCONNECT = amd64:1074033722
++PPPIOCDETACH = amd64:1074033724
++PPPIOCDISCONN = amd64:29753
++PPPIOCGASYNCMAP = amd64:2147775576
++PPPIOCGCHAN = amd64:2147775543
++PPPIOCGDEBUG = amd64:2147775553
++PPPIOCGFLAGS = amd64:2147775578
++PPPIOCGIDLE32 = amd64:2148037695
++PPPIOCGIDLE64 = amd64:2148561983
++PPPIOCGL2TPSTATS = amd64:2152231990
++PPPIOCGMRU = amd64:2147775571
++PPPIOCGNPMODE = amd64:3221779532
++PPPIOCGRASYNCMAP = amd64:2147775573
++PPPIOCGUNIT = amd64:2147775574
++PPPIOCGXASYNCMAP = amd64:2149610576
++PPPIOCNEWUNIT = amd64:3221517374
++PPPIOCSACTIVE = amd64:1074820166
++PPPIOCSASYNCMAP = amd64:1074033751
++PPPIOCSCOMPRESS = amd64:1074820173
++PPPIOCSDEBUG = amd64:1074033728
++PPPIOCSFLAGS = amd64:1074033753
++PPPIOCSMAXCID = amd64:1074033745
++PPPIOCSMRRU = amd64:1074033723
++PPPIOCSMRU = amd64:1074033746
++PPPIOCSNPMODE = amd64:1074295883
++PPPIOCSPASS = amd64:1074820167
++PPPIOCSRASYNCMAP = amd64:1074033748
++PPPIOCSXASYNCMAP = amd64:1075868751
++PPPIOCUNBRIDGECHAN = amd64:29748
++PPPIOCXFERUNIT = amd64:29774
++SC_CCP_OPEN = amd64:64
++SC_CCP_UP = amd64:128
++SC_COMP_AC = amd64:2
++SC_COMP_PROT = amd64:1
++SC_COMP_RUN = amd64:4096
++SC_COMP_TCP = amd64:4
++SC_DEBUG = amd64:65536
++SC_DECOMP_RUN = amd64:8192
++SC_ENABLE_IP = amd64:256
++SC_LOOP_TRAFFIC = amd64:512
++SC_MP_SHORTSEQ = amd64:2048
++SC_MP_XSHORTSEQ = amd64:16384
++SC_MULTILINK = amd64:1024
++SC_NO_TCP_CCID = amd64:8
++SC_REJ_COMP_AC = amd64:16
++SC_REJ_COMP_TCP = amd64:32
++SIOCGPPPCSTATS = amd64:35314
++SIOCGPPPSTATS = amd64:35312
++SIOCGPPPVER = amd64:35313
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
++__NR_read = amd64:0
++__NR_write = amd64:1
+diff --git a/sys/linux/codex_ptp.txt b/sys/linux/codex_ptp.txt
+new file mode 100644
+index 0000000000..2d34741f99
+--- /dev/null
++++ b/sys/linux/codex_ptp.txt
+@@ -0,0 +1,106 @@
++meta arches["amd64"]
++# SPDX-License-Identifier: Apache-2.0
++
++include <uapi/asm/ioctl.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/ptp_clock.h>
++
++resource fd_codex_ptp[fd]
++
++syz_open_dev$__CODEX_ptp(dev ptr[in, string["/dev/ptp#"]], id intptr, flags flags[open_flags]) fd_codex_ptp
++openat$__CODEX_ptp0(fd const[AT_FDCWD], file ptr[in, string["/dev/ptp0"]], flags flags[open_flags], mode const[0]) fd_codex_ptp
++read$__CODEX_ptp(fd fd_codex_ptp, data ptr[out, array[codex_ptp_extts_event, 0:64]], len bytesize[data])
++
++ioctl$__CODEX_PTP_CLOCK_GETCAPS(fd fd_codex_ptp, cmd const[PTP_CLOCK_GETCAPS], arg ptr[out, codex_ptp_clock_caps])
++ioctl$__CODEX_PTP_EXTTS_REQUEST(fd fd_codex_ptp, cmd const[PTP_EXTTS_REQUEST], arg ptr[in, codex_ptp_extts_request])
++ioctl$__CODEX_PTP_PEROUT_REQUEST(fd fd_codex_ptp, cmd const[PTP_PEROUT_REQUEST], arg ptr[in, codex_ptp_perout_request])
++ioctl$__CODEX_PTP_ENABLE_PPS(fd fd_codex_ptp, cmd const[PTP_ENABLE_PPS], arg ptr[in, bool32])
++ioctl$__CODEX_PTP_SYS_OFFSET(fd fd_codex_ptp, cmd const[PTP_SYS_OFFSET], arg ptr[inout, codex_ptp_sys_offset])
++ioctl$__CODEX_PTP_PIN_GETFUNC(fd fd_codex_ptp, cmd const[PTP_PIN_GETFUNC], arg ptr[inout, codex_ptp_pin_desc])
++ioctl$__CODEX_PTP_PIN_SETFUNC(fd fd_codex_ptp, cmd const[PTP_PIN_SETFUNC], arg ptr[in, codex_ptp_pin_desc])
++ioctl$__CODEX_PTP_SYS_OFFSET_PRECISE(fd fd_codex_ptp, cmd const[PTP_SYS_OFFSET_PRECISE], arg ptr[out, codex_ptp_sys_offset_precise])
++ioctl$__CODEX_PTP_SYS_OFFSET_EXTENDED(fd fd_codex_ptp, cmd const[PTP_SYS_OFFSET_EXTENDED], arg ptr[inout, codex_ptp_sys_offset_extended])
++ioctl$__CODEX_PTP_CLOCK_GETCAPS2(fd fd_codex_ptp, cmd const[PTP_CLOCK_GETCAPS2], arg ptr[out, codex_ptp_clock_caps])
++ioctl$__CODEX_PTP_EXTTS_REQUEST2(fd fd_codex_ptp, cmd const[PTP_EXTTS_REQUEST2], arg ptr[in, codex_ptp_extts_request])
++ioctl$__CODEX_PTP_PEROUT_REQUEST2(fd fd_codex_ptp, cmd const[PTP_PEROUT_REQUEST2], arg ptr[in, codex_ptp_perout_request])
++ioctl$__CODEX_PTP_ENABLE_PPS2(fd fd_codex_ptp, cmd const[PTP_ENABLE_PPS2], arg ptr[in, bool32])
++ioctl$__CODEX_PTP_SYS_OFFSET2(fd fd_codex_ptp, cmd const[PTP_SYS_OFFSET2], arg ptr[inout, codex_ptp_sys_offset])
++ioctl$__CODEX_PTP_PIN_GETFUNC2(fd fd_codex_ptp, cmd const[PTP_PIN_GETFUNC2], arg ptr[inout, codex_ptp_pin_desc])
++ioctl$__CODEX_PTP_PIN_SETFUNC2(fd fd_codex_ptp, cmd const[PTP_PIN_SETFUNC2], arg ptr[in, codex_ptp_pin_desc])
++ioctl$__CODEX_PTP_SYS_OFFSET_PRECISE2(fd fd_codex_ptp, cmd const[PTP_SYS_OFFSET_PRECISE2], arg ptr[out, codex_ptp_sys_offset_precise])
++ioctl$__CODEX_PTP_SYS_OFFSET_EXTENDED2(fd fd_codex_ptp, cmd const[PTP_SYS_OFFSET_EXTENDED2], arg ptr[inout, codex_ptp_sys_offset_extended])
++ioctl$__CODEX_PTP_MASK_CLEAR_ALL(fd fd_codex_ptp, cmd const[PTP_MASK_CLEAR_ALL], arg const[0])
++ioctl$__CODEX_PTP_MASK_EN_SINGLE(fd fd_codex_ptp, cmd const[PTP_MASK_EN_SINGLE], arg ptr[in, int32])
++ioctl$__CODEX_PTP_SYS_OFFSET_PRECISE_CYCLES(fd fd_codex_ptp, cmd const[PTP_SYS_OFFSET_PRECISE_CYCLES], arg ptr[out, codex_ptp_sys_offset_precise])
++ioctl$__CODEX_PTP_SYS_OFFSET_EXTENDED_CYCLES(fd fd_codex_ptp, cmd const[PTP_SYS_OFFSET_EXTENDED_CYCLES], arg ptr[inout, codex_ptp_sys_offset_extended])
++
++codex_ptp_clock_time {
++	sec		int64
++	nsec		int32
++	reserved	int32
++}
++
++codex_ptp_clock_caps {
++	max_adj			int32
++	n_alarm			int32
++	n_ext_ts		int32
++	n_per_out		int32
++	pps			int32
++	n_pins			int32
++	cross_timestamping	int32
++	adjust_phase		int32
++	max_phase_adj		int32
++	rsv			array[int32, 11]
++}
++
++codex_ptp_extts_request {
++	index	int32
++	flags	flags[codex_ptp_extts_flags, int32]
++	rsv	array[int32, 2]
++}
++
++codex_ptp_perout_request {
++	start	codex_ptp_clock_time
++	period	codex_ptp_clock_time
++	index	int32
++	flags	flags[codex_ptp_perout_flags, int32]
++	on	codex_ptp_clock_time
++	rsv	array[int32, 4]
++}
++
++codex_ptp_sys_offset {
++	n_samples	int32[0:PTP_MAX_SAMPLES]
++	rsv		array[int32, 3]
++	ts		array[codex_ptp_clock_time, 51]
++}
++
++codex_ptp_sys_offset_extended {
++	n_samples	int32[0:PTP_MAX_SAMPLES]
++	rsv		array[int32, 3]
++	ts		array[codex_ptp_clock_time, 75]
++}
++
++codex_ptp_sys_offset_precise {
++	device		codex_ptp_clock_time
++	sys_realtime	codex_ptp_clock_time
++	sys_monoraw	codex_ptp_clock_time
++	rsv		array[int32, 4]
++}
++
++codex_ptp_pin_desc {
++	name	array[int8, 64]
++	index	int32
++	func	int32
++	chan	int32
++	rsv	array[int32, 5]
++}
++
++codex_ptp_extts_event {
++	t	codex_ptp_clock_time
++	index	int32
++	flags	int32
++	rsv	array[int32, 2]
++}
++
++codex_ptp_extts_flags = PTP_ENABLE_FEATURE, PTP_RISING_EDGE, PTP_FALLING_EDGE, PTP_STRICT_FLAGS, PTP_EXT_OFFSET
++codex_ptp_perout_flags = PTP_PEROUT_ONE_SHOT, PTP_PEROUT_DUTY_CYCLE, PTP_PEROUT_PHASE
+diff --git a/sys/linux/codex_ptp.txt.const b/sys/linux/codex_ptp.txt.const
+new file mode 100644
+index 0000000000..6b0ec2a531
+--- /dev/null
++++ b/sys/linux/codex_ptp.txt.const
+@@ -0,0 +1,37 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++PTP_CLOCK_GETCAPS = amd64:2152742145
++PTP_CLOCK_GETCAPS2 = amd64:2152742154
++PTP_ENABLE_FEATURE = amd64:1
++PTP_ENABLE_PPS = amd64:1074019588
++PTP_ENABLE_PPS2 = amd64:1074019597
++PTP_EXTTS_REQUEST = amd64:1074806018
++PTP_EXTTS_REQUEST2 = amd64:1074806027
++PTP_EXT_OFFSET = amd64:16
++PTP_FALLING_EDGE = amd64:4
++PTP_MASK_CLEAR_ALL = amd64:15635
++PTP_MASK_EN_SINGLE = amd64:1074019604
++PTP_MAX_SAMPLES = amd64:25
++PTP_PEROUT_DUTY_CYCLE = amd64:2
++PTP_PEROUT_ONE_SHOT = amd64:1
++PTP_PEROUT_PHASE = amd64:4
++PTP_PEROUT_REQUEST = amd64:1077427459
++PTP_PEROUT_REQUEST2 = amd64:1077427468
++PTP_PIN_GETFUNC = amd64:3227532550
++PTP_PIN_GETFUNC2 = amd64:3227532559
++PTP_PIN_SETFUNC = amd64:1080048903
++PTP_PIN_SETFUNC2 = amd64:1080048912
++PTP_RISING_EDGE = amd64:2
++PTP_STRICT_FLAGS = amd64:8
++PTP_SYS_OFFSET = amd64:1128283397
++PTP_SYS_OFFSET2 = amd64:1128283406
++PTP_SYS_OFFSET_EXTENDED = amd64:3300932873
++PTP_SYS_OFFSET_EXTENDED2 = amd64:3300932882
++PTP_SYS_OFFSET_EXTENDED_CYCLES = amd64:3300932886
++PTP_SYS_OFFSET_PRECISE = amd64:3225435400
++PTP_SYS_OFFSET_PRECISE2 = amd64:3225435409
++PTP_SYS_OFFSET_PRECISE_CYCLES = amd64:3225435413
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
++__NR_read = amd64:0
+diff --git a/sys/linux/codex_rdma_cm.txt b/sys/linux/codex_rdma_cm.txt
+new file mode 100644
+index 0000000000..373fbed8e4
+--- /dev/null
++++ b/sys/linux/codex_rdma_cm.txt
+@@ -0,0 +1,389 @@
++meta arches["amd64"]
++# SPDX-License-Identifier: Apache-2.0
++
++include <uapi/linux/fcntl.h>
++include <uapi/rdma/rdma_user_cm.h>
++
++resource fd_codex_rdma_cm[fd]
++
++openat$__CODEX_rdma_cm(fd const[AT_FDCWD], file ptr[in, string["/dev/infiniband/rdma_cm"]], flags flags[open_flags], mode const[0]) fd_codex_rdma_cm
++read$__CODEX_rdma_cm(fd fd_codex_rdma_cm, event ptr[out, codex_rdma_ucm_event_resp], len bytesize[event])
++
++write$__CODEX_RDMA_USER_CM_CMD_CREATE_ID(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_create_id_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_DESTROY_ID(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_destroy_id_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_BIND_IP(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_bind_ip_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_RESOLVE_IP(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_resolve_ip_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_RESOLVE_ROUTE(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_resolve_route_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_QUERY_ROUTE(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_query_route_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_CONNECT(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_connect_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_LISTEN(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_listen_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_ACCEPT(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_accept_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_REJECT(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_reject_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_DISCONNECT(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_disconnect_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_INIT_QP_ATTR(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_init_qp_attr_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_GET_EVENT(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_get_event_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_GET_OPTION(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_get_option_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_SET_OPTION(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_set_option_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_NOTIFY(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_notify_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_JOIN_IP_MCAST(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_join_ip_mcast_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_LEAVE_MCAST(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_leave_mcast_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_MIGRATE_ID(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_migrate_id_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_QUERY(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_query_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_BIND(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_bind_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_RESOLVE_ADDR(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_resolve_addr_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_JOIN_MCAST(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_join_mcast_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_RESOLVE_IB_SERVICE(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_resolve_ib_service_msg], len bytesize[data])
++write$__CODEX_RDMA_USER_CM_CMD_WRITE_CM_EVENT(fd fd_codex_rdma_cm, data ptr[in, codex_rdma_ucm_write_event_msg], len bytesize[data])
++
++codex_rdma_ucm_hdr_create_id {
++	cmd	const[RDMA_USER_CM_CMD_CREATE_ID, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_destroy_id {
++	cmd	const[RDMA_USER_CM_CMD_DESTROY_ID, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_bind_ip {
++	cmd	const[RDMA_USER_CM_CMD_BIND_IP, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_resolve_ip {
++	cmd	const[RDMA_USER_CM_CMD_RESOLVE_IP, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_resolve_route {
++	cmd	const[RDMA_USER_CM_CMD_RESOLVE_ROUTE, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_query_route {
++	cmd	const[RDMA_USER_CM_CMD_QUERY_ROUTE, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_connect {
++	cmd	const[RDMA_USER_CM_CMD_CONNECT, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_listen {
++	cmd	const[RDMA_USER_CM_CMD_LISTEN, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_accept {
++	cmd	const[RDMA_USER_CM_CMD_ACCEPT, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_reject {
++	cmd	const[RDMA_USER_CM_CMD_REJECT, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_disconnect {
++	cmd	const[RDMA_USER_CM_CMD_DISCONNECT, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_init_qp_attr {
++	cmd	const[RDMA_USER_CM_CMD_INIT_QP_ATTR, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_get_event {
++	cmd	const[RDMA_USER_CM_CMD_GET_EVENT, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_get_option {
++	cmd	const[RDMA_USER_CM_CMD_GET_OPTION, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_set_option {
++	cmd	const[RDMA_USER_CM_CMD_SET_OPTION, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_notify {
++	cmd	const[RDMA_USER_CM_CMD_NOTIFY, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_join_ip_mcast {
++	cmd	const[RDMA_USER_CM_CMD_JOIN_IP_MCAST, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_leave_mcast {
++	cmd	const[RDMA_USER_CM_CMD_LEAVE_MCAST, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_migrate_id {
++	cmd	const[RDMA_USER_CM_CMD_MIGRATE_ID, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_query {
++	cmd	const[RDMA_USER_CM_CMD_QUERY, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_bind {
++	cmd	const[RDMA_USER_CM_CMD_BIND, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_resolve_addr {
++	cmd	const[RDMA_USER_CM_CMD_RESOLVE_ADDR, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_join_mcast {
++	cmd	const[RDMA_USER_CM_CMD_JOIN_MCAST, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_resolve_ib_service {
++	cmd	const[RDMA_USER_CM_CMD_RESOLVE_IB_SERVICE, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_ucm_hdr_write_event {
++	cmd	const[RDMA_USER_CM_CMD_WRITE_CM_EVENT, int32]
++	in_len	int16[0:1024]
++	out_len	int16[0:1024]
++}
++
++codex_rdma_sockaddr_storage {
++	data	array[int8, 128]
++}
++
++codex_rdma_ucm_create_id_msg {
++	hdr		codex_rdma_ucm_hdr_create_id
++	uid		int64
++	response	ptr64[out, codex_rdma_ucm_create_id_resp]
++	ps		int16
++	qp_type		int8
++	port_space	int8
++}
++
++codex_rdma_ucm_create_id_resp {
++	id	int32
++}
++
++codex_rdma_ucm_destroy_id_msg {
++	hdr		codex_rdma_ucm_hdr_destroy_id
++	id		int32
++	reserved	int32
++}
++
++codex_rdma_ucm_bind_ip_msg {
++	hdr		codex_rdma_ucm_hdr_bind_ip
++	id		int32
++	reserved	int32
++	addr		codex_rdma_sockaddr_storage
++}
++
++codex_rdma_ucm_resolve_ip_msg {
++	hdr		codex_rdma_ucm_hdr_resolve_ip
++	id		int32
++	timeout_ms	int32
++	src_addr	codex_rdma_sockaddr_storage
++	dst_addr	codex_rdma_sockaddr_storage
++}
++
++codex_rdma_ucm_resolve_route_msg {
++	hdr		codex_rdma_ucm_hdr_resolve_route
++	id		int32
++	timeout_ms	int32
++}
++
++codex_rdma_ucm_query_route_msg {
++	hdr		codex_rdma_ucm_hdr_query_route
++	id		int32
++	reserved	int32
++}
++
++codex_rdma_ucm_connect_msg {
++	hdr	codex_rdma_ucm_hdr_connect
++	param	codex_rdma_ucm_conn_param
++}
++
++codex_rdma_ucm_listen_msg {
++	hdr	codex_rdma_ucm_hdr_listen
++	id	int32
++	backlog	int32
++}
++
++codex_rdma_ucm_accept_msg {
++	hdr	codex_rdma_ucm_hdr_accept
++	param	codex_rdma_ucm_conn_param
++}
++
++codex_rdma_ucm_reject_msg {
++	hdr			codex_rdma_ucm_hdr_reject
++	id			int32
++	private_data_len	bytesize[private_data, int8]
++	private_data		ptr64[in, array[int8, 0:256]]
++}
++
++codex_rdma_ucm_disconnect_msg {
++	hdr		codex_rdma_ucm_hdr_disconnect
++	id		int32
++	reserved	int32
++}
++
++codex_rdma_ucm_init_qp_attr_msg {
++	hdr		codex_rdma_ucm_hdr_init_qp_attr
++	id		int32
++	qp_state	int32
++	response	ptr64[out, array[int8, 0:256]]
++}
++
++codex_rdma_ucm_get_event_msg {
++	hdr		codex_rdma_ucm_hdr_get_event
++	response	ptr64[out, codex_rdma_ucm_event_resp]
++}
++
++codex_rdma_ucm_get_option_msg {
++	hdr	codex_rdma_ucm_hdr_get_option
++	id	int32
++	level	int32
++	optname	int32
++	optlen	bytesize[optval, int32]
++	optval	ptr64[inout, array[int8, 0:256]]
++}
++
++codex_rdma_ucm_set_option_msg {
++	hdr	codex_rdma_ucm_hdr_set_option
++	id	int32
++	level	int32
++	optname	int32
++	optlen	bytesize[optval, int32]
++	optval	ptr64[inout, array[int8, 0:256]]
++}
++
++codex_rdma_ucm_notify_msg {
++	hdr	codex_rdma_ucm_hdr_notify
++	id	int32
++	event	int32
++}
++
++codex_rdma_ucm_join_ip_mcast_msg {
++	hdr		codex_rdma_ucm_hdr_join_ip_mcast
++	id		int32
++	reserved	int32
++	addr		codex_rdma_sockaddr_storage
++}
++
++codex_rdma_ucm_leave_mcast_msg {
++	hdr		codex_rdma_ucm_hdr_leave_mcast
++	id		int32
++	reserved	int32
++}
++
++codex_rdma_ucm_migrate_id_msg {
++	hdr	codex_rdma_ucm_hdr_migrate_id
++	id	int32
++	fd	fd
++}
++
++codex_rdma_ucm_query_msg {
++	hdr		codex_rdma_ucm_hdr_query
++	id		int32
++	option		int32
++	response	ptr64[out, array[int8, 0:512]]
++}
++
++codex_rdma_ucm_bind_msg {
++	hdr		codex_rdma_ucm_hdr_bind
++	id		int32
++	reserved	int32
++	addr		codex_rdma_sockaddr_storage
++}
++
++codex_rdma_ucm_resolve_addr_msg {
++	hdr		codex_rdma_ucm_hdr_resolve_addr
++	id		int32
++	timeout_ms	int32
++	src_addr	codex_rdma_sockaddr_storage
++	dst_addr	codex_rdma_sockaddr_storage
++}
++
++codex_rdma_ucm_join_mcast_msg {
++	hdr		codex_rdma_ucm_hdr_join_mcast
++	id		int32
++	uid		int64
++	addr		codex_rdma_sockaddr_storage
++	response	ptr64[out, array[int8, 0:64]]
++}
++
++codex_rdma_ucm_resolve_ib_service_msg {
++	hdr		codex_rdma_ucm_hdr_resolve_ib_service
++	id		int32
++	timeout_ms	int32
++	addr		codex_rdma_sockaddr_storage
++}
++
++codex_rdma_ucm_write_event_msg {
++	hdr		codex_rdma_ucm_hdr_write_event
++	id		int32
++	event		int32
++	status		int32
++	data_len	bytesize[data, int32]
++	data		ptr64[in, array[int8, 0:256]]
++}
++
++codex_rdma_ucm_conn_param {
++	id			int32
++	qp_num			int32
++	qp_type			int32
++	srq			bool8
++	responder_resources	int8
++	initiator_depth		int8
++	flow_control		int8
++	retry_count		int8
++	rnr_retry_count		int8
++	valid			int8
++	private_data_len	bytesize[private_data, int8]
++	private_data		ptr64[in, array[int8, 0:256]]
++}
++
++codex_rdma_ucm_event_resp {
++	id	int32
++	event	int32
++	status	int32
++	uid	int64
++	data	array[int8, 256]
++}
+diff --git a/sys/linux/codex_rdma_cm.txt.const b/sys/linux/codex_rdma_cm.txt.const
+new file mode 100644
+index 0000000000..6cb7dfd7d3
+--- /dev/null
++++ b/sys/linux/codex_rdma_cm.txt.const
+@@ -0,0 +1,31 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++RDMA_USER_CM_CMD_ACCEPT = amd64:8
++RDMA_USER_CM_CMD_BIND = amd64:20
++RDMA_USER_CM_CMD_BIND_IP = amd64:2
++RDMA_USER_CM_CMD_CONNECT = amd64:6
++RDMA_USER_CM_CMD_CREATE_ID = amd64:0
++RDMA_USER_CM_CMD_DESTROY_ID = amd64:1
++RDMA_USER_CM_CMD_DISCONNECT = amd64:10
++RDMA_USER_CM_CMD_GET_EVENT = amd64:12
++RDMA_USER_CM_CMD_GET_OPTION = amd64:13
++RDMA_USER_CM_CMD_INIT_QP_ATTR = amd64:11
++RDMA_USER_CM_CMD_JOIN_IP_MCAST = amd64:16
++RDMA_USER_CM_CMD_JOIN_MCAST = amd64:22
++RDMA_USER_CM_CMD_LEAVE_MCAST = amd64:17
++RDMA_USER_CM_CMD_LISTEN = amd64:7
++RDMA_USER_CM_CMD_MIGRATE_ID = amd64:18
++RDMA_USER_CM_CMD_NOTIFY = amd64:15
++RDMA_USER_CM_CMD_QUERY = amd64:19
++RDMA_USER_CM_CMD_QUERY_ROUTE = amd64:5
++RDMA_USER_CM_CMD_REJECT = amd64:9
++RDMA_USER_CM_CMD_RESOLVE_ADDR = amd64:21
++RDMA_USER_CM_CMD_RESOLVE_IB_SERVICE = amd64:23
++RDMA_USER_CM_CMD_RESOLVE_IP = amd64:3
++RDMA_USER_CM_CMD_RESOLVE_ROUTE = amd64:4
++RDMA_USER_CM_CMD_SET_OPTION = amd64:14
++RDMA_USER_CM_CMD_WRITE_CM_EVENT = amd64:24
++__NR_openat = amd64:257
++__NR_read = amd64:0
++__NR_write = amd64:1
+diff --git a/sys/linux/codex_sequencer.txt b/sys/linux/codex_sequencer.txt
+new file mode 100644
+index 0000000000..1205aa2f78
+--- /dev/null
++++ b/sys/linux/codex_sequencer.txt
+@@ -0,0 +1,46 @@
++meta arches["amd64"]
++# SPDX-License-Identifier: Apache-2.0
++
++include <uapi/asm/ioctl.h>
++include <uapi/linux/fcntl.h>
++include <uapi/linux/time.h>
++include <uapi/sound/asequencer.h>
++include <uapi/sound/asound.h>
++
++resource fd_codex_sndseq[fd]
++
++openat$__CODEX_sndseq(fd const[AT_FDCWD], file ptr[in, string["/dev/snd/seq"]], flags flags[open_flags], mode const[0]) fd_codex_sndseq
++read$__CODEX_sndseq(fd fd_codex_sndseq, data ptr[out, array[snd_seq_event, 0:64]], len bytesize[data])
++write$__CODEX_sndseq(fd fd_codex_sndseq, data ptr[in, array[snd_seq_event, 0:64]], len bytesize[data])
++
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_PVERSION(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_PVERSION], arg ptr[out, int32])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_CLIENT_ID(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_CLIENT_ID], arg ptr[out, int32])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_SYSTEM_INFO(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_SYSTEM_INFO], arg ptr[inout, snd_seq_system_info])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_RUNNING_MODE(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_RUNNING_MODE], arg ptr[in, snd_seq_running_info])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_GET_CLIENT_INFO(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_GET_CLIENT_INFO], arg ptr[inout, snd_seq_client_info])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_SET_CLIENT_INFO(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_SET_CLIENT_INFO], arg ptr[in, snd_seq_client_info])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_CREATE_PORT(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_CREATE_PORT], arg ptr[inout, snd_seq_port_info])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_DELETE_PORT(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_DELETE_PORT], arg ptr[in, snd_seq_port_info])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_GET_PORT_INFO(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_GET_PORT_INFO], arg ptr[inout, snd_seq_port_info])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_SET_PORT_INFO(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_SET_PORT_INFO], arg ptr[in, snd_seq_port_info])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_SUBSCRIBE_PORT(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_SUBSCRIBE_PORT], arg ptr[in, snd_seq_port_subscribe])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_UNSUBSCRIBE_PORT(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_UNSUBSCRIBE_PORT], arg ptr[in, snd_seq_port_subscribe])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_CREATE_QUEUE(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_CREATE_QUEUE], arg ptr[inout, snd_seq_queue_info])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_DELETE_QUEUE(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_DELETE_QUEUE], arg ptr[in, snd_seq_queue_info])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_GET_QUEUE_INFO(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_GET_QUEUE_INFO], arg ptr[inout, snd_seq_queue_info])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_SET_QUEUE_INFO(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_SET_QUEUE_INFO], arg ptr[in, snd_seq_queue_info])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_GET_NAMED_QUEUE(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_GET_NAMED_QUEUE], arg ptr[inout, snd_seq_queue_info])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_GET_QUEUE_STATUS(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_GET_QUEUE_STATUS], arg ptr[inout, snd_seq_queue_status])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_GET_QUEUE_TEMPO(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_GET_QUEUE_TEMPO], arg ptr[inout, snd_seq_queue_status])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_SET_QUEUE_TEMPO(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_SET_QUEUE_TEMPO], arg ptr[in, snd_seq_queue_status])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_GET_QUEUE_TIMER(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_GET_QUEUE_TIMER], arg ptr[inout, snd_seq_queue_timer])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_SET_QUEUE_TIMER(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_SET_QUEUE_TIMER], arg ptr[in, snd_seq_queue_timer])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_GET_QUEUE_CLIENT(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_GET_QUEUE_CLIENT], arg ptr[inout, snd_seq_queue_client])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_SET_QUEUE_CLIENT(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_SET_QUEUE_CLIENT], arg ptr[in, snd_seq_queue_client])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_GET_CLIENT_POOL(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_GET_CLIENT_POOL], arg ptr[inout, snd_seq_client_pool])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_SET_CLIENT_POOL(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_SET_CLIENT_POOL], arg ptr[in, snd_seq_client_pool])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_REMOVE_EVENTS(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_REMOVE_EVENTS], arg ptr[in, snd_seq_remove_events])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_QUERY_SUBS(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_QUERY_SUBS], arg ptr[inout, snd_seq_query_subs])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_GET_SUBSCRIPTION(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_GET_SUBSCRIPTION], arg ptr[inout, snd_seq_port_subscribe])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_QUERY_NEXT_CLIENT(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_QUERY_NEXT_CLIENT], arg ptr[inout, snd_seq_client_info])
++ioctl$__CODEX_SNDRV_SEQ_IOCTL_QUERY_NEXT_PORT(fd fd_codex_sndseq, cmd const[SNDRV_SEQ_IOCTL_QUERY_NEXT_PORT], arg ptr[inout, snd_seq_port_info])
+diff --git a/sys/linux/codex_sequencer.txt.const b/sys/linux/codex_sequencer.txt.const
+new file mode 100644
+index 0000000000..1c557bb7d8
+--- /dev/null
++++ b/sys/linux/codex_sequencer.txt.const
+@@ -0,0 +1,38 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++SNDRV_SEQ_IOCTL_CLIENT_ID = amd64:2147767041
++SNDRV_SEQ_IOCTL_CREATE_PORT = amd64:3232256800
++SNDRV_SEQ_IOCTL_CREATE_QUEUE = amd64:3230421810
++SNDRV_SEQ_IOCTL_DELETE_PORT = amd64:1084773153
++SNDRV_SEQ_IOCTL_DELETE_QUEUE = amd64:1082938163
++SNDRV_SEQ_IOCTL_GET_CLIENT_INFO = amd64:3233567504
++SNDRV_SEQ_IOCTL_GET_CLIENT_POOL = amd64:3227013963
++SNDRV_SEQ_IOCTL_GET_NAMED_QUEUE = amd64:3230421814
++SNDRV_SEQ_IOCTL_GET_PORT_INFO = amd64:3232256802
++SNDRV_SEQ_IOCTL_GET_QUEUE_CLIENT = amd64:3226227529
++SNDRV_SEQ_IOCTL_GET_QUEUE_INFO = amd64:3230421812
++SNDRV_SEQ_IOCTL_GET_QUEUE_STATUS = amd64:3227276096
++SNDRV_SEQ_IOCTL_GET_QUEUE_TEMPO = amd64:3224130369
++SNDRV_SEQ_IOCTL_GET_QUEUE_TIMER = amd64:3227538245
++SNDRV_SEQ_IOCTL_GET_SUBSCRIPTION = amd64:3226489680
++SNDRV_SEQ_IOCTL_PVERSION = amd64:2147767040
++SNDRV_SEQ_IOCTL_QUERY_NEXT_CLIENT = amd64:3233567569
++SNDRV_SEQ_IOCTL_QUERY_NEXT_PORT = amd64:3232256850
++SNDRV_SEQ_IOCTL_QUERY_SUBS = amd64:3227013967
++SNDRV_SEQ_IOCTL_REMOVE_EVENTS = amd64:1077957454
++SNDRV_SEQ_IOCTL_RUNNING_MODE = amd64:3222295299
++SNDRV_SEQ_IOCTL_SET_CLIENT_INFO = amd64:1086083857
++SNDRV_SEQ_IOCTL_SET_CLIENT_POOL = amd64:1079530316
++SNDRV_SEQ_IOCTL_SET_PORT_INFO = amd64:1084773155
++SNDRV_SEQ_IOCTL_SET_QUEUE_CLIENT = amd64:1078743882
++SNDRV_SEQ_IOCTL_SET_QUEUE_INFO = amd64:3230421813
++SNDRV_SEQ_IOCTL_SET_QUEUE_TEMPO = amd64:1076646722
++SNDRV_SEQ_IOCTL_SET_QUEUE_TIMER = amd64:1080054598
++SNDRV_SEQ_IOCTL_SUBSCRIBE_PORT = amd64:1079006000
++SNDRV_SEQ_IOCTL_SYSTEM_INFO = amd64:3224392450
++SNDRV_SEQ_IOCTL_UNSUBSCRIBE_PORT = amd64:1079006001
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
++__NR_read = amd64:0
++__NR_write = amd64:1
+diff --git a/sys/linux/codex_sg.txt b/sys/linux/codex_sg.txt
+new file mode 100644
+index 0000000000..09ef42d387
+--- /dev/null
++++ b/sys/linux/codex_sg.txt
+@@ -0,0 +1,91 @@
++meta arches["amd64"]
++# SPDX-License-Identifier: Apache-2.0
++
++include <linux/blkdev.h>
++include <scsi/scsi.h>
++include <scsi/scsi_ioctl.h>
++include <scsi/sg.h>
++include <uapi/linux/fcntl.h>
++
++resource fd_codex_sg[fd]
++
++syz_open_dev$__CODEX_sg(dev ptr[in, string["/dev/sg#"]], id intptr, flags flags[open_flags]) fd_codex_sg
++openat$__CODEX_sg0(fd const[AT_FDCWD], file ptr[in, string["/dev/sg0"]], flags flags[open_flags], mode const[0]) fd_codex_sg
++read$__CODEX_sg(fd fd_codex_sg, data buffer[out], len len[data])
++write$__CODEX_sg(fd fd_codex_sg, data buffer[in], len len[data])
++
++ioctl$__CODEX_SG_SET_TIMEOUT(fd fd_codex_sg, cmd const[SG_SET_TIMEOUT], arg ptr[in, int32])
++ioctl$__CODEX_SG_GET_TIMEOUT(fd fd_codex_sg, cmd const[SG_GET_TIMEOUT], arg const[0])
++ioctl$__CODEX_SG_EMULATED_HOST(fd fd_codex_sg, cmd const[SG_EMULATED_HOST], arg ptr[out, int32])
++ioctl$__CODEX_SG_SET_TRANSFORM(fd fd_codex_sg, cmd const[SG_SET_TRANSFORM], arg ptr[in, int32])
++ioctl$__CODEX_SG_GET_TRANSFORM(fd fd_codex_sg, cmd const[SG_GET_TRANSFORM], arg const[0])
++ioctl$__CODEX_SG_SET_RESERVED_SIZE(fd fd_codex_sg, cmd const[SG_SET_RESERVED_SIZE], arg ptr[in, int32])
++ioctl$__CODEX_SG_GET_RESERVED_SIZE(fd fd_codex_sg, cmd const[SG_GET_RESERVED_SIZE], arg ptr[out, int32])
++ioctl$__CODEX_SG_GET_SCSI_ID(fd fd_codex_sg, cmd const[SG_GET_SCSI_ID], arg ptr[out, codex_sg_scsi_id])
++ioctl$__CODEX_SG_SET_FORCE_LOW_DMA(fd fd_codex_sg, cmd const[SG_SET_FORCE_LOW_DMA], arg ptr[in, bool32])
++ioctl$__CODEX_SG_GET_LOW_DMA(fd fd_codex_sg, cmd const[SG_GET_LOW_DMA], arg ptr[out, int32])
++ioctl$__CODEX_SG_SET_FORCE_PACK_ID(fd fd_codex_sg, cmd const[SG_SET_FORCE_PACK_ID], arg ptr[in, bool32])
++ioctl$__CODEX_SG_GET_PACK_ID(fd fd_codex_sg, cmd const[SG_GET_PACK_ID], arg ptr[out, int32])
++ioctl$__CODEX_SG_GET_NUM_WAITING(fd fd_codex_sg, cmd const[SG_GET_NUM_WAITING], arg ptr[out, int32])
++ioctl$__CODEX_SG_GET_SG_TABLESIZE(fd fd_codex_sg, cmd const[SG_GET_SG_TABLESIZE], arg ptr[out, int32])
++ioctl$__CODEX_SG_SET_DEBUG(fd fd_codex_sg, cmd const[SG_SET_DEBUG], arg ptr[in, int32])
++ioctl$__CODEX_SG_GET_VERSION_NUM(fd fd_codex_sg, cmd const[SG_GET_VERSION_NUM], arg ptr[out, int32])
++ioctl$__CODEX_SG_NEXT_CMD_LEN(fd fd_codex_sg, cmd const[SG_NEXT_CMD_LEN], arg ptr[in, int32])
++ioctl$__CODEX_SG_SCSI_RESET(fd fd_codex_sg, cmd const[SG_SCSI_RESET], arg ptr[in, flags[codex_sg_reset_flags, int32]])
++ioctl$__CODEX_SG_IO(fd fd_codex_sg, cmd const[SG_IO], arg ptr[inout, codex_sg_io_hdr])
++ioctl$__CODEX_SG_GET_REQUEST_TABLE(fd fd_codex_sg, cmd const[SG_GET_REQUEST_TABLE], arg ptr[out, array[codex_sg_req_info, SG_MAX_QUEUE]])
++ioctl$__CODEX_SG_SET_KEEP_ORPHAN(fd fd_codex_sg, cmd const[SG_SET_KEEP_ORPHAN], arg ptr[in, bool32])
++ioctl$__CODEX_SG_GET_KEEP_ORPHAN(fd fd_codex_sg, cmd const[SG_GET_KEEP_ORPHAN], arg ptr[out, int32])
++ioctl$__CODEX_SG_GET_ACCESS_COUNT(fd fd_codex_sg, cmd const[SG_GET_ACCESS_COUNT], arg ptr[out, int32])
++ioctl$__CODEX_SG_GET_COMMAND_Q(fd fd_codex_sg, cmd const[SG_GET_COMMAND_Q], arg ptr[out, int32])
++ioctl$__CODEX_SG_SET_COMMAND_Q(fd fd_codex_sg, cmd const[SG_SET_COMMAND_Q], arg ptr[in, bool32])
++
++codex_sg_io_hdr {
++	interface_id	const[SG_INTERFACE_ID_ORIG, int32]
++	dxfer_direction	flags[codex_sg_dxfer, int32]
++	cmd_len		bytesize[cmdp, int8]
++	mx_sb_len	bytesize[sbp, int8]
++	iovec_count	const[0, int16]
++	dxfer_len	bytesize[dxferp, int32]
++	dxferp		ptr[inout, array[int8, 0:4096]]
++	cmdp		ptr[in, array[int8, 1:32]]
++	sbp		ptr[out, array[int8, 0:96]]
++	timeout		int32
++	flags		flags[codex_sg_flags, int32]
++	pack_id		int32
++	usr_ptr		ptr[inout, array[int8, 0:256]]
++	status		const[0, int8]
++	masked_status	const[0, int8]
++	msg_status	const[0, int8]
++	sb_len_wr	const[0, int8]
++	host_status	const[0, int16]
++	driver_status	const[0, int16]
++	resid		const[0, int32]
++	duration	const[0, int32]
++	info		const[0, int32]
++}
++
++codex_sg_scsi_id {
++	host_no		int32
++	channel		int32
++	scsi_id		int32
++	lun		int32
++	scsi_type	int32
++	h_cmd_per_lun	int16
++	d_queue_depth	int16
++	unused		array[int32, 2]
++}
++
++codex_sg_req_info {
++	req_state	int8
++	problem		int8
++	duration	int32
++	orphan		int32
++	sg_io_owned	int32
++	pack_id		int32
++	usr_ptr		ptr[inout, array[int8, 0:256]]
++}
++
++codex_sg_dxfer = SG_DXFER_NONE, SG_DXFER_TO_DEV, SG_DXFER_FROM_DEV, SG_DXFER_TO_FROM_DEV, SG_DXFER_UNKNOWN
++codex_sg_flags = SG_FLAG_DIRECT_IO, SG_FLAG_UNUSED_LUN_INHIBIT, SG_FLAG_MMAP_IO, SG_FLAG_NO_DXFER, SG_FLAG_Q_AT_TAIL, SG_FLAG_Q_AT_HEAD
++codex_sg_reset_flags = SG_SCSI_RESET_NOTHING, SG_SCSI_RESET_DEVICE, SG_SCSI_RESET_BUS, SG_SCSI_RESET_HOST, SG_SCSI_RESET_TARGET, SG_SCSI_RESET_NO_ESCALATE
+diff --git a/sys/linux/codex_sg.txt.const b/sys/linux/codex_sg.txt.const
+new file mode 100644
+index 0000000000..703d489a4b
+--- /dev/null
++++ b/sys/linux/codex_sg.txt.const
+@@ -0,0 +1,51 @@
++# Code generated by syz-sysgen. DO NOT EDIT.
++arches = amd64
++AT_FDCWD = amd64:18446744073709551516
++SG_DXFER_FROM_DEV = amd64:18446744073709551613
++SG_DXFER_NONE = amd64:18446744073709551615
++SG_DXFER_TO_DEV = amd64:18446744073709551614
++SG_DXFER_TO_FROM_DEV = amd64:18446744073709551612
++SG_DXFER_UNKNOWN = amd64:18446744073709551611
++SG_EMULATED_HOST = amd64:8707
++SG_FLAG_DIRECT_IO = amd64:1
++SG_FLAG_MMAP_IO = amd64:4
++SG_FLAG_NO_DXFER = amd64:65536
++SG_FLAG_Q_AT_HEAD = amd64:32
++SG_FLAG_Q_AT_TAIL = amd64:16
++SG_FLAG_UNUSED_LUN_INHIBIT = amd64:2
++SG_GET_ACCESS_COUNT = amd64:8841
++SG_GET_COMMAND_Q = amd64:8816
++SG_GET_KEEP_ORPHAN = amd64:8840
++SG_GET_LOW_DMA = amd64:8826
++SG_GET_NUM_WAITING = amd64:8829
++SG_GET_PACK_ID = amd64:8828
++SG_GET_REQUEST_TABLE = amd64:8838
++SG_GET_RESERVED_SIZE = amd64:8818
++SG_GET_SCSI_ID = amd64:8822
++SG_GET_SG_TABLESIZE = amd64:8831
++SG_GET_TIMEOUT = amd64:8706
++SG_GET_TRANSFORM = amd64:8709
++SG_GET_VERSION_NUM = amd64:8834
++SG_INTERFACE_ID_ORIG = amd64:83
++SG_IO = amd64:8837
++SG_MAX_QUEUE = amd64:16
++SG_NEXT_CMD_LEN = amd64:8835
++SG_SCSI_RESET = amd64:8836
++SG_SCSI_RESET_BUS = amd64:2
++SG_SCSI_RESET_DEVICE = amd64:1
++SG_SCSI_RESET_HOST = amd64:3
++SG_SCSI_RESET_NOTHING = amd64:0
++SG_SCSI_RESET_NO_ESCALATE = amd64:256
++SG_SCSI_RESET_TARGET = amd64:4
++SG_SET_COMMAND_Q = amd64:8817
++SG_SET_DEBUG = amd64:8830
++SG_SET_FORCE_LOW_DMA = amd64:8825
++SG_SET_FORCE_PACK_ID = amd64:8827
++SG_SET_KEEP_ORPHAN = amd64:8839
++SG_SET_RESERVED_SIZE = amd64:8821
++SG_SET_TIMEOUT = amd64:8705
++SG_SET_TRANSFORM = amd64:8708
++__NR_ioctl = amd64:16
++__NR_openat = amd64:257
++__NR_read = amd64:0
++__NR_write = amd64:1
