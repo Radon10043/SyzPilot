@@ -53,7 +53,7 @@ cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
 cd sys/amd64/conf && config CLOUD
 cd ../compile/CLOUD
 make cleandepend && make depend
-make -j16 && make install
+make -j$JOBS && make install
 reboot
 ```
 
@@ -119,7 +119,7 @@ cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
 cd sys/amd64/conf && config CLOUD
 cd ../compile/CLOUD
 make cleandepend && make depend
-make -j16 && make install
+make -j$JOBS && make install
 reboot
 ```
 
@@ -185,7 +185,7 @@ cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
 cd sys/amd64/conf && config CLOUD
 cd ../compile/CLOUD
 make cleandepend && make depend
-make -j16 && make install
+make -j$JOBS && make install
 reboot
 ```
 

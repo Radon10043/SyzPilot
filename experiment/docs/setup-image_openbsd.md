@@ -90,7 +90,7 @@ git checkout 23290a22
 cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
 cd sys/arch/amd64/conf && config CLOUD
 cd ../compile/CLOUD
-make depend && make -j16 && make install
+make depend && make -j$JOBS && make install
 reboot
 ```
 
@@ -193,7 +193,7 @@ git checkout 6bf0f93a
 cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
 cd sys/arch/amd64/conf && config CLOUD
 cd ../compile/CLOUD
-make depend && make -j16 && make install
+make depend && make -j$JOBS && make install
 reboot
 ```
 
@@ -296,7 +296,7 @@ git checkout 6dac8606
 cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
 cd sys/arch/amd64/conf && config CLOUD
 cd ../compile/CLOUD
-make depend && make -j16 && make install
+make depend && make -j$JOBS && make install
 reboot
 ```
 

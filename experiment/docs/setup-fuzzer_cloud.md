@@ -11,9 +11,9 @@ git clone --recurse-submodules https://github.com/Radon10043/cloud
 # or git clone https://github.com/Radon10043/cloud && cd cloud && git submodule update --init --recursive
 
 cd cloud/syzkaller
-git apply ../patch/syzkaller/*
+git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-kern/*
-make all -j16
+make all -j$JOBS
 ```
 
 ### freebsd binaries
@@ -28,7 +28,7 @@ qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/image/freebsd/15.0.0.qco
 cd /root/cloud
 git submodule update --init --recursive
 cd syzkaller
-git apply ../patch/syzkaller/*
+git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-kern/*
 gmake target
 ```
@@ -117,7 +117,7 @@ git clone https://github.com/radon10043/cloud && cd cloud
 git submodule update --init --recursive
 
 cd syzkaller
-git apply ../patch/syzkaller/*
+git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-kern/*
 gmake target
 ```
@@ -160,9 +160,9 @@ mv syzkaller/bin bin-kern
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
 git checkout . && git clean -fdx
-git apply ../patch/syzkaller/*
+git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-subsys/*
-make all -j16
+make all -j$JOBS
 ```
 
 ### freebsd binaries
@@ -177,7 +177,7 @@ qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/image/freebsd/15.0.0.qco
 cd /root/cloud
 git submodule update --init --recursive
 cd syzkaller
-git apply ../patch/syzkaller/*
+git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-subsys/*
 gmake target
 ```
@@ -201,7 +201,7 @@ qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./dev.qcow2,
 (vm) build the needed binaries on the OpenBSD vm:
 ```sh
 cd /root/cloud/syzkaller
-git apply ../patch/syzkaller/*
+git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-subsys/*
 gmake target
 ```
@@ -234,4 +234,42 @@ make target TARGETOS=netbsd SOURCEDIR=$EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5-tp
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud
 mv syzkaller/bin bin-subsys
+```
+
+## setup binaries for ablation fuzzing
+
+### nodb variant
+
+(host):
+```bash
+cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+git checkout . && git clean -fdx
+git apply -3 ../patch/syzkaller/*
+git apply ../patch/specs-ablation/specs-syzkaller-ac3c71e7-linux-v6.18-subsystem-nodb-gemini-3-flash-preview.patch
+make all -j$JOBS
+mv bin ../bin-nodb
+```
+
+### noiter variant
+
+(host):
+```bash
+cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+git checkout . && git clean -fdx
+git apply -3 ../patch/syzkaller/*
+git apply ../patch/specs-ablation/specs-syzkaller-ac3c71e7-linux-v6.18-subsystem-noiter-gemini-3-flash-preview.patch
+make all -j$JOBS
+mv bin ../bin-noiter
+```
+
+### openllm variant
+
+(host):
+```bash
+cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+git checkout . && git clean -fdx
+git apply -3 ../patch/syzkaller/*
+git apply ../patch/specs-ablation/specs-syzkaller-ac3c71e7-linux-v6.18-subsystem-openllm-qwen3-235b-a22b-instruct-2507.patch
+make all -j$JOBS
+mv bin ../bin-openllm
 ```
