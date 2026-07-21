@@ -1,11 +1,14 @@
-# setup KernelGEM
+# setup KernelGEM for spec generation
 
 this document shows how to setup KernelGEM and use it for generating specifications and fuzzing.
 
 please replace the following variables according to your actual situation:
 - `$CLOUD`: directory for saveing cloud source
 - `$KERNELGEM`: directory for saving KernelGEM source
-- `$KERNSRC`: directory for saving linux kernel source
+- `$LINUX`: directory for saving linux kernel source
+- `$ANDROID`: directory for saving android kernel source
+
+## preparation
 
 create a docker image via `$CLOUD/experiment/KernelGEM/Dockerfile` and enter the container.
 ```bash
@@ -20,7 +23,8 @@ docker run \
 docker exec -it kernelgem-exp bash
 ```
 
-setup KernelGEM.
+## setup KernelGEM
+
 ```bash
 git clone https://github.com/ise-uiuc/KernelGPT.git KernelGEM
 cd KernelGEM
@@ -30,27 +34,29 @@ git submodule update --init --recursive --depth 1 --progress
 pip install -r requirements.txt
 ```
 
+## generate specs for linux
+
 build linux v6.18.
 ```bash
-cd $KernelGEM
+cd $KERNELGEM
 cp $CLOUD/configs/kernel/linux.config linux/.config
 bear -- make CC=clang HOSTCC=clang olddefconfig all -j16
 ```
 
 build and run analysis tool.
 ```bash
-cd $KernelGEM/spec-gen/analyzer
+cd $KERNELGEM/spec-gen/analyzer
 make all
 
-./analyze -p $KernelGEM/linux/compile_commands.json
-python3 process_output.py --linux-path $KernelGEM/linux
-./usage -p $KernelGEM/linux/compile_commands.json
-python3 process_output.py --linux-path $KernelGEM/linux --usage
+./analyze -p $KERNELGEM/linux/compile_commands.json
+python3 process_output.py --linux-path $KERNELGEM/linux
+./usage -p $KERNELGEM/linux/compile_commands.json
+python3 process_output.py --linux-path $KERNELGEM/linux --usage
 ```
 
-setup .env file under `$KernelGEM/spec-gen` and run syscall description generation.
+setup .env file under `$KERNELGEM/spec-gen` and run syscall description generation.
 ```bash
-cd $KernelGEM/spec-gen
+cd $KERNELGEM/spec-gen
 touch .env
 echo "OPENAI_BASE_URL=YOUR_BASE_URL" >> .env
 echo "OPENAI_API_KEY=YOUR_API_KEY" >> .env
@@ -76,5 +82,38 @@ extract consts for synthesized specifications:
 ```bash
 cd $KERNELGPT/syzkaller
 make bin/syz-extract
-ls sys/linux/gpt*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$KERNSRC -os=linux -arch=amd64
+ls sys/linux/gpt*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$LINUX -os=linux -arch=amd64
+```
+
+## generate specs for android
+
+generate `compile_commands.json` of android kernel:
+```bash
+cd $ANDROID
+tools/bazel run --kasan --defconfig_fragment=//common:debian_image_x86_64_defconfig //common-modules/virtual-device:virtual_device_x86_64_compile_commands -- $PWD/dist/compile_commands.json
+```
+
+build and run analysis tool:
+```bash
+cd $KERNELGEM/spec-gen/analyzer
+make TARGETOS=android all
+
+./analyze -p $ANDROID/dist/compile_commands.json
+python3 process_output.py --linux-path $PWD
+./usage -p $ANDROID/dist/compile_commands.json
+python3 process_output.py --linux-path $PWD --usage
+```
+
+setup .env file under `$KERNELGEM/spec-gen` and run syscall description generation.
+```bash
+cd $KERNELGEM/spec-gen
+touch .env
+echo "OPENAI_BASE_URL=YOUR_BASE_URL" >> .env
+echo "OPENAI_API_KEY=YOUR_API_KEY" >> .env
+echo "OPENAI_MODEL=YOUR_FAVORITE_LLM" >> .env
+
+# for debugging
+python3 gen_spec.py -d analyzer/processed_handlers.json -o spec-output -n 1
+# for generating complete specifications, watch out your wallet
+# python3 gen_spec.py -d analyzer/processed_handlers.json -o spec-output -n 1000
 ```

@@ -1,8 +1,8 @@
 diff --git a/.gitignore b/.gitignore
-index ad557cc..cca9bd1 100644
+index ad557cc..e9780bb 100644
 --- a/.gitignore
 +++ b/.gitignore
-@@ -15,3 +15,14 @@ starcoder-*/
+@@ -15,3 +15,15 @@ starcoder-*/
  *.tmp
  tmp
  .cache
@@ -12,6 +12,7 @@ index ad557cc..cca9bd1 100644
 +spec-gen/analyzer/analyze
 +spec-gen/analyzer/usage
 +spec-gen/analyzer/*.txt
++spec-gen/analyzer/*.jsonl
 +spec-gen/analyzer/processed_*.json
 +spec-gen/spec-output
 +spec-gen/log-macro-no-header.txt
@@ -35,54 +36,320 @@ index ff8ac55..ee79a6f 100644
  openai
 +dotenv
 +psutil
+diff --git a/spec-eval/run-specs.py b/spec-eval/run-specs.py
+index d253544..1ceb10f 100644
+--- a/spec-eval/run-specs.py
++++ b/spec-eval/run-specs.py
+@@ -162,7 +162,6 @@ def prepare_run(wkd: Path, run, jobs):
+     prepare_linux(wkd, name="linux_for_const")
+     r = subprocess.run(
+         [
+-            "tools/syz-env",
+             "make",
+             "extract",
+             "TARGETOS=linux",
 diff --git a/spec-gen/analyzer/Makefile b/spec-gen/analyzer/Makefile
-index 603be09..85d94a5 100644
+index 603be09..37676fd 100644
 --- a/spec-gen/analyzer/Makefile
 +++ b/spec-gen/analyzer/Makefile
-@@ -1,10 +1,14 @@
+@@ -1,30 +1,50 @@
  # Variables
 -LLVM_INCLUDE := $(shell llvm-config-14 --includedir)
 -LLVM_FLAGS := $(shell llvm-config-14 --cxxflags --ldflags --libs core)
-+LLVM_INCLUDE := $(shell llvm-config --includedir)
-+LLVM_CXXFLAGS := $(shell llvm-config --cxxflags)
-+LLVM_LDFLAGS  := $(shell llvm-config --ldflags)
-+LLVM_LIBS     := $(shell llvm-config --libs all)
-+
- CLANG_LIBS := -lclangTooling -lclangFrontend -lclangDriver -lclangSerialization \
+-CLANG_LIBS := -lclangTooling -lclangFrontend -lclangDriver -lclangSerialization \
 -             -lclangParse -lclangSema -lclangAnalysis -lclangAST -lclangBasic \
 -             -lclangEdit -lclangLex -lclangASTMatchers \
 -						 -lclangRewrite
-+              -lclangParse -lclangSema -lclangAnalysis -lclangAST -lclangBasic \
-+              -lclangEdit -lclangLex -lclangASTMatchers \
-+              -lclangRewrite -lclangSupport
+-CXXFLAGS := --std=c++17 -pthread
++SHELL := /bin/bash
++.SHELLFLAGS := -o pipefail -c
 +
- CXXFLAGS := --std=c++17 -pthread
++LLVM_CONFIG ?= llvm-config
++CXX := clang++
++TARGETOS ?= linux
++
++ifeq ($(TARGETOS),android)
++TARGET_CPPFLAGS := -DTARGET_ANDROID=1
++else ifeq ($(TARGETOS),linux)
++TARGET_CPPFLAGS := -DTARGET_LINUX=1
++else
++$(error unsupported TARGETOS=$(TARGETOS); use TARGETOS=linux or TARGETOS=android)
++endif
++
++LLVM_INCLUDE := $(shell $(LLVM_CONFIG) --includedir)
++LLVM_LIBDIR := $(shell $(LLVM_CONFIG) --libdir)
++LLVM_CXXFLAGS := $(shell $(LLVM_CONFIG) --cxxflags)
++LLVM_LDFLAGS  := $(shell $(LLVM_CONFIG) --ldflags) -Wl,-rpath,$(LLVM_LIBDIR)
++LLVM_SYSTEM_LIBS := $(shell $(LLVM_CONFIG) --system-libs)
++
++CLANG_LIBS := -lclang-cpp
++
++CXXFLAGS := --std=c++17 -pthread $(TARGET_CPPFLAGS)
  LOG_FILE := analyze-compile.log
  
-@@ -15,16 +19,16 @@ OBJ_FILES=helper.o
- all: analyze usage
+ # Object files
+-OBJ_FILES=helper.o
++OBJ_FILES=helper.$(TARGETOS).o
  
- analyze: analyze.cpp $(OBJ_FILES)
--	@clang++ $^ -o $@ -I$(LLVM_INCLUDE) $(LLVM_FLAGS) $(CLANG_LIBS) $(CXXFLAGS) 2>&1 | tee $(LOG_FILE)
-+	@clang++ $^ -o $@ -I$(LLVM_INCLUDE) $(CXXFLAGS) $(LLVM_CXXFLAGS) $(LLVM_LDFLAGS) $(CLANG_LIBS) $(LLVM_LIBS) 2>&1 | tee $(LOG_FILE)
+ # Default target
+-all: analyze usage
++all: prepare-log analyze usage
++
++prepare-log:
++	@: > $(LOG_FILE)
  
- usage: usage.cpp $(OBJ_FILES)
+-analyze: analyze.cpp $(OBJ_FILES)
 -	@clang++ $^ -o $@ -I$(LLVM_INCLUDE) $(LLVM_FLAGS) $(CLANG_LIBS) $(CXXFLAGS) 2>&1 | tee $(LOG_FILE)
-+	@clang++ $^ -o $@ -I$(LLVM_INCLUDE) $(CXXFLAGS) $(LLVM_CXXFLAGS) $(LLVM_LDFLAGS) $(CLANG_LIBS) $(LLVM_LIBS) 2>&1 | tee $(LOG_FILE)
++analyze: analyze.cpp $(OBJ_FILES) | prepare-log
++	@$(CXX) $^ -o $@ -I$(LLVM_INCLUDE) $(CXXFLAGS) $(LLVM_CXXFLAGS) $(LLVM_LDFLAGS) $(CLANG_LIBS) $(LLVM_SYSTEM_LIBS) 2>&1 | tee -a $(LOG_FILE)
+ 
+-usage: usage.cpp $(OBJ_FILES)
+-	@clang++ $^ -o $@ -I$(LLVM_INCLUDE) $(LLVM_FLAGS) $(CLANG_LIBS) $(CXXFLAGS) 2>&1 | tee $(LOG_FILE)
++usage: usage.cpp $(OBJ_FILES) | prepare-log
++	@$(CXX) $^ -o $@ -I$(LLVM_INCLUDE) $(CXXFLAGS) $(LLVM_CXXFLAGS) $(LLVM_LDFLAGS) $(CLANG_LIBS) $(LLVM_SYSTEM_LIBS) 2>&1 | tee -a $(LOG_FILE)
  
  # Compiling helper.cpp to an object file
- helper.o: helper.cpp helper.hpp
+-helper.o: helper.cpp helper.hpp
 -	@$(CXX) -c $< -o $@ -I$(LLVM_INCLUDE) $(LLVM_FLAGS) $(CLANG_LIBS) $(CXXFLAGS) 2>&1  | tee -a $(LOG_FILE)
-+	@clang++ -c $< -o $@ -I$(LLVM_INCLUDE) $(CXXFLAGS) $(LLVM_CXXFLAGS) 2>&1  | tee -a $(LOG_FILE)
++helper.$(TARGETOS).o: helper.cpp helper.hpp | prepare-log
++	@$(CXX) -c $< -o $@ -I$(LLVM_INCLUDE) $(CXXFLAGS) $(LLVM_CXXFLAGS) 2>&1 | tee -a $(LOG_FILE)
  
  clean:
 -	@rm -f analyze usage $(LOG_FILE)
 +	@rm -f analyze usage $(LOG_FILE) *.o
  
- .PHONY: all clean
+-.PHONY: all clean
 \ No newline at end of file
++.PHONY: all prepare-log analyze usage clean
+diff --git a/spec-gen/analyzer/analyze.cpp b/spec-gen/analyzer/analyze.cpp
+index 398fcda..4eb92ac 100644
+--- a/spec-gen/analyzer/analyze.cpp
++++ b/spec-gen/analyzer/analyze.cpp
+@@ -167,6 +167,11 @@ int main(int argc, const char **argv) {
+   llvm::cl::opt<std::string> OptCompileCommands(
+       "p", llvm::cl::desc("Specify path compile_commands.json"),
+       llvm::cl::Required, llvm::cl::cat(MyToolCategory));
++#ifdef TARGET_ANDROID
++  llvm::cl::opt<int> OptJobs(
++      "jobs", llvm::cl::desc("Maximum source files to analyze in parallel"),
++      llvm::cl::init(default_job_count()), llvm::cl::cat(MyToolCategory));
++#endif
+   llvm::cl::ParseCommandLineOptions(argc, argv);
+ 
+   // Load compile_commands.json manually
+@@ -193,23 +198,31 @@ int main(int argc, const char **argv) {
+ 
+   // Process each source file
+   std::vector<std::future<void>> futures;
+-  auto frontendAction = newFrontendActionFactory<StructAction>();
+ 
++#ifdef TARGET_ANDROID
++  int maxThreads = OptJobs;
++  if (maxThreads < 1) {
++    maxThreads = 1;
++  }
++#else
+   int maxThreads = 100;
++#endif
+   Semaphore sem(maxThreads);
+   // Assuming 'sources' is a vector of strings containing source paths
+   for (const auto &sourcePath : sources) {
+     sem.wait(); // Wait for an available slot
+ 
+-    // Capture necessary variables by reference
++    // Capture the path by value; the range-for reference is not valid after
++    // the current iteration.
+     futures.push_back(
+-        std::async(std::launch::async, [&sem, &sourcePath, &CompilationDatabase,
+-                                        &frontendAction]() {
++        std::async(std::launch::async, [&sem, sourcePath, &CompilationDatabase]() {
+           std::cout << sourcePath << std::endl;
+ 
+           // Processing logic with ClangTool
+           std::vector<std::string> currentSource = {sourcePath};
+           ClangTool tool(*CompilationDatabase, currentSource);
++          configure_clang_tool(tool);
++          auto frontendAction = newFrontendActionFactory<StructAction>();
+           tool.run(frontendAction.get());
+ 
+           sem.notify(); // Signal that this thread is done
+@@ -219,4 +232,4 @@ int main(int argc, const char **argv) {
+   for (auto &fut : futures) {
+     fut.wait();
+   }
+-}
+\ No newline at end of file
++}
+diff --git a/spec-gen/analyzer/helper.cpp b/spec-gen/analyzer/helper.cpp
+index fa12f84..53c6130 100644
+--- a/spec-gen/analyzer/helper.cpp
++++ b/spec-gen/analyzer/helper.cpp
+@@ -6,6 +6,38 @@ using json = nlohmann::json;
+ 
+ std::mutex mutex;
+ std::set<std::string> existing_filenames;
++#ifdef TARGET_ANDROID
++const std::filesystem::path output_directory = std::filesystem::current_path();
++#endif
++
++#ifdef TARGET_ANDROID
++static bool is_dependency_output_arg(llvm::StringRef arg) {
++  if (arg == "-M" || arg == "-MM" || arg == "-MD" || arg == "-MMD" ||
++      arg == "-MG" || arg == "-MP" || arg.starts_with("-MF") ||
++      arg.starts_with("-MT") || arg.starts_with("-MQ")) {
++    return true;
++  }
++
++  return arg.starts_with("-Wp,") &&
++         (arg.contains("-MMD") || arg.contains("-MD") ||
++          arg.contains("-MF"));
++}
++
++static bool dependency_output_arg_takes_value(llvm::StringRef arg) {
++  return arg == "-MF" || arg == "-MT" || arg == "-MQ";
++}
++#endif
++
++int default_job_count() {
++  unsigned threads = std::thread::hardware_concurrency();
++  if (threads == 0) {
++    return 8;
++  }
++  if (threads > 32) {
++    return 32;
++  }
++  return static_cast<int>(threads);
++}
+ 
+ std::string get_decl_code(const NamedDecl *decl) {
+   SourceManager &srcMgr = decl->getASTContext().getSourceManager();
+@@ -46,7 +78,11 @@ void output_decl(const NamedDecl *decl, std::string output_file_name,
+   std::string sourceCode = get_decl_code(decl);
+ 
+   std::ofstream output_file;
++#ifdef TARGET_ANDROID
++  output_file.open(output_directory / output_file_name, std::ios_base::app);
++#else
+   output_file.open(output_file_name, std::ios_base::app);
++#endif
+   json j;
+   j["name"] = name;
+   j["source"] = sourceCode;
+@@ -87,4 +123,31 @@ void output_decl(const NamedDecl *decl, std::string output_file_name,
+   output_file << json_str << std::endl;
+   output_file.flush();
+   output_file.close();
+-}
+\ No newline at end of file
++}
++
++void configure_clang_tool(ClangTool &tool) {
++#ifdef TARGET_ANDROID
++  tool.appendArgumentsAdjuster(
++      [](const CommandLineArguments &args, llvm::StringRef) {
++        CommandLineArguments adjusted;
++        adjusted.reserve(args.size());
++
++        for (size_t i = 0; i < args.size(); ++i) {
++          llvm::StringRef arg(args[i]);
++          if (dependency_output_arg_takes_value(arg)) {
++            ++i;
++            continue;
++          }
++          if (is_dependency_output_arg(arg)) {
++            continue;
++          }
++          adjusted.push_back(args[i]);
++        }
++
++        return adjusted;
++      });
++  tool.appendArgumentsAdjuster(getClangStripOutputAdjuster());
++  tool.appendArgumentsAdjuster(getClangStripDependencyFileAdjuster());
++  tool.appendArgumentsAdjuster(getClangSyntaxOnlyAdjuster());
++#endif
++}
+diff --git a/spec-gen/analyzer/helper.hpp b/spec-gen/analyzer/helper.hpp
+index 7fa57ad..8f68c40 100644
+--- a/spec-gen/analyzer/helper.hpp
++++ b/spec-gen/analyzer/helper.hpp
+@@ -12,6 +12,7 @@
+ #include <clang/AST/RecursiveASTVisitor.h>
+ #include <clang/Frontend/CompilerInstance.h>
+ #include <clang/Frontend/FrontendActions.h>
++#include <clang/Tooling/ArgumentsAdjusters.h>
+ #include <clang/Tooling/CommonOptionsParser.h>
+ #include <clang/Tooling/JSONCompilationDatabase.h>
+ #include <clang/Tooling/Tooling.h>
+@@ -56,5 +57,7 @@ private:
+ std::string get_decl_code(const clang::NamedDecl *);
+ void output_decl(const clang::NamedDecl *decl, std::string output_file_name,
+                  bool is_typedef = false, std::string alias_name = "");
++void configure_clang_tool(clang::tooling::ClangTool &tool);
++int default_job_count();
+ 
+ #endif
+diff --git a/spec-gen/analyzer/usage.cpp b/spec-gen/analyzer/usage.cpp
+index 11fe1e5..f47c663 100644
+--- a/spec-gen/analyzer/usage.cpp
++++ b/spec-gen/analyzer/usage.cpp
+@@ -96,6 +96,11 @@ int main(int argc, const char **argv) {
+   llvm::cl::opt<std::string> OptCompileCommands(
+       "p", llvm::cl::desc("Specify path compile_commands.json"),
+       llvm::cl::Required, llvm::cl::cat(MyToolCategory));
++#ifdef TARGET_ANDROID
++  llvm::cl::opt<int> OptJobs(
++      "jobs", llvm::cl::desc("Maximum source files to analyze in parallel"),
++      llvm::cl::init(default_job_count()), llvm::cl::cat(MyToolCategory));
++#endif
+   llvm::cl::ParseCommandLineOptions(argc, argv);
+ 
+   // Load compile_commands.json manually
+@@ -129,23 +134,31 @@ int main(int argc, const char **argv) {
+   std::cout << "Loaded " << handler_names.size() << " handler names"
+             << std::endl;
+ 
+-  auto frontendAction = newFrontendActionFactory<StructAction>();
+   std::vector<std::future<void>> futures;
++#ifdef TARGET_ANDROID
++  int maxThreads = OptJobs;
++  if (maxThreads < 1) {
++    maxThreads = 1;
++  }
++#else
+   int maxThreads = 100;
++#endif
+   Semaphore sem(maxThreads);
+   // Assuming 'sources' is a vector of strings containing source paths
+   for (const auto &sourcePath : sources) {
+     sem.wait(); // Wait for an available slot
+ 
+-    // Capture necessary variables by reference
++    // Capture the path by value; the range-for reference is not valid after
++    // the current iteration.
+     futures.push_back(
+-        std::async(std::launch::async, [&sem, &sourcePath, &CompilationDatabase,
+-                                        &frontendAction]() {
++        std::async(std::launch::async, [&sem, sourcePath, &CompilationDatabase]() {
+           std::cout << sourcePath << std::endl;
+ 
+           // Processing logic with ClangTool
+           std::vector<std::string> currentSource = {sourcePath};
+           ClangTool tool(*CompilationDatabase, currentSource);
++          configure_clang_tool(tool);
++          auto frontendAction = newFrontendActionFactory<StructAction>();
+           tool.run(frontendAction.get());
+ 
+           sem.notify(); // Signal that this thread is done
+@@ -155,4 +168,4 @@ int main(int argc, const char **argv) {
+   for (auto &fut : futures) {
+     fut.wait();
+   }
+-}
+\ No newline at end of file
++}
 diff --git a/spec-gen/gen_spec.py b/spec-gen/gen_spec.py
-index 49865b5..e73c790 100644
+index 49865b5..a939626 100644
 --- a/spec-gen/gen_spec.py
 +++ b/spec-gen/gen_spec.py
 @@ -6,6 +6,7 @@ from pathlib import Path
@@ -93,7 +360,15 @@ index 49865b5..e73c790 100644
      SyzSpec,
      existing_fds,
      find_missing_code,
-@@ -35,7 +36,7 @@ from gen_utils import (
+@@ -28,6 +29,7 @@ from gen_utils import (
+     is_existing_type,
+     merge_init_ioctl,
+     parse_proto_ops,
++    parse_json_answer,
+     pop_unknown_args,
+     pop_unknown_spec,
+     pop_unknown_types,
+@@ -35,7 +37,7 @@ from gen_utils import (
      update_spec_dict,
      update_types,
  )
@@ -102,7 +377,7 @@ index 49865b5..e73c790 100644
  from loguru import logger
  from output_spec import initialize_spec_dict, is_primitive_type, output_spec
  from ret_types import RetTypes
-@@ -50,7 +51,7 @@ OUTPUT_DIR = Path("spec-output")
+@@ -50,7 +52,7 @@ OUTPUT_DIR = Path("spec-output")
  
  def gen_answer(prompt: str, prompt_path: Path, answer_path: Path):
      prompt_path.write_text(prompt)
@@ -111,7 +386,7 @@ index 49865b5..e73c790 100644
      if answer is None:
          logger.error(f"[{prompt_path}] Step 1 failed")
          return
-@@ -79,7 +80,7 @@ def gen_init(file_path: Path, ops_code, ops_name, prompt_output_path, ops_type):
+@@ -79,13 +81,13 @@ def gen_init(file_path: Path, ops_code, ops_name, prompt_output_path, ops_type):
              ops_type,
          )
          open_prompt_path.write_text(open_prompt)
@@ -120,7 +395,14 @@ index 49865b5..e73c790 100644
          open_output_path.write_text(open_answer)
      else:
          open_answer = open_output_path.read_text()
-@@ -181,7 +182,7 @@ def gen_sockaddr(file_path, bind_name, bind_code):
+ 
+     try:
+-        open_answer = json.loads(open_answer)
++        open_answer = parse_json_answer(open_answer)
+     except json.decoder.JSONDecodeError:
+         logger.error(f"[{ops_name}] Failed to decode json")
+         raise ValueError("Failed to decode json", RetTypes.LLM_ERROR)
+@@ -181,13 +183,13 @@ def gen_sockaddr(file_path, bind_name, bind_code):
      else:
          prompt = gen_sockaddr_prompt(file_path, bind_code)
          prompt_path.write_text(prompt)
@@ -129,7 +411,32 @@ index 49865b5..e73c790 100644
          if answer is None:
              logger.error(f"[{file_path}] Step 0 failed")
              return
-@@ -536,7 +537,12 @@ def gen_spec_recursive(
+         answer_path.write_text(answer)
+ 
+-    return json.loads(answer)
++    return parse_json_answer(answer)
+ 
+ 
+ def gen_ioctl(
+@@ -345,7 +347,7 @@ def gen_ioctl(
+                 step2_answer = gen_answer(
+                     step2_prompt, step2_output_path, step2_answer_path
+                 )
+-            answer_dict = json.loads(step2_answer)
++            answer_dict = parse_json_answer(step2_answer)
+             if cmd_name not in answer_dict:
+                 logger.error(f"[{file_path}] Step 2 failed for {cmd_name}")
+                 continue
+@@ -397,7 +399,7 @@ def gen_ioctl(
+                     step4_answer = gen_answer(
+                         step4_prompt, step4_output_path, step4_answer_path
+                     )
+-                answer_dict = json.loads(step4_answer)
++                answer_dict = parse_json_answer(step4_answer)
+                 if "fops" not in answer_dict:
+                     logger.error(
+                         f"[{file_path}] Step 4 failed for {ioctl_name}"
+@@ -536,7 +538,12 @@ def gen_spec_recursive(
  
      # Step 2: Infer the unknown arg.
      for depth in range(MAX_DEPTH):
@@ -143,7 +450,16 @@ index 49865b5..e73c790 100644
          for cmd_name, cmd_data in unknown_args.items():
              logger.info(f"[{f_name}] Step 2: unknown arg for {cmd_name}")
  
-@@ -809,11 +815,16 @@ def gen_driver_spec(ops_name, ops_path, ops_code, output_dir_name="drivers"):
+@@ -562,7 +569,7 @@ def gen_spec_recursive(
+                 step2_answer = gen_answer(
+                     step2_prompt, step2_output_path, step2_answer_path
+                 )
+-            answer_dict = json.loads(step2_answer)
++            answer_dict = parse_json_answer(step2_answer)
+             if cmd_name not in answer_dict:
+                 logger.error(f"[{key_name}] Step 2 failed for {cmd_name}")
+                 continue
+@@ -809,11 +816,16 @@ def gen_driver_spec(ops_name, ops_path, ops_code, output_dir_name="drivers"):
      ioctl_code = ioctl_info["source"]
      statistics["ioctl_path"] = str(ioctl_path)
  
@@ -165,7 +481,7 @@ index 49865b5..e73c790 100644
      if not ioctl_dict:
          statistics["result"] = "failed no spec"
          logger.error(f"[{ops_name}] Failed")
-@@ -902,6 +913,14 @@ def main():
+@@ -902,6 +914,14 @@ def main():
          default=None,
          help="path to the debug file",
      )
@@ -180,7 +496,7 @@ index 49865b5..e73c790 100644
      args = parser.parse_args()
  
      json_path = Path(args.data)
-@@ -916,6 +935,34 @@ def main():
+@@ -916,6 +936,34 @@ def main():
      debug_file = args.debug_file
      ops_handler_data = json.loads(json_path.read_text())
  
@@ -215,7 +531,7 @@ index 49865b5..e73c790 100644
      logger.info(f"num of ops: {len(ops_handler_data)}")
  
      generated_ops = set()
-@@ -933,30 +980,32 @@ def main():
+@@ -933,30 +981,32 @@ def main():
              continue
  
          for ops_path, ops_code in ops_data.items():
@@ -273,10 +589,10 @@ index 49865b5..e73c790 100644
              generated_ops.add(ops_name)
              results[ops_type].append(statistics)
 diff --git a/spec-gen/gen_utils.py b/spec-gen/gen_utils.py
-index 6a1de9c..a4f8bf7 100644
+index 6a1de9c..2b93f62 100644
 --- a/spec-gen/gen_utils.py
 +++ b/spec-gen/gen_utils.py
-@@ -27,15 +27,15 @@ SOCKOPT_ARG_TEMPLATE_PATH = (
+@@ -27,20 +27,61 @@ SOCKOPT_ARG_TEMPLATE_PATH = (
  
  EXISTING_PATH = Path(__file__).parent / "existings"
  EXISTING_TYPE_PATH = EXISTING_PATH / "types.txt"
@@ -296,7 +612,53 @@ index 6a1de9c..a4f8bf7 100644
  existing_fds = set(EXISTING_FD_PATH.read_text().split("\n"))
  existing_filenames = set(EXISTING_FILENAME_PATH.read_text().split("\n"))
  dev_files = set(DEV_FILES_PATH.read_text().split("\n"))
-@@ -48,6 +48,28 @@ class OpsType(Enum):
+ 
+ 
++def parse_json_answer(answer_txt: str):
++    """Parse JSON from either a raw JSON answer or a fenced markdown block."""
++    if answer_txt is None:
++        raise json.JSONDecodeError("empty answer", "", 0)
++
++    answer_txt = answer_txt.strip()
++    decoder = json.JSONDecoder()
++
++    candidates = [answer_txt]
++    candidates.extend(
++        match.group(1).strip()
++        for match in re.finditer(
++            r"```[ \t]*(?:json)?[^\r\n]*\r?\n(.*?)\r?\n?[ \t]*```",
++            answer_txt,
++            flags=re.IGNORECASE | re.DOTALL,
++        )
++    )
++
++    last_error = None
++    for candidate in candidates:
++        if not candidate:
++            continue
++        try:
++            return json.loads(candidate)
++        except json.JSONDecodeError as e:
++            last_error = e
++
++    for idx, char in enumerate(answer_txt):
++        if char not in "{[":
++            continue
++        try:
++            parsed, _ = decoder.raw_decode(answer_txt[idx:])
++            return parsed
++        except json.JSONDecodeError as e:
++            last_error = e
++
++    if last_error is not None:
++        raise last_error
++    raise json.JSONDecodeError("no JSON object found", answer_txt, 0)
++
++
+ class OpsType(Enum):
+     SOCKET = auto()
+     FS = auto()
+@@ -48,6 +89,28 @@ class OpsType(Enum):
      DRIVER = auto()
  
  
@@ -325,6 +687,33 @@ index 6a1de9c..a4f8bf7 100644
  def get_ops_type(ops_path: str, ops_code: str = None):
      """Get the ops type from the ops name and path."""
      ops_path = str(ops_path)
+@@ -405,7 +468,7 @@ class SyzSpec:
+ 
+     def add_ioctls(self, ioctl_code, only_types=False):
+         try:
+-            ioctls = json.loads(ioctl_code)
++            ioctls = parse_json_answer(ioctl_code)
+             new_types = ioctls["types"] if "types" in ioctls else {}
+             new_ioctls = ioctls["ioctls"] if "ioctls" in ioctls else {}
+ 
+@@ -496,7 +559,7 @@ def pop_unknown_types(type_dict, pop_all=False) -> dict:
+ 
+ def update_types(type_dict: dict, answer_txt: str):
+     try:
+-        new_types = json.loads(answer_txt)
++        new_types = parse_json_answer(answer_txt)
+     except Exception as e:
+         logger.error(f"Failed to parse {answer_txt}")
+         logger.error(e)
+@@ -537,7 +600,7 @@ def merge_init_ioctl(init_dict, ioctl_dict):
+ 
+ def update_spec_dict(spec_dict, answer_txt):
+     try:
+-        new_spec_dict = json.loads(answer_txt)
++        new_spec_dict = parse_json_answer(answer_txt)
+     except Exception as e:
+         logger.error(f"Failed to parse {answer_txt}")
+         logger.error(e)
 diff --git a/spec-gen/llm_utils.py b/spec-gen/llm_utils.py
 index b8b113b..f2e221d 100644
 --- a/spec-gen/llm_utils.py
