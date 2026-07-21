@@ -49,7 +49,7 @@ RUN DEBIAN_FRONTEND=noninteractive apt-get install -y tzdata
 RUN apt-get install -y sudo emacs-nox vim-nox file python3-dateutil git
 RUN apt-get install -y flex bison libtinfo5 libelf-dev bc build-essential
 RUN apt-get install -y libssl-dev dwarves libdw-dev language-pack-en-base
-RUN apt-get install -y qemu-system-x86 debootstrap jq
+RUN apt-get install -y qemu-system-x86 debootstrap jq ripgrep
 RUN rm -rf /var/lib/apt/lists/*
 
 # Copy across source files needed for build
