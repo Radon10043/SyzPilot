@@ -1268,12 +1268,28 @@ index 0000000..11f0039
 +		fmt.Printf("cmd is invalid\n")
 +	}
 +}
+diff --git a/lib/MLTA/Common.hh b/lib/MLTA/Common.hh
+index f48eae4..7d10ce8 100644
+--- a/lib/MLTA/Common.hh
++++ b/lib/MLTA/Common.hh
+@@ -6,7 +6,11 @@
+ #include <llvm/Support/raw_ostream.h>
+ #include <llvm/Support/CommandLine.h>
+ #include <llvm/IR/DebugInfo.h>
++#if __has_include(<llvm/TargetParser/Triple.h>)
++#include <llvm/TargetParser/Triple.h>
++#else
+ #include <llvm/ADT/Triple.h>
++#endif
+ 
+ #include <unistd.h>
+ #include <bitset>
 diff --git a/script/build.bash b/script/build.bash
 old mode 100644
 new mode 100755
 diff --git a/script/genspec.sh b/script/genspec.sh
 new file mode 100755
-index 0000000..55e254b
+index 0000000..12cf4b3
 --- /dev/null
 +++ b/script/genspec.sh
 @@ -0,0 +1,119 @@
@@ -1380,7 +1396,7 @@ index 0000000..55e254b
 +{
 +    "bitcode": "$bc_path",
 +    "knowledge": "$REPO_DIR/config/knowledge.json",
-+    "version": "cloudexp"
++    "version": "v6.18"
 +}
 +__EOF__
 +
@@ -1398,10 +1414,10 @@ index 0000000..55e254b
 +done
 diff --git a/script/genspec_subsystems.sh b/script/genspec_subsystems.sh
 new file mode 100755
-index 0000000..bfa481e
+index 0000000..d6e2c51
 --- /dev/null
 +++ b/script/genspec_subsystems.sh
-@@ -0,0 +1,182 @@
+@@ -0,0 +1,184 @@
 +#!/bin/bash
 +# Run SyzDescribe for specific subsystems (with parallel execution).
 +#
@@ -1413,7 +1429,7 @@ index 0000000..bfa481e
 +
 +set -euo pipefail
 +
-+KERNEL_DIR="/vol/linux/v6.18/build4SyzDescribe"
++KERNEL_DIR=
 +REPO_DIR=$(realpath "$(dirname "$0")/..")
 +SYZDESCRIBE_BIN="$REPO_DIR/build/tools/SyzDescribe/SyzDescribe"
 +KNOWLEDGE="$REPO_DIR/config/knowledge.json"
@@ -1424,6 +1440,7 @@ index 0000000..bfa481e
 +
 +print_help() {
 +    echo "usage: $0 [ARGS]"
++    echo "  -k, --kernel <PATH>       Kernel source directory (required)"
 +    echo "  -o, --outdir <PATH>       Output directory (required)"
 +    echo "  -j, --jobs <N>            Max parallel jobs (default: nproc=$(nproc))"
 +    echo "  -t, --timeout <DURATION>  Timeout per subsystem (default: 60m)"
@@ -1432,6 +1449,7 @@ index 0000000..bfa481e
 +
 +while [[ $# -gt 0 ]]; do
 +    case "$1" in
++        -k|--kernel) KERNEL_DIR="$2"; shift 2 ;;
 +        -o|--outdir) OUTDIR="$2"; shift 2 ;;
 +        -j|--jobs) MAX_JOBS="$2"; shift 2 ;;
 +        -t|--timeout) TIMEOUT_DURATION="$2"; shift 2 ;;
