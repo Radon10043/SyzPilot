@@ -97,6 +97,81 @@ index 7646761..3121b68 100644
 +RUN tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz && \
 +    rm go1.23.6.linux-amd64.tar.gz
 +RUN /bin/bash -c 'echo "export PATH=/usr/local/go/bin:$PATH" >> /root/.bashrc'
+diff --git a/include/klee/Utils/llvm_related.h b/include/klee/Utils/llvm_related.h
+index 0a5a659..05c1b1b 100644
+--- a/include/klee/Utils/llvm_related.h
++++ b/include/klee/Utils/llvm_related.h
+@@ -5,6 +5,8 @@
+ #ifndef INC_LLVM_RELATED_H
+ #define INC_LLVM_RELATED_H
+ 
++#include "klee/Config/Version.h"
++
+ #include "basic.h"
+ #include "log.h"
+ 
+@@ -37,6 +39,8 @@ static std::string get_real_structure_name(const std::string &name) __attribute_
+ 
+ static llvm::Type *get_real_type(llvm::Type *t) __attribute__ ((unused));
+ 
++static llvm::Type *get_non_opaque_pointer_element_type(llvm::Type *t) __attribute__ ((unused));
++
+ static std::string get_real_function_type(llvm::FunctionType *ft) __attribute__ ((unused));
+ 
+ // for debug info
+@@ -124,12 +128,29 @@ std::string get_real_structure_name(const std::string &name) {
+   return ret;
+ }
+ 
++llvm::Type *get_non_opaque_pointer_element_type(llvm::Type *t) {
++  auto *pt = llvm::dyn_cast_or_null<llvm::PointerType>(t);
++  if (pt == nullptr) {
++    return nullptr;
++  }
++#if LLVM_VERSION_CODE >= LLVM_VERSION(15, 0)
++  if (pt->isOpaque()) {
++    return nullptr;
++  }
++#endif
++  return pt->getNonOpaquePointerElementType();
++}
++
+ llvm::Type *get_real_type(llvm::Type *t) {
+   if (t == nullptr) {
+     return nullptr;
+   }
+   if (t->isPointerTy()) {
+-    return get_real_type(t->getNonOpaquePointerElementType());
++    auto *element_type = get_non_opaque_pointer_element_type(t);
++    if (element_type == nullptr) {
++      return t;
++    }
++    return get_real_type(element_type);
+   } else if (t->isArrayTy()) {
+     return get_real_type(t->getArrayElementType());
+   } else if (t->isVectorTy()) {
+@@ -143,8 +164,8 @@ std::string get_real_function_type(llvm::FunctionType *ft) {
+   std::string str;
+   int64_t debug = 4;
+   auto ret = ft->getReturnType();
+-  if (ret->isPointerTy() &&
+-      ret->getNonOpaquePointerElementType()->isStructTy()) {
++  auto *ret_element_type = get_non_opaque_pointer_element_type(ret);
++  if (ret_element_type != nullptr && ret_element_type->isStructTy()) {
+     hy_print(debug, ret->print, str) str = str.substr(0, str.size() - 1);
+     if (str.find("struct") == std::string::npos) {
+       type += str;
+@@ -168,8 +189,8 @@ std::string get_real_function_type(llvm::FunctionType *ft) {
+       type += ", ";
+     }
+     auto temp = ft->getParamType(i);
+-    if (temp->isPointerTy() &&
+-        temp->getNonOpaquePointerElementType()->isStructTy()) {
++    auto *param_element_type = get_non_opaque_pointer_element_type(temp);
++    if (param_element_type != nullptr && param_element_type->isStructTy()) {
+       hy_print(debug, temp->print, str) str = str.substr(0, str.size() - 1);
+       if (str.find("struct") == std::string::npos) {
+         type += str;
 diff --git a/kernelbc/gen.go b/kernelbc/gen.go
 new file mode 100644
 index 0000000..11f0039
@@ -648,11 +723,247 @@ index 0000000..11f0039
 +		fmt.Printf("cmd is invalid\n")
 +	}
 +}
+diff --git a/lib/Core/ExecutionState.cpp b/lib/Core/ExecutionState.cpp
+index 48e8cc7..30338bd 100644
+--- a/lib/Core/ExecutionState.cpp
++++ b/lib/Core/ExecutionState.cpp
+@@ -763,7 +763,11 @@ void ExecutionState::add_mo_type(const MemoryObject *mo, llvm::Type *_type, uint
+   // yuhao: todo may has issue
+   auto temp = _type;
+   while (temp->isPointerTy()) {
+-    temp = temp->getPointerElementType();
++    auto *element_type = get_non_opaque_pointer_element_type(temp);
++    if (element_type == nullptr) {
++      break;
++    }
++    temp = element_type;
+   }
+ 
+   if (_type->isStructTy() || _type->isArrayTy() || _type->isFunctionTy() ||
+@@ -841,4 +845,4 @@ bool ExecutionState::is_possible_mo(const MemoryObject *mo, llvm::Type *_type) {
+     } else {
+       return false;
+     }
+-}
+\ No newline at end of file
++}
 diff --git a/lib/Core/Executor.cpp b/lib/Core/Executor.cpp
-index bf4b303..00371a6 100644
+index bf4b303..e9d8a81 100644
 --- a/lib/Core/Executor.cpp
 +++ b/lib/Core/Executor.cpp
-@@ -6363,7 +6363,7 @@ size_t Executor::getAllocationAlignment(const llvm::Value *allocSite) const {
+@@ -600,12 +600,18 @@ void Executor::initializeGlobalObject(ExecutionState &state, ObjectState *os,
+                                       bool symbolic) {
+   const auto targetData = kmodule->targetData.get();
+   if (const ConstantVector *cp = dyn_cast<ConstantVector>(c)) {
++    if (!cp->getType()->getElementType()->isSized()) {
++      return;
++    }
+     unsigned elementSize =
+         targetData->getTypeStoreSize(cp->getType()->getElementType());
+     for (unsigned i = 0, e = cp->getNumOperands(); i != e; ++i)
+       initializeGlobalObject(state, os, v, cp->getOperand(i),
+                              offset + i * elementSize);
+   } else if (isa<ConstantAggregateZero>(c)) {
++    if (!c->getType()->isSized()) {
++      return;
++    }
+     unsigned i, size = targetData->getTypeStoreSize(c->getType());
+     for (i = 0; i < size; i++)
+       os->write8(offset + i, (uint8_t)0);
+@@ -620,24 +626,36 @@ void Executor::initializeGlobalObject(ExecutionState &state, ObjectState *os,
+     }
+ 
+   } else if (const ConstantArray *ca = dyn_cast<ConstantArray>(c)) {
++    if (!ca->getType()->getElementType()->isSized()) {
++      return;
++    }
+     unsigned elementSize =
+         targetData->getTypeStoreSize(ca->getType()->getElementType());
+     for (unsigned i = 0, e = ca->getNumOperands(); i != e; ++i)
+       initializeGlobalObject(state, os, v, ca->getOperand(i),
+                              offset + i * elementSize);
+   } else if (const ConstantStruct *cs = dyn_cast<ConstantStruct>(c)) {
+-    const StructLayout *sl =
+-        targetData->getStructLayout(cast<StructType>(cs->getType()));
++    auto *st = cast<StructType>(cs->getType());
++    if (st->isOpaque() || !st->isSized()) {
++      return;
++    }
++    const StructLayout *sl = targetData->getStructLayout(st);
+     for (unsigned i = 0, e = cs->getNumOperands(); i != e; ++i)
+       initializeGlobalObject(state, os, v, cs->getOperand(i),
+                              offset + sl->getElementOffset(i));
+   } else if (const ConstantDataSequential *cds =
+                  dyn_cast<ConstantDataSequential>(c)) {
++    if (!cds->getElementType()->isSized()) {
++      return;
++    }
+     unsigned elementSize = targetData->getTypeStoreSize(cds->getElementType());
+     for (unsigned i = 0, e = cds->getNumElements(); i != e; ++i)
+       initializeGlobalObject(state, os, v, cds->getElementAsConstant(i),
+                              offset + i * elementSize);
+   } else if (!isa<UndefValue>(c) && !isa<MetadataAsValue>(c)) {
++    if (!c->getType()->isSized()) {
++      return;
++    }
+     unsigned StoreBits = targetData->getTypeStoreSizeInBits(c->getType());
+     ref<ConstantExpr> C = evalConstant(c);
+ 
+@@ -655,6 +673,9 @@ void Executor::initializeGlobalObject(ExecutionState &state, ObjectState *os,
+                                       const llvm::Value *v, llvm::Type *ty,
+                                       unsigned offset, bool only_pointer) {
+   const auto targetData = kmodule->targetData.get();
++  if (ty == nullptr || !ty->isSized()) {
++    return;
++  }
+   if (auto *vt = dyn_cast<VectorType>(ty)) {
+     unsigned elementSize = targetData->getTypeStoreSize(vt->getElementType());
+     for (unsigned i = 0, e = vt->getNumContainedTypes(); i != e; ++i)
+@@ -666,6 +687,9 @@ void Executor::initializeGlobalObject(ExecutionState &state, ObjectState *os,
+       initializeGlobalObject(state, os, v, at->getElementType(),
+                              offset + i * elementSize);
+   } else if (auto *st = dyn_cast<StructType>(ty)) {
++    if (st->isOpaque()) {
++      return;
++    }
+     const StructLayout *sl = targetData->getStructLayout(st);
+     for (unsigned i = 0, e = st->getNumElements(); i != e; ++i)
+       initializeGlobalObject(state, os, v, st->getElementType(i),
+@@ -943,8 +967,7 @@ void Executor::initializeGlobalObjects(ExecutionState &state) {
+       os->initializeToZero();
+       // initialize global object with symbolic value
+       current_global_name = v.getName().str();
+-      initializeGlobalObject(state, os, &v,
+-                             v.getType()->getPointerElementType(), 0);
++      initializeGlobalObject(state, os, &v, v.getValueType(), 0);
+     }
+   }
+ }
+@@ -2963,8 +2986,7 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
+ 
+     if (f) {
+       const FunctionType *fType = f->getFunctionType();
+-      const FunctionType *fpType =
+-          dyn_cast<FunctionType>(fp->getType()->getPointerElementType());
++      const FunctionType *fpType = cb.getFunctionType();
+ 
+       // special case the call with a bitcast case
+       if (fType != fpType) {
+@@ -3603,8 +3625,10 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
+       if (check->isTrue()) {
+         auto bi = dyn_cast<llvm::BitCastInst>(ki->inst);
+         hy_log(debug, "BitCast: update mo type");
+-        add_mo_type(state, mo, bi->getSrcTy()->getPointerElementType());
+-        add_mo_type(state, mo, bi->getDestTy()->getPointerElementType());
++        add_mo_type(state, mo,
++                    get_non_opaque_pointer_element_type(bi->getSrcTy()));
++        add_mo_type(state, mo,
++                    get_non_opaque_pointer_element_type(bi->getDestTy()));
+       }
+ 
+       // ref<Expr> offset = mo->getOffsetExpr(result);
+@@ -3633,14 +3657,14 @@ void Executor::executeInstruction(ExecutionState &state, KInstruction *ki) {
+       }
+       llvm::BitCastInst *bi = dyn_cast<llvm::BitCastInst>(ki->inst);
+ 
+-      llvm::Type *src_type = bi->getSrcTy()->getPointerElementType();
+-      if (src_type->isSized()) {
++      llvm::Type *src_type = get_non_opaque_pointer_element_type(bi->getSrcTy());
++      if (src_type && src_type->isSized()) {
+         uint64_t src_size = kmodule->targetData->getTypeStoreSize(src_type);
+         ucmo->update_ucmo_size(src_type, src_size);
+       }
+ 
+-      llvm::Type *dest_type = bi->getDestTy()->getPointerElementType();
+-      if (dest_type->isSized()) {
++      llvm::Type *dest_type = get_non_opaque_pointer_element_type(bi->getDestTy());
++      if (dest_type && dest_type->isSized()) {
+         uint64_t dest_size = kmodule->targetData->getTypeStoreSize(dest_type);
+         ucmo->update_ucmo_size(dest_type, dest_size);
+       }
+@@ -4207,9 +4231,15 @@ void Executor::computeOffsetsSeqTy(KGEPInstruction *kgepi,
+                                    uint64_t index, const TypeIt it) {
+   assert(it->getNumContainedTypes() == 1 &&
+          "Sequential type must contain one subtype");
+-  uint64_t elementSize =
+-      kmodule->targetData->getTypeStoreSize(it->getContainedType(0));
+-  const Value *operand = it.getOperand();
++  computeOffsetsSeqTy(kgepi, constantOffset, index, it->getContainedType(0),
++                      it.getOperand());
++}
++
++void Executor::computeOffsetsSeqTy(KGEPInstruction *kgepi,
++                                   ref<ConstantExpr> &constantOffset,
++                                   uint64_t index, Type *elementType,
++                                   const Value *operand) {
++  uint64_t elementSize = kmodule->targetData->getTypeStoreSize(elementType);
+   if (const Constant *c = dyn_cast<Constant>(operand)) {
+     ref<ConstantExpr> index =
+         evalConstant(c)->SExt(Context::get().getPointerWidth());
+@@ -4221,6 +4251,53 @@ void Executor::computeOffsetsSeqTy(KGEPInstruction *kgepi,
+   }
+ }
+ 
++void Executor::computeOffsetsGEP(KGEPInstruction *kgepi,
++                                 const GetElementPtrInst *gepi) {
++  ref<ConstantExpr> constantOffset =
++      ConstantExpr::alloc(0, Context::get().getPointerWidth());
++  Type *currentType = gepi->getSourceElementType();
++  uint64_t index = 1;
++  bool firstIndex = true;
++
++  for (auto ii = gepi->idx_begin(), ie = gepi->idx_end(); ii != ie;
++       ++ii, ++index) {
++    const Value *operand = ii->get();
++
++    if (firstIndex) {
++      computeOffsetsSeqTy(kgepi, constantOffset, index, currentType, operand);
++      firstIndex = false;
++      continue;
++    }
++
++    if (StructType *st = dyn_cast<StructType>(currentType)) {
++      const StructLayout *sl = kmodule->targetData->getStructLayout(st);
++      const ConstantInt *ci = cast<ConstantInt>(operand);
++      uint64_t fieldIndex = ci->getZExtValue();
++      uint64_t addend = sl->getElementOffset((unsigned)fieldIndex);
++      constantOffset = constantOffset->Add(
++          ConstantExpr::alloc(addend, Context::get().getPointerWidth()));
++      currentType = st->getElementType(fieldIndex);
++    } else if (ArrayType *at = dyn_cast<ArrayType>(currentType)) {
++      Type *elementType = at->getElementType();
++      computeOffsetsSeqTy(kgepi, constantOffset, index, elementType, operand);
++      currentType = elementType;
++    } else if (VectorType *vt = dyn_cast<VectorType>(currentType)) {
++      Type *elementType = vt->getElementType();
++      computeOffsetsSeqTy(kgepi, constantOffset, index, elementType, operand);
++      currentType = elementType;
++    } else if (currentType->isPointerTy()) {
++      Type *elementType = get_non_opaque_pointer_element_type(currentType);
++      assert(elementType && "cannot compute GEP through opaque pointer type");
++      computeOffsetsSeqTy(kgepi, constantOffset, index, elementType, operand);
++      currentType = elementType;
++    } else {
++      assert("invalid type" && 0);
++    }
++  }
++
++  kgepi->offset = constantOffset->getZExtValue();
++}
++
+ template <typename TypeIt>
+ void Executor::computeOffsets(KGEPInstruction *kgepi, TypeIt ib, TypeIt ie) {
+   ref<ConstantExpr> constantOffset =
+@@ -4245,7 +4322,7 @@ void Executor::computeOffsets(KGEPInstruction *kgepi, TypeIt ib, TypeIt ie) {
+ void Executor::bindInstructionConstants(KInstruction *KI) {
+   if (GetElementPtrInst *gepi = dyn_cast<GetElementPtrInst>(KI->inst)) {
+     KGEPInstruction *kgepi = static_cast<KGEPInstruction *>(KI);
+-    computeOffsets(kgepi, gep_type_begin(gepi), gep_type_end(gepi));
++    computeOffsetsGEP(kgepi, gepi);
+   } else if (InsertValueInst *ivi = dyn_cast<InsertValueInst>(KI->inst)) {
+     KGEPInstruction *kgepi = static_cast<KGEPInstruction *>(KI);
+     computeOffsets(kgepi, iv_type_begin(ivi), iv_type_end(ivi));
+@@ -6363,7 +6440,7 @@ size_t Executor::getAllocationAlignment(const llvm::Value *allocSite) const {
        type = GO->getType();
      }
    } else if (const AllocaInst *AI = dyn_cast<AllocaInst>(allocSite)) {
@@ -661,6 +972,90 @@ index bf4b303..00371a6 100644
      type = AI->getAllocatedType();
    } else if (isa<InvokeInst>(allocSite) || isa<CallInst>(allocSite)) {
      // FIXME: Model the semantics of the call to use the right alignment
+@@ -7331,11 +7408,14 @@ bool Executor::backward_trace(llvm::Value *value, llvm::Type **type,
+     has_offset = true;
+     *base = gep;
+     *type = gep->getSourceElementType();
+-    backward_trace(gep->getOperand(0), type, has_offset, base);
++    llvm::Type *source_type = *type;
++    if (!backward_trace(gep->getOperand(0), type, has_offset, base) || !*type) {
++      *type = source_type;
++    }
+     return true;
+   } else if (value->getType()->isPointerTy()) {
+-    *type = value->getType()->getPointerElementType();
+-    return true;
++    *type = get_non_opaque_pointer_element_type(value->getType());
++    return *type != nullptr;
+   } else {
+     std::string str;
+     hy_print(-1, value->print, str);
+@@ -7751,12 +7831,18 @@ void Executor::record_linked_list(ExecutionState &state, KInstruction *ki) {
+   if (!type->isPointerTy()) {
+     return;
+   }
+-  type = type->getPointerElementType();
++  type = get_non_opaque_pointer_element_type(type);
++  if (!type) {
++    return;
++  }
+ 
+   if (!type->isPointerTy()) {
+     return;
+   }
+-  type = type->getPointerElementType();
++  type = get_non_opaque_pointer_element_type(type);
++  if (!type) {
++    return;
++  }
+ 
+   if (!type->isStructTy()) {
+     return;
+@@ -7824,11 +7910,17 @@ void Executor::maintain_linked_list(ExecutionState &state, KInstruction *ki,
+   if (!type->isPointerTy()) {
+     return;
+   }
+-  type = type->getPointerElementType();
++  type = get_non_opaque_pointer_element_type(type);
++  if (!type) {
++    return;
++  }
+   if (!type->isPointerTy()) {
+     return;
+   }
+-  type = type->getPointerElementType();
++  type = get_non_opaque_pointer_element_type(type);
++  if (!type) {
++    return;
++  }
+   if (!type->isStructTy()) {
+     return;
+   }
+@@ -7981,4 +8073,4 @@ void Executor::type_analysis(ExecutionState &state, KInstruction *ki,
+   } else {
+ 
+   }
+-}
+\ No newline at end of file
++}
+diff --git a/lib/Core/Executor.h b/lib/Core/Executor.h
+index be4607f..f9b4911 100644
+--- a/lib/Core/Executor.h
++++ b/lib/Core/Executor.h
+@@ -502,9 +502,13 @@ private:
+   void computeOffsetsSeqTy(KGEPInstruction *kgepi,
+                            ref<ConstantExpr> &constantOffset, uint64_t index,
+                            const TypeIt it);
++  void computeOffsetsSeqTy(KGEPInstruction *kgepi,
++                           ref<ConstantExpr> &constantOffset, uint64_t index,
++                           llvm::Type *elementType, const llvm::Value *operand);
+ 
+   template <typename TypeIt>
+   void computeOffsets(KGEPInstruction *kgepi, TypeIt ib, TypeIt ie);
++  void computeOffsetsGEP(KGEPInstruction *kgepi, const llvm::GetElementPtrInst *gepi);
+ 
+   /// bindInstructionConstants - Initialize any necessary per instruction
+   /// constant values.
 diff --git a/lib/Core/GetElementPtrTypeIterator.h b/lib/Core/GetElementPtrTypeIterator.h
 index d8b0e09..4e0314c 100644
 --- a/lib/Core/GetElementPtrTypeIterator.h
@@ -693,6 +1088,124 @@ index e580257..13c6b88 100644
  
  			typeConfineInInitializer(GV);
  		}
+diff --git a/lib/MLTA/MLTA.cc b/lib/MLTA/MLTA.cc
+index afcd7e6..93a45f8 100644
+--- a/lib/MLTA/MLTA.cc
++++ b/lib/MLTA/MLTA.cc
+@@ -54,8 +54,12 @@ bool MLTA::fuzzyTypeMatch(Type *Ty1, Type *Ty2,
+ 		return true;
+ 
+ 	while (Ty1->isPointerTy() && Ty2->isPointerTy()) {
+-		Ty1 = Ty1->getPointerElementType();
+-		Ty2 = Ty2->getPointerElementType();
++		Type *ETy1 = get_non_opaque_pointer_element_type(Ty1);
++		Type *ETy2 = get_non_opaque_pointer_element_type(Ty2);
++		if (!ETy1 || !ETy2)
++			return true;
++		Ty1 = ETy1;
++		Ty2 = ETy2;
+ 	}
+ 
+ 	if (Ty1->isStructTy() && Ty2->isStructTy() &&
+@@ -268,7 +272,9 @@ bool MLTA::isCompositeType(Type *Ty) {
+ Type *MLTA::getFuncPtrType(Value *V) {
+ 	Type *Ty = V->getType();
+ 	if (PointerType *PTy = dyn_cast<PointerType>(Ty)) {
+-		Type *ETy = PTy->getPointerElementType();
++		Type *ETy = get_non_opaque_pointer_element_type(PTy);
++		if (!ETy)
++			return NULL;
+ 		if (ETy->isFunctionTy())
+ 			return ETy;
+ 	}
+@@ -387,9 +393,9 @@ bool MLTA::typeConfineInInitializer(GlobalVariable *GV) {
+ 				User *OU = dyn_cast<User>(O);
+ 				LU.push_back(OU);
+ 				if (GlobalVariable *GO = dyn_cast<GlobalVariable>(OU)) {
+-					Type *Ty = POTy->getPointerElementType();
++					Type *Ty = get_non_opaque_pointer_element_type(POTy);
+ 					// FIXME: take it as a confinement instead of a cap
+-					if (Ty->isStructTy())
++					if (Ty && Ty->isStructTy())
+ 						typeCapSet.insert(typeHash(Ty));
+ 				}
+ 			}
+@@ -609,9 +615,9 @@ bool MLTA::typePropInFunction(Function *F) {
+ 		Type *FromTy = Cast->getOperand(0)->getType();
+ 		Type *ToTy = Cast->getType();
+ 		if (FromTy->isPointerTy() && ToTy->isPointerTy()) {
+-			Type *EFromTy = FromTy->getPointerElementType();
+-			Type *EToTy = ToTy->getPointerElementType();
+-			if (EFromTy->isStructTy() && EToTy->isStructTy()) {
++			Type *EFromTy = get_non_opaque_pointer_element_type(FromTy);
++			Type *EToTy = get_non_opaque_pointer_element_type(ToTy);
++			if (EFromTy && EToTy && EFromTy->isStructTy() && EToTy->isStructTy()) {
+ 				//propagateType(Cast, EFromTy, -1);
+ 			}
+ 		}
+@@ -644,7 +650,8 @@ void MLTA::collectAliasStructPtr(Function *F) {
+ 			if (!ToTy->isPointerTy())
+ 				continue;
+ 			
+-			if (!isCompositeType(ToTy->getPointerElementType()))
++			Type *ToElementTy = get_non_opaque_pointer_element_type(ToTy);
++			if (!ToElementTy || !isCompositeType(ToElementTy))
+ 				continue;
+ 
+ 			if (AliasMap.find(FromV) != AliasMap.end()) {
+@@ -889,12 +896,12 @@ Type *MLTA::getBaseType(Value *V, std::set<Value *> &Visited) {
+ 	// The value itself is a pointer to a composite type
+ 	else if (Ty->isPointerTy()) {
+ 
+-		Type *ETy = Ty->getPointerElementType();
+-		if (isCompositeType(ETy)) {
++		Type *ETy = get_non_opaque_pointer_element_type(Ty);
++		if (ETy && isCompositeType(ETy)) {
+ 			return ETy;
+ 		}
+ 		else if (Value *BV = recoverBaseType(V))
+-			return BV->getType()->getPointerElementType();
++			return get_non_opaque_pointer_element_type(BV->getType());
+ 	}
+ 
+ 	if (BitCastOperator *BCO = 
+@@ -957,14 +964,17 @@ bool MLTA::getGEPLayerTypes(GEPOperator *GEP, std::list<typeidx_t> &TyList) {
+ 		Instruction *I = dyn_cast<Instruction>(PO);
+ 		Value *BV = recoverBaseType(PO);
+ 		if (BV) {
+-			ETy = BV->getType()->getPointerElementType();
+-			APInt Offset (ConstI->getBitWidth(), 
+-					ConstI->getZExtValue());
+-			Type *BaseTy = ETy;
+-			SmallVector<APInt>IndiceV = DLMap[I->getModule()]
+-				->getGEPIndicesForOffset(BaseTy, Offset);
+-			for (auto Idx : IndiceV) {
+-				Indices.push_back(*Idx.getRawData());
++			Type *RecoveredTy = get_non_opaque_pointer_element_type(BV->getType());
++			if (RecoveredTy) {
++				ETy = RecoveredTy;
++				APInt Offset (ConstI->getBitWidth(),
++						ConstI->getZExtValue());
++				Type *BaseTy = ETy;
++				SmallVector<APInt>IndiceV = DLMap[I->getModule()]
++					->getGEPIndicesForOffset(BaseTy, Offset);
++				for (auto Idx : IndiceV) {
++					Indices.push_back(*Idx.getRawData());
++				}
+ 			}
+ 		}
+ 		else if (StructType *STy = dyn_cast<StructType>(ETy)) {
+@@ -1033,8 +1043,8 @@ bool MLTA::getGEPLayerTypes(GEPOperator *GEP, std::list<typeidx_t> &TyList) {
+ 				if (PointerType *PTy 
+ 						= dyn_cast<PointerType>(BCO->getType())) {
+ 
+-					Type *ToTy = PTy->getPointerElementType();
+-					if (Ty0 == ToTy)
++					Type *ToTy = get_non_opaque_pointer_element_type(PTy);
++					if (ToTy && Ty0 == ToTy)
+ 						TmpTyList.push_front(typeidx_c(ETy, 0));
+ 				}
+ 			}
 diff --git a/lib/Module/Optimize.cpp b/lib/Module/Optimize.cpp
 index 35b9805..585d746 100644
 --- a/lib/Module/Optimize.cpp
