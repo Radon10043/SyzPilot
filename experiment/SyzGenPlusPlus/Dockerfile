@@ -15,7 +15,7 @@ RUN apt-get install -y qemu-system-x86 xz-utils cmake gdb libdw-dev libssl-dev s
 RUN apt-get install -y rsync file devscripts equivs gnupg config-package-dev debhelper-compat dwarves
 RUN apt-get install -y unzip gettext ccache git-email cpio gawk lsb-release software-properties-common
 RUN apt-get install -y cloc openssh-server python3 python3-pip python3-dev language-pack-en-base jq
-RUN apt-get install -y pkg-config libzstd-dev libxml2-dev zlib1g-dev sshfs
+RUN apt-get install -y pkg-config libzstd-dev libxml2-dev zlib1g-dev sshfs lz4 debian-archive-keyring
 
 # Install golang-1.24.4
 RUN wget https://go.dev/dl/go1.24.4.linux-amd64.tar.gz
