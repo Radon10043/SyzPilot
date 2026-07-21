@@ -1,3 +1,12 @@
+diff --git a/.gitignore b/.gitignore
+index 7aadd0a..06e52bb 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -39,3 +39,4 @@ fuzz/
+ results/
+ *.txt
+ 
++*.config
 diff --git a/.gitmodules b/.gitmodules
 index e69de29..9deec67 100644
 --- a/.gitmodules
@@ -6,6 +15,27 @@ index e69de29..9deec67 100644
 +[submodule "syzkaller"]
 +	path = syzkaller
 +	url = https://github.com/google/syzkaller
+diff --git a/hooks/linux/Makefile b/hooks/linux/Makefile
+index 4533a57..960dc37 100644
+--- a/hooks/linux/Makefile
++++ b/hooks/linux/Makefile
+@@ -1,12 +1,14 @@
+ obj-m += hook.o
+ hook-objs := src/hook_kprobe.o src/interface.o
+ EXTRA_CFLAGS := -I$(src)/lib
++KBUILD_M ?= $(CURDIR)
++KBUILD_ARGS ?=
+ 
+ # all:
+ # 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) modules
+ # clean:
+ # 	make -C /lib/modules/$(shell uname -r)/build M=$(PWD) clean
+ all:
+-	make -C $(KERNEL) M=$(PWD) modules > /dev/null
++	make -C $(KERNEL) M=$(KBUILD_M) $(KBUILD_ARGS) modules > /dev/null
+ clean:
+-	make -C $(KERNEL) M=$(PWD) clean
++	make -C $(KERNEL) M=$(KBUILD_M) $(KBUILD_ARGS) clean
 diff --git a/hooks/linux/client/Makefile b/hooks/linux/client/Makefile
 index 11e3802..af0d480 100644
 --- a/hooks/linux/client/Makefile
@@ -22,6 +52,63 @@ index 11e3802..af0d480 100644
  clean:
  	rm *.o client getfd
 \ No newline at end of file
+diff --git a/hooks/linux/lib/hook.h b/hooks/linux/lib/hook.h
+index e80d85f..78d7d18 100644
+--- a/hooks/linux/lib/hook.h
++++ b/hooks/linux/lib/hook.h
+@@ -12,7 +12,7 @@
+ #define COPY_FROM_USER  1
+ #define COPY_TO_USER    2
+ 
+-#pragma pack(8)
++#pragma pack(push, 8)
+ 
+ typedef struct hook_entry {
+     unsigned long addr;
+@@ -20,7 +20,7 @@ typedef struct hook_entry {
+     unsigned id;
+ } hook_entry_t __attribute__ ((aligned (8)));
+ 
+-int compare_entry(const void *a, const void *b) {
++static inline int compare_entry(const void *a, const void *b) {
+     hook_entry_t *h1 = (hook_entry_t *)a;
+     hook_entry_t *h2 = (hook_entry_t *)b;
+     return h1->addr - h2->addr;
+@@ -39,6 +39,8 @@ typedef struct fd_operations {
+     unsigned long open;
+ } fd_operations_t;
+ 
++#pragma pack(pop)
++
+ #ifndef ALIGN
+ #define _ALIGN(x, mask)	(((x) + (mask)) & ~(mask))
+ #define ALIGN(x, a) _ALIGN(x, (typeof(x))(a) - 1)
+@@ -47,4 +49,4 @@ typedef struct fd_operations {
+ #define SIZE_OF_HOOK(size) ALIGN(((size) * sizeof(hook_entry_t) + sizeof(unsigned long)), 4096)
+ #define GET_HOOK_ENTRIES(ptr) (hook_entry_t*)((uint8_t*)(ptr) + sizeof(unsigned long))
+ 
+-#endif
+\ No newline at end of file
++#endif
+diff --git a/hooks/linux/lib/kprobe.h b/hooks/linux/lib/kprobe.h
+new file mode 100644
+index 0000000..88d30d3
+--- /dev/null
++++ b/hooks/linux/lib/kprobe.h
+@@ -0,0 +1,13 @@
++#ifndef KPROBE_HEADER_H
++#define KPROBE_HEADER_H
++
++#include <linux/kprobes.h>
++
++#define HOOK_KPROBE(_name, _pre_hook, _post_hook) \
++{                               \
++    .symbol_name = _name,       \
++    .pre_handler = _pre_hook,   \
++    .post_handler = _post_hook, \
++}
++
++#endif
 diff --git a/hooks/linux/src/hook_ftrace.c b/hooks/linux/src/hook_ftrace.c
 index 9636e24..4c91d65 100644
 --- a/hooks/linux/src/hook_ftrace.c
@@ -36,7 +123,7 @@ index 9636e24..4c91d65 100644
  static void copy_from_user_callback(
      unsigned long ip, 
 diff --git a/hooks/linux/src/hook_kprobe.c b/hooks/linux/src/hook_kprobe.c
-index f7382f8..c1cd3d2 100644
+index f7382f8..2d891b4 100644
 --- a/hooks/linux/src/hook_kprobe.c
 +++ b/hooks/linux/src/hook_kprobe.c
 @@ -3,8 +3,8 @@
@@ -45,13 +132,20 @@ index f7382f8..c1cd3d2 100644
  
 -#include "ftrace.h"
 -#include "interface.h"
-+#include "../lib/ftrace.h"
++#include "../lib/kprobe.h"
 +#include "../lib/interface.h"
  
  // See samples/kprobes/kprobe_example.c for examples
  #define PRE_HANDLER_KERNEL(name, addr, size)   \
+@@ -93,4 +93,4 @@ static void __exit hook_exit(void) {
+ }
+ 
+ module_init(hook_init);
+-module_exit(hook_exit);
+\ No newline at end of file
++module_exit(hook_exit);
 diff --git a/hooks/linux/src/interface.c b/hooks/linux/src/interface.c
-index b961c03..a5b7348 100644
+index b961c03..555ff01 100644
 --- a/hooks/linux/src/interface.c
 +++ b/hooks/linux/src/interface.c
 @@ -5,8 +5,8 @@
@@ -65,6 +159,15 @@ index b961c03..a5b7348 100644
  
  struct hook {
      spinlock_t lock;
+@@ -16,7 +16,7 @@ struct hook {
+     enum hook_mode mode;
+ } ghook;
+ 
+-void interface_write(unsigned long addr, unsigned size, unsigned func_id) {
++static void interface_write(unsigned long addr, unsigned size, unsigned func_id) {
+     hook_entry_t *entries;
+     unsigned long *data;
+     unsigned long pos;
 @@ -96,7 +96,7 @@ static int interface_mmap(struct file *filep, struct vm_area_struct *vma) {
      }
      if (!hook->data) {
@@ -96,6 +199,13 @@ index b961c03..a5b7348 100644
      return copy_to_user((void *)arg, &ops, sizeof(ops));
  }
  
+@@ -202,4 +203,4 @@ int interface_init(void) {
+ 
+     debugfs_create_file_unsafe(INTERFACE_NAME, 0600, NULL, NULL, &interface_fops);
+     return 0;
+-}
+\ No newline at end of file
++}
 diff --git a/main.py b/main.py
 index 7d02856..f456119 100644
 --- a/main.py
@@ -112,15 +222,15 @@ index 7d02856..f456119 100644
  
 diff --git a/run_subsystems.sh b/run_subsystems.sh
 new file mode 100755
-index 0000000..147eff9
+index 0000000..962a93d
 --- /dev/null
 +++ b/run_subsystems.sh
-@@ -0,0 +1,198 @@
+@@ -0,0 +1,201 @@
 +#!/bin/bash
 +#
 +# Generate specifications for Linux kernel subsystems using SyzGenPlusPlus
 +#
-+# Subsystems: comedi, dri, fuse, i2c, input, kvm, ptp, ppp, rdma_cm, sequencer, sg
++# Subsystems: autofs, comedi, dri, fuse, i2c, input, kvm, ptp, ppp, rdma_cm, sequencer, sg
 +#
 +# Usage:
 +#   ./run_subsystems.sh              # Run all subsystems
@@ -148,6 +258,9 @@ index 0000000..147eff9
 +# For device groups sharing the same ioctl handler, only one representative is selected
 +# ============================================================================
 +declare -A SUBSYSTEM_DRIVERS
++
++# autofs: /dev/autofs
++SUBSYSTEM_DRIVERS[autofs]="autofs"
 +
 +# comedi: /dev/comedi0 - /dev/comedi4 share the same ioctl handler
 +SUBSYSTEM_DRIVERS[comedi]="comedi0"
@@ -186,7 +299,7 @@ index 0000000..147eff9
 +# ============================================================================
 +# Subsystem list to process
 +# ============================================================================
-+ALL_SUBSYSTEMS=(comedi dri fuse i2c input kvm ptp ppp rdma_cm sequencer sg)
++ALL_SUBSYSTEMS=(autofs comedi dri fuse i2c input kvm ptp ppp rdma_cm sequencer sg)
 +
 +if [[ $# -gt 0 ]]; then
 +    SUBSYSTEMS=("$@")
@@ -419,10 +532,43 @@ index bb1f9cf..e5b1cfc 100644
                      visited[(source.reg_offset, addr, t)] = False
                      res = False
 diff --git a/syzgen/target/linux.py b/syzgen/target/linux.py
-index 46a3776..0390dbd 100644
+index 46a3776..8923535 100644
 --- a/syzgen/target/linux.py
 +++ b/syzgen/target/linux.py
-@@ -77,9 +77,9 @@ class LinuxTarget(Target):
+@@ -53,10 +53,31 @@ class LinuxTarget(Target):
+ 
+         # hook.ko must be compiled with the target kernel
+         cwd = os.path.join(os.getcwd(), "hooks", "linux")
++        env = {**os.environ}
++        kernel_source = options.getConfigKey("kernel_source", self.inst.kernel_dir)
++        kernel_build = options.getConfigKey("kernel_build", "")
++        kernel_toolchain = options.getConfigKey("kernel_toolchain", "")
++        kbuild_args = options.getConfigKey("kbuild_args", "")
++
++        env.update({
++            "KERNEL": kernel_source,
++            "KBUILD_M": cwd,
++        })
++        if kernel_build:
++            env["KBUILD_OUTPUT"] = kernel_build
++        if kernel_toolchain:
++            env["PATH"] = f"{kernel_toolchain}{os.pathsep}{env['PATH']}"
++        if kbuild_args:
++            env["KBUILD_ARGS"] = kbuild_args
++        for key in ["LLVM", "LLVM_IAS"]:
++            value = options.getConfigKey(key, "")
++            if value:
++                env[key] = str(value)
++
+         subprocess.run(
+             ["make"],
+             cwd=cwd,
+-            env={**os.environ, "KERNEL": self.inst.kernel_dir, "PWD": cwd},
++            env=env,
+             check=True,
+         )
+         self.copy_file("hooks/linux/client/getfd")
+@@ -77,9 +98,9 @@ class LinuxTarget(Target):
                  os.getcwd(), "linux-distro", f"linux-{version}-raw")
          if image:
              config["image"] = os.path.abspath(
