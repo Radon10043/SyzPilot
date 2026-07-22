@@ -10,12 +10,34 @@ set -euo pipefail
 # required args
 KERNDIR=
 
+# optional args
+KERNTYP=all
+
+KERNEL_TYPES=(linux freebsd openbsd netbsd android gvisor)
+VALID_KERNTYP=(all "${KERNEL_TYPES[@]}")
+
 print_help() {
     echo "usage: $0 [ARGS]"
     echo "  args (required):"
-    echo "    -d, --dir <DIR>        path to the directory to store kernel sources"
+    echo "    -d, --dir     <DIR>       path to the directory to store kernel sources"
     echo "  args (optional):"
-    echo "    -h, --help             print help message"
+    echo "    -k, --kernel  <KERNEL>    kernel types"
+    echo "                                  * options: all, linux, freebsd, openbsd, netbsd, android, gvisor"
+    echo "                                  * default: all"
+    echo "    -h, --help                print help message"
+}
+
+valid_kerntyp() {
+    local ktype=$1
+    local valid_ktype
+
+    for valid_ktype in "${VALID_KERNTYP[@]}"; do
+        if [[ "$ktype" == "$valid_ktype" ]]; then
+            return 0
+        fi
+    done
+
+    return 1
 }
 
 # arg parsing
@@ -23,11 +45,30 @@ while [[ $# -gt 0 ]]; do
     case $1 in
     -d | --dir)
         # check if dir exists
-        if [[ -z "$2" ]] || [[ ! -d "$2" ]]; then
+        if [[ $# -lt 2 || -z "$2" ]]; then
+            echo "Error: Missing directory for '$1'."
+            print_help
+            exit 1
+        fi
+        if [[ ! -d "$2" ]]; then
             echo "Error: Directory '$2' does not exist."
             exit 1
         fi
         KERNDIR=$(realpath "$2")
+        shift 2
+        ;;
+    -k | --kernel)
+        if [[ $# -lt 2 || -z "$2" || "$2" == -* ]]; then
+            echo "Error: Missing kernel type for '$1'."
+            print_help
+            exit 1
+        fi
+        KERNTYP=$2
+        if ! valid_kerntyp "$KERNTYP"; then
+            echo "Error: Invalid kernel type '$KERNTYP'."
+            print_help
+            exit 1
+        fi
         shift 2
         ;;
     -h | --help)
@@ -89,14 +130,38 @@ netbsd() {
     fi
 }
 
-mkdir -p $KERNDIR/linux && cd $KERNDIR/linux
-linux
+android() {
+    echo "updating android/mainline ..."
+    if [ ! -d "mainline" ]; then
+        mkdir mainline && cd mainline
+        yes | repo init -u https://android.googlesource.com/kernel/manifest \
+            -b common-android-mainline \
+            --partial-clone --clone-filter=blob:none
+        cd ..
+    fi
+    cd mainline && repo sync -c -j4
+}
 
-mkdir -p $KERNDIR/freebsd && cd $KERNDIR/freebsd
-freebsd
+gvisor() {
+    echo "updating gvisor/mainline ..."
+    if [ ! -d "mainline" ]; then
+        git clone https://github.com/google/gvisor mainline
+    else
+        git -C mainline pull
+    fi
+}
 
-mkdir -p $KERNDIR/openbsd && cd $KERNDIR/openbsd
-openbsd
+update_kernel() {
+    local ktype=$1
+    mkdir -p "$KERNDIR/$ktype"
+    cd "$KERNDIR/$ktype"
+    "$ktype"
+}
 
-mkdir -p $KERNDIR/netbsd && cd $KERNDIR/netbsd
-netbsd
+if [[ "$KERNTYP" == "all" ]]; then
+    for ktype in "${KERNEL_TYPES[@]}"; do
+        update_kernel "$ktype"
+    done
+else
+    update_kernel "$KERNTYP"
+fi
