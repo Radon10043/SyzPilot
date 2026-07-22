@@ -1,6 +1,6 @@
 # setup kernel/android
 
-(host) download and build android kernels via manifests under cloud/configs/kernel/android:
+(container.cloud): download and build android kernels via manifests under cloud/configs/kernel/android:
 ```bash
 mkdir $EXPERIMENT_ROOT/kernel/android
 

@@ -1,6 +1,6 @@
 # setup image/freebsd
 
-(host) generate an SSH key:
+(container.cloud): generate an SSH key:
 ```bash
 mkdir -p $EXPERIMENT_ROOT/image/freebsd && cd $EXPERIMENT_ROOT/image/freebsd
 ssh-keygen -t rsa -f ./freebsd.id_rsa -N ""
@@ -8,7 +8,7 @@ ssh-keygen -t rsa -f ./freebsd.id_rsa -N ""
 
 ## 15.0.0
 
-(host) download 15.0 image:
+(container.cloud): download 15.0 image:
 ```bash
 cd $EXPERIMENT_ROOT/image/freebsd
 wget https://download.freebsd.org/releases/VM-IMAGES/15.0-RELEASE/amd64/Latest/FreeBSD-15.0-RELEASE-amd64-ufs.qcow2.xz
@@ -57,7 +57,7 @@ make -j$JOBS && make install
 reboot
 ```
 
-(host) install sshkey and verify kernel version:
+(container.cloud): install sshkey and verify kernel version:
 ```bash
 cd $EXPERIMENT_ROOT/image/freebsd
 ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
@@ -74,7 +74,7 @@ poweroff
 
 ## 14.3.0
 
-(host) download 14.3 image:
+(container.cloud): download 14.3 image:
 ```bash
 cd $EXPERIMENT_ROOT/image/freebsd
 wget https://archive.freebsd.org/old-releases/VM-IMAGES/14.3-RELEASE/amd64/Latest/FreeBSD-14.3-RELEASE-amd64-ufs.qcow2.xz
@@ -123,7 +123,7 @@ make -j$JOBS && make install
 reboot
 ```
 
-(host) install sshkey and verify kernel version:
+(container.cloud): install sshkey and verify kernel version:
 ```bash
 cd $EXPERIMENT_ROOT/image/freebsd
 ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
@@ -140,7 +140,7 @@ poweroff
 
 ## 14.2.0
 
-(host) download 14.2 image:
+(container.cloud): download 14.2 image:
 ```bash
 cd $EXPERIMENT_ROOT/image/freebsd
 wget https://archive.freebsd.org/old-releases/VM-IMAGES/14.2-RELEASE/amd64/Latest/FreeBSD-14.2-RELEASE-amd64-ufs.qcow2.xz
@@ -189,7 +189,7 @@ make -j$JOBS && make install
 reboot
 ```
 
-(host) install sshkey and verify kernel version:
+(container.cloud): install sshkey and verify kernel version:
 ```bash
 cd $EXPERIMENT_ROOT/image/freebsd
 ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost

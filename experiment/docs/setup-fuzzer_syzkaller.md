@@ -2,7 +2,7 @@
 
 ## linux binaries
 
-(host)
+(container.cloud):
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/syzkaller
 git apply $EXPERIMENT_ROOT/fuzzer/cloud/patch/syzkaller/openbsd.patch $EXPERIMENT_ROOT/fuzzer/cloud/patch/syzkaller/netbsd.patch
@@ -11,7 +11,7 @@ make all
 
 ## freebsd binaries
 
-(host) start a freebsd vm, let's add `-snapshot` so that we can do whatever we want on vm:
+(container.cloud): start a freebsd vm, let's add `-snapshot` so that we can do whatever we want on vm:
 ```bash
 qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/image/freebsd/15.0.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host -snapshot
 ```
@@ -25,7 +25,7 @@ git apply /root/cloud/patch/syzkaller/freebsd.patch /root/cloud/patch/syzkaller/
 gmake target
 ```
 
-(host) copy needed binaries to the host:
+(container.cloud): copy needed binaries to the host:
 ```bash
 scp -P 3733 \
     -o UserKnownHostsFile=/dev/null \
@@ -41,7 +41,7 @@ poweroff
 
 ## openbsd binaries
 
-(host) start up vm:
+(container.cloud): start up vm:
 ```bash
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=$EXPERIMENT_ROOT/image/openbsd/dev.qcow2,format=qcow2 -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
 ```
@@ -54,7 +54,7 @@ git apply /root/cloud/patch/syzkaller/freebsd.patch /root/cloud/patch/syzkaller/
 gmake target
 ```
 
-(host) copy needed binaries to the host:
+(container.cloud): copy needed binaries to the host:
 ```bash
 scp -P 6736 \
     -o UserKnownHostsFile=/dev/null \
@@ -70,7 +70,7 @@ shutdown -p now
 
 ## netbsd binaries
 
-(host):
+(container.cloud)::
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/syzkaller
 make target TARGETOS=netbsd SOURCEDIR=$EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5 CCFLAGS="-static-libstdc++" CXXFLAGS="-static-libstdc++"

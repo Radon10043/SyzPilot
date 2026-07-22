@@ -1,5 +1,6 @@
 # setup kernel/linux
 
+(container.cloud):
 ```bash
 mkdir $EXPERIMENT_ROOT/kernel/linux && cd $EXPERIMENT_ROOT/kernel/linux
 git clone -b v6.18 --depth 1 https://github.com/gregkh/linux v6.18

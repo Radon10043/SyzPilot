@@ -1,6 +1,6 @@
 # setup fuzzer/KernelGEM
 
-(host) directly use generated specs:
+(container.cloud): directly use generated specs:
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer
 git clone https://github.com/ise-uiuc/KernelGPT KernelGEM

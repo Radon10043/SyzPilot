@@ -1,6 +1,6 @@
 # setup fuzzer/SyzDescribe
 
-(host) directly use generated specs:
+(container.cloud): directly use generated specs:
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/SyzDescribe
 git apply -3 $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzDescribe/repo.patch
