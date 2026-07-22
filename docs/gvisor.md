@@ -9,7 +9,7 @@ The prefix of each description in the doc means the environment that the instruc
 
 Please replace the following variables according to the actual situation:
 - `$GVISOR`: directory for saving gvisor and its artifacts.
-- `CLOUD`: directory for saveing cloud source.
+- `$CLOUD`: directory for saveing cloud source.
 
 ## setup gvisor build image
 
@@ -34,7 +34,7 @@ docker run \
     --cpus 16 \
     --network host \
     --privileged \
-    --rm gvisor-build:latest \
+    --rm gvisor-build:20260511 \
         --output_user_root=/output \
 		build \
 		--verbose_failures \
@@ -82,7 +82,7 @@ docker run \
 	--name gvisor-fuzz \
     --privileged \
     --rm -d cloud:latest tail -f /dev/null
-docker exec -it
+docker exec -it bash
 ```
 
 (container.fuzz) in the fuzzing container, install binary:
