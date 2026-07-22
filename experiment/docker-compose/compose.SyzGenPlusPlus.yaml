@@ -26,6 +26,11 @@ x-base: &base
 name: github.com/seclab-ucr/SyzGenPlusPlus
 
 services:
+
+###############
+### Kernels ###
+###############
+
   linux-v6.18-kernel:
     <<: *base
     environment:
@@ -150,6 +155,69 @@ services:
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$SYZGENPLUSPLUS/bin-kern /syzkaller/bin
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
+
+  gvisor-release_20251215.0-kernel:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/gvisor/release-20251215.0
+      KERNEL_NAME: gvisor
+      KERNEL_VERSION: "release_20251215.0"
+      SUBSYSTEM: kernel
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-kern /syzkaller/bin
+        find $$KERNEL/output -name runsc_cov -type f | xargs -I {} cp {} /usr/local/bin/
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
+
+  gvisor-release_20251208.0-kernel:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/gvisor/release-20251208.0
+      KERNEL_NAME: gvisor
+      KERNEL_VERSION: "release_20251208.0"
+      SUBSYSTEM: kernel
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-kern /syzkaller/bin
+        find $$KERNEL/output -name runsc_cov -type f | xargs -I {} cp {} /usr/local/bin/
+        timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
+
+  gvisor-release_20251201.0-kernel:
+    <<: *base
+    environment:
+      <<: *env
+      KERNEL: ${EXPERIMENT_ROOT_CONTAINER}/kernel/gvisor/release-20251201.0
+      KERNEL_NAME: gvisor
+      KERNEL_VERSION: "release_20251201.0"
+      SUBSYSTEM: kernel
+    command:
+      - bash
+      - -ceu
+      - |
+        export SUFFIX="$$(cat /proc/sys/kernel/random/uuid | cut -d- -f1)"
+        export WORKDIR="$$OUTROOT/$$KERNEL_NAME-$$KERNEL_VERSION-$$SUBSYSTEM/out-$$SUFFIX"
+        mkdir -p $$WORKDIR
+        perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' $$CLOUD/configs/fuzz/$$KERNEL_NAME/$$SUBSYSTEM.cfg > /fuzz.cfg
+        jq '.syzkaller = "/syzkaller"' /fuzz.cfg > $$WORKDIR/fuzz.cfg
+        cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-kern /syzkaller/bin
+        find $$KERNEL/output -name runsc_cov -type f | xargs -I {} cp {} /usr/local/bin/
         timeout -s KILL 24h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
 ##################
