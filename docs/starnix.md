@@ -24,10 +24,10 @@ rm -rf integration
 change version (e.g. 4c117a94d1cafc3f48d0f3deee07676f6501a0af in releases/f30 branch, also the last commit before 2026.1):
 ```bash
 cd $KERNSRC
-jiri init -shallow=true .
+jiri init -partial=true .
 jiri import \
 	-name=integration \
-	-revision=3517da2d11892152e7c23f1811580b6f1917d702 \
+	-revision=4c117a94d1cafc3f48d0f3deee07676f6501a0af \
 	-remote-branch=releases/f30 \
 	flower \
 	https://fuchsia.googlesource.com/integration
