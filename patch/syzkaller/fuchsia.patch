@@ -1,5 +1,5 @@
 diff --git a/executor/conn.h b/executor/conn.h
-index e1f3f7d0d2..75f9051e15 100644
+index e1f3f7d0d..75f9051e1 100644
 --- a/executor/conn.h
 +++ b/executor/conn.h
 @@ -192,22 +192,44 @@ class Select
@@ -69,10 +69,10 @@ index e1f3f7d0d2..75f9051e15 100644
  	Select(const Select&) = delete;
  	Select& operator=(const Select&) = delete;
 diff --git a/executor/executor.cc b/executor/executor.cc
-index d6bba7aa7d..a5fef317cf 100644
+index d6bba7aa7..a6f85d09b 100644
 --- a/executor/executor.cc
 +++ b/executor/executor.cc
-@@ -378,6 +378,10 @@ struct cover_t {
+@@ -378,6 +378,14 @@ struct cover_t {
  	bool overflow;
  	// True if cover_enable() was called for this object.
  	bool enabled;
@@ -80,11 +80,15 @@ index d6bba7aa7d..a5fef317cf 100644
 +	uint64* fuchsia_counts_snapshot;
 +	uint64 fuchsia_counts_words;
 +#endif
++#if GOOS_linux
++	uint64* starnix_counts_snapshot;
++	uint64 starnix_counts_words;
++#endif
  };
  
  struct thread_t {
 diff --git a/executor/executor_fuchsia.h b/executor/executor_fuchsia.h
-index bd2952c9e3..5436126081 100644
+index bd2952c9e..543612608 100644
 --- a/executor/executor_fuchsia.h
 +++ b/executor/executor_fuchsia.h
 @@ -2,15 +2,198 @@
@@ -287,11 +291,388 @@ index bd2952c9e3..5436126081 100644
  
  static void os_init(int argc, char** argv, void* data, size_t data_size)
  {
+diff --git a/executor/executor_linux.h b/executor/executor_linux.h
+index bbc5dfff0..8d425b5f9 100644
+--- a/executor/executor_linux.h
++++ b/executor/executor_linux.h
+@@ -5,9 +5,11 @@
+ #include <signal.h>
+ #include <stdio.h>
+ #include <stdlib.h>
++#include <string.h>
+ #include <sys/ioctl.h>
+ #include <sys/mman.h>
+ #include <sys/prctl.h>
++#include <sys/stat.h>
+ #include <sys/syscall.h>
+ #include <unistd.h>
+ 
+@@ -52,6 +54,197 @@ static inline __u64 kcov_remote_handle(__u64 subsys, __u64 inst)
+ 	return subsys | inst;
+ }
+ 
++static const uint64 kStarnixSancovPcMagic = 0xc0bfffffffffff64ull;
++static const uint64 kStarnixSancovCountsMagic = 0x0023766f436e6153ull;
++static const int kStarnixSancovPcFd = kCoverFilterFd + 1;
++static const int kStarnixSancovCountsFd = kCoverFilterFd + 2;
++
++static bool starnix_sancov_enabled;
++static const uint64* starnix_sancov_pcs;
++static const uint64* starnix_sancov_counts;
++static uint64 starnix_sancov_words;
++static int starnix_sancov_runner_pcs_fd = -1;
++static int starnix_sancov_runner_counts_fd = -1;
++
++// The Starnix kernel exports its sanitizer coverage tables here when it's built
++// with the starnix_sancov build arg. Both files are backed by the kernel's live
++// tables, so mapping them once is enough to keep observing the counters.
++static const char* const starnix_sancov_pc_paths[] = {
++    "/proc/starnix_sancov/pcs",
++};
++static const char* const starnix_sancov_counts_paths[] = {
++    "/proc/starnix_sancov/counts",
++};
++
++static bool starnix_sancov_requested()
++{
++	return getenv("SYZ_STARNIX_SANCOV") != NULL ||
++	       getenv("SYZ_STARNIX_COVER_PCS") != NULL ||
++	       getenv("SYZ_STARNIX_COVER_COUNTS") != NULL;
++}
++
++static bool starnix_runtime_detected()
++{
++	char buf[256];
++	int fd = open("/proc/version", O_RDONLY);
++	if (fd == -1)
++		return false;
++	ssize_t n = read(fd, buf, sizeof(buf) - 1);
++	close(fd);
++	if (n <= 0)
++		return false;
++	buf[n] = 0;
++	return strstr(buf, "starnix") != NULL || strstr(buf, "Starnix") != NULL;
++}
++
++static bool starnix_sancov_should_use()
++{
++	return starnix_sancov_requested() || starnix_runtime_detected();
++}
++
++// Maps a sancov table shared with the kernel, so that reading the counters
++// afterwards costs nothing. Going through read() instead would be both slow and
++// self-defeating: the read path runs in the kernel we are measuring, so it would
++// show up as coverage of its own on every single exec.
++static const uint64* starnix_sancov_map_fd(int fd, const char* kind, size_t* size)
++{
++	struct stat st;
++	if (fstat(fd, &st))
++		failmsg("failed to stat Starnix sancov data", "%s: %s", kind, strerror(errno));
++	size_t len = st.st_size;
++	if (len < 2 * sizeof(uint64) || (len % sizeof(uint64)) != 0)
++		failmsg("bad Starnix sancov size", "%s size=%zu", kind, len);
++	void* data = mmap(NULL, len, PROT_READ, MAP_SHARED, fd, 0);
++	if (data == MAP_FAILED)
++		failmsg("failed to mmap Starnix sancov data", "%s: %s", kind, strerror(errno));
++	*size = len;
++	return (const uint64*)data;
++}
++
++static int starnix_sancov_try_open(const char* env_name, const char* const* paths, size_t count,
++				   const char* kind, const char** path_out)
++{
++	const char* env_path = getenv(env_name);
++	if (env_path && env_path[0] != 0) {
++		int fd = open(env_path, O_RDONLY);
++		if (fd != -1) {
++			debug("using Starnix sancov %s: %s\n", kind, env_path);
++			if (path_out)
++				*path_out = env_path;
++			return fd;
++		}
++		return -1;
++	}
++
++	for (size_t i = 0; i < count; i++) {
++		int fd = open(paths[i], O_RDONLY);
++		if (fd != -1) {
++			debug("using Starnix sancov %s: %s\n", kind, paths[i]);
++			if (path_out)
++				*path_out = paths[i];
++			return fd;
++		}
++	}
++	return -1;
++}
++
++static int starnix_sancov_open(const char* env_name, const char* const* paths, size_t count, const char* kind)
++{
++	const char* path = NULL;
++	int fd = starnix_sancov_try_open(env_name, paths, count, kind, &path);
++	if (fd != -1)
++		return fd;
++	const char* env_path = getenv(env_name);
++	if (env_path && env_path[0] != 0)
++		failmsg("failed to open Starnix sancov data", "%s=%s: %s", env_name, env_path, strerror(errno));
++	failmsg("failed to open Starnix sancov data", "%s: %s", kind, strerror(errno));
++}
++
++static const uint64* starnix_sancov_map(const char* env_name, const char* const* paths, size_t path_count,
++					const char* kind, size_t* size)
++{
++	int fd = starnix_sancov_open(env_name, paths, path_count, kind);
++	const uint64* data = starnix_sancov_map_fd(fd, kind, size);
++	close(fd);
++	return data;
++}
++
++static bool starnix_sancov_have_inherited_fds()
++{
++	return fcntl(kStarnixSancovPcFd, F_GETFD) != -1 &&
++	       fcntl(kStarnixSancovCountsFd, F_GETFD) != -1;
++}
++
++static int starnix_sancov_dup_for_runner(int fd, const char* kind)
++{
++	int dupfd = fcntl(fd, F_DUPFD_CLOEXEC, kStarnixSancovCountsFd + 1);
++	if (dupfd < 0)
++		dupfd = fcntl(fd, F_DUPFD, kStarnixSancovCountsFd + 1);
++	if (dupfd < 0)
++		failmsg("failed to dup Starnix sancov fd", "%s: %s", kind, strerror(errno));
++	close(fd);
++	return dupfd;
++}
++
++// Opens the tables once in the runner so that all exec processes share the fds.
++// Staying quiet when they aren't there is intentional: whether coverage is
++// really required is only known later, in cover_open, which does fail loudly.
++static void starnix_sancov_prepare_runner_fds()
++{
++	if (!starnix_sancov_should_use() || starnix_sancov_runner_pcs_fd != -1)
++		return;
++	int pcs_fd = starnix_sancov_try_open(
++	    "SYZ_STARNIX_COVER_PCS", starnix_sancov_pc_paths, ARRAY_SIZE(starnix_sancov_pc_paths), "PCs", NULL);
++	int counts_fd = starnix_sancov_try_open("SYZ_STARNIX_COVER_COUNTS", starnix_sancov_counts_paths,
++						ARRAY_SIZE(starnix_sancov_counts_paths), "counts", NULL);
++	if (pcs_fd != -1 && counts_fd != -1) {
++		starnix_sancov_runner_pcs_fd = starnix_sancov_dup_for_runner(pcs_fd, "PCs");
++		starnix_sancov_runner_counts_fd = starnix_sancov_dup_for_runner(counts_fd, "counts");
++		return;
++	}
++	debug("Starnix sancov data is not available\n");
++	if (pcs_fd != -1)
++		close(pcs_fd);
++	if (counts_fd != -1)
++		close(counts_fd);
++}
++
++static int starnix_sancov_child_fd_max()
++{
++	if (starnix_sancov_runner_pcs_fd == -1)
++		return kCoverFilterFd;
++	return kStarnixSancovCountsFd;
++}
++
++static void starnix_sancov_init()
++{
++	if (starnix_sancov_counts)
++		return;
++
++	size_t pc_size = 0;
++	size_t counts_size = 0;
++	if (starnix_sancov_have_inherited_fds()) {
++		debug("using inherited Starnix sancov fds\n");
++		starnix_sancov_pcs = starnix_sancov_map_fd(kStarnixSancovPcFd, "PCs", &pc_size);
++		starnix_sancov_counts = starnix_sancov_map_fd(kStarnixSancovCountsFd, "counts", &counts_size);
++	} else {
++		starnix_sancov_pcs = starnix_sancov_map("SYZ_STARNIX_COVER_PCS", starnix_sancov_pc_paths,
++							ARRAY_SIZE(starnix_sancov_pc_paths), "PCs", &pc_size);
++		starnix_sancov_counts = starnix_sancov_map("SYZ_STARNIX_COVER_COUNTS", starnix_sancov_counts_paths,
++							   ARRAY_SIZE(starnix_sancov_counts_paths), "counts",
++							   &counts_size);
++	}
++	if (pc_size != counts_size)
++		failmsg("mismatching Starnix sancov sizes", "pcs=%zu counts=%zu", pc_size, counts_size);
++	if (starnix_sancov_pcs[0] != kStarnixSancovPcMagic)
++		failmsg("bad Starnix sancov PC magic", "magic=0x%llx", starnix_sancov_pcs[0]);
++	if (starnix_sancov_counts[0] != kStarnixSancovCountsMagic)
++		failmsg("bad Starnix sancov counts magic", "magic=0x%llx", starnix_sancov_counts[0]);
++	starnix_sancov_words = counts_size / sizeof(uint64);
++	starnix_sancov_enabled = true;
++	debug("Starnix sancov loaded: %llu entries\n", starnix_sancov_words - 1);
++}
++
+ static void os_init(int argc, char** argv, char* data, size_t data_size)
+ {
+ 	prctl(PR_SET_PDEATHSIG, SIGKILL, 0, 0, 0);
+@@ -103,6 +296,14 @@ static intptr_t execute_syscall(const call_t* c, intptr_t a[kMaxArgs])
+ 
+ static void cover_open(cover_t* cov, bool extra)
+ {
++	if (starnix_sancov_should_use()) {
++		starnix_sancov_init();
++		cov->data_size = (extra ? kExtraCoverSize : flag_snapshot ? kSnapshotCoverSize
++									  : kCoverSize) *
++				 sizeof(uint64);
++		return;
++	}
++
+ 	int fd = open("/sys/kernel/debug/kcov", O_RDWR);
+ 	if (fd == -1)
+ 		fail("open of /sys/kernel/debug/kcov failed");
+@@ -121,6 +322,12 @@ static void cover_open(cover_t* cov, bool extra)
+ 
+ static void cover_close(cover_t* cov)
+ {
++	if (starnix_sancov_enabled) {
++		cov->enabled = false;
++		cov->fd = -1;
++		return;
++	}
++
+ 	if (cov->fd == -1)
+ 		fail("attempting to close an invalid cover fd");
+ 	if (cov->enabled) {
+@@ -150,6 +357,28 @@ static void cover_mmap(cover_t* cov)
+ 		fail("cover_mmap invoked on an already mmapped cover_t object");
+ 	if (cov->data_size == 0)
+ 		fail("cover_t structure is corrupted");
++	if (starnix_sancov_enabled) {
++		cov->mmap_alloc_size = cov->data_size;
++		cov->mmap_alloc_ptr = (char*)mmap(NULL, cov->mmap_alloc_size,
++						  PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
++		if (cov->mmap_alloc_ptr == MAP_FAILED)
++			exitf("failed to allocate Starnix coverage buffer");
++		cov->data = cov->mmap_alloc_ptr;
++		cov->data_end = cov->data + cov->data_size;
++		cov->data_offset = sizeof(uint64);
++		cov->pc_offset = 0;
++		cov->starnix_counts_words = starnix_sancov_words;
++		cov->starnix_counts_snapshot = (uint64*)malloc(starnix_sancov_words * sizeof(uint64));
++		if (!cov->starnix_counts_snapshot)
++			exitf("failed to allocate Starnix coverage snapshot");
++		memcpy(cov->starnix_counts_snapshot, starnix_sancov_counts,
++		       starnix_sancov_words * sizeof(uint64));
++		*(uint64*)cov->data = 0;
++		cov->size = 0;
++		cov->overflow = false;
++		return;
++	}
++
+ 	// Allocate kcov buffer plus two guard pages surrounding it.
+ 	cov->mmap_alloc_size = cov->data_size + 2 * SYZ_PAGE_SIZE;
+ 	cov->mmap_alloc_ptr = (char*)mmap(NULL, cov->mmap_alloc_size,
+@@ -177,10 +406,21 @@ static void cover_munmap(cover_t* cov)
+ 	if (munmap(cov->mmap_alloc_ptr, cov->mmap_alloc_size))
+ 		fail("cover_munmap failed");
+ 	cov->mmap_alloc_ptr = NULL;
++	if (cov->starnix_counts_snapshot) {
++		free(cov->starnix_counts_snapshot);
++		cov->starnix_counts_snapshot = NULL;
++		cov->starnix_counts_words = 0;
++	}
+ }
+ 
+ static void cover_enable(cover_t* cov, bool collect_comps, bool extra)
+ {
++	if (starnix_sancov_enabled) {
++		cov->collect_comps = false;
++		cov->enabled = true;
++		return;
++	}
++
+ 	unsigned int kcov_mode = collect_comps ? KCOV_TRACE_CMP : KCOV_TRACE_PC;
+ 	// The KCOV_ENABLE call should be fatal,
+ 	// but in practice ioctl fails with assorted errors (9, 14, 25),
+@@ -214,6 +454,17 @@ static void cover_reset(cover_t* cov)
+ 			fail("cover_reset: current_thread == 0");
+ 		cov = &current_thread->cov;
+ 	}
++	if (starnix_sancov_enabled) {
++		if (!cov->starnix_counts_snapshot)
++			fail("Starnix cover_reset on a non-mmapped cover_t object");
++		memcpy(cov->starnix_counts_snapshot, starnix_sancov_counts,
++		       starnix_sancov_words * sizeof(uint64));
++		*(uint64*)cov->data = 0;
++		cov->size = 0;
++		cov->overflow = false;
++		return;
++	}
++
+ 	if (flag_read_only_coverage) {
+ 		if (ioctl(cov->fd, KCOV_RESET_TRACE, 0))
+ 			fail("KCOV_RESET_TRACE failed");
+@@ -234,6 +485,32 @@ static void cover_collect_impl(cover_t* cov)
+ 
+ static void cover_collect(cover_t* cov)
+ {
++	if (starnix_sancov_enabled) {
++		if (!cov->starnix_counts_snapshot)
++			fail("Starnix cover_collect on a non-mmapped cover_t object");
++		uint64* out = (uint64*)cov->data;
++		uint64 max = cov->data_size / sizeof(uint64) - 1;
++		uint64 n = 0;
++
++		for (uint64 i = 1; i < starnix_sancov_words; i++) {
++			uint64 count = __atomic_load_n(&starnix_sancov_counts[i], __ATOMIC_RELAXED);
++			if (count == cov->starnix_counts_snapshot[i])
++				continue;
++			cov->starnix_counts_snapshot[i] = count;
++			uint64 pc = __atomic_load_n(&starnix_sancov_pcs[i], __ATOMIC_RELAXED);
++			if (pc == 0)
++				continue;
++			if (n == max) {
++				cov->overflow = true;
++				continue;
++			}
++			out[++n] = pc;
++		}
++		out[0] = n;
++		cov->size = n;
++		return;
++	}
++
+ 	if (is_kernel_64_bit)
+ 		cover_collect_impl<uint64>(cov);
+ 	else
+@@ -312,6 +589,9 @@ static const char* setup_devlink_pci()
+ 
+ static const char* setup_delay_kcov()
+ {
++	if (starnix_sancov_should_use())
++		return "Starnix sancov coverage does not use delayed kcov mmap";
++
+ 	int fd = open("/sys/kernel/debug/kcov", O_RDWR);
+ 	if (fd == -1)
+ 		return "open of /sys/kernel/debug/kcov failed";
+@@ -342,6 +622,9 @@ static const char* setup_delay_kcov()
+ 
+ static const char* setup_kcov_reset_ioctl()
+ {
++	if (starnix_sancov_should_use())
++		return "Starnix sancov coverage does not use KCOV_RESET_TRACE";
++
+ 	int fd = open("/sys/kernel/debug/kcov", O_RDWR);
+ 	if (fd == -1)
+ 		return "open of /sys/kernel/debug/kcov failed";
 diff --git a/executor/executor_runner.h b/executor/executor_runner.h
-index f26d446bfa..1273b84a52 100644
+index f26d446bf..ffe70605c 100644
 --- a/executor/executor_runner.h
 +++ b/executor/executor_runner.h
-@@ -982,6 +982,7 @@ static void runner(char** argv, int argc)
+@@ -344,6 +344,12 @@ private:
+ 		    {max_signal_fd_, kMaxSignalFd},
+ 		    {cover_filter_fd_, kCoverFilterFd},
+ 		};
++#if GOOS_linux
++		if (starnix_sancov_runner_pcs_fd != -1) {
++			fds.push_back({starnix_sancov_runner_pcs_fd, kStarnixSancovPcFd});
++			fds.push_back({starnix_sancov_runner_counts_fd, kStarnixSancovCountsFd});
++		}
++#endif
+ 		const char* argv[] = {bin_, "exec", nullptr};
+ 		process_.emplace(argv, fds);
+ 
+@@ -982,6 +988,7 @@ static void runner(char** argv, int argc)
  	// In particular we want to ignore SIGPIPE, but also everything else since
  	// test processes manage to send random signals using tracepoints with bpf programs.
  	// This is not a bullet-proof protection, but it won't harm either.
@@ -299,7 +680,7 @@ index f26d446bfa..1273b84a52 100644
  	for (int sig = 0; sig <= 64; sig++)
  		signal(sig, SIG_IGN);
  	if (signal(SIGINT, SigintHandler) == SIG_ERR)
-@@ -997,6 +998,7 @@ static void runner(char** argv, int argc)
+@@ -997,12 +1004,18 @@ static void runner(char** argv, int argc)
  		if (sigaction(sig, &act, nullptr))
  			failmsg("sigaction failed", "sig=%d", sig);
  	}
@@ -307,8 +688,33 @@ index f26d446bfa..1273b84a52 100644
  
  	Connection conn(manager_addr, manager_port);
  
+ 	// This is required to make Subprocess fd remapping logic work.
+-	// kCoverFilterFd is the largest fd we set in the child processes.
+-	for (int fd = conn.FD(); fd < kCoverFilterFd;)
++	// Fill low fd numbers up to the largest fd we set in child processes.
++	int max_child_fd = kCoverFilterFd;
++#if GOOS_linux
++	starnix_sancov_prepare_runner_fds();
++	max_child_fd = starnix_sancov_child_fd_max();
++#endif
++	for (int fd = conn.FD(); fd < max_child_fd;)
+ 		fd = dup(fd);
+ 
+ 	Runner(conn, vm_index, argv[0]);
+diff --git a/pkg/build/starnix.go b/pkg/build/starnix.go
+index bd7fa0612..caac4c899 100644
+--- a/pkg/build/starnix.go
++++ b/pkg/build/starnix.go
+@@ -75,6 +75,7 @@ func (st starnix) build(params Params) (ImageDetails, error) {
+ 		"scripts/fx", "--dir", buildSubdir,
+ 		"set", product,
+ 		"--debug",
++		"--args=starnix_sancov=true",
+ 		"--assembly-override", fmt.Sprintf("//products/workbench/*=//local:%s", overrideName),
+ 	); err != nil {
+ 		return ImageDetails{}, err
 diff --git a/pkg/cover/backend/elf.go b/pkg/cover/backend/elf.go
-index 88b8302c4f..805272315c 100644
+index 88b8302c4..8f9f55258 100644
 --- a/pkg/cover/backend/elf.go
 +++ b/pkg/cover/backend/elf.go
 @@ -48,7 +48,9 @@ const (
@@ -322,9 +728,151 @@ index 88b8302c4f..805272315c 100644
  		return TraceCbPc
  	}
  	if strings.HasPrefix(name, "__sanitizer_cov_trace_") ||
+@@ -201,6 +203,45 @@ func elfReadModuleCoverPoints(target *targets.Target, module *vminfo.KernelModul
+ 			}
+ 		}
+ 	}
++	if len(pcs[0]) == 0 && len(pcs[1]) == 0 {
++		return elfScanCoverPoints(target, module, info, file)
++	}
++	return pcs, nil
++}
++
++// Finds the calls to the coverage callbacks by looking for the call instructions
++// themselves rather than for relocations against the callbacks.
++//
++// A fully linked binary such as the Starnix kernel resolves its own calls at link
++// time and keeps no relocations for them, so the relocation scan finds nothing.
++func elfScanCoverPoints(target *targets.Target, module *vminfo.KernelModule, info *symbolInfo,
++	file *elf.File) ([2][]uint64, error) {
++	var pcs [2][]uint64
++	arch := arches[target.Arch]
++	if arch == nil || arch.isCallInsn == nil {
++		return pcs, nil
++	}
++	text := file.Section(".text")
++	if text == nil {
++		return pcs, fmt.Errorf("no .text section in the object file")
++	}
++	data, err := text.Data()
++	if err != nil {
++		return pcs, err
++	}
++	for i := 0; i+arch.callLen <= len(data); i += arch.scanSize {
++		insn := data[i : i+arch.callLen]
++		if !arch.isCallInsn(arch, insn) {
++			continue
++		}
++		pc := text.Addr + uint64(i)
++		switch callee := arch.callTarget(arch, insn, pc); {
++		case info.tracePC[callee]:
++			pcs[0] = append(pcs[0], module.Addr+pc)
++		case info.traceCmp[callee]:
++			pcs[1] = append(pcs[1], module.Addr+pc)
++		}
++	}
+ 	return pcs, nil
+ }
+ 
+diff --git a/pkg/cover/backend/modules.go b/pkg/cover/backend/modules.go
+index f44790e73..03ec3a5de 100644
+--- a/pkg/cover/backend/modules.go
++++ b/pkg/cover/backend/modules.go
+@@ -8,6 +8,7 @@ import (
+ 	"debug/elf"
+ 	"fmt"
+ 	"io/fs"
++	"os"
+ 	"path/filepath"
+ 	"strings"
+ 
+@@ -18,8 +19,14 @@ import (
+ 
+ func DiscoverModules(target *targets.Target, objDir string, moduleObj []string) (
+ 	[]*vminfo.KernelModule, error) {
++	objPath := filepath.Join(objDir, target.KernelObject)
++	objIsFile := false
++	if st, err := os.Stat(objDir); err == nil && !st.IsDir() {
++		objPath = objDir
++		objIsFile = true
++	}
+ 	module := &vminfo.KernelModule{
+-		Path: filepath.Join(objDir, target.KernelObject),
++		Path: objPath,
+ 	}
+ 	textRange, err := elfReadTextSecRange(module)
+ 	if err != nil {
+@@ -32,7 +39,7 @@ func DiscoverModules(target *targets.Target, objDir string, moduleObj []string)
+ 			Size: textRange.End - textRange.Start,
+ 		},
+ 	}
+-	if target.OS == targets.Linux {
++	if target.OS == targets.Linux && !objIsFile {
+ 		modules1, err := discoverModulesLinux(append([]string{objDir}, moduleObj...))
+ 		if err != nil {
+ 			return nil, err
+diff --git a/pkg/vminfo/features.go b/pkg/vminfo/features.go
+index 6c4d6ae6d..de5be6791 100644
+--- a/pkg/vminfo/features.go
++++ b/pkg/vminfo/features.go
+@@ -107,6 +107,19 @@ func (ctx *checkContext) finishFeatures(featureInfos []*flatrpc.FeatureInfo) (Fe
+ 			feat.Reason = feat.Reason[pos+len(executorPrefix):]
+ 		}
+ 		feat.Reason = strings.TrimSpace(outputReplacer.Replace(feat.Reason))
++		if ctx.cfg.VMType == "starnix" {
++			switch res.id {
++			case flatrpc.FeatureCoverage:
++				feat.Reason = "enabled via Starnix sancov"
++				feat.Enabled = true
++			case flatrpc.FeatureComparisons:
++				feat.Reason = "Starnix sancov does not provide comparisons"
++				feat.Enabled = false
++			case flatrpc.FeatureExtraCoverage:
++				feat.Reason = "Starnix sancov does not provide extra coverage"
++				feat.Enabled = false
++			}
++		}
+ 		features[res.id] = feat
+ 	}
+ 	if feat := features[flatrpc.FeatureSandboxNone]; !feat.Enabled {
+diff --git a/pkg/vminfo/linux_syscalls.go b/pkg/vminfo/linux_syscalls.go
+index 605b939d2..8cdba8f25 100644
+--- a/pkg/vminfo/linux_syscalls.go
++++ b/pkg/vminfo/linux_syscalls.go
+@@ -16,7 +16,10 @@ import (
+ 	"github.com/google/syzkaller/sys/targets"
+ )
+ 
+-func (linux) syscallCheck(ctx *checkContext, call *prog.Syscall) string {
++func (linux linux) syscallCheck(ctx *checkContext, call *prog.Syscall) string {
++	if reason := linux.starnixDisabledSyscall(call); reason != "" {
++		return reason
++	}
+ 	check := linuxSyscallChecks[call.CallName]
+ 	if check == nil {
+ 		check = func(ctx *checkContext, call *prog.Syscall) string {
+@@ -41,6 +44,18 @@ func (linux) syscallCheck(ctx *checkContext, call *prog.Syscall) string {
+ 	return linuxSupportedLSM(ctx, call)
+ }
+ 
++func (linux linux) starnixDisabledSyscall(call *prog.Syscall) string {
++	if linux.vmType != targets.Starnix {
++		return ""
++	}
++	switch call.CallName {
++	case "mlock", "mlock2", "mprotect", "munlock", "pkey_mprotect":
++		return "disabled on Starnix: zero-length ranges currently panic the Starnix kernel"
++	default:
++		return ""
++	}
++}
++
+ func linuxSupportedLSM(ctx *checkContext, call *prog.Syscall) string {
+ 	for _, lsm := range []string{"selinux", "apparmor", "smack"} {
+ 		if !strings.Contains(strings.ToLower(call.Name), lsm) {
 diff --git a/sys/fuchsia/bti.txt.const b/sys/fuchsia/bti.txt.const
 new file mode 100644
-index 0000000000..baf56c29c0
+index 000000000..baf56c29c
 --- /dev/null
 +++ b/sys/fuchsia/bti.txt.const
 @@ -0,0 +1,7 @@
@@ -339,7 +887,7 @@ diff --git a/sys/fuchsia/cache_amd64.const b/sys/fuchsia/cache.txt.const
 similarity index 53%
 rename from sys/fuchsia/cache_amd64.const
 rename to sys/fuchsia/cache.txt.const
-index d004f8574e..7330a95f66 100644
+index d004f8574..7330a95f6 100644
 --- a/sys/fuchsia/cache_amd64.const
 +++ b/sys/fuchsia/cache.txt.const
 @@ -1,5 +1,5 @@
@@ -352,7 +900,7 @@ index d004f8574e..7330a95f66 100644
 -ZX_INTERRUPT_VIRTUAL = 16
 diff --git a/sys/fuchsia/cache_arm64.const b/sys/fuchsia/cache_arm64.const
 deleted file mode 100644
-index d004f8574e..0000000000
+index d004f8574..000000000
 --- a/sys/fuchsia/cache_arm64.const
 +++ /dev/null
 @@ -1,5 +0,0 @@
@@ -363,7 +911,7 @@ index d004f8574e..0000000000
 -ZX_INTERRUPT_VIRTUAL = 16
 diff --git a/sys/fuchsia/channel.txt.const b/sys/fuchsia/channel.txt.const
 new file mode 100644
-index 0000000000..1300d800f8
+index 000000000..1300d800f
 --- /dev/null
 +++ b/sys/fuchsia/channel.txt.const
 @@ -0,0 +1,4 @@
@@ -373,7 +921,7 @@ index 0000000000..1300d800f8
 +ZX_CHANNEL_WRITE_USE_IOVEC = 2
 diff --git a/sys/fuchsia/channel_amd64.const b/sys/fuchsia/channel_amd64.const
 deleted file mode 100644
-index b87076488e..0000000000
+index b87076488..000000000
 --- a/sys/fuchsia/channel_amd64.const
 +++ /dev/null
 @@ -1,3 +0,0 @@
@@ -382,7 +930,7 @@ index b87076488e..0000000000
 -ZX_CHANNEL_WRITE_USE_IOVEC = 2
 diff --git a/sys/fuchsia/channel_arm64.const b/sys/fuchsia/channel_arm64.const
 deleted file mode 100644
-index b87076488e..0000000000
+index b87076488..000000000
 --- a/sys/fuchsia/channel_arm64.const
 +++ /dev/null
 @@ -1,3 +0,0 @@
@@ -391,7 +939,7 @@ index b87076488e..0000000000
 -ZX_CHANNEL_WRITE_USE_IOVEC = 2
 diff --git a/sys/fuchsia/clock.txt.const b/sys/fuchsia/clock.txt.const
 new file mode 100644
-index 0000000000..766e30f6de
+index 000000000..766e30f6d
 --- /dev/null
 +++ b/sys/fuchsia/clock.txt.const
 @@ -0,0 +1,10 @@
@@ -407,7 +955,7 @@ index 0000000000..766e30f6de
 +ZX_TIME_INFINITE = 9223372036854775807
 diff --git a/sys/fuchsia/cprng.txt.const b/sys/fuchsia/cprng.txt.const
 new file mode 100644
-index 0000000000..ab0a19e22b
+index 000000000..ab0a19e22
 --- /dev/null
 +++ b/sys/fuchsia/cprng.txt.const
 @@ -0,0 +1,4 @@
@@ -417,7 +965,7 @@ index 0000000000..ab0a19e22b
 +ZX_CPRNG_DRAW_MAX_LEN = 256
 diff --git a/sys/fuchsia/cprng_amd64.const b/sys/fuchsia/cprng_amd64.const
 deleted file mode 100644
-index 336d9a31b0..0000000000
+index 336d9a31b..000000000
 --- a/sys/fuchsia/cprng_amd64.const
 +++ /dev/null
 @@ -1,2 +0,0 @@
@@ -426,7 +974,7 @@ index 336d9a31b0..0000000000
 \ No newline at end of file
 diff --git a/sys/fuchsia/cprng_arm64.const b/sys/fuchsia/cprng_arm64.const
 deleted file mode 100644
-index 336d9a31b0..0000000000
+index 336d9a31b..000000000
 --- a/sys/fuchsia/cprng_arm64.const
 +++ /dev/null
 @@ -1,2 +0,0 @@
@@ -435,14 +983,14 @@ index 336d9a31b0..0000000000
 \ No newline at end of file
 diff --git a/sys/fuchsia/debug.txt.const b/sys/fuchsia/debug.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/debug.txt.const
 @@ -0,0 +1,2 @@
 +# Code generated by syz-sysgen. DO NOT EDIT.
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/debuglog.txt b/sys/fuchsia/debuglog.txt
-index f68d9352cd..a9fc1306af 100644
+index f68d9352c..a9fc1306a 100644
 --- a/sys/fuchsia/debuglog.txt
 +++ b/sys/fuchsia/debuglog.txt
 @@ -4,6 +4,7 @@
@@ -455,7 +1003,7 @@ index f68d9352cd..a9fc1306af 100644
  
 diff --git a/sys/fuchsia/debuglog.txt.const b/sys/fuchsia/debuglog.txt.const
 new file mode 100644
-index 0000000000..73f8b58c1b
+index 000000000..73f8b58c1
 --- /dev/null
 +++ b/sys/fuchsia/debuglog.txt.const
 @@ -0,0 +1,3 @@
@@ -464,7 +1012,7 @@ index 0000000000..73f8b58c1b
 +ZX_LOG_FLAG_READABLE = 1073741824
 diff --git a/sys/fuchsia/event.txt.const b/sys/fuchsia/event.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/event.txt.const
 @@ -0,0 +1,2 @@
@@ -472,7 +1020,7 @@ index 0000000000..d2b0ef2bdf
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/eventpair.txt.const b/sys/fuchsia/eventpair.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/eventpair.txt.const
 @@ -0,0 +1,2 @@
@@ -480,7 +1028,7 @@ index 0000000000..d2b0ef2bdf
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/exception.txt.const b/sys/fuchsia/exception.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/exception.txt.const
 @@ -0,0 +1,2 @@
@@ -490,7 +1038,7 @@ diff --git a/sys/fuchsia/fidl_amd64.const b/sys/fuchsia/fidl.txt.const
 similarity index 64%
 rename from sys/fuchsia/fidl_amd64.const
 rename to sys/fuchsia/fidl.txt.const
-index e551b9836c..ee3959ca94 100644
+index e551b9836..ee3959ca9 100644
 --- a/sys/fuchsia/fidl_amd64.const
 +++ b/sys/fuchsia/fidl.txt.const
 @@ -1,4 +1,5 @@
@@ -502,7 +1050,7 @@ index e551b9836c..ee3959ca94 100644
  FIDL_HANDLE_ABSENT = 0
 diff --git a/sys/fuchsia/fidl_arm64.const b/sys/fuchsia/fidl_arm64.const
 deleted file mode 100644
-index e551b9836c..0000000000
+index e551b9836..000000000
 --- a/sys/fuchsia/fidl_arm64.const
 +++ /dev/null
 @@ -1,5 +0,0 @@
@@ -513,7 +1061,7 @@ index e551b9836c..0000000000
 -FIDL_HANDLE_PRESENT = 4294967295
 diff --git a/sys/fuchsia/fifo.txt.const b/sys/fuchsia/fifo.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/fifo.txt.const
 @@ -0,0 +1,2 @@
@@ -521,14 +1069,14 @@ index 0000000000..d2b0ef2bdf
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/framebuffer.txt.const b/sys/fuchsia/framebuffer.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/framebuffer.txt.const
 @@ -0,0 +1,2 @@
 +# Code generated by syz-sysgen. DO NOT EDIT.
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/fuchsia_cobalt.syz.txt b/sys/fuchsia/fuchsia_cobalt.syz.txt
-index 33b4a45586..74743f7db4 100644
+index 33b4a4558..74743f7db 100644
 --- a/sys/fuchsia/fuchsia_cobalt.syz.txt
 +++ b/sys/fuchsia/fuchsia_cobalt.syz.txt
 @@ -3,6 +3,8 @@
@@ -544,7 +1092,7 @@ diff --git a/sys/fuchsia/fuchsia_cobalt.syz_amd64.const b/sys/fuchsia/fuchsia_co
 similarity index 78%
 rename from sys/fuchsia/fuchsia_cobalt.syz_amd64.const
 rename to sys/fuchsia/fuchsia_cobalt.txt.const
-index 52bb8969d0..f5dce90010 100644
+index 52bb8969d..f5dce9001 100644
 --- a/sys/fuchsia/fuchsia_cobalt.syz_amd64.const
 +++ b/sys/fuchsia/fuchsia_cobalt.txt.const
 @@ -1,2 +1,3 @@
@@ -552,7 +1100,7 @@ index 52bb8969d0..f5dce90010 100644
 +arches = amd64
  ZX_CHANNEL_MAX_MSG_BYTES = 65536
 diff --git a/sys/fuchsia/fuchsia_devicesettings.syz.txt b/sys/fuchsia/fuchsia_devicesettings.syz.txt
-index af2e9f0db5..522a917992 100644
+index af2e9f0db..522a91799 100644
 --- a/sys/fuchsia/fuchsia_devicesettings.syz.txt
 +++ b/sys/fuchsia/fuchsia_devicesettings.syz.txt
 @@ -2,6 +2,7 @@
@@ -565,7 +1113,7 @@ index af2e9f0db5..522a917992 100644
  fuchsia_devicesettings_ValueType = fuchsia_devicesettings_ValueType_number, fuchsia_devicesettings_ValueType_text
 diff --git a/sys/fuchsia/fuchsia_devicesettings.syz_arm64.const b/sys/fuchsia/fuchsia_devicesettings.syz_arm64.const
 deleted file mode 100644
-index 69f12f3f80..0000000000
+index 69f12f3f8..000000000
 --- a/sys/fuchsia/fuchsia_devicesettings.syz_arm64.const
 +++ /dev/null
 @@ -1,4 +0,0 @@
@@ -577,7 +1125,7 @@ diff --git a/sys/fuchsia/fuchsia_devicesettings.syz_amd64.const b/sys/fuchsia/fu
 similarity index 90%
 rename from sys/fuchsia/fuchsia_devicesettings.syz_amd64.const
 rename to sys/fuchsia/fuchsia_devicesettings.txt.const
-index 69f12f3f80..3439ca13f2 100644
+index 69f12f3f8..3439ca13f 100644
 --- a/sys/fuchsia/fuchsia_devicesettings.syz_amd64.const
 +++ b/sys/fuchsia/fuchsia_devicesettings.txt.const
 @@ -1,4 +1,5 @@
@@ -587,7 +1135,7 @@ index 69f12f3f80..3439ca13f2 100644
  fuchsia_devicesettings_ValueType_number = 1
  fuchsia_devicesettings_ValueType_text = 2
 diff --git a/sys/fuchsia/fuchsia_hardware_ethernet.syz.txt b/sys/fuchsia/fuchsia_hardware_ethernet.syz.txt
-index 5f5126f943..382bd74896 100644
+index 5f5126f94..382bd7489 100644
 --- a/sys/fuchsia/fuchsia_hardware_ethernet.syz.txt
 +++ b/sys/fuchsia/fuchsia_hardware_ethernet.syz.txt
 @@ -2,6 +2,7 @@
@@ -602,7 +1150,7 @@ diff --git a/sys/fuchsia/fuchsia_cobalt.syz_arm64.const b/sys/fuchsia/fuchsia_ha
 similarity index 78%
 rename from sys/fuchsia/fuchsia_cobalt.syz_arm64.const
 rename to sys/fuchsia/fuchsia_hardware_ethernet.txt.const
-index 52bb8969d0..f5dce90010 100644
+index 52bb8969d..f5dce9001 100644
 --- a/sys/fuchsia/fuchsia_cobalt.syz_arm64.const
 +++ b/sys/fuchsia/fuchsia_hardware_ethernet.txt.const
 @@ -1,2 +1,3 @@
@@ -610,7 +1158,7 @@ index 52bb8969d0..f5dce90010 100644
 +arches = amd64
  ZX_CHANNEL_MAX_MSG_BYTES = 65536
 diff --git a/sys/fuchsia/fuchsia_io.syz.txt b/sys/fuchsia/fuchsia_io.syz.txt
-index ec2f893ce4..2367ead5b9 100644
+index ec2f893ce..2367ead5b 100644
 --- a/sys/fuchsia/fuchsia_io.syz.txt
 +++ b/sys/fuchsia/fuchsia_io.syz.txt
 @@ -2,6 +2,7 @@
@@ -623,7 +1171,7 @@ index ec2f893ce4..2367ead5b9 100644
  fuchsia_io_SeekOrigin = fuchsia_io_SeekOrigin_START, fuchsia_io_SeekOrigin_CURRENT, fuchsia_io_SeekOrigin_END
 diff --git a/sys/fuchsia/fuchsia_io.syz_arm64.const b/sys/fuchsia/fuchsia_io.syz_arm64.const
 deleted file mode 100644
-index 7bf0342816..0000000000
+index 7bf034281..000000000
 --- a/sys/fuchsia/fuchsia_io.syz_arm64.const
 +++ /dev/null
 @@ -1,5 +0,0 @@
@@ -636,7 +1184,7 @@ diff --git a/sys/fuchsia/fuchsia_io.syz_amd64.const b/sys/fuchsia/fuchsia_io.txt
 similarity index 90%
 rename from sys/fuchsia/fuchsia_io.syz_amd64.const
 rename to sys/fuchsia/fuchsia_io.txt.const
-index 7bf0342816..33438a2641 100644
+index 7bf034281..33438a264 100644
 --- a/sys/fuchsia/fuchsia_io.syz_amd64.const
 +++ b/sys/fuchsia/fuchsia_io.txt.const
 @@ -1,4 +1,5 @@
@@ -646,7 +1194,7 @@ index 7bf0342816..33438a2641 100644
  fuchsia_io_SeekOrigin_CURRENT = 1
  fuchsia_io_SeekOrigin_END = 2
 diff --git a/sys/fuchsia/fuchsia_ldsvc.syz.txt b/sys/fuchsia/fuchsia_ldsvc.syz.txt
-index b63b668a98..5fe9da1c88 100644
+index b63b668a9..5fe9da1c8 100644
 --- a/sys/fuchsia/fuchsia_ldsvc.syz.txt
 +++ b/sys/fuchsia/fuchsia_ldsvc.syz.txt
 @@ -2,6 +2,7 @@
@@ -659,7 +1207,7 @@ index b63b668a98..5fe9da1c88 100644
  
 diff --git a/sys/fuchsia/fuchsia_ldsvc.syz_amd64.const b/sys/fuchsia/fuchsia_ldsvc.syz_amd64.const
 deleted file mode 100644
-index 52bb8969d0..0000000000
+index 52bb8969d..000000000
 --- a/sys/fuchsia/fuchsia_ldsvc.syz_amd64.const
 +++ /dev/null
 @@ -1,2 +0,0 @@
@@ -667,7 +1215,7 @@ index 52bb8969d0..0000000000
 -ZX_CHANNEL_MAX_MSG_BYTES = 65536
 diff --git a/sys/fuchsia/fuchsia_ldsvc.syz_arm64.const b/sys/fuchsia/fuchsia_ldsvc.syz_arm64.const
 deleted file mode 100644
-index 52bb8969d0..0000000000
+index 52bb8969d..000000000
 --- a/sys/fuchsia/fuchsia_ldsvc.syz_arm64.const
 +++ /dev/null
 @@ -1,2 +0,0 @@
@@ -677,7 +1225,7 @@ diff --git a/sys/fuchsia/fuchsia_hardware_ethernet.syz_amd64.const b/sys/fuchsia
 similarity index 78%
 rename from sys/fuchsia/fuchsia_hardware_ethernet.syz_amd64.const
 rename to sys/fuchsia/fuchsia_ldsvc.txt.const
-index 52bb8969d0..f5dce90010 100644
+index 52bb8969d..f5dce9001 100644
 --- a/sys/fuchsia/fuchsia_hardware_ethernet.syz_amd64.const
 +++ b/sys/fuchsia/fuchsia_ldsvc.txt.const
 @@ -1,2 +1,3 @@
@@ -685,7 +1233,7 @@ index 52bb8969d0..f5dce90010 100644
 +arches = amd64
  ZX_CHANNEL_MAX_MSG_BYTES = 65536
 diff --git a/sys/fuchsia/fuchsia_mem.syz.txt b/sys/fuchsia/fuchsia_mem.syz.txt
-index 382a91753b..615c93fb32 100644
+index 382a91753..615c93fb3 100644
 --- a/sys/fuchsia/fuchsia_mem.syz.txt
 +++ b/sys/fuchsia/fuchsia_mem.syz.txt
 @@ -2,6 +2,7 @@
@@ -697,7 +1245,7 @@ index 382a91753b..615c93fb32 100644
  include <fuchsia/mem/c/fidl.h>
  
 diff --git a/sys/fuchsia/fuchsia_net.syz.txt b/sys/fuchsia/fuchsia_net.syz.txt
-index 5250aceb65..081f0cc69f 100644
+index 5250aceb6..081f0cc69 100644
 --- a/sys/fuchsia/fuchsia_net.syz.txt
 +++ b/sys/fuchsia/fuchsia_net.syz.txt
 @@ -2,6 +2,7 @@
@@ -710,7 +1258,7 @@ index 5250aceb65..081f0cc69f 100644
  fuchsia_net_LookupIpOptions = fuchsia_net_LookupIpOptions_V4_ADDRS, fuchsia_net_LookupIpOptions_V6_ADDRS, fuchsia_net_LookupIpOptions_CNAME_LOOKUP
 diff --git a/sys/fuchsia/fuchsia_net.syz_arm64.const b/sys/fuchsia/fuchsia_net.syz_arm64.const
 deleted file mode 100644
-index 6d5ce48179..0000000000
+index 6d5ce4817..000000000
 --- a/sys/fuchsia/fuchsia_net.syz_arm64.const
 +++ /dev/null
 @@ -1,5 +0,0 @@
@@ -723,7 +1271,7 @@ diff --git a/sys/fuchsia/fuchsia_net.syz_amd64.const b/sys/fuchsia/fuchsia_net.t
 similarity index 92%
 rename from sys/fuchsia/fuchsia_net.syz_amd64.const
 rename to sys/fuchsia/fuchsia_net.txt.const
-index 6d5ce48179..022e9d225e 100644
+index 6d5ce4817..022e9d225 100644
 --- a/sys/fuchsia/fuchsia_net.syz_amd64.const
 +++ b/sys/fuchsia/fuchsia_net.txt.const
 @@ -1,4 +1,5 @@
@@ -733,7 +1281,7 @@ index 6d5ce48179..022e9d225e 100644
  fuchsia_net_LookupIpOptions_CNAME_LOOKUP = 4
  fuchsia_net_LookupIpOptions_V4_ADDRS = 1
 diff --git a/sys/fuchsia/fuchsia_process.syz.txt b/sys/fuchsia/fuchsia_process.syz.txt
-index 65338928c3..3adde2850e 100644
+index 65338928c..3adde2850 100644
 --- a/sys/fuchsia/fuchsia_process.syz.txt
 +++ b/sys/fuchsia/fuchsia_process.syz.txt
 @@ -2,6 +2,7 @@
@@ -746,7 +1294,7 @@ index 65338928c3..3adde2850e 100644
  
 diff --git a/sys/fuchsia/fuchsia_process.syz_amd64.const b/sys/fuchsia/fuchsia_process.syz_amd64.const
 deleted file mode 100644
-index 52bb8969d0..0000000000
+index 52bb8969d..000000000
 --- a/sys/fuchsia/fuchsia_process.syz_amd64.const
 +++ /dev/null
 @@ -1,2 +0,0 @@
@@ -754,7 +1302,7 @@ index 52bb8969d0..0000000000
 -ZX_CHANNEL_MAX_MSG_BYTES = 65536
 diff --git a/sys/fuchsia/fuchsia_process.syz_arm64.const b/sys/fuchsia/fuchsia_process.syz_arm64.const
 deleted file mode 100644
-index 52bb8969d0..0000000000
+index 52bb8969d..000000000
 --- a/sys/fuchsia/fuchsia_process.syz_arm64.const
 +++ /dev/null
 @@ -1,2 +0,0 @@
@@ -764,7 +1312,7 @@ diff --git a/sys/fuchsia/fuchsia_hardware_ethernet.syz_arm64.const b/sys/fuchsia
 similarity index 78%
 rename from sys/fuchsia/fuchsia_hardware_ethernet.syz_arm64.const
 rename to sys/fuchsia/fuchsia_process.txt.const
-index 52bb8969d0..f5dce90010 100644
+index 52bb8969d..f5dce9001 100644
 --- a/sys/fuchsia/fuchsia_hardware_ethernet.syz_arm64.const
 +++ b/sys/fuchsia/fuchsia_process.txt.const
 @@ -1,2 +1,3 @@
@@ -772,7 +1320,7 @@ index 52bb8969d0..f5dce90010 100644
 +arches = amd64
  ZX_CHANNEL_MAX_MSG_BYTES = 65536
 diff --git a/sys/fuchsia/fuchsia_scpi.syz.txt b/sys/fuchsia/fuchsia_scpi.syz.txt
-index 2ddc0f2580..b57ee36495 100644
+index 2ddc0f258..b57ee3649 100644
 --- a/sys/fuchsia/fuchsia_scpi.syz.txt
 +++ b/sys/fuchsia/fuchsia_scpi.syz.txt
 @@ -2,6 +2,7 @@
@@ -785,7 +1333,7 @@ index 2ddc0f2580..b57ee36495 100644
  
 diff --git a/sys/fuchsia/fuchsia_scpi.syz_amd64.const b/sys/fuchsia/fuchsia_scpi.syz_amd64.const
 deleted file mode 100644
-index 52bb8969d0..0000000000
+index 52bb8969d..000000000
 --- a/sys/fuchsia/fuchsia_scpi.syz_amd64.const
 +++ /dev/null
 @@ -1,2 +0,0 @@
@@ -793,7 +1341,7 @@ index 52bb8969d0..0000000000
 -ZX_CHANNEL_MAX_MSG_BYTES = 65536
 diff --git a/sys/fuchsia/fuchsia_scpi.syz_arm64.const b/sys/fuchsia/fuchsia_scpi.syz_arm64.const
 deleted file mode 100644
-index 52bb8969d0..0000000000
+index 52bb8969d..000000000
 --- a/sys/fuchsia/fuchsia_scpi.syz_arm64.const
 +++ /dev/null
 @@ -1,2 +0,0 @@
@@ -801,7 +1349,7 @@ index 52bb8969d0..0000000000
 -ZX_CHANNEL_MAX_MSG_BYTES = 65536
 diff --git a/sys/fuchsia/fuchsia_scpi.txt.const b/sys/fuchsia/fuchsia_scpi.txt.const
 new file mode 100644
-index 0000000000..f5dce90010
+index 000000000..f5dce9001
 --- /dev/null
 +++ b/sys/fuchsia/fuchsia_scpi.txt.const
 @@ -0,0 +1,3 @@
@@ -810,14 +1358,14 @@ index 0000000000..f5dce90010
 +ZX_CHANNEL_MAX_MSG_BYTES = 65536
 diff --git a/sys/fuchsia/futex.txt.const b/sys/fuchsia/futex.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/futex.txt.const
 @@ -0,0 +1,2 @@
 +# Code generated by syz-sysgen. DO NOT EDIT.
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/guest.txt b/sys/fuchsia/guest.txt
-index d29bc76a1a..4df6fb16d3 100644
+index d29bc76a1..4df6fb16d 100644
 --- a/sys/fuchsia/guest.txt
 +++ b/sys/fuchsia/guest.txt
 @@ -4,6 +4,8 @@
@@ -833,7 +1381,7 @@ diff --git a/sys/fuchsia/guest_amd64.const b/sys/fuchsia/guest.txt.const
 similarity index 71%
 rename from sys/fuchsia/guest_amd64.const
 rename to sys/fuchsia/guest.txt.const
-index 71b0f874bf..eb6044b2ea 100644
+index 71b0f874b..eb6044b2e 100644
 --- a/sys/fuchsia/guest_amd64.const
 +++ b/sys/fuchsia/guest.txt.const
 @@ -1,9 +1,9 @@
@@ -853,7 +1401,7 @@ index 71b0f874bf..eb6044b2ea 100644
 +ZX_PKT_TYPE_GUEST_MEM = 4
 diff --git a/sys/fuchsia/guest_arm64.const b/sys/fuchsia/guest_arm64.const
 deleted file mode 100644
-index 71b0f874bf..0000000000
+index 71b0f874b..000000000
 --- a/sys/fuchsia/guest_arm64.const
 +++ /dev/null
 @@ -1,9 +0,0 @@
@@ -868,7 +1416,7 @@ index 71b0f874bf..0000000000
 -ZX_PKT_TYPE_GUEST_VCPU = 6
 diff --git a/sys/fuchsia/handle.txt.const b/sys/fuchsia/handle.txt.const
 new file mode 100644
-index 0000000000..46dd6209c0
+index 000000000..46dd6209c
 --- /dev/null
 +++ b/sys/fuchsia/handle.txt.const
 @@ -0,0 +1,3 @@
@@ -877,7 +1425,7 @@ index 0000000000..46dd6209c0
 +ZX_HANDLE_INVALID = 0
 diff --git a/sys/fuchsia/handle_arm64.const b/sys/fuchsia/handle_arm64.const
 deleted file mode 100644
-index 71ad6edb2d..0000000000
+index 71ad6edb2..000000000
 --- a/sys/fuchsia/handle_arm64.const
 +++ /dev/null
 @@ -1,25 +0,0 @@
@@ -910,7 +1458,7 @@ diff --git a/sys/fuchsia/interrupt_amd64.const b/sys/fuchsia/interrupt.txt.const
 similarity index 65%
 rename from sys/fuchsia/interrupt_amd64.const
 rename to sys/fuchsia/interrupt.txt.const
-index 4457b5bae9..4b8932aa60 100644
+index 4457b5bae..4b8932aa6 100644
 --- a/sys/fuchsia/interrupt_amd64.const
 +++ b/sys/fuchsia/interrupt.txt.const
 @@ -1,10 +1,12 @@
@@ -935,7 +1483,7 @@ index 4457b5bae9..4b8932aa60 100644
 +ZX_INTERRUPT_VIRTUAL = 16
 diff --git a/sys/fuchsia/interrupt_arm64.const b/sys/fuchsia/interrupt_arm64.const
 deleted file mode 100644
-index 4457b5bae9..0000000000
+index 4457b5bae..000000000
 --- a/sys/fuchsia/interrupt_arm64.const
 +++ /dev/null
 @@ -1,10 +0,0 @@
@@ -950,7 +1498,7 @@ index 4457b5bae9..0000000000
 -ZX_INTERRUPT_BIND = 0
 -ZX_INTERRUPT_UNBIND = 1
 diff --git a/sys/fuchsia/iommu.txt b/sys/fuchsia/iommu.txt
-index ed6ba333bf..92bb359230 100644
+index ed6ba333b..92bb35923 100644
 --- a/sys/fuchsia/iommu.txt
 +++ b/sys/fuchsia/iommu.txt
 @@ -7,6 +7,4 @@ include <zircon/syscalls.h>
@@ -963,7 +1511,7 @@ index ed6ba333bf..92bb359230 100644
 +zx_iommu_create(handle zx_resource, type int32, desc ptr[in, array[int8]], size len[desc], out_handle ptr[out, zx_iommu])
 diff --git a/sys/fuchsia/iommu.txt.const b/sys/fuchsia/iommu.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/iommu.txt.const
 @@ -0,0 +1,2 @@
@@ -971,7 +1519,7 @@ index 0000000000..d2b0ef2bdf
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/ioports.txt.const b/sys/fuchsia/ioports.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/ioports.txt.const
 @@ -0,0 +1,2 @@
@@ -981,7 +1529,7 @@ diff --git a/sys/fuchsia/job_amd64.const b/sys/fuchsia/job.txt.const
 similarity index 80%
 rename from sys/fuchsia/job_amd64.const
 rename to sys/fuchsia/job.txt.const
-index 26a12d8055..b8dee008a1 100644
+index 26a12d805..b8dee008a 100644
 --- a/sys/fuchsia/job_amd64.const
 +++ b/sys/fuchsia/job.txt.const
 @@ -1,34 +1,34 @@
@@ -1036,7 +1584,7 @@ index 26a12d8055..b8dee008a1 100644
 +ZX_TIMER_SLACK_LATE = 2
 diff --git a/sys/fuchsia/job_arm64.const b/sys/fuchsia/job_arm64.const
 deleted file mode 100644
-index 26a12d8055..0000000000
+index 26a12d805..000000000
 --- a/sys/fuchsia/job_arm64.const
 +++ /dev/null
 @@ -1,34 +0,0 @@
@@ -1076,7 +1624,7 @@ index 26a12d8055..0000000000
 -ZX_JOB_CRITICAL_PROCESS_RETCODE_NONZERO = 1
 diff --git a/sys/fuchsia/ktrace.txt.const b/sys/fuchsia/ktrace.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/ktrace.txt.const
 @@ -0,0 +1,2 @@
@@ -1084,7 +1632,7 @@ index 0000000000..d2b0ef2bdf
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/log_amd64.const b/sys/fuchsia/log_amd64.const
 deleted file mode 100644
-index d16fe84eaf..0000000000
+index d16fe84ea..000000000
 --- a/sys/fuchsia/log_amd64.const
 +++ /dev/null
 @@ -1,2 +0,0 @@
@@ -1092,7 +1640,7 @@ index d16fe84eaf..0000000000
 -ZX_LOG_FLAG_READABLE = 1073741824
 diff --git a/sys/fuchsia/log_arm64.const b/sys/fuchsia/log_arm64.const
 deleted file mode 100644
-index d16fe84eaf..0000000000
+index d16fe84ea..000000000
 --- a/sys/fuchsia/log_arm64.const
 +++ /dev/null
 @@ -1,2 +0,0 @@
@@ -1100,7 +1648,7 @@ index d16fe84eaf..0000000000
 -ZX_LOG_FLAG_READABLE = 1073741824
 diff --git a/sys/fuchsia/misc.txt.const b/sys/fuchsia/misc.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/misc.txt.const
 @@ -0,0 +1,2 @@
@@ -1108,7 +1656,7 @@ index 0000000000..d2b0ef2bdf
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/msi.txt.const b/sys/fuchsia/msi.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/msi.txt.const
 @@ -0,0 +1,2 @@
@@ -1116,7 +1664,7 @@ index 0000000000..d2b0ef2bdf
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/mtrace.txt.const b/sys/fuchsia/mtrace.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/mtrace.txt.const
 @@ -0,0 +1,2 @@
@@ -1126,7 +1674,7 @@ diff --git a/sys/fuchsia/object_amd64.const b/sys/fuchsia/object.txt.const
 similarity index 69%
 rename from sys/fuchsia/object_amd64.const
 rename to sys/fuchsia/object.txt.const
-index 841c0110b7..2b76e73925 100644
+index 841c0110b..2b76e7392 100644
 --- a/sys/fuchsia/object_amd64.const
 +++ b/sys/fuchsia/object.txt.const
 @@ -1,33 +1,34 @@
@@ -1194,7 +1742,7 @@ index 841c0110b7..2b76e73925 100644
 +ZX_WAIT_ASYNC_ONCE = 0
 diff --git a/sys/fuchsia/object_arm64.const b/sys/fuchsia/object_arm64.const
 deleted file mode 100644
-index dd52736cf9..0000000000
+index dd52736cf..000000000
 --- a/sys/fuchsia/object_arm64.const
 +++ /dev/null
 @@ -1,52 +0,0 @@
@@ -1253,7 +1801,7 @@ index dd52736cf9..0000000000
 \ No newline at end of file
 diff --git a/sys/fuchsia/pager.txt.const b/sys/fuchsia/pager.txt.const
 new file mode 100644
-index 0000000000..fd359277ab
+index 000000000..fd359277a
 --- /dev/null
 +++ b/sys/fuchsia/pager.txt.const
 @@ -0,0 +1,9 @@
@@ -1268,7 +1816,7 @@ index 0000000000..fd359277ab
 +ZX_VMO_TRAP_DIRTY = 8
 diff --git a/sys/fuchsia/pager_amd64.const b/sys/fuchsia/pager_amd64.const
 deleted file mode 100644
-index 5da980231d..0000000000
+index 5da980231..000000000
 --- a/sys/fuchsia/pager_amd64.const
 +++ /dev/null
 @@ -1,4 +0,0 @@
@@ -1278,7 +1826,7 @@ index 5da980231d..0000000000
 -ZX_PAGER_OP_WRITEBACK_END = 4
 diff --git a/sys/fuchsia/pager_arm64.const b/sys/fuchsia/pager_arm64.const
 deleted file mode 100644
-index 5da980231d..0000000000
+index 5da980231..000000000
 --- a/sys/fuchsia/pager_arm64.const
 +++ /dev/null
 @@ -1,4 +0,0 @@
@@ -1288,7 +1836,7 @@ index 5da980231d..0000000000
 -ZX_PAGER_OP_WRITEBACK_END = 4
 diff --git a/sys/fuchsia/pc.txt.const b/sys/fuchsia/pc.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/pc.txt.const
 @@ -0,0 +1,2 @@
@@ -1296,7 +1844,7 @@ index 0000000000..d2b0ef2bdf
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/pmt.txt.const b/sys/fuchsia/pmt.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/pmt.txt.const
 @@ -0,0 +1,2 @@
@@ -1304,7 +1852,7 @@ index 0000000000..d2b0ef2bdf
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/port.txt.const b/sys/fuchsia/port.txt.const
 new file mode 100644
-index 0000000000..84dbb459c3
+index 000000000..84dbb459c
 --- /dev/null
 +++ b/sys/fuchsia/port.txt.const
 @@ -0,0 +1,4 @@
@@ -1314,7 +1862,7 @@ index 0000000000..84dbb459c3
 +ZX_PORT_BIND_TO_INTERRUPT = 1
 diff --git a/sys/fuchsia/port_amd64.const b/sys/fuchsia/port_amd64.const
 deleted file mode 100644
-index 726f405356..0000000000
+index 726f40535..000000000
 --- a/sys/fuchsia/port_amd64.const
 +++ /dev/null
 @@ -1,2 +0,0 @@
@@ -1322,7 +1870,7 @@ index 726f405356..0000000000
 -ZX_PKT_TYPE_USER = 0
 diff --git a/sys/fuchsia/port_arm64.const b/sys/fuchsia/port_arm64.const
 deleted file mode 100644
-index 726f405356..0000000000
+index 726f40535..000000000
 --- a/sys/fuchsia/port_arm64.const
 +++ /dev/null
 @@ -1,2 +0,0 @@
@@ -1332,7 +1880,7 @@ diff --git a/sys/fuchsia/posix_amd64.const b/sys/fuchsia/posix.txt.const
 similarity index 91%
 rename from sys/fuchsia/posix_amd64.const
 rename to sys/fuchsia/posix.txt.const
-index bae219db3c..696b030c1b 100644
+index bae219db3..696b030c1 100644
 --- a/sys/fuchsia/posix_amd64.const
 +++ b/sys/fuchsia/posix.txt.const
 @@ -1,4 +1,5 @@
@@ -1344,7 +1892,7 @@ index bae219db3c..696b030c1b 100644
  AT_NO_AUTOMOUNT = 2048
 diff --git a/sys/fuchsia/posix_arm64.const b/sys/fuchsia/posix_arm64.const
 deleted file mode 100644
-index bae219db3c..0000000000
+index bae219db3..000000000
 --- a/sys/fuchsia/posix_arm64.const
 +++ /dev/null
 @@ -1,49 +0,0 @@
@@ -1399,7 +1947,7 @@ index bae219db3c..0000000000
 -S_IXUSR = 64
 diff --git a/sys/fuchsia/processes.txt.const b/sys/fuchsia/processes.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/processes.txt.const
 @@ -0,0 +1,2 @@
@@ -1407,14 +1955,14 @@ index 0000000000..d2b0ef2bdf
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/profile.txt.const b/sys/fuchsia/profile.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/profile.txt.const
 @@ -0,0 +1,2 @@
 +# Code generated by syz-sysgen. DO NOT EDIT.
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/resource.txt b/sys/fuchsia/resource.txt
-index fe2d5a511a..29195d0ee7 100644
+index fe2d5a511..29195d0ee 100644
 --- a/sys/fuchsia/resource.txt
 +++ b/sys/fuchsia/resource.txt
 @@ -10,4 +10,4 @@ resource zx_resource[zx_handle]
@@ -1425,7 +1973,7 @@ index fe2d5a511a..29195d0ee7 100644
 +res_create_options = ZX_RSRC_KIND_MMIO, ZX_RSRC_KIND_IRQ, ZX_RSRC_KIND_IOPORT, ZX_RSRC_KIND_ROOT, ZX_RSRC_KIND_SMC
 diff --git a/sys/fuchsia/resource.txt.const b/sys/fuchsia/resource.txt.const
 new file mode 100644
-index 0000000000..f8e82f8ded
+index 000000000..f8e82f8de
 --- /dev/null
 +++ b/sys/fuchsia/resource.txt.const
 @@ -0,0 +1,7 @@
@@ -1437,7 +1985,7 @@ index 0000000000..f8e82f8ded
 +ZX_RSRC_KIND_ROOT = 3
 +ZX_RSRC_KIND_SMC = 4
 diff --git a/sys/fuchsia/rights.txt b/sys/fuchsia/rights.txt
-index 744a434aa7..ad7aada7a1 100644
+index 744a434aa..ad7aada7a 100644
 --- a/sys/fuchsia/rights.txt
 +++ b/sys/fuchsia/rights.txt
 @@ -3,4 +3,6 @@
@@ -1451,7 +1999,7 @@ diff --git a/sys/fuchsia/handle_amd64.const b/sys/fuchsia/rights.txt.const
 similarity index 89%
 rename from sys/fuchsia/handle_amd64.const
 rename to sys/fuchsia/rights.txt.const
-index 71ad6edb2d..4aaf1759c9 100644
+index 71ad6edb2..4aaf1759c 100644
 --- a/sys/fuchsia/handle_amd64.const
 +++ b/sys/fuchsia/rights.txt.const
 @@ -1,25 +1,25 @@
@@ -1499,7 +2047,7 @@ index 71ad6edb2d..4aaf1759c9 100644
 +ZX_RIGHT_WRITE = 8
 diff --git a/sys/fuchsia/rights_amd64.const b/sys/fuchsia/rights_amd64.const
 deleted file mode 100644
-index 1c73ba64aa..0000000000
+index 1c73ba64a..000000000
 --- a/sys/fuchsia/rights_amd64.const
 +++ /dev/null
 @@ -1,31 +0,0 @@
@@ -1537,7 +2085,7 @@ index 1c73ba64aa..0000000000
 \ No newline at end of file
 diff --git a/sys/fuchsia/rights_arm64.const b/sys/fuchsia/rights_arm64.const
 deleted file mode 100644
-index 1c73ba64aa..0000000000
+index 1c73ba64a..000000000
 --- a/sys/fuchsia/rights_arm64.const
 +++ /dev/null
 @@ -1,31 +0,0 @@
@@ -1575,7 +2123,7 @@ index 1c73ba64aa..0000000000
 \ No newline at end of file
 diff --git a/sys/fuchsia/smc.txt.const b/sys/fuchsia/smc.txt.const
 new file mode 100644
-index 0000000000..b0d8f1610f
+index 000000000..b0d8f1610
 --- /dev/null
 +++ b/sys/fuchsia/smc.txt.const
 @@ -0,0 +1,2 @@
@@ -1583,7 +2131,7 @@ index 0000000000..b0d8f1610f
 +arches = arm64
 diff --git a/sys/fuchsia/sockets.txt.const b/sys/fuchsia/sockets.txt.const
 new file mode 100644
-index 0000000000..106575f20f
+index 000000000..106575f20
 --- /dev/null
 +++ b/sys/fuchsia/sockets.txt.const
 @@ -0,0 +1,7 @@
@@ -1596,7 +2144,7 @@ index 0000000000..106575f20f
 +ZX_SOCKET_STREAM = 0
 diff --git a/sys/fuchsia/sockets_amd64.const b/sys/fuchsia/sockets_amd64.const
 deleted file mode 100644
-index e1ab6b0a18..0000000000
+index e1ab6b0a1..000000000
 --- a/sys/fuchsia/sockets_amd64.const
 +++ /dev/null
 @@ -1,6 +0,0 @@
@@ -1609,7 +2157,7 @@ index e1ab6b0a18..0000000000
 \ No newline at end of file
 diff --git a/sys/fuchsia/sockets_arm64.const b/sys/fuchsia/sockets_arm64.const
 deleted file mode 100644
-index e1ab6b0a18..0000000000
+index e1ab6b0a1..000000000
 --- a/sys/fuchsia/sockets_arm64.const
 +++ /dev/null
 @@ -1,6 +0,0 @@
@@ -1624,7 +2172,7 @@ diff --git a/sys/fuchsia/stream_amd64.const b/sys/fuchsia/stream.txt.const
 similarity index 62%
 rename from sys/fuchsia/stream_amd64.const
 rename to sys/fuchsia/stream.txt.const
-index d00776c566..45fc37ce6b 100644
+index d00776c56..45fc37ce6 100644
 --- a/sys/fuchsia/stream_amd64.const
 +++ b/sys/fuchsia/stream.txt.const
 @@ -1,8 +1,9 @@
@@ -1645,7 +2193,7 @@ index d00776c566..45fc37ce6b 100644
 +ZX_STREAM_SEEK_ORIGIN_START = 0
 diff --git a/sys/fuchsia/stream_arm64.const b/sys/fuchsia/stream_arm64.const
 deleted file mode 100644
-index d00776c566..0000000000
+index d00776c56..000000000
 --- a/sys/fuchsia/stream_arm64.const
 +++ /dev/null
 @@ -1,8 +0,0 @@
@@ -1660,14 +2208,14 @@ index d00776c566..0000000000
 \ No newline at end of file
 diff --git a/sys/fuchsia/sys.txt.const b/sys/fuchsia/sys.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/sys.txt.const
 @@ -0,0 +1,2 @@
 +# Code generated by syz-sysgen. DO NOT EDIT.
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/system.txt b/sys/fuchsia/system.txt
-index f5358829e8..1bcfdfa485 100644
+index f5358829e..1bcfdfa48 100644
 --- a/sys/fuchsia/system.txt
 +++ b/sys/fuchsia/system.txt
 @@ -5,6 +5,8 @@
@@ -1683,7 +2231,7 @@ diff --git a/sys/fuchsia/system_amd64.const b/sys/fuchsia/system.txt.const
 similarity index 86%
 rename from sys/fuchsia/system_amd64.const
 rename to sys/fuchsia/system.txt.const
-index 1d5cb99e44..87a3495422 100644
+index 1d5cb99e4..87a349542 100644
 --- a/sys/fuchsia/system_amd64.const
 +++ b/sys/fuchsia/system.txt.const
 @@ -1,21 +1,23 @@
@@ -1724,7 +2272,7 @@ index 1d5cb99e44..87a3495422 100644
 +ZX_SYSTEM_POWERCTL_X86_SET_PKG_PL1 = 4
 diff --git a/sys/fuchsia/system_arm64.const b/sys/fuchsia/system_arm64.const
 deleted file mode 100644
-index 4320446a4f..0000000000
+index 4320446a4..000000000
 --- a/sys/fuchsia/system_arm64.const
 +++ /dev/null
 @@ -1,19 +0,0 @@
@@ -1750,7 +2298,7 @@ index 4320446a4f..0000000000
 \ No newline at end of file
 diff --git a/sys/fuchsia/task.txt.const b/sys/fuchsia/task.txt.const
 new file mode 100644
-index 0000000000..5cf7582ea7
+index 000000000..5cf7582ea
 --- /dev/null
 +++ b/sys/fuchsia/task.txt.const
 @@ -0,0 +1,3 @@
@@ -1759,7 +2307,7 @@ index 0000000000..5cf7582ea7
 +ZX_EXCEPTION_CHANNEL_DEBUGGER = 1
 diff --git a/sys/fuchsia/tasks_amd64.const b/sys/fuchsia/tasks_amd64.const
 deleted file mode 100644
-index 9b3b187c18..0000000000
+index 9b3b187c1..000000000
 --- a/sys/fuchsia/tasks_amd64.const
 +++ /dev/null
 @@ -1,2 +0,0 @@
@@ -1767,7 +2315,7 @@ index 9b3b187c18..0000000000
 -ZX_EXCEPTION_CHANNEL_DEBUGGER = 1
 diff --git a/sys/fuchsia/tasks_arm64.const b/sys/fuchsia/tasks_arm64.const
 deleted file mode 100644
-index 9b3b187c18..0000000000
+index 9b3b187c1..000000000
 --- a/sys/fuchsia/tasks_arm64.const
 +++ /dev/null
 @@ -1,2 +0,0 @@
@@ -1775,7 +2323,7 @@ index 9b3b187c18..0000000000
 -ZX_EXCEPTION_CHANNEL_DEBUGGER = 1
 diff --git a/sys/fuchsia/thread.txt.const b/sys/fuchsia/thread.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/thread.txt.const
 @@ -0,0 +1,2 @@
@@ -1783,7 +2331,7 @@ index 0000000000..d2b0ef2bdf
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/time_amd64.const b/sys/fuchsia/time_amd64.const
 deleted file mode 100644
-index 0d19c6d737..0000000000
+index 0d19c6d73..000000000
 --- a/sys/fuchsia/time_amd64.const
 +++ /dev/null
 @@ -1,5 +0,0 @@
@@ -1794,7 +2342,7 @@ index 0d19c6d737..0000000000
 -ZX_TIME_INFINITE = 9223372036854775807
 diff --git a/sys/fuchsia/time_arm64.const b/sys/fuchsia/time_arm64.const
 deleted file mode 100644
-index 0d19c6d737..0000000000
+index 0d19c6d73..000000000
 --- a/sys/fuchsia/time_arm64.const
 +++ /dev/null
 @@ -1,5 +0,0 @@
@@ -1807,7 +2355,7 @@ diff --git a/sys/fuchsia/timer_amd64.const b/sys/fuchsia/timer.txt.const
 similarity index 59%
 rename from sys/fuchsia/timer_amd64.const
 rename to sys/fuchsia/timer.txt.const
-index fef6535a07..401ad4d47f 100644
+index fef6535a0..401ad4d47 100644
 --- a/sys/fuchsia/timer_amd64.const
 +++ b/sys/fuchsia/timer.txt.const
 @@ -1,4 +1,5 @@
@@ -1819,7 +2367,7 @@ index fef6535a07..401ad4d47f 100644
  ZX_TIMER_SLACK_EARLY = 1
 diff --git a/sys/fuchsia/timer_arm64.const b/sys/fuchsia/timer_arm64.const
 deleted file mode 100644
-index fef6535a07..0000000000
+index fef6535a0..000000000
 --- a/sys/fuchsia/timer_arm64.const
 +++ /dev/null
 @@ -1,5 +0,0 @@
@@ -1830,14 +2378,14 @@ index fef6535a07..0000000000
 -ZX_TIMER_SLACK_LATE = 2
 diff --git a/sys/fuchsia/vcpu.txt.const b/sys/fuchsia/vcpu.txt.const
 new file mode 100644
-index 0000000000..d2b0ef2bdf
+index 000000000..d2b0ef2bd
 --- /dev/null
 +++ b/sys/fuchsia/vcpu.txt.const
 @@ -0,0 +1,2 @@
 +# Code generated by syz-sysgen. DO NOT EDIT.
 +arches = amd64, arm64
 diff --git a/sys/fuchsia/vmar.txt b/sys/fuchsia/vmar.txt
-index 9539b3d1c4..635c8b0bba 100644
+index 9539b3d1c..635c8b0bb 100644
 --- a/sys/fuchsia/vmar.txt
 +++ b/sys/fuchsia/vmar.txt
 @@ -17,6 +17,6 @@ zx_vmar_protect(handle zx_vmar, options flags[vmar_protect_options], addr zx_vad
@@ -1852,7 +2400,7 @@ diff --git a/sys/fuchsia/vmar_amd64.const b/sys/fuchsia/vmar.txt.const
 similarity index 92%
 rename from sys/fuchsia/vmar_amd64.const
 rename to sys/fuchsia/vmar.txt.const
-index 33878dd9ac..a3eddda0e3 100644
+index 33878dd9a..a3eddda0e 100644
 --- a/sys/fuchsia/vmar_amd64.const
 +++ b/sys/fuchsia/vmar.txt.const
 @@ -1,42 +1,43 @@
@@ -1939,7 +2487,7 @@ index 33878dd9ac..a3eddda0e3 100644
 +ZX_VM_SPECIFIC = 16
 diff --git a/sys/fuchsia/vmar_arm64.const b/sys/fuchsia/vmar_arm64.const
 deleted file mode 100644
-index 33878dd9ac..0000000000
+index 33878dd9a..000000000
 --- a/sys/fuchsia/vmar_arm64.const
 +++ /dev/null
 @@ -1,42 +0,0 @@
@@ -1988,7 +2536,7 @@ index 33878dd9ac..0000000000
 \ No newline at end of file
 diff --git a/sys/fuchsia/vmo.txt.const b/sys/fuchsia/vmo.txt.const
 new file mode 100644
-index 0000000000..e7b8926103
+index 000000000..e7b892610
 --- /dev/null
 +++ b/sys/fuchsia/vmo.txt.const
 @@ -0,0 +1,25 @@
@@ -2019,7 +2567,7 @@ index 0000000000..e7b8926103
 +ZX_VMO_RESIZABLE = 2
 diff --git a/sys/fuchsia/vmos_amd64.const b/sys/fuchsia/vmos_amd64.const
 deleted file mode 100644
-index 0d44f8f51b..0000000000
+index 0d44f8f51..000000000
 --- a/sys/fuchsia/vmos_amd64.const
 +++ /dev/null
 @@ -1,13 +0,0 @@
@@ -2038,7 +2586,7 @@ index 0d44f8f51b..0000000000
 -ZX_VMO_OP_DECOMMIT = 2
 diff --git a/sys/fuchsia/vmos_arm64.const b/sys/fuchsia/vmos_arm64.const
 deleted file mode 100644
-index 0d44f8f51b..0000000000
+index 0d44f8f51..000000000
 --- a/sys/fuchsia/vmos_arm64.const
 +++ /dev/null
 @@ -1,13 +0,0 @@
@@ -2056,7 +2604,7 @@ index 0d44f8f51b..0000000000
 -ZX_VMO_OP_COMMIT = 1
 -ZX_VMO_OP_DECOMMIT = 2
 diff --git a/sys/syz-extract/fuchsia.go b/sys/syz-extract/fuchsia.go
-index 8a473984aa..9547f2e05f 100644
+index 8a473984a..9547f2e05 100644
 --- a/sys/syz-extract/fuchsia.go
 +++ b/sys/syz-extract/fuchsia.go
 @@ -4,7 +4,12 @@
@@ -2156,7 +2704,7 @@ index 8a473984aa..9547f2e05f 100644
 +	return res, undeclared, nil
  }
 diff --git a/sys/targets/targets.go b/sys/targets/targets.go
-index a076d2710f..b8455e2c9a 100644
+index a076d2710..b8455e2c9 100644
 --- a/sys/targets/targets.go
 +++ b/sys/targets/targets.go
 @@ -467,6 +467,7 @@ var List = map[string]map[string]*Target{
@@ -2168,7 +2716,7 @@ index a076d2710f..b8455e2c9a 100644
  			CCompiler:        sourceDirVar + "/prebuilt/third_party/clang/linux-x64/bin/clang",
  			Objdump:          sourceDirVar + "/prebuilt/third_party/clang/linux-x64/bin/llvm-objdump",
 diff --git a/vm/qemu/qemu.go b/vm/qemu/qemu.go
-index d5d10d66bf..49c773e2a0 100644
+index d5d10d66b..49c773e2a 100644
 --- a/vm/qemu/qemu.go
 +++ b/vm/qemu/qemu.go
 @@ -517,9 +517,13 @@ func (inst *instance) buildQemuArgs() ([]string, error) {
@@ -2195,4 +2743,95 @@ index d5d10d66bf..49c773e2a0 100644
 +	}
  	return fmt.Sprintf("localhost:%v", port), nil
  }
+ 
+diff --git a/vm/starnix/starnix.go b/vm/starnix/starnix.go
+index e6da96dc0..7bd6a77fd 100644
+--- a/vm/starnix/starnix.go
++++ b/vm/starnix/starnix.go
+@@ -36,6 +36,10 @@ func init() {
+ type Config struct {
+ 	// Number of VMs to run in parallel (1 by default).
+ 	Count int `json:"count"`
++	// Paths inside the Starnix container for the live sancov PC table and counter table.
++	// These are consumed by the Linux executor when coverage is enabled.
++	CoveragePCs    string `json:"coverage_pcs"`
++	CoverageCounts string `json:"coverage_counts"`
+ }
+ 
+ type Pool struct {
+@@ -70,6 +74,13 @@ type instance struct {
+ 
+ const targetDir = "/tmp"
+ 
++// Where a Starnix kernel built with the starnix_sancov build arg exports its
++// sanitizer coverage tables.
++const (
++	defaultCoveragePCs    = "/proc/starnix_sancov/pcs"
++	defaultCoverageCounts = "/proc/starnix_sancov/counts"
++)
++
+ func ctor(env *vmimpl.Env) (vmimpl.Pool, error) {
+ 	cfg := &Config{}
+ 	if err := config.LoadData(env.Config, cfg); err != nil {
+@@ -78,6 +89,12 @@ func ctor(env *vmimpl.Env) (vmimpl.Pool, error) {
+ 	if cfg.Count < 1 || cfg.Count > 128 {
+ 		return nil, fmt.Errorf("invalid config param count: %v, want [1, 128]", cfg.Count)
+ 	}
++	if cfg.CoveragePCs == "" {
++		cfg.CoveragePCs = defaultCoveragePCs
++	}
++	if cfg.CoverageCounts == "" {
++		cfg.CoverageCounts = defaultCoverageCounts
++	}
+ 
+ 	ffxDir, err := os.MkdirTemp("", "syz-ffx")
+ 	if err != nil {
+@@ -481,7 +498,7 @@ func (inst *instance) Run(ctx context.Context, command string) (
+ 	sshArgs := vmimpl.SSHArgsForward(inst.debug, inst.sshPrivKey, inst.port, inst.forwardPort, useSystemSSHCfg)
+ 	sshCmd := []string{"ssh"}
+ 	sshCmd = append(sshCmd, sshArgs...)
+-	sshCmd = append(sshCmd, "root@localhost", "cd "+targetDir+" && ", command)
++	sshCmd = append(sshCmd, "root@localhost", inst.remoteCommand(command))
+ 	if inst.debug {
+ 		log.Logf(1, "instance %s: running command: %#v", inst.name, sshCmd)
+ 	}
+@@ -501,6 +518,19 @@ func (inst *instance) Run(ctx context.Context, command string) (
+ 	})
+ }
+ 
++func (inst *instance) remoteCommand(command string) string {
++	env := []string{
++		"SYZ_STARNIX_SANCOV=1",
++		"SYZ_STARNIX_COVER_PCS=" + shellQuote(inst.cfg.CoveragePCs),
++		"SYZ_STARNIX_COVER_COUNTS=" + shellQuote(inst.cfg.CoverageCounts),
++	}
++	return fmt.Sprintf("cd %s && %s %s", shellQuote(targetDir), strings.Join(env, " "), command)
++}
++
++func shellQuote(s string) string {
++	return "'" + strings.ReplaceAll(s, "'", "'\\''") + "'"
++}
++
+ func (inst *instance) Info() ([]byte, error) {
+ 	info := fmt.Sprintf("%v\n%v", inst.version, "ffx")
+ 	return []byte(info), nil
+@@ -560,7 +590,18 @@ func GetToolPath(fuchsiaDir, toolName string) (string, error) {
+ 
+ 	for _, metadata := range metadataList {
+ 		if metadata.Name == toolName {
+-			return filepath.Join(buildDir, metadata.Path), nil
++			path := filepath.Join(buildDir, metadata.Path)
++			if _, err := os.Stat(path); err == nil {
++				return path, nil
++			}
++			break
++		}
++	}
++
++	for _, hostDir := range []string{"host_x64", "host_x64-novariant"} {
++		path := filepath.Join(buildDir, hostDir, toolName)
++		if _, err := os.Stat(path); err == nil {
++			return path, nil
+ 		}
+ 	}
  
