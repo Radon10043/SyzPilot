@@ -6,7 +6,7 @@
 # usage:
 #   bash scripts/fuchsia/refresh.sh -f $FUCHSIA
 
-set -euo pipefail
+set -e
 
 # required args
 FUCHSIA=
@@ -48,19 +48,26 @@ if [[ ! -d "$FUCHSIA" ]]; then
     exit 1
 fi
 
+cd $FUCHSIA
+source scripts/fx-env.sh && fx-update-path
+
+PRODUCT_BUNDLE="$(ffx config get product.path | tr -d '"')"
+PB_SYSTEM_A=$PRODUCT_BUNDLE/system_a
+FUCHSIA_ZBI="$(ffx product get-image-path "$PRODUCT_BUNDLE" --slot a --image-type zbi)"
+FXFS_SPARSE_BLK="$(ffx product get-image-path "$PRODUCT_BUNDLE" --slot a --image-type fxfs.fastboot)"
+
 OUT_DIR=$FUCHSIA/out/x64
 SYZ_DIR=$OUT_DIR/syzkaller
-PB_SYSTEM_A=$OUT_DIR/obj/products/core/product_bundle.x64/product_bundle/system_a
 BOOTFS_DIR=$SYZ_DIR/obj/bootfs
 
 mkdir -p $SYZ_DIR/obj
 
 # find the kernel object file, prefer the one with more sanitizers enabled
 KERNEL_CANDS=(
-    $OUT_DIR/kernel_x64.lk_debug_level_2-sancov/vmzircon.with-tests
-    $OUT_DIR/kernel_x64.lk_debug_level_2-kasan-sancov/vmzircon.with-tests
-    $OUT_DIR/kernel_x64.lk_debug_level_2-kasan/vmzircon.with-tests
-    $OUT_DIR/kernel_x64.lk_debug_level_2/vmzircon.with-tests
+    $OUT_DIR/kernel_x64-sancov/vmzircon
+    $OUT_DIR/kernel_x64-kasan-sancov/vmzircon
+    $OUT_DIR/kernel_x64-kasan/vmzircon
+    $OUT_DIR/kernel_x64/vmzircon
 )
 for cand in "${KERNEL_CANDS[@]}"; do
     if [[ -e $cand ]]; then
@@ -69,40 +76,30 @@ for cand in "${KERNEL_CANDS[@]}"; do
     fi
 done
 if [[ -z "${KERNEL_OBJ:-}" ]]; then
-    echo "failed to find a vmzircon.with-tests artifact" >&2
+    echo "failed to find a vmzircon artifact" >&2
     exit 1
 fi
 
 ln -sfn $KERNEL_OBJ $SYZ_DIR/obj/zircon.elf
-ln -sfn $OUT_DIR/obj/products/core/product_bundle.x64/product_bundle/system_a/linux-x86-boot-shim.bin $SYZ_DIR/kernel
-
-# find the zbi file, prefer the one with more debug info
-ZBI_CANDS=(
-    $OUT_DIR/obj/bundles/assembly/zircon_eng/kernel/kernel.eng.zbi
-    $PB_SYSTEM_A/fuchsia.zbi
-)
-for cand in "${ZBI_CANDS[@]}"; do
-    if [[ -e $cand ]]; then
-        ZIRCON_ZBI=$cand
-        break
-    fi
-done
-if [[ -z "${ZIRCON_ZBI:-}" ]]; then
-    echo "failed to find a zircon ZBI artifact" >&2
-    exit 1
-fi
+ln -sfn $PB_SYSTEM_A/linux-x86-boot-shim.bin $SYZ_DIR/kernel
 
 rm -rf "${BOOTFS_DIR}"
 mkdir -p "${BOOTFS_DIR}"
-"$OUT_DIR/host_x64/zbi" -x -D $BOOTFS_DIR $PB_SYSTEM_A/fuchsia.zbi
+"$OUT_DIR/host_x64/zbi" -x -D $BOOTFS_DIR $FUCHSIA_ZBI
 
-"$FUCHSIA/prebuilt/third_party/libsparse/bin/simg2img" $PB_SYSTEM_A/fxfs.sparse.blk $SYZ_DIR/fxfs.blk
+# generate sshkey
+ffx config check-ssh-keys
+AUTH_SSHKEY="$(ffx config get ssh.pub | tr -d '"')"
+PRIV_SSHKEY="$(ffx config get ssh.priv | tr -d '"')"
+cp $PRIV_SSHKEY $SYZ_DIR/
+
+"$FUCHSIA/prebuilt/third_party/libsparse/bin/simg2img" $FXFS_SPARSE_BLK $SYZ_DIR/fxfs.blk
 
 "$OUT_DIR/host_x64/zbi" \
     -o $SYZ_DIR/fuchsia-ssh.zbi \
-    $ZIRCON_ZBI \
-    $BOOTFS_DIR \
     --replace \
+    $FUCHSIA_ZBI \
+    $BOOTFS_DIR \
     --entry data/ssh/authorized_keys=/root/.ssh/fuchsia_authorized_keys \
     --entry bin/syz-executor="$OUT_DIR/syz-executor" \
     --entry lib/libfdio.so="$OUT_DIR/x64-novariant-shared/libfdio.so" \
