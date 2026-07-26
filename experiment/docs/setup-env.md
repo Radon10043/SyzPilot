@@ -66,6 +66,7 @@ git submodule update --init --recursive
 - [setup kernel/netbsd](setup-kernel_netbsd.md)
 - [setup kernel/android](setup-kernel_android.md)
 - [setup kernel/gvisor](setup-kernel_gvisor.md)
+- [setup kernel/fuchsia](setup-kernel_fuchsia.md)
 - [setup image/debian](setup-image_debian.md)
 - [setup image/freebsd](setup-image_freebsd.md)
 - [setup image/openbsd](setup-image_openbsd.md)
