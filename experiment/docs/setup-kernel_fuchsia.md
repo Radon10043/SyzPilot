@@ -9,7 +9,7 @@ curl -s "https://fuchsia.googlesource.com/jiri/+/HEAD/scripts/bootstrap_jiri?for
 export PATH="$EXPERIMENT_ROOT/kernel/fuchsia/releases.f30/.jiri_root/bin:$PATH"
 
 cd "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f30"
-jiri init -shallow=true .
+jiri init -partial=true .
 jiri import \
 	-name=integration \
 	-revision=4c117a94d1cafc3f48d0f3deee07676f6501a0af \
