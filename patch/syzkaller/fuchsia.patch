@@ -88,10 +88,10 @@ index d6bba7aa7..a6f85d09b 100644
  
  struct thread_t {
 diff --git a/executor/executor_fuchsia.h b/executor/executor_fuchsia.h
-index bd2952c9e..543612608 100644
+index bd2952c9e3..fa155037b9 100644
 --- a/executor/executor_fuchsia.h
 +++ b/executor/executor_fuchsia.h
-@@ -2,15 +2,198 @@
+@@ -2,15 +2,223 @@
  // Use of this source code is governed by Apache 2 LICENSE that can be found in the LICENSE file.
  
  #include <errno.h>
@@ -108,6 +108,22 @@ index bd2952c9e..543612608 100644
 -#include "nocover.h"
 +static const uint64 kFuchsiaSancovPcMagic = 0xc0bfffffffffff64ull;
 +static const uint64 kFuchsiaSancovCountsMagic = 0x0023766f436e6153ull;
++
++// The Zircon kernel stores the call site rather than the return address: it
++// subtracts this bias from __builtin_return_address(0) so that the .sancov files
++// it publishes match what LLVM's sancov tool expects. See kReturnAddressBias in
++// zircon/kernel/lib/instrumentation/sancov.cc.
++//
++// syzkaller works the other way around: it is given return addresses and walks
++// back one instruction itself (PreviousInstructionPC). Add the bias back so the
++// PCs we report line up with the coverage callbacks found in the kernel ELF;
++// without this every PC misses its callback by one byte and coverage cannot be
++// symbolized at all.
++#if GOARCH_arm64
++static const uint64 kFuchsiaSancovReturnBias = 4;
++#else
++static const uint64 kFuchsiaSancovReturnBias = 1;
++#endif
 +
 +static uint64* fuchsia_sancov_pcs;
 +static uint64* fuchsia_sancov_counts;
@@ -222,8 +238,14 @@ index bd2952c9e..543612608 100644
 +{
 +	if (!flag_coverage || cov == 0)
 +		return;
++	// Threads mmap their coverage lazily: thread_create() only does it when the
++	// request that first needed the thread was collecting coverage. A later
++	// request that does collect coverage can reuse such a thread, and
++	// execute_call() then resets its cover_t while it is still unmapped. There is
++	// nothing to snapshot in that case, and nothing will be read back out of it
++	// either, so treat it as "not collecting" rather than failing the executor.
 +	if (!cov->fuchsia_counts_snapshot)
-+		fail("Fuchsia cover_reset on a non-mmapped cover_t object");
++		return;
 +	memcpy(cov->fuchsia_counts_snapshot, fuchsia_sancov_counts,
 +	       fuchsia_sancov_words * sizeof(uint64));
 +	*(uint64*)cov->data = 0;
@@ -233,8 +255,11 @@ index bd2952c9e..543612608 100644
 +
 +static void cover_collect(cover_t* cov)
 +{
-+	if (!cov->fuchsia_counts_snapshot)
-+		fail("Fuchsia cover_collect on a non-mmapped cover_t object");
++	// See cover_reset(): an unmapped cover_t simply collected nothing.
++	if (!cov->fuchsia_counts_snapshot) {
++		cov->size = 0;
++		return;
++	}
 +	uint64* out = (uint64*)cov->data;
 +	uint64 max = cov->data_size / sizeof(uint64) - 1;
 +	uint64 n = 0;
@@ -252,7 +277,7 @@ index bd2952c9e..543612608 100644
 +				cov->overflow = true;
 +				continue;
 +			}
-+			out[++n] = pc;
++			out[++n] = pc + kFuchsiaSancovReturnBias;
 +		}
 +	}
 +	out[0] = n;
@@ -713,6 +738,31 @@ index bd7fa0612..caac4c899 100644
  		"--assembly-override", fmt.Sprintf("//products/workbench/*=//local:%s", overrideName),
  	); err != nil {
  		return ImageDetails{}, err
+diff --git a/pkg/cover/backend/dwarf.go b/pkg/cover/backend/dwarf.go
+index f35368f5e6..bc3f9904ee 100644
+--- a/pkg/cover/backend/dwarf.go
++++ b/pkg/cover/backend/dwarf.go
+@@ -154,6 +154,20 @@ func makeDWARFUnsafe(params *dwarfParams) (*Impl, error) {
+ 	splitBuildDelimiters := params.splitBuildDelimiters
+ 	modules := params.hostModules
+ 
++	// Targets that cannot enumerate loaded modules from inside the VM report none at
++	// all: Fuchsia goes through vminfo's nopChecker, whose parseModules returns an
++	// empty list. Without a single module there is nothing to read symbols from, and
++	// symbolization fails below with a misleading "failed to parse DWARF". Fall back
++	// to the kernel object in the obj directory, which is what we want to symbolize
++	// against anyway.
++	if len(modules) == 0 {
++		discovered, err := DiscoverModules(target, kernelDirs.Obj, params.moduleObj)
++		if err != nil {
++			return nil, err
++		}
++		modules = discovered
++	}
++
+ 	// Here and below index 0 refers to coverage callbacks (__sanitizer_cov_trace_pc(_guard))
+ 	// and index 1 refers to comparison callbacks (__sanitizer_cov_trace_cmp*).
+ 	var allCoverPoints [2][]uint64
 diff --git a/pkg/cover/backend/elf.go b/pkg/cover/backend/elf.go
 index 88b8302c4..8f9f55258 100644
 --- a/pkg/cover/backend/elf.go
