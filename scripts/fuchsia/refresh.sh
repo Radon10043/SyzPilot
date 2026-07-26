@@ -64,10 +64,16 @@ mkdir -p $SYZ_DIR/obj
 
 # find the kernel object file, prefer the one with more sanitizers enabled
 KERNEL_CANDS=(
-    $OUT_DIR/kernel_x64-sancov/vmzircon
+    # f30, f29
     $OUT_DIR/kernel_x64-kasan-sancov/vmzircon
+    $OUT_DIR/kernel_x64-sancov/vmzircon
     $OUT_DIR/kernel_x64-kasan/vmzircon
     $OUT_DIR/kernel_x64/vmzircon
+    # f28, f27
+    $OUT_DIR/kernel_x64-kasan-sancov/physzircon
+    $OUT_DIR/kernel_x64-sancov/physzircon
+    $OUT_DIR/kernel_x64-kasan/physzircon
+    $OUT_DIR/kernel_x64/physzircon
 )
 for cand in "${KERNEL_CANDS[@]}"; do
     if [[ -e $cand ]]; then
@@ -76,7 +82,7 @@ for cand in "${KERNEL_CANDS[@]}"; do
     fi
 done
 if [[ -z "${KERNEL_OBJ:-}" ]]; then
-    echo "failed to find a vmzircon artifact" >&2
+    echo "failed to find a vmzircon/physzircon artifact" >&2
     exit 1
 fi
 
