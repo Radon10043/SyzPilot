@@ -1,0 +1,1746 @@
+diff --git a/src/starnix/build/BUILD.gn b/src/starnix/build/BUILD.gn
+index af722ba2db5..238fd87099d 100644
+--- a/src/starnix/build/BUILD.gn
++++ b/src/starnix/build/BUILD.gn
+@@ -3,6 +3,7 @@
+ # found in the LICENSE file.
+ 
+ import("//build/python/python_binary.gni")
++import("//src/starnix/build/args.gni")
+ 
+ python_binary("generate_container_config_component") {
+   main_source = "generate_container_config_component.py"
+@@ -15,3 +16,47 @@ python_binary("generate_container_config_shard") {
+   main_callable = "main"
+   deps = [ "//third_party/pyjson5" ]
+ }
++
++# Add this config to any libraries that live under //src/starnix but are also
++# used outside of the Starnix kernel, such as by the network stack.
++config("shared_library_config") {
++  configs = [ "//src/starnix/config:starnix_clippy_lints" ]
++}
++
++# Add this config to any crate that ends up in the Starnix kernel but does not
++# already opt into the Starnix lints, such as the crates under
++# //src/starnix/modules. Expands to nothing unless the kernel is being built
++# with coverage.
++config("kernel_instrumentation") {
++  # Only instrument what ends up in the kernel: everything that calls the
++  # coverage runtime has to be linked against it, and host tools don't have one
++  # to call into anyway.
++  if (starnix_sancov && is_fuchsia) {
++    configs = [ ":sancov" ]
++  }
++}
++
++# Add this config to any libraries that are only used by the Starnix kernel
++# binary.
++config("kernel_library_config") {
++  configs = [
++    ":shared_library_config",
++    ":kernel_instrumentation",
++  ]
++}
++
++# Instruments a crate so that every basic block reports itself to the
++# SanitizerCoverage runtime in //src/starnix/lib/starnix_sancov.
++#
++# Only the Rust side is instrumented, which conveniently keeps the runtime
++# itself -- written in C++ -- from calling into itself.
++#
++# Any binary that links a crate built with this must also depend on
++# //src/starnix/lib/starnix_sancov:runtime, or it will fail to link.
++config("sancov") {
++  rustflags = [
++    "-Cpasses=sancov-module",
++    "-Cllvm-args=-sanitizer-coverage-level=3",
++    "-Cllvm-args=-sanitizer-coverage-trace-pc-guard",
++  ]
++}
+diff --git a/src/starnix/build/args.gni b/src/starnix/build/args.gni
+new file mode 100644
+index 00000000000..7139b23a6f5
+--- /dev/null
++++ b/src/starnix/build/args.gni
+@@ -0,0 +1,13 @@
++# Copyright 2025 The Fuchsia Authors. All rights reserved.
++# Use of this source code is governed by a BSD-style license that can be
++# found in the LICENSE file.
++
++declare_args() {
++  # Compiles the Starnix kernel with SanitizerCoverage, which makes it export
++  # its live coverage tables through `/proc/starnix_sancov` for coverage-guided
++  # fuzzers such as syzkaller. This costs a fair amount of performance, so it is
++  # only meant for fuzzing builds.
++  #
++  # See //src/starnix/lib/starnix_sancov.
++  starnix_sancov = false
++}
+diff --git a/src/starnix/kernel/BUILD.gn b/src/starnix/kernel/BUILD.gn
+index 68234d8c5a7..7a90b3ff9a3 100644
+--- a/src/starnix/kernel/BUILD.gn
++++ b/src/starnix/kernel/BUILD.gn
+@@ -59,6 +59,7 @@ rustc_binary("starnix_kernel_bin") {
+     "//src/lib/trace/rust:trace",
+     "//src/lib/trace/rust:trace-provider",
+     "//src/starnix/lib/extended_pstate:lib",
++    "//src/starnix/lib/starnix_sancov",
+     "//third_party/rust_crates:anyhow",
+     "//third_party/rust_crates:async-lock",
+     "//third_party/rust_crates:futures",
+@@ -160,6 +161,7 @@ rustc_library("starnix_core") {
+     "fs/proc/pid_directory.rs",
+     "fs/proc/pressure_directory.rs",
+     "fs/proc/proc_directory.rs",
++    "fs/proc/sancov.rs",
+     "fs/proc/self_symlink.rs",
+     "fs/proc/stat.rs",
+     "fs/proc/swaps.rs",
+@@ -401,6 +403,7 @@ rustc_library("starnix_core") {
+     "//src/starnix/lib/range_map",
+     "//src/starnix/lib/selinux",
+     "//src/starnix/lib/starnix_lifecycle",
++    "//src/starnix/lib/starnix_sancov",
+     "//src/starnix/lib/starnix_sync",
+     "//src/starnix/lib/starnix_syscalls",
+     "//src/starnix/lib/starnix_types",
+@@ -492,7 +495,7 @@ rustc_library("starnix_core") {
+     "//src/starnix/lib/selinux/testdata/micro_policies/hooks_tests_policy.pp",
+     "//src/starnix/lib/selinux/testdata/composite_policies/compiled/bounded_transition_policy.pp",
+   ]
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:kernel_library_config" ]
+ 
+   # Allows binaries that depend on this library to link.
+   public_configs = [ "//build/config/fuchsia:static_cpp_standard_library" ]
+@@ -584,7 +587,7 @@ rustc_library("starnix_kernel_runner") {
+ 
+   test_deps = [ "//src/lib/fuchsia" ]
+ 
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:kernel_library_config" ]
+ }
+ 
+ rustc_library("starnix_logging") {
+@@ -635,7 +638,7 @@ rustc_library("starnix_logging") {
+     features += [ "trace_and_debug_logs_in_release" ]
+   }
+ 
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:kernel_library_config" ]
+ }
+ 
+ static_library("restricted_trampoline") {
+diff --git a/src/starnix/kernel/fs/proc/mod.rs b/src/starnix/kernel/fs/proc/mod.rs
+index 53542508027..c789726def3 100644
+--- a/src/starnix/kernel/fs/proc/mod.rs
++++ b/src/starnix/kernel/fs/proc/mod.rs
+@@ -16,6 +16,7 @@ pub mod mounts_symlink;
+ pub mod pid_directory;
+ mod pressure_directory;
+ mod proc_directory;
++mod sancov;
+ pub mod self_symlink;
+ pub mod stat;
+ pub mod swaps;
+diff --git a/src/starnix/kernel/fs/proc/proc_directory.rs b/src/starnix/kernel/fs/proc/proc_directory.rs
+index bf9d2525487..6cbefde7154 100644
+--- a/src/starnix/kernel/fs/proc/proc_directory.rs
++++ b/src/starnix/kernel/fs/proc/proc_directory.rs
+@@ -14,6 +14,7 @@ use crate::fs::proc::misc::MiscFile;
+ use crate::fs::proc::mounts_symlink::MountsSymlink;
+ use crate::fs::proc::pid_directory::pid_directory;
+ use crate::fs::proc::pressure_directory::pressure_directory;
++use crate::fs::proc::sancov::starnix_sancov_directory;
+ use crate::fs::proc::self_symlink::SelfSymlink;
+ use crate::fs::proc::stat::StatFile;
+ use crate::fs::proc::swaps::SwapsFile;
+@@ -120,6 +121,9 @@ impl ProcDirectory {
+         if let Some(pressure_directory) = pressure_directory(current_task, fs) {
+             nodes.insert("pressure".into(), pressure_directory);
+         }
++        if let Some(sancov_directory) = starnix_sancov_directory(current_task, fs) {
++            nodes.insert("starnix_sancov".into(), sancov_directory);
++        }
+ 
+         Arc::new(ProcDirectory { nodes })
+     }
+diff --git a/src/starnix/kernel/fs/proc/sancov.rs b/src/starnix/kernel/fs/proc/sancov.rs
+new file mode 100644
+index 00000000000..90da24b4f3d
+--- /dev/null
++++ b/src/starnix/kernel/fs/proc/sancov.rs
+@@ -0,0 +1,43 @@
++// Copyright 2025 The Fuchsia Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++use crate::mm::memory::MemoryObject;
++use crate::task::CurrentTask;
++use crate::vfs::{FileSystemHandle, FsNodeHandle, MemoryRegularNode, StaticDirectoryBuilder};
++use starnix_uapi::file_mode::mode;
++use std::sync::Arc;
++
++/// Creates `/proc/starnix_sancov`, which exposes the kernel's SanitizerCoverage
++/// tables to programs running in the container.
++///
++/// Returns `None` unless the kernel was built with `starnix_sancov = true`.
++///
++/// Both files are backed by the live VMOs the kernel records into, so a fuzzer
++/// can mmap them once and watch the counters change without any further
++/// syscalls -- which matters both for speed and because reading the files
++/// through the kernel would itself show up as coverage.
++pub fn starnix_sancov_directory(
++    current_task: &CurrentTask,
++    fs: &FileSystemHandle,
++) -> Option<FsNodeHandle> {
++    let tables = starnix_sancov::tables()?;
++    let pcs = tables.pcs_vmo().ok()?;
++    let counts = tables.counts_vmo().ok()?;
++
++    let mut dir = StaticDirectoryBuilder::new(fs);
++    dir.entry(
++        current_task,
++        "pcs",
++        MemoryRegularNode::from_memory(Arc::new(MemoryObject::from(pcs))),
++        mode!(IFREG, 0o444),
++    );
++    dir.entry(
++        current_task,
++        "counts",
++        MemoryRegularNode::from_memory(Arc::new(MemoryObject::from(counts))),
++        mode!(IFREG, 0o444),
++    );
++    dir.set_mode(mode!(IFDIR, 0o555));
++    Some(dir.build(current_task))
++}
+diff --git a/src/starnix/kernel/main.rs b/src/starnix/kernel/main.rs
+index 86d1e030abe..d62463cc655 100644
+--- a/src/starnix/kernel/main.rs
++++ b/src/starnix/kernel/main.rs
+@@ -127,6 +127,10 @@ enum KernelServices {
+     // LINT.ThenChange(//tools/testing/tefmocheck/string_in_log_check.go:starnix_panic_tefmo)
+ )]
+ async fn main() -> Result<(), Error> {
++    // Give the coverage instrumentation somewhere to record into, as early as
++    // possible. Does nothing unless the kernel was built with `starnix_sancov`.
++    starnix_sancov::init();
++
+     // Make sure that if this process panics in normal mode that the whole kernel's job is killed.
+     fruntime::job_default()
+         .set_critical(zx::JobCriticalOptions::RETCODE_NONZERO, &fruntime::process_self())
+diff --git a/src/starnix/lib/ebpf/BUILD.gn b/src/starnix/lib/ebpf/BUILD.gn
+index c4f5e51877f..ddf92c58af5 100644
+--- a/src/starnix/lib/ebpf/BUILD.gn
++++ b/src/starnix/lib/ebpf/BUILD.gn
+@@ -39,7 +39,7 @@ rustc_library("ebpf") {
+     "//third_party/rust_crates:zerocopy",
+   ]
+ 
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:shared_library_config" ]
+ 
+   with_unit_tests = true
+ 
+diff --git a/src/starnix/lib/ebpf_api/BUILD.gn b/src/starnix/lib/ebpf_api/BUILD.gn
+index 505866eed6b..a56d2bbf4fb 100644
+--- a/src/starnix/lib/ebpf_api/BUILD.gn
++++ b/src/starnix/lib/ebpf_api/BUILD.gn
+@@ -41,7 +41,7 @@ rustc_library("ebpf_api") {
+     "//third_party/rust_crates:zerocopy",
+   ]
+ 
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:shared_library_config" ]
+ 
+   with_unit_tests = true
+   test_deps = [ "//src/lib/fuchsia" ]
+diff --git a/src/starnix/lib/expando/BUILD.gn b/src/starnix/lib/expando/BUILD.gn
+index 4bf753ab99b..2506fe2f933 100644
+--- a/src/starnix/lib/expando/BUILD.gn
++++ b/src/starnix/lib/expando/BUILD.gn
+@@ -15,7 +15,7 @@ rustc_library("expando") {
+   sources = [ "src/lib.rs" ]
+   deps = [ "//src/starnix/lib/starnix_sync" ]
+ 
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:kernel_library_config" ]
+   with_unit_tests = true
+ }
+ 
+diff --git a/src/starnix/lib/kernel_manager/BUILD.gn b/src/starnix/lib/kernel_manager/BUILD.gn
+index 96eee31b6d1..05ad1e47b55 100644
+--- a/src/starnix/lib/kernel_manager/BUILD.gn
++++ b/src/starnix/lib/kernel_manager/BUILD.gn
+@@ -47,7 +47,7 @@ rustc_library("kernel_manager") {
+ 
+   test_deps = [ "//src/lib/fuchsia" ]
+ 
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:kernel_library_config" ]
+ }
+ 
+ fuchsia_unittest_package("starnix_kernel_manager-tests") {
+diff --git a/src/starnix/lib/linux_uapi/BUILD.gn b/src/starnix/lib/linux_uapi/BUILD.gn
+index 69fe6082530..e1f7411d55a 100644
+--- a/src/starnix/lib/linux_uapi/BUILD.gn
++++ b/src/starnix/lib/linux_uapi/BUILD.gn
+@@ -43,7 +43,7 @@ rustc_library("linux_uapi") {
+     "//third_party/rust_crates:static_assertions",
+     "//third_party/rust_crates:zerocopy",
+   ]
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:shared_library_config" ]
+ 
+   disable_clippy = true
+ }
+diff --git a/src/starnix/lib/magma/BUILD.gn b/src/starnix/lib/magma/BUILD.gn
+index cfda9813b3e..8e58f87d5ce 100644
+--- a/src/starnix/lib/magma/BUILD.gn
++++ b/src/starnix/lib/magma/BUILD.gn
+@@ -13,5 +13,5 @@ rustc_library("magma") {
+ 
+   deps = [ "//third_party/rust_crates:zerocopy" ]
+ 
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:shared_library_config" ]
+ }
+diff --git a/src/starnix/lib/perfetto/BUILD.gn b/src/starnix/lib/perfetto/BUILD.gn
+index 03270104b49..a2542151a95 100644
+--- a/src/starnix/lib/perfetto/BUILD.gn
++++ b/src/starnix/lib/perfetto/BUILD.gn
+@@ -9,7 +9,7 @@ import("//tools/protobuf/rust_proto_library.gni")
+ rustc_library("perfetto") {
+   edition = "2021"
+   sources = [ "src/lib.rs" ]
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:kernel_library_config" ]
+   deps = [
+     ":perfetto_protos",
+     "//src/starnix/kernel:starnix_core",
+diff --git a/src/starnix/lib/range_map/BUILD.gn b/src/starnix/lib/range_map/BUILD.gn
+index 30121b6cea6..8f63b09ef28 100644
+--- a/src/starnix/lib/range_map/BUILD.gn
++++ b/src/starnix/lib/range_map/BUILD.gn
+@@ -19,7 +19,7 @@ rustc_library("range_map") {
+   ]
+   deps = [ "//third_party/rust_crates:arrayvec" ]
+ 
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:kernel_library_config" ]
+ 
+   if (starnix_use_cowmap) {
+     features = [ "use_cowmap" ]
+diff --git a/src/starnix/lib/selinux/BUILD.gn b/src/starnix/lib/selinux/BUILD.gn
+index 880607b08c3..dddf9638045 100644
+--- a/src/starnix/lib/selinux/BUILD.gn
++++ b/src/starnix/lib/selinux/BUILD.gn
+@@ -81,7 +81,7 @@ rustc_library("selinux") {
+     "//third_party/rust_crates:serde",
+     "//third_party/rust_crates:serde_json5",
+   ]
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:kernel_library_config" ]
+ 
+   if (is_host) {
+     # Host builds use `parking_lot` for lock primitives.
+diff --git a/src/starnix/lib/starnix_lifecycle/BUILD.gn b/src/starnix/lib/starnix_lifecycle/BUILD.gn
+index 5136352a42e..8598f3e9292 100644
+--- a/src/starnix/lib/starnix_lifecycle/BUILD.gn
++++ b/src/starnix/lib/starnix_lifecycle/BUILD.gn
+@@ -32,7 +32,7 @@ rustc_library("starnix_lifecycle") {
+     "//third_party/rust_crates:futures",
+   ]
+ 
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:kernel_library_config" ]
+ }
+ 
+ fuchsia_unittest_package("starnix_lifecycle-tests") {
+diff --git a/src/starnix/lib/starnix_sancov/BUILD.gn b/src/starnix/lib/starnix_sancov/BUILD.gn
+new file mode 100644
+index 00000000000..88e755e5450
+--- /dev/null
++++ b/src/starnix/lib/starnix_sancov/BUILD.gn
+@@ -0,0 +1,35 @@
++# Copyright 2025 The Fuchsia Authors. All rights reserved.
++# Use of this source code is governed by a BSD-style license that can be
++# found in the LICENSE file.
++
++import("//build/rust/rustc_library.gni")
++
++# The SanitizerCoverage callbacks the instrumented Starnix crates call into.
++# Deliberately not built with `kernel_library_config`: instrumenting the
++# instrumentation would make the callback recurse into itself.
++static_library("runtime") {
++  sources = [ "sancov.cc" ]
++
++  # Any binary linking instrumented Starnix crates needs this, see
++  # //src/starnix/build:sancov.
++  visibility = [
++    ":*",
++    "//src/starnix/runner:*",
++  ]
++}
++
++rustc_library("starnix_sancov") {
++  name = "starnix_sancov"
++  edition = "2021"
++  version = "0.1.0"
++  source_root = "src/lib.rs"
++  sources = [ "src/lib.rs" ]
++  deps = [
++    "//sdk/rust/zx",
++    "//src/lib/fuchsia-runtime",
++    "//third_party/rust_crates:log",
++  ]
++  non_rust_deps = [ ":runtime" ]
++
++  configs += [ "//src/starnix/build:shared_library_config" ]
++}
+diff --git a/src/starnix/lib/starnix_sancov/sancov.cc b/src/starnix/lib/starnix_sancov/sancov.cc
+new file mode 100644
+index 00000000000..c13ecc3c6b8
+--- /dev/null
++++ b/src/starnix/lib/starnix_sancov/sancov.cc
+@@ -0,0 +1,123 @@
++// Copyright 2025 The Fuchsia Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include <stddef.h>
++#include <stdint.h>
++
++#include <atomic>
++
++// SanitizerCoverage runtime for the Starnix kernel.
++//
++// When the `starnix_sancov` build arg is set, the Starnix crates are compiled
++// with `-sanitizer-coverage-trace-pc-guard`, which makes every instrumented
++// basic block call __sanitizer_cov_trace_pc_guard() with a pointer to its own
++// slot in the linker-merged __sancov_guards section.
++//
++// This file must never be instrumented itself, otherwise the callback would
++// recurse infinitely.  That holds as long as instrumentation is only added
++// through rustflags, which do not affect C++.
++//
++// The data is kept in the wire format used by the Zircon kernel, see
++// //zircon/kernel/lib/instrumentation/sancov.cc: a magic number followed by one
++// word per instrumented PC.  The buffers themselves are allocated by the Rust
++// side (see lib.rs) out of VMOs so that they can be handed to Linux programs
++// running in the container, which read them to collect coverage.
++
++extern "C" {
++
++// Bounds of the guard section.  These are provided by the linker and are both
++// null when nothing at all was instrumented.
++[[gnu::weak]] extern uint32_t __start___sancov_guards[];
++[[gnu::weak]] extern uint32_t __stop___sancov_guards[];
++
++// Start of this executable's image, used to convert runtime PCs into the
++// link-time addresses that the consumer of the data expects.
++extern const char __ehdr_start[];
++
++}  // extern "C"
++
++namespace {
++
++constexpr uint64_t kPcMagic = 0xC0BFFFFFFFFFFF64ULL;
++constexpr uint64_t kCountsMagic = 0x0023766f436e6153ULL;  // "SanCov#" (LE)
++
++size_t GuardsCount() {
++  if (__start___sancov_guards == nullptr) {
++    return 0;
++  }
++  return static_cast<size_t>(__stop___sancov_guards - __start___sancov_guards);
++}
++
++// Both remain null until starnix_sancov_set_buffers() publishes the buffers.
++// Instrumented code starts running in static constructors, long before the
++// kernel is able to allocate anything, so until then hits are accumulated in
++// the guard slots and transferred when the buffers show up.  Afterwards each
++// guard slot is only a flag telling whether the PC has been recorded yet.
++std::atomic<uint64_t*> g_counts{nullptr};
++uint64_t* g_pcs = nullptr;
++
++}  // namespace
++
++extern "C" {
++
++// Called from a constructor of every instrumented object file.  LLVM passes the
++// bounds of the whole merged section every time, and indices are derived from
++// the guard address directly, so there is nothing to record here.
++void __sanitizer_cov_trace_pc_guard_init(uint32_t* start, uint32_t* stop) {}
++
++// Called from every instrumented basic block.
++void __sanitizer_cov_trace_pc_guard(uint32_t* guard) {
++  uint64_t* counts = g_counts.load(std::memory_order_acquire);
++  if (counts == nullptr) [[unlikely]] {
++    // Pre-initialization; count the hit in the guard slot itself.
++    ++*guard;
++    return;
++  }
++
++  // Slot 0 of each buffer holds the magic number, so the tables are offset by
++  // one from the guard section.
++  const size_t idx = static_cast<size_t>(guard - __start___sancov_guards) + 1;
++  __atomic_fetch_add(&counts[idx], 1, __ATOMIC_RELAXED);
++
++  // Use the guard as a flag indicating whether the PC has been stored, so that
++  // only the first thread through this block pays for the store.
++  if (__atomic_load_n(guard, __ATOMIC_RELAXED) == 0 &&
++      __atomic_exchange_n(guard, 1u, __ATOMIC_RELAXED) == 0) [[unlikely]] {
++    // Record the return address, which is what coverage consumers expect: they
++    // step back one instruction themselves to get to the call site. Rebase it
++    // to a link-time address so that they need no further adjustment.
++    g_pcs[idx] = reinterpret_cast<uintptr_t>(__builtin_return_address(0)) -
++                 reinterpret_cast<uintptr_t>(__ehdr_start);
++  }
++}
++
++// Number of instrumented PCs, i.e. the number of entries that follow the magic
++// number in each buffer.  Zero if the kernel was built without instrumentation.
++size_t starnix_sancov_guards_count() { return GuardsCount(); }
++
++// Hands the runtime the two buffers to record into, each of which must hold at
++// least starnix_sancov_guards_count() + 1 words and stay mapped forever.
++// Returns false if there is nothing to record or if buffers were already set.
++bool starnix_sancov_set_buffers(uint64_t* counts, uint64_t* pcs) {
++  const size_t count = GuardsCount();
++  if (count == 0 || g_counts.load(std::memory_order_relaxed) != nullptr) {
++    return false;
++  }
++
++  counts[0] = kCountsMagic;
++  pcs[0] = kPcMagic;
++
++  // Move the hits accumulated in the guard slots to their real home and reset
++  // the guards to their post-initialization meaning.  PCs whose only hits
++  // happened before this point keep a zero PC slot, which consumers skip.
++  for (size_t i = 0; i < count; ++i) {
++    counts[i + 1] = __atomic_exchange_n(&__start___sancov_guards[i], 0u, __ATOMIC_RELAXED);
++  }
++
++  g_pcs = pcs;
++  g_counts.store(counts, std::memory_order_release);
++  return true;
++}
++
++}  // extern "C"
+diff --git a/src/starnix/lib/starnix_sancov/src/lib.rs b/src/starnix/lib/starnix_sancov/src/lib.rs
+new file mode 100644
+index 00000000000..9b3e33ce9ef
+--- /dev/null
++++ b/src/starnix/lib/starnix_sancov/src/lib.rs
+@@ -0,0 +1,108 @@
++// Copyright 2025 The Fuchsia Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++//! Owns the buffers that the Starnix kernel's SanitizerCoverage runtime records
++//! into, and hands out read-only VMOs for them.
++//!
++//! The kernel is instrumented when it is built with `starnix_sancov = true`;
++//! otherwise there are no instrumented PCs and everything here is inert. See
++//! `sancov.cc` for the runtime itself and `//src/starnix/modules/procfs` for
++//! how the tables reach programs running in the container.
++
++use std::sync::OnceLock;
++use zx::{AsHandleRef as _, HandleBased as _};
++
++extern "C" {
++    fn starnix_sancov_guards_count() -> usize;
++    fn starnix_sancov_set_buffers(counts: *mut u64, pcs: *mut u64) -> bool;
++}
++
++/// Read-only handles to the live coverage tables.
++///
++/// Both tables have the same layout: a magic number followed by one word per
++/// instrumented PC. The counts table holds a hit counter for each PC, the PC
++/// table holds that PC as a link-time address (zero until the PC is first hit).
++pub struct SancovTables {
++    pcs: zx::Vmo,
++    counts: zx::Vmo,
++    size: u64,
++}
++
++impl SancovTables {
++    /// Size of each table in bytes.
++    pub fn size(&self) -> u64 {
++        self.size
++    }
++
++    /// A read-only handle to the PC table.
++    pub fn pcs_vmo(&self) -> Result<zx::Vmo, zx::Status> {
++        self.pcs.duplicate_handle(zx::Rights::SAME_RIGHTS)
++    }
++
++    /// A read-only handle to the hit counter table.
++    pub fn counts_vmo(&self) -> Result<zx::Vmo, zx::Status> {
++        self.counts.duplicate_handle(zx::Rights::SAME_RIGHTS)
++    }
++}
++
++static TABLES: OnceLock<Option<SancovTables>> = OnceLock::new();
++
++/// Allocates the coverage tables and starts recording into them.
++///
++/// Hits from before this call are not lost: the runtime accumulates them in the
++/// guard slots and moves them over here. Does nothing if the kernel was not
++/// built with instrumentation, and is idempotent.
++pub fn init() {
++    tables();
++}
++
++/// The coverage tables, or `None` if the kernel is not instrumented.
++pub fn tables() -> Option<&'static SancovTables> {
++    TABLES
++        .get_or_init(|| match create() {
++            Ok(tables) => tables,
++            Err(status) => {
++                log::warn!("failed to set up Starnix sancov tables: {status}");
++                None
++            }
++        })
++        .as_ref()
++}
++
++fn create() -> Result<Option<SancovTables>, zx::Status> {
++    // SAFETY: the runtime only reads linker-provided section bounds.
++    let count = unsafe { starnix_sancov_guards_count() };
++    if count == 0 {
++        return Ok(None);
++    }
++    let size = ((count + 1) * std::mem::size_of::<u64>()) as u64;
++
++    let (counts_vmo, counts_addr) = map_table(size, "starnix:sancov-counts")?;
++    let (pcs_vmo, pcs_addr) = map_table(size, "starnix:sancov-pcs")?;
++
++    // SAFETY: both mappings are `size` bytes long, which is what the runtime
++    // was told to expect, and they are never unmapped.
++    if !unsafe { starnix_sancov_set_buffers(counts_addr as *mut u64, pcs_addr as *mut u64) } {
++        return Ok(None);
++    }
++
++    // The writable handles are dropped here; the mappings keep the VMOs alive.
++    Ok(Some(SancovTables { pcs: read_only(&pcs_vmo)?, counts: read_only(&counts_vmo)?, size }))
++}
++
++/// Creates a VMO of `size` bytes and maps it read-write for the lifetime of the
++/// process, returning the VMO and the address it was mapped at.
++fn map_table(size: u64, name: &str) -> Result<(zx::Vmo, usize), zx::Status> {
++    let vmo = zx::Vmo::create(size)?;
++    vmo.set_name(&zx::Name::new_lossy(name))?;
++    let flags =
++        zx::VmarFlags::PERM_READ | zx::VmarFlags::PERM_WRITE | zx::VmarFlags::REQUIRE_NON_RESIZABLE;
++    let addr = fuchsia_runtime::vmar_root_self().map(0, &vmo, 0, size as usize, flags)?;
++    Ok((vmo, addr))
++}
++
++fn read_only(vmo: &zx::Vmo) -> Result<zx::Vmo, zx::Status> {
++    let rights = vmo.basic_info()?.rights.difference(zx::Rights::WRITE);
++    vmo.duplicate_handle(rights)
++}
+diff --git a/src/starnix/lib/starnix_sync/BUILD.gn b/src/starnix/lib/starnix_sync/BUILD.gn
+index 6dbe692eb7b..8646c9b1b17 100644
+--- a/src/starnix/lib/starnix_sync/BUILD.gn
++++ b/src/starnix/lib/starnix_sync/BUILD.gn
+@@ -41,7 +41,7 @@ rustc_library("starnix_sync") {
+     "src/port_event.rs",
+   ]
+ 
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:kernel_library_config" ]
+ }
+ 
+ fuchsia_unittest_package("starnix_sync-tests") {
+diff --git a/src/starnix/lib/starnix_syscalls/BUILD.gn b/src/starnix/lib/starnix_syscalls/BUILD.gn
+index 2a09c6ca9e1..acf8fa752ac 100644
+--- a/src/starnix/lib/starnix_syscalls/BUILD.gn
++++ b/src/starnix/lib/starnix_syscalls/BUILD.gn
+@@ -32,5 +32,5 @@ rustc_library("starnix_syscalls") {
+     features += [ "arch32" ]
+   }
+ 
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:kernel_library_config" ]
+ }
+diff --git a/src/starnix/lib/starnix_types/BUILD.gn b/src/starnix/lib/starnix_types/BUILD.gn
+index 65e597b5b4a..1354d66efc6 100644
+--- a/src/starnix/lib/starnix_types/BUILD.gn
++++ b/src/starnix/lib/starnix_types/BUILD.gn
+@@ -48,7 +48,7 @@ rustc_library("starnix_types") {
+     features += [ "arch32" ]
+   }
+ 
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:kernel_library_config" ]
+ }
+ 
+ fuchsia_unittest_package("starnix_types-tests") {
+diff --git a/src/starnix/lib/starnix_uapi/BUILD.gn b/src/starnix/lib/starnix_uapi/BUILD.gn
+index 547ebfcb27f..f3b1838e628 100644
+--- a/src/starnix/lib/starnix_uapi/BUILD.gn
++++ b/src/starnix/lib/starnix_uapi/BUILD.gn
+@@ -65,7 +65,7 @@ rustc_library("starnix_uapi") {
+ 
+   test_deps = [ "//src/lib/fuchsia" ]
+ 
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:kernel_library_config" ]
+ }
+ 
+ fuchsia_unittest_package("starnix_uapi-tests") {
+diff --git a/src/starnix/lib/syncio/BUILD.gn b/src/starnix/lib/syncio/BUILD.gn
+index 6f181d09972..85ce3a7b7fa 100644
+--- a/src/starnix/lib/syncio/BUILD.gn
++++ b/src/starnix/lib/syncio/BUILD.gn
+@@ -36,7 +36,7 @@ rustc_library("syncio") {
+     "//third_party/rust_crates:anyhow",
+   ]
+ 
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:shared_library_config" ]
+ }
+ 
+ fuchsia_unittest_package("starnix_syncio-tests") {
+diff --git a/src/starnix/lib/usercopy/BUILD.gn b/src/starnix/lib/usercopy/BUILD.gn
+index 0e2fd8a700e..bb9609ed6a8 100644
+--- a/src/starnix/lib/usercopy/BUILD.gn
++++ b/src/starnix/lib/usercopy/BUILD.gn
+@@ -67,7 +67,7 @@ rustc_library("usercopy") {
+     "//src/lib/fuchsia",
+     "//third_party/rust_crates:test-case",
+   ]
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:kernel_library_config" ]
+ }
+ 
+ fuchsia_test_component("usercopy-unittests-component") {
+diff --git a/src/starnix/lib/virtgralloc/BUILD.gn b/src/starnix/lib/virtgralloc/BUILD.gn
+index 22b213d0fea..33ee763d4bb 100644
+--- a/src/starnix/lib/virtgralloc/BUILD.gn
++++ b/src/starnix/lib/virtgralloc/BUILD.gn
+@@ -11,5 +11,5 @@ rustc_library("virtgralloc") {
+     "src/virtgralloc.rs",
+   ]
+   deps = [ "//third_party/rust_crates:zerocopy" ]
+-  configs += [ "//src/starnix/config:starnix_clippy_lints" ]
++  configs += [ "//src/starnix/build:kernel_library_config" ]
+ }
+diff --git a/src/starnix/modules/BUILD.gn b/src/starnix/modules/BUILD.gn
+index cb918acbe65..e954b90d9f5 100644
+--- a/src/starnix/modules/BUILD.gn
++++ b/src/starnix/modules/BUILD.gn
+@@ -26,6 +26,8 @@ rustc_library("modules") {
+ 
+   sources = [ "lib.rs" ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//src/starnix/kernel:starnix_core",
+     "//src/starnix/lib/starnix_sync",
+diff --git a/src/starnix/modules/ashmem/BUILD.gn b/src/starnix/modules/ashmem/BUILD.gn
+index 4a76a8ad152..bbb4f4f3661 100644
+--- a/src/starnix/modules/ashmem/BUILD.gn
++++ b/src/starnix/modules/ashmem/BUILD.gn
+@@ -12,6 +12,8 @@ rustc_library("ashmem") {
+ 
+   sources = [ "lib.rs" ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//sdk/rust/zx",
+     "//src/starnix/kernel:starnix_core",
+diff --git a/src/starnix/modules/cgroupfs/BUILD.gn b/src/starnix/modules/cgroupfs/BUILD.gn
+index f57da6c6a1d..a8e9059ae50 100644
+--- a/src/starnix/modules/cgroupfs/BUILD.gn
++++ b/src/starnix/modules/cgroupfs/BUILD.gn
+@@ -27,6 +27,8 @@ rustc_library("cgroupfs") {
+     "procs.rs",
+   ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   # TODO(https://fxbug.dev/42059075): Re-enable starnix in these environments.
+   exclude_toolchain_tags = [
+     "asan",
+diff --git a/src/starnix/modules/device_mapper/BUILD.gn b/src/starnix/modules/device_mapper/BUILD.gn
+index 2456adeb2ab..1db72204f1c 100644
+--- a/src/starnix/modules/device_mapper/BUILD.gn
++++ b/src/starnix/modules/device_mapper/BUILD.gn
+@@ -11,6 +11,8 @@ rustc_library("device_mapper") {
+   source_root = "lib.rs"
+   sources = [ source_root ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//src/lib/mundane",
+     "//src/starnix/kernel:starnix_core",
+diff --git a/src/starnix/modules/ext4/BUILD.gn b/src/starnix/modules/ext4/BUILD.gn
+index 28fd51650d2..75505cf543e 100644
+--- a/src/starnix/modules/ext4/BUILD.gn
++++ b/src/starnix/modules/ext4/BUILD.gn
+@@ -22,6 +22,8 @@ rustc_library("ext4") {
+     "pager.rs",
+   ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   # TODO(https://fxbug.dev/42059075): Re-enable starnix in these environments.
+   exclude_toolchain_tags = [
+     "asan",
+diff --git a/src/starnix/modules/functionfs/BUILD.gn b/src/starnix/modules/functionfs/BUILD.gn
+index 605c642d3e8..53523d514e6 100644
+--- a/src/starnix/modules/functionfs/BUILD.gn
++++ b/src/starnix/modules/functionfs/BUILD.gn
+@@ -12,6 +12,8 @@ rustc_library("functionfs") {
+ 
+   sources = [ "lib.rs" ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//sdk/fidl/fuchsia.hardware.adb:fuchsia.hardware.adb_rust",
+     "//sdk/rust/zx",
+diff --git a/src/starnix/modules/fuse/BUILD.gn b/src/starnix/modules/fuse/BUILD.gn
+index 5e9065d38a1..e3850464eb4 100644
+--- a/src/starnix/modules/fuse/BUILD.gn
++++ b/src/starnix/modules/fuse/BUILD.gn
+@@ -12,6 +12,8 @@ rustc_library("fuse") {
+ 
+   sources = [ "lib.rs" ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//sdk/rust/zx",
+     "//src/starnix/kernel:starnix_core",
+diff --git a/src/starnix/modules/gpu/BUILD.gn b/src/starnix/modules/gpu/BUILD.gn
+index a36a3c4f312..d0cf5959a92 100644
+--- a/src/starnix/modules/gpu/BUILD.gn
++++ b/src/starnix/modules/gpu/BUILD.gn
+@@ -16,6 +16,8 @@ rustc_library("gpu") {
+     "lib.rs",
+   ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     ":gfxstream_stubs",
+     "//src/starnix/kernel:starnix_core",
+diff --git a/src/starnix/modules/gralloc/BUILD.gn b/src/starnix/modules/gralloc/BUILD.gn
+index 8ad6aaa512b..6c017be9ceb 100644
+--- a/src/starnix/modules/gralloc/BUILD.gn
++++ b/src/starnix/modules/gralloc/BUILD.gn
+@@ -17,6 +17,8 @@ rustc_library("gralloc") {
+     "lib.rs",
+   ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//sdk/fidl/fuchsia.starnix.gralloc:fuchsia.starnix.gralloc_rust",
+     "//sdk/rust/zx",
+diff --git a/src/starnix/modules/input/BUILD.gn b/src/starnix/modules/input/BUILD.gn
+index da403925f06..c8e67352e9d 100644
+--- a/src/starnix/modules/input/BUILD.gn
++++ b/src/starnix/modules/input/BUILD.gn
+@@ -26,6 +26,8 @@ rustc_library("input") {
+     "uinput.rs",
+   ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   # TODO(https://fxbug.dev/42059075): Re-enable starnix in these environments.
+   exclude_toolchain_tags = [
+     "asan",
+diff --git a/src/starnix/modules/layeredfs/BUILD.gn b/src/starnix/modules/layeredfs/BUILD.gn
+index 52e74b71773..d374f0e4257 100644
+--- a/src/starnix/modules/layeredfs/BUILD.gn
++++ b/src/starnix/modules/layeredfs/BUILD.gn
+@@ -19,6 +19,8 @@ rustc_library("layeredfs") {
+ 
+   sources = [ "lib.rs" ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   # TODO(https://fxbug.dev/42059075): Re-enable starnix in these environments.
+   exclude_toolchain_tags = [
+     "asan",
+diff --git a/src/starnix/modules/loop/BUILD.gn b/src/starnix/modules/loop/BUILD.gn
+index fa2033b7766..ffe8ae5cd36 100644
+--- a/src/starnix/modules/loop/BUILD.gn
++++ b/src/starnix/modules/loop/BUILD.gn
+@@ -25,6 +25,8 @@ rustc_library("loop") {
+ 
+   sources = [ "lib.rs" ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//sdk/rust/zx",
+     "//src/starnix/kernel:starnix_core",
+diff --git a/src/starnix/modules/magma/BUILD.gn b/src/starnix/modules/magma/BUILD.gn
+index 969f22020c0..0ae7d3fa685 100644
+--- a/src/starnix/modules/magma/BUILD.gn
++++ b/src/starnix/modules/magma/BUILD.gn
+@@ -20,6 +20,8 @@ rustc_library("magma") {
+     "magma.rs",
+   ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//sdk/fidl/fuchsia.logger:fuchsia.logger_rust",
+     "//sdk/fidl/fuchsia.ui.composition:fuchsia.ui.composition_rust",
+diff --git a/src/starnix/modules/nanohub/BUILD.gn b/src/starnix/modules/nanohub/BUILD.gn
+index 92f1bf4d657..ace3a718ffc 100644
+--- a/src/starnix/modules/nanohub/BUILD.gn
++++ b/src/starnix/modules/nanohub/BUILD.gn
+@@ -40,6 +40,8 @@ rustc_library("nanohub") {
+     "socket_tunnel_file.rs",
+   ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//sdk/fidl/fuchsia.hardware.google.nanohub:fuchsia.hardware.google.nanohub_rust",
+     "//sdk/fidl/fuchsia.hardware.serial:fuchsia.hardware.serial_rust",
+diff --git a/src/starnix/modules/overlayfs/BUILD.gn b/src/starnix/modules/overlayfs/BUILD.gn
+index 9a0ad0fce3e..807c014d7b8 100644
+--- a/src/starnix/modules/overlayfs/BUILD.gn
++++ b/src/starnix/modules/overlayfs/BUILD.gn
+@@ -12,6 +12,8 @@ rustc_library("overlayfs") {
+ 
+   sources = [ "lib.rs" ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//src/starnix/kernel:starnix_core",
+     "//src/starnix/kernel:starnix_logging",
+diff --git a/src/starnix/modules/perfetto-producer/BUILD.gn b/src/starnix/modules/perfetto-producer/BUILD.gn
+index 347afedd07c..90bec39ff5f 100644
+--- a/src/starnix/modules/perfetto-producer/BUILD.gn
++++ b/src/starnix/modules/perfetto-producer/BUILD.gn
+@@ -13,6 +13,8 @@ rustc_library("perfetto-producer") {
+ 
+   sources = [ "lib.rs" ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//src/starnix/kernel:starnix_core",
+     "//src/starnix/kernel:starnix_logging",
+diff --git a/src/starnix/modules/perfetto_consumer/BUILD.gn b/src/starnix/modules/perfetto_consumer/BUILD.gn
+index 867b7cb6ee7..e5f89f9d474 100644
+--- a/src/starnix/modules/perfetto_consumer/BUILD.gn
++++ b/src/starnix/modules/perfetto_consumer/BUILD.gn
+@@ -13,6 +13,8 @@ rustc_library("perfetto_consumer") {
+ 
+   sources = [ "lib.rs" ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//src/lib/trace/rust:trace",
+     "//src/lib/trace/rust:trace-observer",
+diff --git a/src/starnix/modules/selinuxfs/BUILD.gn b/src/starnix/modules/selinuxfs/BUILD.gn
+index 49276b2c421..75c29d22e18 100644
+--- a/src/starnix/modules/selinuxfs/BUILD.gn
++++ b/src/starnix/modules/selinuxfs/BUILD.gn
+@@ -17,6 +17,8 @@ rustc_library("selinuxfs") {
+     "seq_lock.rs",
+   ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   # TODO(https://fxbug.dev/42059075): Re-enable starnix in these environments.
+   exclude_toolchain_tags = [
+     "asan",
+diff --git a/src/starnix/modules/thermal/BUILD.gn b/src/starnix/modules/thermal/BUILD.gn
+index adb7576de57..4253d299725 100644
+--- a/src/starnix/modules/thermal/BUILD.gn
++++ b/src/starnix/modules/thermal/BUILD.gn
+@@ -12,6 +12,8 @@ rustc_library("thermal") {
+ 
+   sources = [ "lib.rs" ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//sdk/fidl/fuchsia.hardware.temperature:fuchsia.hardware.temperature_rust",
+     "//sdk/rust/zx",
+diff --git a/src/starnix/modules/touch_power_policy/BUILD.gn b/src/starnix/modules/touch_power_policy/BUILD.gn
+index 77dc9a6cc55..24985dadcea 100644
+--- a/src/starnix/modules/touch_power_policy/BUILD.gn
++++ b/src/starnix/modules/touch_power_policy/BUILD.gn
+@@ -12,6 +12,8 @@ rustc_library("touch_power_policy") {
+ 
+   sources = [ "lib.rs" ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//src/starnix/kernel:starnix_core",
+     "//src/starnix/kernel:starnix_logging",
+diff --git a/src/starnix/modules/tracefs/BUILD.gn b/src/starnix/modules/tracefs/BUILD.gn
+index 4fea8f58260..48dc8d80e35 100644
+--- a/src/starnix/modules/tracefs/BUILD.gn
++++ b/src/starnix/modules/tracefs/BUILD.gn
+@@ -24,6 +24,8 @@ rustc_library("tracefs") {
+     "tracing_directory.rs",
+   ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   # TODO(https://fxbug.dev/42059075): Re-enable starnix in these environments.
+   exclude_toolchain_tags = [
+     "asan",
+diff --git a/src/starnix/modules/tun/BUILD.gn b/src/starnix/modules/tun/BUILD.gn
+index 71987e0d644..29d29e1dcc9 100644
+--- a/src/starnix/modules/tun/BUILD.gn
++++ b/src/starnix/modules/tun/BUILD.gn
+@@ -12,6 +12,8 @@ rustc_library("tun") {
+ 
+   sources = [ "lib.rs" ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//sdk/fidl/fuchsia.hardware.network:fuchsia.hardware.network_rust",
+     "//sdk/fidl/fuchsia.net:fuchsia.net_rust",
+diff --git a/src/starnix/modules/zram/BUILD.gn b/src/starnix/modules/zram/BUILD.gn
+index 9efccd310dc..86b0e55c4c7 100644
+--- a/src/starnix/modules/zram/BUILD.gn
++++ b/src/starnix/modules/zram/BUILD.gn
+@@ -12,6 +12,8 @@ rustc_library("zram") {
+ 
+   sources = [ "lib.rs" ]
+ 
++  configs += [ "//src/starnix/build:kernel_instrumentation" ]
++
+   deps = [
+     "//sdk/fidl/fuchsia.kernel:fuchsia.kernel_rust",
+     "//sdk/rust/zx",
+diff --git a/src/starnix/runner/BUILD.gn b/src/starnix/runner/BUILD.gn
+index 76cfea11ba2..edf5131b5d0 100644
+--- a/src/starnix/runner/BUILD.gn
++++ b/src/starnix/runner/BUILD.gn
+@@ -4,6 +4,7 @@
+ 
+ import("//build/components.gni")
+ import("//build/rust/rustc_binary.gni")
++import("//src/starnix/build/args.gni")
+ import("//src/starnix/kernel/starnix.gni")
+ 
+ group("runner") {
+@@ -38,6 +39,13 @@ rustc_binary("starnix_runner_bin") {
+ 
+   sources = [ "main.rs" ]
+ 
++  # The runner links parts of the kernel, so an instrumented build needs the
++  # coverage runtime here too. Nothing reads the runner's own coverage; the
++  # dependency is only there to satisfy the instrumentation.
++  if (starnix_sancov) {
++    non_rust_deps = [ "//src/starnix/lib/starnix_sancov:runtime" ]
++  }
++
+   configs += [ "//src/starnix/config:starnix_clippy_lints" ]
+ }
+ 
+diff --git a/src/testing/fuzzing/BUILD.gn b/src/testing/fuzzing/BUILD.gn
+index 0b9ea9a6d53..b9c7b762dcc 100644
+--- a/src/testing/fuzzing/BUILD.gn
++++ b/src/testing/fuzzing/BUILD.gn
+@@ -7,15 +7,12 @@ group("fuzzing") {
+   deps = [
+     ":tests",
+     "go",
++    "syzkaller",
+     "syzkaller/starnix:syzkaller_starnix",
+-
+-    # TODO(https://fxbug.dev/42151900): syzkaller needs to update ddk include paths.
+-    # "syzkaller",
+   ]
+ }
+ 
+ group("tests") {
+   testonly = true
+-  # TODO(https://fxbug.dev/42151900): syzkaller needs to update ddk include paths.
+-  # deps = [ "syzkaller:tests" ]
++  deps = [ "syzkaller:tests" ]
+ }
+diff --git a/src/testing/fuzzing/syzkaller/BUILD.gn b/src/testing/fuzzing/syzkaller/BUILD.gn
+index 66afd3f13a8..a5941f45616 100644
+--- a/src/testing/fuzzing/syzkaller/BUILD.gn
++++ b/src/testing/fuzzing/syzkaller/BUILD.gn
+@@ -4,10 +4,17 @@
+ 
+ import("//build/compiled_action.gni")
+ import("//build/components.gni")
++import("//build/config/clang/clang_prefix.gni")
+ import("//build/go/go_binary.gni")
+ import("//build/go/go_library.gni")
+ 
+-syzkaller_dir = "//third_party/syzkaller"
++declare_args() {
++  syzkaller_dir = "//third_party/syzkaller"
++}
++
++declare_args() {
++  syzkaller_git_dir = "${syzkaller_dir}/.git"
++}
+ 
+ group("syzkaller") {
+   testonly = true
+@@ -34,21 +41,23 @@ if (target_cpu == "x64") {
+ GOOS = "fuchsia"
+ HOSTGOOS = "linux"
+ 
+-# Like "git rev-parse HEAD", but without needing a Python script wrapper.
+-SYZKALLER_GIT_DIR = "//.git/modules/third_party%2fsyzkaller"
+-GIT_REVISION = read_file("${SYZKALLER_GIT_DIR}/HEAD", "trim string")
++GIT_REVISION = read_file("${syzkaller_git_dir}/HEAD", "trim string")
+ GIT_BRANCH = string_replace(GIT_REVISION, "ref: ", "", 1)
+ if (GIT_BRANCH != GIT_REVISION) {
+-  GIT_REVISION = read_file("${SYZKALLER_GIT_DIR}/${GIT_BRANCH}", "trim string")
++  GIT_REVISION = read_file("${syzkaller_git_dir}/${GIT_BRANCH}", "trim string")
+ }
++GIT_REVISION += "+"
+ 
+-compiled_action("generate-syscall-definitions") {
+-  tool = ":syz-sysgen"
++action("generate-syscall-definitions") {
++  script = "//build/gn_run_binary.sh"
++  inputs = [ "${syzkaller_dir}/bin/syz-sysgen" ]
+   outputs = [
+     "$target_gen_dir/sysgen/executor/defs.h",
+     "$target_gen_dir/sysgen/executor/syscalls.h",
+   ]
+   args = [
++    rebased_clang_prefix,
++    rebase_path("${syzkaller_dir}/bin/syz-sysgen", root_build_dir),
+     "--src",
+     src,
+     "--out",
+@@ -56,6 +65,19 @@ compiled_action("generate-syscall-definitions") {
+   ]
+ }
+ 
++copy("copy-executor-source") {
++  sources = [ "${syzkaller_dir}/executor/executor.cc" ]
++  outputs = [ "$target_gen_dir/sysgen/executor/{{source_file_part}}" ]
++}
++
++copy("copy-executor-overrides") {
++  sources = [
++    "files.h",
++    "subprocess.h",
++  ]
++  outputs = [ "$target_gen_dir/sysgen/executor/{{source_file_part}}" ]
++}
++
+ executable("syz-executor") {
+   sources = [
+     "${src}/executor/common.h",
+@@ -67,20 +89,24 @@ executable("syz-executor") {
+     "${src}/executor/common_test.h",
+     "${src}/executor/common_usb.h",
+     "${src}/executor/common_windows.h",
+-    "${src}/executor/executor.cc",
+     "${src}/executor/executor_bsd.h",
+     "${src}/executor/executor_fuchsia.h",
+     "${src}/executor/executor_linux.h",
+     "${src}/executor/executor_test.h",
+     "${src}/executor/executor_windows.h",
+-    "${src}/executor/kvm.S",
+-    "${src}/executor/kvm.S.h",
+     "${src}/executor/kvm.h",
+-    "${src}/executor/kvm_gen.cc",
+     "${src}/executor/nocover.h",
+     "${src}/executor/test.h",
+     "${src}/executor/test_linux.h",
+   ]
++  if (target_cpu == "x64") {
++    sources += [
++      "${src}/executor/kvm_amd64.S",
++      "${src}/executor/kvm_amd64.S.h",
++    ]
++  }
++  sources += get_target_outputs(":copy-executor-source")
++  sources += get_target_outputs(":copy-executor-overrides")
+   sources += get_target_outputs(":generate-syscall-definitions")
+   defines = [
+     "GOOS_${GOOS}=1",
+@@ -92,10 +118,20 @@ executable("syz-executor") {
+       rebase_path(
+           get_label_info(":generate-syscall-definitions", "target_gen_dir"),
+           root_build_dir)
+-  cflags = [ "-I$generated_syscalls_dir/sysgen/executor" ]
++  cflags = [
++    "-I$generated_syscalls_dir/sysgen/executor",
++    "-I" + rebase_path("compat", root_build_dir),
++    "-I${src}/executor",
++    "-I${src}",
++    "-I${src}/executor/_include",
++    "-include",
++    rebase_path("compat/fuchsia_syscall_compat.h", root_build_dir),
++  ]
+   configs -= [ "//build/config:default_warnings" ]
+   configs += [ ":warnings" ]
+   deps = [
++    ":copy-executor-overrides",
++    ":copy-executor-source",
+     ":generate-syscall-definitions",
+     "//sdk/lib/fdio",
+     "//src/devices/lib/driver",
+@@ -112,7 +148,10 @@ config("warnings") {
+     "-Wunused-const-variable",
+     "-Wframe-larger-than=16384",
+     "-Wunused-const-variable",
++    "-Wno-unused-but-set-variable",
+     "-Wno-deprecated",
++    "-Wno-unused-function",
++    "-Wno-unused-const-variable",
+   ]
+ }
+ 
+diff --git a/src/testing/fuzzing/syzkaller/README.md b/src/testing/fuzzing/syzkaller/README.md
+index 56a1627c3c5..fdf0c0e6780 100644
+--- a/src/testing/fuzzing/syzkaller/README.md
++++ b/src/testing/fuzzing/syzkaller/README.md
+@@ -1,9 +1,67 @@
+ This directory contains definitions needed to build and run
+ [syzkaller](https://github.com/google/syzkaller) against Fuchsia's system call
+-interfaces.
++interfaces with kernel sanitizer coverage.
+ 
+-- The top-level directory is relevant for Zircon fuzzing (currently on pause:
+-  https://fxbug.dev/296220035). Its BUILD.gn contains rules to build syzkaller's
+-  `syz-executor` component for Fuchsia.
++- The top-level directory is relevant for Zircon fuzzing. Its BUILD.gn contains
++  rules to build syzkaller's `syz-executor` component for Fuchsia.
+ 
+ - The `starnix` subdirectory is relevant for Starnix fuzzing (currently active).
++
++## Build
++
++Use a kernel sancov variant and include this package:
++
++```sh
++fx set core.x64 \
++  --variant=sancov \
++  --with //src/testing/fuzzing/syzkaller \
++  --with-base //bundles/tools
++fx build //src/testing/fuzzing/syzkaller
++```
++
++The build produces the target-side `syz-executor-pkg` package. Build the
++host-side syzkaller tools from the syzkaller checkout with:
++
++```sh
++cd third_party/syzkaller
++make TARGETOS=fuchsia TARGETARCH=amd64 TARGETVMARCH=amd64 manager execprog
++```
++
++## Run
++
++Start and package a Fuchsia image with `syz-executor-pkg` available, then use a
++manager config similar to:
++
++```json
++{
++  "name": "fuchsia-zircon",
++  "target": "fuchsia/amd64",
++  "http": "127.0.0.1:56741",
++  "workdir": "/tmp/syzkaller-fuchsia",
++  "kernel_obj": "$FUCHSIA_DIR/out/default/zircon.elf",
++  "kernel_src": "$FUCHSIA_DIR",
++  "syzkaller": "$FUCHSIA_DIR/third_party/syzkaller",
++  "procs": 4,
++  "cover": true,
++  "sandbox": "none",
++  "type": "qemu",
++  "vm": {
++    "count": 1,
++    "kernel": "$FUCHSIA_DIR/out/default/multiboot.bin",
++    "initrd": "$FUCHSIA_DIR/out/default/fuchsia.zbi",
++    "cpu": 4,
++    "mem": 4096,
++    "qemu_args": "-nographic"
++  }
++}
++```
++
++Then run:
++
++```sh
++third_party/syzkaller/bin/syz-manager -config /path/to/fuchsia.cfg
++```
++
++`syz-executor` runs in the target as the RPC runner. When coverage is enabled, it
++maps the kernel `sancov` and `sancov-counts` debugdata VMOs and reports newly hit
++PCs back to syzkaller so corpus mutation is coverage guided.
+diff --git a/src/testing/fuzzing/syzkaller/compat/fuchsia_syscall_compat.h b/src/testing/fuzzing/syzkaller/compat/fuchsia_syscall_compat.h
+new file mode 100644
+index 00000000000..e8b841c8060
+--- /dev/null
++++ b/src/testing/fuzzing/syzkaller/compat/fuchsia_syscall_compat.h
+@@ -0,0 +1,85 @@
++// Copyright 2026 The Fuchsia Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef SRC_TESTING_FUZZING_SYZKALLER_COMPAT_FUCHSIA_SYSCALL_COMPAT_H_
++#define SRC_TESTING_FUZZING_SYZKALLER_COMPAT_FUCHSIA_SYSCALL_COMPAT_H_
++
++#include <stdint.h>
++#include <dirent.h>
++#include <stdio.h>
++#include <string.h>
++#include <sys/stat.h>
++#include <unistd.h>
++#include <zircon/syscalls.h>
++#include <zircon/types.h>
++
++#define SYZKALLER_FUCHSIA_COMPAT_UNUSED __attribute__((unused))
++
++static void SYZKALLER_FUCHSIA_COMPAT_UNUSED remove_dir(const char* dir)
++{
++	DIR* dp = opendir(dir);
++	if (dp == nullptr) {
++		rmdir(dir);
++		return;
++	}
++	struct dirent* ep = nullptr;
++	while ((ep = readdir(dp)) != nullptr) {
++		if (!strcmp(ep->d_name, ".") || !strcmp(ep->d_name, ".."))
++			continue;
++		char filename[1024];
++		snprintf(filename, sizeof(filename), "%s/%s", dir, ep->d_name);
++		struct stat st;
++		if (lstat(filename, &st))
++			continue;
++		if (S_ISDIR(st.st_mode))
++			remove_dir(filename);
++		else
++			unlink(filename);
++	}
++	closedir(dp);
++	rmdir(dir);
++}
++
++static zx_handle_t SYZKALLER_FUCHSIA_COMPAT_UNUSED get_root_resource()
++{
++	return ZX_HANDLE_INVALID;
++}
++
++static zx_status_t SYZKALLER_FUCHSIA_COMPAT_UNUSED
++zx_framebuffer_get_info(zx_handle_t resource, int32_t* format, int32_t* width, int32_t* height,
++			int32_t* stride)
++{
++	return ZX_ERR_NOT_SUPPORTED;
++}
++
++static zx_status_t SYZKALLER_FUCHSIA_COMPAT_UNUSED
++zx_framebuffer_set_range(zx_handle_t resource, zx_handle_t vmo, int32_t length, int32_t format,
++			 int32_t width, int32_t height, int32_t stride)
++{
++	return ZX_ERR_NOT_SUPPORTED;
++}
++
++static zx_status_t SYZKALLER_FUCHSIA_COMPAT_UNUSED
++zx_ktrace_write(zx_handle_t resource, uint32_t id, uint32_t arg0, uint32_t arg1)
++{
++	return ZX_ERR_NOT_SUPPORTED;
++}
++
++static zx_status_t SYZKALLER_FUCHSIA_COMPAT_UNUSED
++zx_pager_query_dirty_ranges(zx_handle_t pager, zx_handle_t pager_vmo, uint64_t offset,
++			    uint64_t length, void* buffer, size_t buffer_size, uint64_t* actual,
++			    uint64_t* avail)
++{
++	return ZX_ERR_NOT_SUPPORTED;
++}
++
++static zx_status_t SYZKALLER_FUCHSIA_COMPAT_UNUSED
++zx_pc_firmware_tables(zx_handle_t handle, uint64_t* acpi_rsdp, uint64_t* smbios)
++{
++	return ZX_ERR_NOT_SUPPORTED;
++}
++
++#undef SYZKALLER_FUCHSIA_COMPAT_UNUSED
++
++#endif  // SRC_TESTING_FUZZING_SYZKALLER_COMPAT_FUCHSIA_SYSCALL_COMPAT_H_
+diff --git a/src/testing/fuzzing/syzkaller/compat/sys/resource.h b/src/testing/fuzzing/syzkaller/compat/sys/resource.h
+new file mode 100644
+index 00000000000..a4e7a45dc23
+--- /dev/null
++++ b/src/testing/fuzzing/syzkaller/compat/sys/resource.h
+@@ -0,0 +1,24 @@
++// Copyright 2026 The Fuchsia Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef SRC_TESTING_FUZZING_SYZKALLER_COMPAT_SYS_RESOURCE_H_
++#define SRC_TESTING_FUZZING_SYZKALLER_COMPAT_SYS_RESOURCE_H_
++
++#include <stdint.h>
++
++typedef uint64_t rlim_t;
++
++struct rlimit {
++	rlim_t rlim_cur;
++	rlim_t rlim_max;
++};
++
++#define RLIMIT_NOFILE 7
++
++static inline int __attribute__((unused)) setrlimit(int resource, const struct rlimit* rlim)
++{
++	return 0;
++}
++
++#endif  // SRC_TESTING_FUZZING_SYZKALLER_COMPAT_SYS_RESOURCE_H_
+diff --git a/src/testing/fuzzing/syzkaller/files.h b/src/testing/fuzzing/syzkaller/files.h
+new file mode 100644
+index 00000000000..297aab56f24
+--- /dev/null
++++ b/src/testing/fuzzing/syzkaller/files.h
+@@ -0,0 +1,98 @@
++// Copyright 2026 The Fuchsia Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#if !GOOS_fuchsia
++#include_next "files.h"
++#else
++
++#include <memory>
++#include <string>
++#include <utility>
++#include <vector>
++
++#include <dirent.h>
++#include <errno.h>
++#include <fcntl.h>
++#include <glob.h>
++#include <stdarg.h>
++#include <string.h>
++#include <unistd.h>
++
++static std::vector<std::string> Glob(const std::string& pattern)
++{
++	glob_t buf = {};
++	int res = glob(pattern.c_str(), GLOB_MARK | GLOB_NOSORT, nullptr, &buf);
++	if (res != 0 && res != GLOB_NOMATCH)
++		failmsg("glob failed", "pattern='%s' res=%d", pattern.c_str(), res);
++	std::vector<std::string> files;
++	for (size_t i = 0; i < buf.gl_pathc; i++) {
++		const char* file = buf.gl_pathv[i];
++		if (file[strlen(file) - 1] == '/')
++			continue;
++		files.push_back(file);
++	}
++	globfree(&buf);
++	debug("glob %s resolved to %zu files\n", pattern.c_str(), files.size());
++	return files;
++}
++
++static std::unique_ptr<rpc::FileInfoRawT> ReadFile(const std::string& file)
++{
++	auto info = std::make_unique<rpc::FileInfoRawT>();
++	info->name = file;
++	int fd = open(file.c_str(), O_RDONLY);
++	if (fd == -1) {
++		info->exists = errno != EEXIST && errno != ENOENT;
++		info->error = strerror(errno);
++	} else {
++		info->exists = true;
++		for (;;) {
++			constexpr size_t kChunk = 4 << 10;
++			info->data.resize(info->data.size() + kChunk);
++			ssize_t n = read(fd, info->data.data() + info->data.size() - kChunk, kChunk);
++			if (n < 0) {
++				info->error = strerror(errno);
++				break;
++			}
++			info->data.resize(info->data.size() - kChunk + n);
++			if (n == 0)
++				break;
++		}
++		close(fd);
++	}
++	debug("reading file %s: size=%zu exists=%d error=%s\n",
++	      info->name.c_str(), info->data.size(), info->exists, info->error.c_str());
++	return info;
++}
++
++static std::string ReadTextFile(const char* file_fmt, ...)
++{
++	char file[1024];
++	va_list args;
++	va_start(args, file_fmt);
++	vsnprintf(file, sizeof(file), file_fmt, args);
++	va_end(args);
++	file[sizeof(file) - 1] = 0;
++	auto data = ReadFile(file)->data;
++	std::string str(data.begin(), data.end());
++	while (!str.empty() && (str.back() == '\n' || str.back() == 0))
++		str.resize(str.size() - 1);
++	return str;
++}
++
++static std::vector<std::unique_ptr<rpc::FileInfoRawT>> ReadFiles(const std::vector<std::string>& files)
++{
++	std::vector<std::unique_ptr<rpc::FileInfoRawT>> results;
++	for (const auto& file : files) {
++		if (!strchr(file.c_str(), '*')) {
++			results.push_back(ReadFile(file));
++			continue;
++		}
++		for (const auto& match : Glob(file))
++			results.push_back(ReadFile(match));
++	}
++	return results;
++}
++
++#endif
+diff --git a/src/testing/fuzzing/syzkaller/subprocess.h b/src/testing/fuzzing/syzkaller/subprocess.h
+new file mode 100644
+index 00000000000..104aca727d4
+--- /dev/null
++++ b/src/testing/fuzzing/syzkaller/subprocess.h
+@@ -0,0 +1,108 @@
++// Copyright 2026 The Fuchsia Authors. All rights reserved.
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#if !GOOS_fuchsia
++#include_next "subprocess.h"
++#else
++
++#include <lib/fdio/spawn.h>
++#include <signal.h>
++#include <string.h>
++#include <unistd.h>
++#include <zircon/syscalls.h>
++#include <zircon/syscalls/object.h>
++
++#include <string>
++#include <vector>
++
++class Subprocess
++{
++public:
++	Subprocess(const char** argv, const std::vector<std::pair<int, int>>& fds)
++	{
++		std::vector<fdio_spawn_action_t> actions;
++		actions.reserve(fds.size());
++		for (auto pair : fds) {
++			if (pair.first == -1)
++				continue;
++			fdio_spawn_action_t action = {};
++			action.action = FDIO_SPAWN_ACTION_CLONE_FD;
++			action.fd.local_fd = pair.first;
++			action.fd.target_fd = pair.second;
++			actions.push_back(action);
++		}
++
++		const char* child_envp[] = {
++		    "ASAN_OPTIONS=handle_segv=0 allow_user_segv_handler=1 detect_leaks=0",
++		    nullptr};
++
++		std::string path = argv[0];
++		if (strchr(path.c_str(), '/') == nullptr)
++			path = "/boot/bin/" + path;
++
++		char err_msg[FDIO_SPAWN_ERR_MSG_MAX_LENGTH] = {};
++		zx_status_t status = fdio_spawn_etc(
++		    ZX_HANDLE_INVALID,
++		    FDIO_SPAWN_CLONE_JOB | FDIO_SPAWN_DEFAULT_LDSVC |
++			FDIO_SPAWN_CLONE_NAMESPACE | FDIO_SPAWN_CLONE_UTC_CLOCK,
++		    path.c_str(), argv, child_envp, actions.size(), actions.data(),
++		    &process_, err_msg);
++		if (status != ZX_OK)
++			failmsg("fdio_spawn_etc failed", "status=%d msg=%s", status, err_msg);
++	}
++
++	~Subprocess()
++	{
++		if (process_ != ZX_HANDLE_INVALID)
++			KillAndWait();
++	}
++
++	int KillAndWait()
++	{
++		if (process_ == ZX_HANDLE_INVALID)
++			fail("subprocess hasn't started or already waited");
++		zx_task_kill(process_);
++		return Wait();
++	}
++
++	int WaitAndKill(uint64 timeout_ms)
++	{
++		if (process_ == ZX_HANDLE_INVALID)
++			fail("subprocess hasn't started or already waited");
++		uint64 start = current_time_ms();
++		for (;;) {
++			zx_status_t status = zx_object_wait_one(process_, ZX_PROCESS_TERMINATED,
++								ZX_TIME_INFINITE_PAST, nullptr);
++			if (status == ZX_OK)
++				return Wait();
++			if (current_time_ms() - start > timeout_ms)
++				zx_task_kill(process_);
++			sleep_ms(10);
++		}
++	}
++
++private:
++	zx_handle_t process_ = ZX_HANDLE_INVALID;
++
++	int Wait()
++	{
++		zx_status_t status = zx_object_wait_one(process_, ZX_PROCESS_TERMINATED,
++							ZX_TIME_INFINITE, nullptr);
++		if (status != ZX_OK)
++			failmsg("process wait failed", "status=%d", status);
++		zx_info_process_t info = {};
++		status = zx_object_get_info(process_, ZX_INFO_PROCESS, &info, sizeof(info), nullptr,
++					    nullptr);
++		zx_handle_close(process_);
++		process_ = ZX_HANDLE_INVALID;
++		if (status != ZX_OK)
++			failmsg("process info failed", "status=%d", status);
++		return static_cast<int>(info.return_code & 0xff);
++	}
++
++	Subprocess(const Subprocess&) = delete;
++	Subprocess& operator=(const Subprocess&) = delete;
++};
++
++#endif
+diff --git a/zircon/kernel/lib/instrumentation/BUILD.gn b/zircon/kernel/lib/instrumentation/BUILD.gn
+index 2caff46e982..4f27de10bc9 100644
+--- a/zircon/kernel/lib/instrumentation/BUILD.gn
++++ b/zircon/kernel/lib/instrumentation/BUILD.gn
+@@ -83,5 +83,15 @@ if (is_kernel) {
+     if (configs + _asan_config - _asan_config != configs) {
+       configs -= _asan_config
+     }
++
++    # sancov code shouldn't be instrumented by sancov itself.  The coverage
++    # callbacks run from very early boot and before the sancov VMOs exist.
++    if (configs + _sancov_config - _sancov_config != configs) {
++      configs -= _sancov_config
++    }
++
++    # The callbacks can run before the compiler ABI state (e.g., x86
++    # safe-stack/stack-protector TLS) is initialized.
++    configs += [ "//build/config:no-compiler-abi" ]
+   }
+ }
+diff --git a/zircon/kernel/lib/instrumentation/sancov.cc b/zircon/kernel/lib/instrumentation/sancov.cc
+index a1c76db0bc3..35d43a65665 100644
+--- a/zircon/kernel/lib/instrumentation/sancov.cc
++++ b/zircon/kernel/lib/instrumentation/sancov.cc
+@@ -17,6 +17,8 @@ InstrumentationDataVmo SancovGetCountsVmo() { return {}; }
+ 
+ #else  // HAVE_SANCOV
+ 
++#include <align.h>
++#include <lib/instrumentation/debugdata.h>
+ #include <lib/instrumentation/kernel-mapped-vmo.h>
+ #include <stdint.h>
+ #include <zircon/assert.h>
+@@ -38,11 +40,18 @@ constexpr uint64_t kMagic64 = 0xC0BFFFFFFFFFFF64ULL;
+ 
+ constexpr uint64_t kCountsMagic = 0x0023766f436e6153ULL;  // "SanCov#" (LE)
+ 
+-// The sancov tool matches "<binaryname>" to "<binaryname>.%u.sancov".
+-constexpr ktl::string_view kPcVmoName = "data/zircon.elf.1.sancov";
+-
+-// This follows the sancov PCs file name just for consistency.
+-constexpr ktl::string_view kCountsVmoName = "data/zircon.elf.1.sancov-counts";
++// Published under the debugdata naming scheme so that the data is discoverable
++// while it is still being updated; see DebugdataVmoName().  The sancov tool
++// matches "<binaryname>" to "<binaryname>.%u.sancov", hence the ".1".
++//
++// The name is kept short on purpose: DebugdataVmoName() only appends the
++// suffix if the whole path still fits in ZX_MAX_NAME_LEN, and the consumer
++// (syz-executor) looks the files up by path under /boot/kernel.
++constexpr ktl::string_view kModuleName = "vmzircon.1";
++constexpr ktl::string_view kPcSinkName = "sancov";
++constexpr ktl::string_view kPcSuffix = "sancov";
++constexpr ktl::string_view kCountsSinkName = "sancov-counts";
++constexpr ktl::string_view kCountsSuffix = "sancov-counts";
+ 
+ // Go back from the return address to the call site.
+ // Note this must exactly match the calculation in the sancov tool.
+@@ -63,6 +72,10 @@ extern "C" uint32_t __start___sancov_guards[], __stop___sancov_guards[];
+ 
+ [[gnu::const]] size_t DataSize() { return (GuardsCount() + 1) * sizeof(uint64_t); }
+ 
++// Round the VMO up to a whole number of pages so that consumers can map the
++// tables in their entirety.
++[[gnu::const]] size_t VmoSize() { return ROUNDUP_PAGE_SIZE(DataSize()); }
++
+ // Instrumented code runs from the earliest point, before initialization.  The
+ // memory for storing the PCs and counts hasn't been set up.  However, code is
+ // running only on the boot CPU.  So in the pre-initialization period, we
+@@ -81,14 +94,14 @@ KernelMappedVmo gSancovPcVmo, gSancovCountsVmo;
+ 
+ void InitSancov(uint level) {
+   fbl::RefPtr<VmObjectPaged> vmo;
+-  zx_status_t status = VmObjectPaged::Create(PMM_ALLOC_FLAG_ANY, 0, DataSize(), &vmo);
++  zx_status_t status = VmObjectPaged::Create(PMM_ALLOC_FLAG_ANY, 0, VmoSize(), &vmo);
+   ZX_ASSERT(status == ZX_OK);
+-  status = gSancovPcVmo.Init(ktl::move(vmo), 0, DataSize(), "sancov-pc-table");
++  status = gSancovPcVmo.Init(ktl::move(vmo), 0, VmoSize(), "sancov-pc-table");
+   ZX_ASSERT(status == ZX_OK);
+ 
+-  status = VmObjectPaged::Create(PMM_ALLOC_FLAG_ANY, 0, DataSize(), &vmo);
++  status = VmObjectPaged::Create(PMM_ALLOC_FLAG_ANY, 0, VmoSize(), &vmo);
+   ZX_ASSERT(status == ZX_OK);
+-  status = gSancovCountsVmo.Init(ktl::move(vmo), 0, DataSize(), "sancov-pc-counts-table");
++  status = gSancovCountsVmo.Init(ktl::move(vmo), 0, VmoSize(), "sancov-pc-counts-table");
+   ZX_ASSERT(status == ZX_OK);
+ 
+   gSancovPcTable = reinterpret_cast<uint64_t*>(gSancovPcVmo.base_locking());
+@@ -164,22 +177,26 @@ void __sanitizer_cov_trace_pc_guard(uint32_t* guard_ptr) {
+ }  // extern "C"
+ 
+ InstrumentationDataVmo SancovGetPcVmo() {
++  auto vmo_name = instrumentation::DebugdataVmoName(kPcSinkName, kModuleName, kPcSuffix,
++                                                    /*is_static=*/false);
+   return {
+       .announce = "SanitizerCoverage",
+-      .sink_name = "sancov",
++      .sink_name = kPcSinkName,
+       .units = "PCs",
+       .scale = sizeof(gSancovPcTable[0]),
+-      .handle = gSancovPcVmo.Publish(kPcVmoName, DataSize()),
++      .handle = gSancovPcVmo.Publish(vmo_name, DataSize()),
+   };
+ }
+ 
+ InstrumentationDataVmo SancovGetCountsVmo() {
++  auto vmo_name = instrumentation::DebugdataVmoName(kCountsSinkName, kModuleName, kCountsSuffix,
++                                                    /*is_static=*/false);
+   return {
+       .announce = "SanitizerCoverage Counts",
+-      .sink_name = "sancov-counts",
++      .sink_name = kCountsSinkName,
+       .units = "counters",
+       .scale = sizeof(gSancovPcCounts[0]),
+-      .handle = gSancovCountsVmo.Publish(kCountsVmoName, DataSize()),
++      .handle = gSancovCountsVmo.Publish(vmo_name, DataSize()),
+   };
+ }
+ 
