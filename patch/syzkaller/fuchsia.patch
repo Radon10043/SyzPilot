@@ -2795,10 +2795,18 @@ index d5d10d66b..49c773e2a 100644
  }
  
 diff --git a/vm/starnix/starnix.go b/vm/starnix/starnix.go
-index e6da96dc0..7bd6a77fd 100644
+index e6da96dc0..5a8a1bbc1 100644
 --- a/vm/starnix/starnix.go
 +++ b/vm/starnix/starnix.go
-@@ -36,6 +36,10 @@ func init() {
+@@ -9,6 +9,7 @@ import (
+ 	"encoding/json"
+ 	"fmt"
+ 	"io"
++	"net"
+ 	"os"
+ 	"os/exec"
+ 	"path/filepath"
+@@ -36,6 +37,10 @@ func init() {
  type Config struct {
  	// Number of VMs to run in parallel (1 by default).
  	Count int `json:"count"`
@@ -2809,7 +2817,7 @@ index e6da96dc0..7bd6a77fd 100644
  }
  
  type Pool struct {
-@@ -70,6 +74,13 @@ type instance struct {
+@@ -70,6 +75,13 @@ type instance struct {
  
  const targetDir = "/tmp"
  
@@ -2823,7 +2831,7 @@ index e6da96dc0..7bd6a77fd 100644
  func ctor(env *vmimpl.Env) (vmimpl.Pool, error) {
  	cfg := &Config{}
  	if err := config.LoadData(env.Config, cfg); err != nil {
-@@ -78,6 +89,12 @@ func ctor(env *vmimpl.Env) (vmimpl.Pool, error) {
+@@ -78,6 +90,12 @@ func ctor(env *vmimpl.Env) (vmimpl.Pool, error) {
  	if cfg.Count < 1 || cfg.Count > 128 {
  		return nil, fmt.Errorf("invalid config param count: %v, want [1, 128]", cfg.Count)
  	}
@@ -2836,7 +2844,85 @@ index e6da96dc0..7bd6a77fd 100644
  
  	ffxDir, err := os.MkdirTemp("", "syz-ffx")
  	if err != nil {
-@@ -481,7 +498,7 @@ func (inst *instance) Run(ctx context.Context, command string) (
+@@ -320,18 +338,7 @@ func (inst *instance) connect() error {
+ 	if inst.debug {
+ 		log.Logf(1, "instance %s: attempting to connect to starnix container over ssh", inst.name)
+ 	}
+-	// Even though the formatting option is called `addresses`, it is guaranteed
+-	// to return at most 1 address per target.
+-	address, err := inst.runFfx(
+-		30*time.Second,
+-		true,
+-		"--target",
+-		inst.name,
+-		"target",
+-		"list",
+-		"--format",
+-		"addresses",
+-	)
++	address, err := inst.sshAddress()
+ 	if err != nil {
+ 		return err
+ 	}
+@@ -345,7 +352,7 @@ func (inst *instance) connect() error {
+ 		"-i", inst.sshPrivKey,
+ 		"-NT",
+ 		"-L", fmt.Sprintf("localhost:%d:localhost:7000", inst.port),
+-		fmt.Sprintf("ssh://%s", bytes.Trim(address, "\n")),
++		fmt.Sprintf("ssh://%s", address),
+ 	)
+ 	cmd.Stderr = os.Stderr
+ 	if err = cmd.Start(); err != nil {
+@@ -361,6 +368,48 @@ func (inst *instance) connect() error {
+ 	return nil
+ }
+ 
++// Returns the target's ssh endpoint as `host:port`, ready to be appended to `ssh://`.
++//
++// `target list --format addresses` looks like the obvious way to get this, but it only prints the
++// ssh port since Fuchsia f29; on older releases it prints a bare address, and ssh then talks to the
++// host's own port 22 instead of the emulator. The json format carries `ssh_port` on every release
++// we support, so go through that instead.
++func (inst *instance) sshAddress() (string, error) {
++	out, err := inst.runFfx(
++		30*time.Second,
++		true,
++		"--target", inst.name,
++		"target", "list",
++		"--format", "json",
++	)
++	if err != nil {
++		return "", err
++	}
++	var targets []struct {
++		Addresses []struct {
++			Type    string `json:"type"`
++			IP      string `json:"ip"`
++			SSHPort int    `json:"ssh_port"`
++		} `json:"addresses"`
++	}
++	if err := json.Unmarshal(out, &targets); err != nil {
++		return "", fmt.Errorf("failed to parse `ffx target list` output %q: %w", out, err)
++	}
++	for _, target := range targets {
++		for _, addr := range target.Addresses {
++			if addr.Type != "Ip" || addr.IP == "" {
++				continue
++			}
++			port := addr.SSHPort
++			if port == 0 {
++				port = 22
++			}
++			return net.JoinHostPort(addr.IP, strconv.Itoa(port)), nil
++		}
++	}
++	return "", fmt.Errorf("instance %s: no ssh address in `ffx target list` output %q", inst.name, out)
++}
++
+ func (inst *instance) ffxCommand(isolated bool, binary string, args ...string) *exec.Cmd {
+ 	config := []string{"-c", "log.enabled=false,ffx.analytics.disabled=true"}
+ 	if !isolated {
+@@ -481,7 +530,7 @@ func (inst *instance) Run(ctx context.Context, command string) (
  	sshArgs := vmimpl.SSHArgsForward(inst.debug, inst.sshPrivKey, inst.port, inst.forwardPort, useSystemSSHCfg)
  	sshCmd := []string{"ssh"}
  	sshCmd = append(sshCmd, sshArgs...)
@@ -2845,7 +2931,7 @@ index e6da96dc0..7bd6a77fd 100644
  	if inst.debug {
  		log.Logf(1, "instance %s: running command: %#v", inst.name, sshCmd)
  	}
-@@ -501,6 +518,19 @@ func (inst *instance) Run(ctx context.Context, command string) (
+@@ -501,6 +550,19 @@ func (inst *instance) Run(ctx context.Context, command string) (
  	})
  }
  
@@ -2865,7 +2951,7 @@ index e6da96dc0..7bd6a77fd 100644
  func (inst *instance) Info() ([]byte, error) {
  	info := fmt.Sprintf("%v\n%v", inst.version, "ffx")
  	return []byte(info), nil
-@@ -560,7 +590,18 @@ func GetToolPath(fuchsiaDir, toolName string) (string, error) {
+@@ -560,7 +622,18 @@ func GetToolPath(fuchsiaDir, toolName string) (string, error) {
  
  	for _, metadata := range metadataList {
  		if metadata.Name == toolName {
