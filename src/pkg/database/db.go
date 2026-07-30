@@ -185,7 +185,7 @@ func (db *Database) GetGlobalVar(name string) (GlobalVar, error) {
 	return gv, nil
 }
 
-// get all global variables from the database
+// GetAllGlobalVar get all global variables from the database
 func (db *Database) GetAllGlobalVar() ([]GlobalVar, error) {
 	var gvs []GlobalVar
 	result := db.gormDB.Find(&gvs)
@@ -209,7 +209,7 @@ func (db *Database) GetMacroDefByPattern(pattern string) ([]MacroDef, error) {
 	return mds, result.Error
 }
 
-// specify table name for MacroDef model
+// TableName specify table name for MacroDef model
 func (MacroDef) TableName() string {
 	return "macroDefs"
 }

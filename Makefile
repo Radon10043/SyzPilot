@@ -50,7 +50,6 @@ analyzer: prepare
 
 generator: prepare
 	$(GO) build $(GOFLAGS) -o bin/generator github.com/Radon10043/cloud/src/generator/
-	$(GO) build $(GOFLAGS) -o bin/generator-fuchsia github.com/Radon10043/cloud/src/generator-fuchsia/
 
 minitask: prepare
 	$(GO) build $(GOFLAGS) -o bin/minitask github.com/Radon10043/cloud/src/minitask/
