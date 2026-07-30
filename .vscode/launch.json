@@ -5,22 +5,22 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "go: launch src/rmunused/main.go",
+            "name": "go: launch src/rmunused",
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/src/rmunused/main.go",
+            "program": "${workspaceFolder}/src/rmunused",
             "cwd": "${workspaceFolder}",
             "args": [
                 "-indir=${workspaceFolder}/syzkaller/sys/linux"
             ],
         },
         {
-            "name": "go: launch experiment/ablation/trimtool/main.go",
+            "name": "go: launch experiment/cloud-trimtool",
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/experiment/ablation/trimtool/main.go",
+            "program": "${workspaceFolder}/experiment/cloud-trimtool",
             "cwd": "${workspaceFolder}",
             "args": [
                 "-db=${workspaceFolder}/data/database/linux.db",
@@ -35,11 +35,11 @@
             ],
         },
         {
-            "name": "go: launch experiment/ablation/noiter/main.go",
+            "name": "go: launch experiment/cloud-noiter",
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/experiment/ablation/noiter/main.go",
+            "program": "${workspaceFolder}/experiment/cloud-noiter",
             "cwd": "${workspaceFolder}",
             "args": [
                 "-db=${workspaceFolder}/data/database/linux.db",
@@ -50,11 +50,11 @@
             ],
         },
         {
-            "name": "go: launch experiment/ablation/nodb/main.go",
+            "name": "go: launch experiment/cloud-nodb",
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/experiment/ablation/nodb/main.go",
+            "program": "${workspaceFolder}/experiment/cloud-nodb",
             "cwd": "${workspaceFolder}",
             "args": [
                 "-db=${workspaceFolder}/data/database/linux.db",
@@ -67,21 +67,21 @@
             ],
         },
         {
-            "name": "go: launch experiment/viz/align/main.go",
+            "name": "go: launch experiment/viz/align",
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/experiment/viz/align/main.go",
+            "program": "${workspaceFolder}/experiment/viz/align",
             "args": [
                 "-input=${workspaceFolder}/.workdir/acc/align.csv",
             ],
         },
         {
-            "name": "go: launch experiment/viz/fuzz/main.go",
+            "name": "go: launch experiment/viz/fuzz",
             "type": "go",
             "request": "launch",
             "mode": "debug",
-            "program": "${workspaceFolder}/experiment/viz/fuzz/main.go",
+            "program": "${workspaceFolder}/experiment/viz/fuzz",
             "args": [
                 "-expdir=${workspaceFolder}/.workdir/experiment",
                 "-master=cloud",
