@@ -36,7 +36,7 @@ func ExecGetEnumCodeByEnumerator(tc *llms.ToolCall, th *ToolHelper) (llms.Messag
 	return tcResp, nil
 }
 
-// GetEnumEntry get the enum entry by enumerator
+// GetEnumEntryByEnumerator gets the enum entry by enumerator
 func GetEnumEntryByEnumerator(enumerator string, db *database.Database) (database.Enum, error) {
 	entry, err := db.GetEnumByEnumerator(enumerator)
 	if err != nil {
