@@ -290,24 +290,24 @@ func setConfigs() *ProgConfig {
 	flag.StringVar(
 		&cfg.OtlSysPrompt,
 		"otl-system-prompt",
-		"./data/prompts/outline/instruction.md,"+
-			"./data/prompts/outline/example_media.md,"+
-			"./data/prompts/outline/example_ppp.md",
+		"./data/prompts/csrc/outline/instruction.md,"+
+			"./data/prompts/csrc/outline/example_media.md,"+
+			"./data/prompts/csrc/outline/example_ppp.md",
 		"Path to the outline system prompt file(s), use comma to separate multiple files",
 	)
 	flag.StringVar(
 		&cfg.GenSysPrompt,
 		"gen-system-prompt",
-		"./data/prompts/generate/instruction.md,"+
-			"./data/prompts/generate/example_media.md,"+
-			"./data/prompts/generate/example_ppp.md",
+		"./data/prompts/csrc/generate/instruction.md,"+
+			"./data/prompts/csrc/generate/example_media.md,"+
+			"./data/prompts/csrc/generate/example_ppp.md",
 		"Path to the generate system prompt file(s), use comma to separate multiple files",
 	)
 	flag.StringVar(
 		&cfg.FixSysPrompt,
 		"fix-system-prompt",
-		"./data/prompts/fix/instruction.md,"+
-			"./data/prompts/fix/example_v4l2.md",
+		"./data/prompts/csrc/fix/instruction.md,"+
+			"./data/prompts/csrc/fix/example_v4l2.md",
 		"Path to the fix system prompt file(s), use comma to separate multiple files",
 	)
 	flag.Parse()
