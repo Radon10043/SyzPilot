@@ -33,7 +33,7 @@ endif
 
 .PHONY: all clean
 
-all: analyzer generator minitask syz-utils pool2syz refactor rmunused
+all: analyzer fanalyzer generator minitask syz-utils pool2syz refactor rmunused
 
 clean:
 	rm -rf bin
@@ -47,6 +47,9 @@ analyzer: prepare
 		$(LD_FLAGS) \
 		-Wl,--start-group $(CLANG_LIBS) -Wl,--end-group \
 		$(LLVM_LIBS)
+
+fanalyzer: prepare
+	$(GO) build $(GOFLAGS) -o bin/fanalyzer github.com/Radon10043/cloud/src/fanalyzer/
 
 generator: prepare
 	$(GO) build $(GOFLAGS) -o bin/generator github.com/Radon10043/cloud/src/generator/
