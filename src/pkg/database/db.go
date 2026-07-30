@@ -75,19 +75,19 @@ func (f Function) GetCode() string { return f.Code }
 func (f Function) GetFile() string { return f.File }
 func (f Function) GetLine() int    { return f.Line }
 
-// specify table name for Function model
+// TableName specifies table name for Function model
 func (Function) TableName() string {
 	return "functions"
 }
 
-// Connect connect to the SQLite database
+// Connect connects to the SQLite database
 func (db *Database) Connect() error {
 	gormDB, err := gorm.Open(sqlite.Open(db.Path), &gorm.Config{})
 	db.gormDB = gormDB
 	return err
 }
 
-// GetFunction get function data by function name
+// GetFunction gets function data by function name
 func (db *Database) GetFunction(name string) (Function, error) {
 	var fun Function
 	db.gormDB.Where("name = ?", name).First(&fun)
@@ -97,14 +97,14 @@ func (db *Database) GetFunction(name string) (Function, error) {
 	return fun, nil
 }
 
-// GetAllFunction get all functions from the database
+// GetAllFunction gets all functions from the database
 func (db *Database) GetAllFunction() ([]Function, error) {
 	var fns []Function
 	result := db.gormDB.Find(&fns)
 	return fns, result.Error
 }
 
-// GetRecord get record data by record name
+// GetRecord gets record data by record name
 func (db *Database) GetRecord(name string) (Record, error) {
 	var rec Record
 	db.gormDB.Where("name = ?", name).First(&rec)
@@ -114,7 +114,7 @@ func (db *Database) GetRecord(name string) (Record, error) {
 	return rec, nil
 }
 
-// get struct data by struct name
+// GetStruct gets struct data by struct name
 func (db *Database) GetStruct(name string) (Record, error) {
 	var rec Record
 	db.gormDB.Where("name = ? AND type = ?", name, "struct").First(&rec)
@@ -124,7 +124,7 @@ func (db *Database) GetStruct(name string) (Record, error) {
 	return rec, nil
 }
 
-// get union data by union name
+// GetUnion gets union data by union name
 func (db *Database) GetUnion(name string) (Record, error) {
 	var rec Record
 	db.gormDB.Where("name = ? AND type = ?", name, "union").First(&rec)
@@ -134,7 +134,7 @@ func (db *Database) GetUnion(name string) (Record, error) {
 	return rec, nil
 }
 
-// GetEnumByEnumerator get enum data by enumerator
+// GetEnumByEnumerator gets enum data by enumerator
 func (db *Database) GetEnumByEnumerator(enumerator string) (Enum, error) {
 	var enum Enum
 	db.gormDB.Where("enumerator = ?", enumerator).First(&enum)
@@ -144,7 +144,7 @@ func (db *Database) GetEnumByEnumerator(enumerator string) (Enum, error) {
 	return enum, nil
 }
 
-// GetEnumBySpecifier get enum data by specifier
+// GetEnumBySpecifier gets enum data by specifier
 func (db *Database) GetEnumBySpecifier(specifier string) (Enum, error) {
 	var enum Enum
 	db.gormDB.Where("specifier = ?", specifier).First(&enum)
@@ -154,7 +154,7 @@ func (db *Database) GetEnumBySpecifier(specifier string) (Enum, error) {
 	return enum, nil
 }
 
-// get typedef data by define (new name)
+// GetTypedef gets typedef data by define (new name)
 func (db *Database) GetTypedef(def string) (Typedef, error) {
 	var td Typedef
 	db.gormDB.Where("define = ?", def).First(&td)
@@ -170,12 +170,12 @@ func (gv GlobalVar) GetCode() string { return gv.Code }
 func (gv GlobalVar) GetFile() string { return gv.File }
 func (gv GlobalVar) GetLine() int    { return gv.Line }
 
-// specify table name for GlobalVar model
+// TableName specifies table name for GlobalVar model
 func (GlobalVar) TableName() string {
 	return "globalVars"
 }
 
-// get global variable data by variable name
+// GetGlobalVar gets global variable data by variable name
 func (db *Database) GetGlobalVar(name string) (GlobalVar, error) {
 	var gv GlobalVar
 	db.gormDB.Where("name = ?", name).First(&gv)
@@ -185,14 +185,14 @@ func (db *Database) GetGlobalVar(name string) (GlobalVar, error) {
 	return gv, nil
 }
 
-// GetAllGlobalVar get all global variables from the database
+// GetAllGlobalVar gets all global variables from the database
 func (db *Database) GetAllGlobalVar() ([]GlobalVar, error) {
 	var gvs []GlobalVar
 	result := db.gormDB.Find(&gvs)
 	return gvs, result.Error
 }
 
-// GetMacroDefByName get macro definition data by macro name
+// GetMacroDefByName gets macro definition data by macro name
 func (db *Database) GetMacroDefByName(name string) (MacroDef, error) {
 	var md MacroDef
 	db.gormDB.Where("name = ?", name).First(&md)
@@ -202,19 +202,19 @@ func (db *Database) GetMacroDefByName(name string) (MacroDef, error) {
 	return md, nil
 }
 
-// GetMacroDefByPattern get macro definitions by name pattern (case sensitive)
+// GetMacroDefByPattern gets macro definitions by name pattern (case sensitive)
 func (db *Database) GetMacroDefByPattern(pattern string) ([]MacroDef, error) {
 	var mds []MacroDef
 	result := db.gormDB.Where("name GLOB ?", pattern).Find(&mds)
 	return mds, result.Error
 }
 
-// TableName specify table name for MacroDef model
+// TableName specifies table name for MacroDef model
 func (MacroDef) TableName() string {
 	return "macroDefs"
 }
 
-// Close close the database connection
+// Close closes the database connection
 func (db *Database) Close() error {
 	sqlDB, err := db.gormDB.DB()
 	if err != nil {
