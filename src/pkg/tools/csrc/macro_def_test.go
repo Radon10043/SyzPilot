@@ -1,4 +1,4 @@
-package tools_test
+package csrc_test
 
 import (
 	"context"
@@ -7,7 +7,8 @@ import (
 
 	"github.com/Radon10043/cloud/src/pkg/agent"
 	"github.com/Radon10043/cloud/src/pkg/database"
-	myTools "github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools/csrc"
 	"github.com/tmc/langchaingo/llms"
 )
 
@@ -18,13 +19,13 @@ func TestGetMacroDefCodeByName(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	toolMap := map[string]myTools.ToolExec{
-		myTools.GetMacroDefCodeByNameTool.Function.Name: {
-			Tool: myTools.GetMacroDefCodeByNameTool,
-			Exec: myTools.ExecGetMacroDefCodeByName,
+	toolMap := map[string]tools.ToolExec{
+		csrc.GetMacroDefCodeByNameTool.Function.Name: {
+			Tool: csrc.GetMacroDefCodeByNameTool,
+			Exec: csrc.ExecGetMacroDefCodeByName,
 		},
 	}
-	toolHelper := &myTools.ToolHelper{
+	toolHelper := &tools.ToolHelper{
 		Db: &db,
 	}
 	ctx := context.Background()
@@ -58,13 +59,13 @@ func TestGetMacroDefCodesByPattern(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	toolMap := map[string]myTools.ToolExec{
-		myTools.GetMacroDefCodesByPatternTool.Function.Name: {
-			Tool: myTools.GetMacroDefCodesByPatternTool,
-			Exec: myTools.ExecGetMacroDefCodesByPattern,
+	toolMap := map[string]tools.ToolExec{
+		csrc.GetMacroDefCodesByPatternTool.Function.Name: {
+			Tool: csrc.GetMacroDefCodesByPatternTool,
+			Exec: csrc.ExecGetMacroDefCodesByPattern,
 		},
 	}
-	toolHelper := &myTools.ToolHelper{
+	toolHelper := &tools.ToolHelper{
 		Db: &db,
 	}
 	ctx := context.Background()
@@ -98,13 +99,13 @@ func TestGetMacroDefLocByName(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	toolMap := map[string]myTools.ToolExec{
-		myTools.GetMacroDefLocByNameTool.Function.Name: {
-			Tool: myTools.GetMacroDefLocByNameTool,
-			Exec: myTools.ExecGetMacroDefLocByName,
+	toolMap := map[string]tools.ToolExec{
+		csrc.GetMacroDefLocByNameTool.Function.Name: {
+			Tool: csrc.GetMacroDefLocByNameTool,
+			Exec: csrc.ExecGetMacroDefLocByName,
 		},
 	}
-	toolHelper := &myTools.ToolHelper{
+	toolHelper := &tools.ToolHelper{
 		Db: &db,
 	}
 	ctx := context.Background()

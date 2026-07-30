@@ -1,4 +1,4 @@
-package tools_test
+package csrc_test
 
 import (
 	"context"
@@ -7,7 +7,8 @@ import (
 
 	"github.com/Radon10043/cloud/src/pkg/agent"
 	"github.com/Radon10043/cloud/src/pkg/database"
-	myTools "github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools/csrc"
 	"github.com/tmc/langchaingo/llms"
 )
 
@@ -18,13 +19,13 @@ func TestGetGlobalVarCodeByName(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	toolMap := map[string]myTools.ToolExec{
-		myTools.GetGlobalVarCodeByNameTool.Function.Name: {
-			Tool: myTools.GetGlobalVarCodeByNameTool,
-			Exec: myTools.ExecGetGlobalVarCodeByName,
+	toolMap := map[string]tools.ToolExec{
+		csrc.GetGlobalVarCodeByNameTool.Function.Name: {
+			Tool: csrc.GetGlobalVarCodeByNameTool,
+			Exec: csrc.ExecGetGlobalVarCodeByName,
 		},
 	}
-	toolHelper := &myTools.ToolHelper{
+	toolHelper := &tools.ToolHelper{
 		Db: &db,
 	}
 	ctx := context.Background()

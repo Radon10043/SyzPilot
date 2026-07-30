@@ -8,7 +8,6 @@ import (
 	"math"
 	"math/rand"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -21,7 +20,8 @@ import (
 	osu "github.com/Radon10043/cloud/src/pkg/osutil"
 	"github.com/Radon10043/cloud/src/pkg/pool"
 	"github.com/Radon10043/cloud/src/pkg/stage"
-	myTools "github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/utils"
 	"github.com/joho/godotenv"
 	"github.com/otiai10/copy"
 	"github.com/tmc/langchaingo/llms/openai"
@@ -29,7 +29,7 @@ import (
 
 // RefEntry is a struct to store reference entry for spec generation,
 type RefEntry struct {
-	Type string // only support "variable" and "function" currently
+	Type string
 	Name string
 }
 
@@ -118,6 +118,17 @@ func main() {
 	if err := checkConfig(cfg); err != nil {
 		log.Fatalf("invalid configuration: %v\n", err)
 	}
+
+	// check size of kernel directory since duplication for a large kernel
+	// directory is very expensive.
+	size, err := utils.Dirsize(cfg.Kernel)
+	if err != nil {
+		log.Fatalf("failed to get size of %v: %v\n", cfg.Kernel, err)
+	}
+	if size > 1<<36 { // 64GB
+		log.Fatalf("kernel directory is too large (> 64GB), consider to use a smaller one.")
+	}
+	log.Printf("kernel directory size: %d MB\n", size/(1<<20))
 
 	// check validity of sysdir
 	if err := checkSysdir(cfg); err != nil {
@@ -245,6 +256,12 @@ func createQueue(db *database.Database, refEntries []RefEntry) ([]database.Entry
 				return nil, fmt.Errorf("failed to get function %q from database: %v", ref.Name, err)
 			}
 			queue = append(queue, fn)
+		case "protocol_decl":
+			pd, err := db.GetProtocolDecl(ref.Name)
+			if err != nil {
+				return nil, fmt.Errorf("failed to get protocol declaration %q from database: %v", ref.Name, err)
+			}
+			queue = append(queue, pd)
 		default:
 			return nil, fmt.Errorf("unsupported reference type %q for entry %q", ref.Type, ref.Name)
 		}
@@ -468,7 +485,7 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 	defer os.RemoveAll(wd)
 
 	// create an agent
-	kAgent, err := createAgent(cfg, db)
+	kAgent, err := createAgent(cfg.Model, osType, db)
 	if err != nil {
 		logger.Printf("failed to create agent instance: %v\n", err)
 		res.Err = err
@@ -540,62 +557,20 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 }
 
 // createAgent creates an agent instance with the given configuration and database, return the agent instance and error
-func createAgent(cfg *ProgConfig, db *database.Database) (*agent.Agent, error) {
+func createAgent(model string, osType osu.OsType, db *database.Database) (*agent.Agent, error) {
 	llm, err := openai.New(
 		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
 		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
-		openai.WithModel(cfg.Model),
+		openai.WithModel(model),
 	)
 	if err != nil {
 		return nil, err
 	}
-	toolMap := map[string]myTools.ToolExec{
-		myTools.GetFuncCodeByNameTool.Function.Name: {
-			Tool: myTools.GetFuncCodeByNameTool,
-			Exec: myTools.ExecGetFuncCodeByName,
-		},
-		myTools.GetEnumCodeByEnumeratorTool.Function.Name: {
-			Tool: myTools.GetEnumCodeByEnumeratorTool,
-			Exec: myTools.ExecGetEnumCodeByEnumerator,
-		},
-		myTools.GetEnumCodeBySpecifierTool.Function.Name: {
-			Tool: myTools.GetEnumCodeBySpecifierTool,
-			Exec: myTools.ExecGetEnumCodeBySpecifier,
-		},
-		myTools.GetStructCodeByNameTool.Function.Name: {
-			Tool: myTools.GetStructCodeByNameTool,
-			Exec: myTools.ExecGetStructCodeByName,
-		},
-		myTools.GetUnionCodeByNameTool.Function.Name: {
-			Tool: myTools.GetUnionCodeByNameTool,
-			Exec: myTools.ExecGetUnionCodeByName,
-		},
-		myTools.GetGlobalVarCodeByNameTool.Function.Name: {
-			Tool: myTools.GetGlobalVarCodeByNameTool,
-			Exec: myTools.ExecGetGlobalVarCodeByName,
-		},
-		myTools.GetTypedefCodeByDefineTool.Function.Name: {
-			Tool: myTools.GetTypedefCodeByDefineTool,
-			Exec: myTools.ExecGetTypedefCodeByDefine,
-		},
-		myTools.GetTypedefTypeByDefineTool.Function.Name: {
-			Tool: myTools.GetTypedefTypeByDefineTool,
-			Exec: myTools.ExecGetTypedefTypeByDefine,
-		},
-		myTools.GetMacroDefCodeByNameTool.Function.Name: {
-			Tool: myTools.GetMacroDefCodeByNameTool,
-			Exec: myTools.ExecGetMacroDefCodeByName,
-		},
-		myTools.GetMacroDefCodesByPatternTool.Function.Name: {
-			Tool: myTools.GetMacroDefCodesByPatternTool,
-			Exec: myTools.ExecGetMacroDefCodesByPattern,
-		},
-		myTools.GetMacroDefLocByNameTool.Function.Name: {
-			Tool: myTools.GetMacroDefLocByNameTool,
-			Exec: myTools.ExecGetMacroDefLocByName,
-		},
+	toolMap, err := osType.AgentToolMap()
+	if err != nil {
+		return nil, err
 	}
-	toolHelper := &myTools.ToolHelper{
+	toolHelper := &tools.ToolHelper{
 		Db: db,
 	}
 	kAgent := agent.NewAgent(
@@ -620,13 +595,10 @@ func duplicateKernel(prefix string, kernel string, osType osu.OsType, logger *lo
 		return "", "", err
 	}
 
-	// run "make distclean" under kernel-extract to clean up the kernel source tree
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command("make", "distclean")
-	cmd.Dir = filepath.Join(prefix, "kernel-extract")
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
+	// run distclean under kernel-extract to clean up the kernel source tree
+	if stdout, stderr, err := osType.Distclean(
+		filepath.Join(prefix, "kernel-extract"),
+	); err != nil {
 		logger.Printf("failed to run 'make distclean' under kernel-extract: %v\nstdout:\n%s\nstderr:\n%s\n", err, stdout.String(), stderr.String())
 		return "", "", err
 	}

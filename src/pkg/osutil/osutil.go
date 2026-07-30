@@ -1,10 +1,16 @@
 package osutil
 
 import (
+	"bytes"
 	"fmt"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools/csrc"
+	"github.com/Radon10043/cloud/src/pkg/tools/fuchsia"
 )
 
 type OsType int
@@ -67,7 +73,7 @@ func (o OsType) KernFilePath(prefix string) string {
 		if runtime.GOARCH != "amd64" {
 			fuchsiaArch = runtime.GOARCH
 		}
-		return filepath.Join(prefix, "out", fuchsiaArch, "kernel_"+fuchsiaArch+".lk_debug_level_0", "vmzircon")
+		return filepath.Join(prefix, "out", fuchsiaArch, "kernel_"+fuchsiaArch+"-kasan-sancov", "vmzircon")
 	default:
 		return ""
 	}
@@ -91,4 +97,71 @@ func ParseOsType(s string) (OsType, error) {
 	default:
 		return unknown, fmt.Errorf("unknown os type: %s", s)
 	}
+}
+
+// Distclean performs OS-specific distclean operation in the given directory
+func (o OsType) Distclean(dir string) (*bytes.Buffer, *bytes.Buffer, error) {
+	var (
+		stdout bytes.Buffer
+		stderr bytes.Buffer
+		cmd    *exec.Cmd
+	)
+	switch o {
+	case Linux, Android:
+		cmd = exec.Command("make", "distclean")
+	default: // no need to run distclean?
+		return nil, nil, nil
+	}
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	err := cmd.Run()
+	return &stdout, &stderr, err
+}
+
+// AgentToolMap returns the tool map for the agent based on the OS type
+func (o OsType) AgentToolMap() (map[string]tools.ToolExec, error) {
+	// c source tools
+	csrcToolMap := map[string]tools.ToolExec{
+		csrc.GetFuncCodeByNameTool.Function.Name:         {Tool: csrc.GetFuncCodeByNameTool, Exec: csrc.ExecGetFuncCodeByName},
+		csrc.GetEnumCodeByEnumeratorTool.Function.Name:   {Tool: csrc.GetEnumCodeByEnumeratorTool, Exec: csrc.ExecGetEnumCodeByEnumerator},
+		csrc.GetEnumCodeBySpecifierTool.Function.Name:    {Tool: csrc.GetEnumCodeBySpecifierTool, Exec: csrc.ExecGetEnumCodeBySpecifier},
+		csrc.GetStructCodeByNameTool.Function.Name:       {Tool: csrc.GetStructCodeByNameTool, Exec: csrc.ExecGetStructCodeByName},
+		csrc.GetUnionCodeByNameTool.Function.Name:        {Tool: csrc.GetUnionCodeByNameTool, Exec: csrc.ExecGetUnionCodeByName},
+		csrc.GetGlobalVarCodeByNameTool.Function.Name:    {Tool: csrc.GetGlobalVarCodeByNameTool, Exec: csrc.ExecGetGlobalVarCodeByName},
+		csrc.GetTypedefCodeByDefineTool.Function.Name:    {Tool: csrc.GetTypedefCodeByDefineTool, Exec: csrc.ExecGetTypedefCodeByDefine},
+		csrc.GetTypedefTypeByDefineTool.Function.Name:    {Tool: csrc.GetTypedefTypeByDefineTool, Exec: csrc.ExecGetTypedefTypeByDefine},
+		csrc.GetMacroDefCodeByNameTool.Function.Name:     {Tool: csrc.GetMacroDefCodeByNameTool, Exec: csrc.ExecGetMacroDefCodeByName},
+		csrc.GetMacroDefCodesByPatternTool.Function.Name: {Tool: csrc.GetMacroDefCodesByPatternTool, Exec: csrc.ExecGetMacroDefCodesByPattern},
+		csrc.GetMacroDefLocByNameTool.Function.Name:      {Tool: csrc.GetMacroDefLocByNameTool, Exec: csrc.ExecGetMacroDefLocByName},
+	}
+
+	// fuchsia tools
+	fuchsiaToolMap := map[string]tools.ToolExec{
+		fuchsia.GetDeclByNameTool.Function.Name:            {Tool: fuchsia.GetDeclByNameTool, Exec: fuchsia.ExecGetDeclByName},
+		fuchsia.GetAliasTypeByNameTool.Function.Name:       {Tool: fuchsia.GetAliasTypeByNameTool, Exec: fuchsia.ExecGetAliasTypeByName},
+		fuchsia.GetBitsMembersByNameTool.Function.Name:     {Tool: fuchsia.GetBitsMembersByNameTool, Exec: fuchsia.ExecGetBitsMembersByName},
+		fuchsia.GetBitsTypeByNameTool.Function.Name:        {Tool: fuchsia.GetBitsTypeByNameTool, Exec: fuchsia.ExecGetBitsTypeByName},
+		fuchsia.GetConstTypeByNameTool.Function.Name:       {Tool: fuchsia.GetConstTypeByNameTool, Exec: fuchsia.ExecGetConstTypeByName},
+		fuchsia.GetConstValueByNameTool.Function.Name:      {Tool: fuchsia.GetConstValueByNameTool, Exec: fuchsia.ExecGetConstValueByName},
+		fuchsia.GetEnumTypeByNameTool.Function.Name:        {Tool: fuchsia.GetEnumTypeByNameTool, Exec: fuchsia.ExecGetEnumTypeByName},
+		fuchsia.GetEnumMembersByNameTool.Function.Name:     {Tool: fuchsia.GetEnumMembersByNameTool, Exec: fuchsia.ExecGetEnumMembersByName},
+		fuchsia.GetProtocolMethodsByNameTool.Function.Name: {Tool: fuchsia.GetProtocolMethodsByNameTool, Exec: fuchsia.ExecGetProtocolMethodsByName},
+		fuchsia.GetProtocolAttrsByNameTool.Function.Name:   {Tool: fuchsia.GetProtocolAttrsByNameTool, Exec: fuchsia.ExecGetProtocolAttrsByName},
+		fuchsia.GetServiceMembersByNameTool.Function.Name:  {Tool: fuchsia.GetServiceMembersByNameTool, Exec: fuchsia.ExecGetServiceMembersByName},
+		fuchsia.GetStructMembersByNameTool.Function.Name:   {Tool: fuchsia.GetStructMembersByNameTool, Exec: fuchsia.ExecGetStructMembersByName},
+		fuchsia.GetStructTypeShapeByNameTool.Function.Name: {Tool: fuchsia.GetStructTypeShapeByNameTool, Exec: fuchsia.ExecGetStructTypeShapeByName},
+		fuchsia.GetTableMembersByNameTool.Function.Name:    {Tool: fuchsia.GetTableMembersByNameTool, Exec: fuchsia.ExecGetTableMembersByName},
+		fuchsia.GetTableTypeShapeByNameTool.Function.Name:  {Tool: fuchsia.GetTableTypeShapeByNameTool, Exec: fuchsia.ExecGetTableTypeShapeByName},
+		fuchsia.GetUnionMembersByNameTool.Function.Name:    {Tool: fuchsia.GetUnionMembersByNameTool, Exec: fuchsia.ExecGetUnionMembersByName},
+		fuchsia.GetUnionTypeShapeByNameTool.Function.Name:  {Tool: fuchsia.GetUnionTypeShapeByNameTool, Exec: fuchsia.ExecGetUnionTypeShapeByName},
+	}
+
+	switch o {
+	case Linux, Android, FreeBSD, OpenBSD, NetBSD:
+		return csrcToolMap, nil
+	case Fuchsia:
+		return fuchsiaToolMap, nil
+	}
+
+	return nil, fmt.Errorf("no appropriate tools for %v.", o.String())
 }

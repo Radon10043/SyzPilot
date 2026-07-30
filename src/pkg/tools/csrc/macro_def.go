@@ -1,10 +1,11 @@
-package tools
+package csrc
 
 import (
 	"encoding/json"
 	"strings"
 
 	"github.com/Radon10043/cloud/src/pkg/database"
+	"github.com/Radon10043/cloud/src/pkg/tools"
 	"github.com/tmc/langchaingo/llms"
 )
 
@@ -18,7 +19,7 @@ func GetMacroDefEntryByName(name string, db *database.Database) (database.MacroD
 }
 
 // ExecGetMacroDefCodeByName execute the get_macro_def_code_by_name tool call
-func ExecGetMacroDefCodeByName(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
+func ExecGetMacroDefCodeByName(tc *llms.ToolCall, th *tools.ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		MacroName string `json:"macro_name"`
 		Rational  string `json:"rational"`
@@ -69,7 +70,7 @@ var GetMacroDefCodeByNameTool = llms.Tool{
 }
 
 // ExecGetMacroDefLocByName execute the get_macro_def_loc_by_name tool call
-func ExecGetMacroDefLocByName(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
+func ExecGetMacroDefLocByName(tc *llms.ToolCall, th *tools.ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		MacroName string `json:"macro_name"`
 		Rational  string `json:"rational"`
@@ -129,7 +130,7 @@ func GetMacroDefEntriesByPattern(pattern string, db *database.Database) ([]datab
 }
 
 // ExecGetMacroDefCodesByPattern execute the get_macro_def_codes_by_pattern tool call
-func ExecGetMacroDefCodesByPattern(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
+func ExecGetMacroDefCodesByPattern(tc *llms.ToolCall, th *tools.ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		MacroPattern string `json:"macro_pattern"`
 		Rational     string `json:"rational"`

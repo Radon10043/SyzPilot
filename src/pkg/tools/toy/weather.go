@@ -1,14 +1,15 @@
-package tools
+package toy
 
 import (
 	"encoding/json"
 
+	"github.com/Radon10043/cloud/src/pkg/tools"
 	"github.com/tmc/langchaingo/llms"
 )
 
 // ExecGetCurrentWeather executes the get_current_weather tool call, i.e. call GetCurrentWeather function
 // and returns the tool response as llms.MessageContent
-func ExecGetCurrentWeather(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
+func ExecGetCurrentWeather(tc *llms.ToolCall, th *tools.ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		Location string `json:"location"`
 	}

@@ -20,7 +20,8 @@ import (
 	"github.com/Radon10043/cloud/src/pkg/pool"
 	"github.com/Radon10043/cloud/src/pkg/queue"
 	"github.com/Radon10043/cloud/src/pkg/stage"
-	myTools "github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools/csrc"
 	"github.com/joho/godotenv"
 	"github.com/tmc/langchaingo/llms/openai"
 )
@@ -193,53 +194,53 @@ func createAgent(model string, db *database.Database) (*agent.Agent, error) {
 	if err != nil {
 		return nil, err
 	}
-	toolMap := map[string]myTools.ToolExec{
-		myTools.GetFuncCodeByNameTool.Function.Name: {
-			Tool: myTools.GetFuncCodeByNameTool,
-			Exec: myTools.ExecGetFuncCodeByName,
+	toolMap := map[string]tools.ToolExec{
+		csrc.GetFuncCodeByNameTool.Function.Name: {
+			Tool: csrc.GetFuncCodeByNameTool,
+			Exec: csrc.ExecGetFuncCodeByName,
 		},
-		myTools.GetEnumCodeByEnumeratorTool.Function.Name: {
-			Tool: myTools.GetEnumCodeByEnumeratorTool,
-			Exec: myTools.ExecGetEnumCodeByEnumerator,
+		csrc.GetEnumCodeByEnumeratorTool.Function.Name: {
+			Tool: csrc.GetEnumCodeByEnumeratorTool,
+			Exec: csrc.ExecGetEnumCodeByEnumerator,
 		},
-		myTools.GetEnumCodeBySpecifierTool.Function.Name: {
-			Tool: myTools.GetEnumCodeBySpecifierTool,
-			Exec: myTools.ExecGetEnumCodeBySpecifier,
+		csrc.GetEnumCodeBySpecifierTool.Function.Name: {
+			Tool: csrc.GetEnumCodeBySpecifierTool,
+			Exec: csrc.ExecGetEnumCodeBySpecifier,
 		},
-		myTools.GetStructCodeByNameTool.Function.Name: {
-			Tool: myTools.GetStructCodeByNameTool,
-			Exec: myTools.ExecGetStructCodeByName,
+		csrc.GetStructCodeByNameTool.Function.Name: {
+			Tool: csrc.GetStructCodeByNameTool,
+			Exec: csrc.ExecGetStructCodeByName,
 		},
-		myTools.GetUnionCodeByNameTool.Function.Name: {
-			Tool: myTools.GetUnionCodeByNameTool,
-			Exec: myTools.ExecGetUnionCodeByName,
+		csrc.GetUnionCodeByNameTool.Function.Name: {
+			Tool: csrc.GetUnionCodeByNameTool,
+			Exec: csrc.ExecGetUnionCodeByName,
 		},
-		myTools.GetGlobalVarCodeByNameTool.Function.Name: {
-			Tool: myTools.GetGlobalVarCodeByNameTool,
-			Exec: myTools.ExecGetGlobalVarCodeByName,
+		csrc.GetGlobalVarCodeByNameTool.Function.Name: {
+			Tool: csrc.GetGlobalVarCodeByNameTool,
+			Exec: csrc.ExecGetGlobalVarCodeByName,
 		},
-		myTools.GetTypedefCodeByDefineTool.Function.Name: {
-			Tool: myTools.GetTypedefCodeByDefineTool,
-			Exec: myTools.ExecGetTypedefCodeByDefine,
+		csrc.GetTypedefCodeByDefineTool.Function.Name: {
+			Tool: csrc.GetTypedefCodeByDefineTool,
+			Exec: csrc.ExecGetTypedefCodeByDefine,
 		},
-		myTools.GetTypedefTypeByDefineTool.Function.Name: {
-			Tool: myTools.GetTypedefTypeByDefineTool,
-			Exec: myTools.ExecGetTypedefTypeByDefine,
+		csrc.GetTypedefTypeByDefineTool.Function.Name: {
+			Tool: csrc.GetTypedefTypeByDefineTool,
+			Exec: csrc.ExecGetTypedefTypeByDefine,
 		},
-		myTools.GetMacroDefCodeByNameTool.Function.Name: {
-			Tool: myTools.GetMacroDefCodeByNameTool,
-			Exec: myTools.ExecGetMacroDefCodeByName,
+		csrc.GetMacroDefCodeByNameTool.Function.Name: {
+			Tool: csrc.GetMacroDefCodeByNameTool,
+			Exec: csrc.ExecGetMacroDefCodeByName,
 		},
-		myTools.GetMacroDefCodesByPatternTool.Function.Name: {
-			Tool: myTools.GetMacroDefCodesByPatternTool,
-			Exec: myTools.ExecGetMacroDefCodesByPattern,
+		csrc.GetMacroDefCodesByPatternTool.Function.Name: {
+			Tool: csrc.GetMacroDefCodesByPatternTool,
+			Exec: csrc.ExecGetMacroDefCodesByPattern,
 		},
-		myTools.GetMacroDefLocByNameTool.Function.Name: {
-			Tool: myTools.GetMacroDefLocByNameTool,
-			Exec: myTools.ExecGetMacroDefLocByName,
+		csrc.GetMacroDefLocByNameTool.Function.Name: {
+			Tool: csrc.GetMacroDefLocByNameTool,
+			Exec: csrc.ExecGetMacroDefLocByName,
 		},
 	}
-	toolHelper := &myTools.ToolHelper{
+	toolHelper := &tools.ToolHelper{
 		Db: db,
 	}
 	kAgent := agent.NewAgent(

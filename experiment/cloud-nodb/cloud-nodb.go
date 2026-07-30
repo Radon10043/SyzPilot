@@ -27,7 +27,7 @@ import (
 	osu "github.com/Radon10043/cloud/src/pkg/osutil"
 	"github.com/Radon10043/cloud/src/pkg/pool"
 	"github.com/Radon10043/cloud/src/pkg/stage"
-	myTools "github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools"
 	"github.com/joho/godotenv"
 	"github.com/otiai10/copy"
 	"github.com/tmc/langchaingo/llms/openai"
@@ -503,8 +503,8 @@ func createAgent(cfg *ProgConfig) (*agent.Agent, error) {
 	if err != nil {
 		return nil, err
 	}
-	toolMap := map[string]myTools.ToolExec{}
-	toolHelper := &myTools.ToolHelper{}
+	toolMap := map[string]tools.ToolExec{}
+	toolHelper := &tools.ToolHelper{}
 	kAgent := agent.NewAgent(
 		agent.WithModel(llm),
 		agent.WithMaxTokens(128<<10),

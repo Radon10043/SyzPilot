@@ -1,9 +1,10 @@
-package tools
+package csrc
 
 import (
 	"encoding/json"
 
 	"github.com/Radon10043/cloud/src/pkg/database"
+	"github.com/Radon10043/cloud/src/pkg/tools"
 	"github.com/tmc/langchaingo/llms"
 )
 
@@ -17,7 +18,7 @@ func GetGlobalVarEntryByName(name string, db *database.Database) (database.Globa
 }
 
 // ExecGetGlobalVarCodeByName execute the get_global_var_code_by_name tool call
-func ExecGetGlobalVarCodeByName(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
+func ExecGetGlobalVarCodeByName(tc *llms.ToolCall, th *tools.ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		VarName  string `json:"var_name"`
 		Rational string `json:"rational"`

@@ -1,14 +1,15 @@
-package tools
+package csrc
 
 import (
 	"encoding/json"
 
 	"github.com/Radon10043/cloud/src/pkg/database"
+	"github.com/Radon10043/cloud/src/pkg/tools"
 	"github.com/tmc/langchaingo/llms"
 )
 
 // ExecGetEnumCodeByEnumerator execute the get_enum_code_by_enumerator tool call
-func ExecGetEnumCodeByEnumerator(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
+func ExecGetEnumCodeByEnumerator(tc *llms.ToolCall, th *tools.ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		Enumerator string `json:"enumerator"`
 		Rational   string `json:"rational"`
@@ -68,7 +69,7 @@ var GetEnumCodeByEnumeratorTool = llms.Tool{
 }
 
 // ExecGetEnumCodeBySpecifier execute the get_enum_code_by_specifier tool call
-func ExecGetEnumCodeBySpecifier(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
+func ExecGetEnumCodeBySpecifier(tc *llms.ToolCall, th *tools.ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		Specifier string `json:"specifier"`
 		Rational  string `json:"rational"`

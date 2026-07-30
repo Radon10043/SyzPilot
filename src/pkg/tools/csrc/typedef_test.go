@@ -1,4 +1,4 @@
-package tools_test
+package csrc_test
 
 import (
 	"context"
@@ -7,7 +7,8 @@ import (
 
 	"github.com/Radon10043/cloud/src/pkg/agent"
 	"github.com/Radon10043/cloud/src/pkg/database"
-	myTools "github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools/csrc"
 	"github.com/tmc/langchaingo/llms"
 )
 
@@ -18,13 +19,13 @@ func TestGetTypedefCodeByDefine(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	toolMap := map[string]myTools.ToolExec{
-		myTools.GetTypedefCodeByDefineTool.Function.Name: {
-			Tool: myTools.GetTypedefCodeByDefineTool,
-			Exec: myTools.ExecGetTypedefCodeByDefine,
+	toolMap := map[string]tools.ToolExec{
+		csrc.GetTypedefCodeByDefineTool.Function.Name: {
+			Tool: csrc.GetTypedefCodeByDefineTool,
+			Exec: csrc.ExecGetTypedefCodeByDefine,
 		},
 	}
-	toolHelper := &myTools.ToolHelper{
+	toolHelper := &tools.ToolHelper{
 		Db: &db,
 	}
 	ctx := context.Background()
@@ -58,13 +59,13 @@ func TestGetTypedefTypeByDefine(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	toolMap := map[string]myTools.ToolExec{
-		myTools.GetTypedefTypeByDefineTool.Function.Name: {
-			Tool: myTools.GetTypedefTypeByDefineTool,
-			Exec: myTools.ExecGetTypedefTypeByDefine,
+	toolMap := map[string]tools.ToolExec{
+		csrc.GetTypedefTypeByDefineTool.Function.Name: {
+			Tool: csrc.GetTypedefTypeByDefineTool,
+			Exec: csrc.ExecGetTypedefTypeByDefine,
 		},
 	}
-	toolHelper := &myTools.ToolHelper{
+	toolHelper := &tools.ToolHelper{
 		Db: &db,
 	}
 	ctx := context.Background()

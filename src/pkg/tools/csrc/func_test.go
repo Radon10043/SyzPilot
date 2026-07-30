@@ -1,4 +1,4 @@
-package tools_test
+package csrc_test
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/Radon10043/cloud/src/pkg/agent"
 	"github.com/Radon10043/cloud/src/pkg/database"
 	myTools "github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools/csrc"
 	"github.com/tmc/langchaingo/llms"
 )
 
@@ -19,9 +20,9 @@ func TestGetFuncCodeByName(t *testing.T) {
 	}
 	defer db.Close()
 	toolMap := map[string]myTools.ToolExec{
-		myTools.GetFuncCodeByNameTool.Function.Name: {
-			Tool: myTools.GetFuncCodeByNameTool,
-			Exec: myTools.ExecGetFuncCodeByName,
+		csrc.GetFuncCodeByNameTool.Function.Name: {
+			Tool: csrc.GetFuncCodeByNameTool,
+			Exec: csrc.ExecGetFuncCodeByName,
 		},
 	}
 	toolHelper := &myTools.ToolHelper{

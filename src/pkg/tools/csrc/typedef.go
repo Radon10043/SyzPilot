@@ -1,31 +1,32 @@
-package tools
+package csrc
 
 import (
 	"encoding/json"
 
 	"github.com/Radon10043/cloud/src/pkg/database"
+	"github.com/Radon10043/cloud/src/pkg/tools"
 	"github.com/tmc/langchaingo/llms"
 )
 
-// GetStructEntryByName get the struct entry by struct name
-func GetStructEntryByName(name string, db *database.Database) (database.Record, error) {
-	entry, err := db.GetStruct(name)
+// GetTypedefEntryByDefine get the typedef entry by its define
+func GetTypedefEntryByDefine(define string, db *database.Database) (database.Typedef, error) {
+	entry, err := db.GetTypedef(define)
 	if err != nil {
-		return database.Record{}, err
+		return database.Typedef{}, err
 	}
 	return entry, nil
 }
 
-// ExecGetStructCodeByName execute the get_struct_code_by_name tool call
-func ExecGetStructCodeByName(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
+// ExecGetTypedefCodeByDefine execute the get_typedef_code_by_define tool call
+func ExecGetTypedefCodeByDefine(tc *llms.ToolCall, th *tools.ToolHelper) (llms.MessageContent, error) {
 	var args struct {
-		StructName string `json:"struct_name"`
-		Rational   string `json:"rational"`
+		TypedefDefine string `json:"typedef_define"`
+		Rational      string `json:"rational"`
 	}
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := GetStructEntryByName(args.StructName, th.Db)
+	resp, err := GetTypedefEntryByDefine(args.TypedefDefine, th.Db)
 	var respContent string = ""
 	if err != nil {
 		respContent = err.Error() // likely not found error
@@ -45,52 +46,42 @@ func ExecGetStructCodeByName(tc *llms.ToolCall, th *ToolHelper) (llms.MessageCon
 	return tcResp, nil
 }
 
-var GetStructCodeByNameTool = llms.Tool{
+var GetTypedefCodeByDefineTool = llms.Tool{
 	Type: "function",
 	Function: &llms.FunctionDefinition{
-		Name:        "get_struct_code_by_name",
-		Description: "Retrieve the code of a struct given its name.",
+		Name:        "get_typedef_code_by_define",
+		Description: "Retrieve the code of a typedef given its define.",
 		Parameters: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"struct_name": map[string]any{
+				"typedef_define": map[string]any{
 					"type":        "string",
-					"description": "The name of the struct to retrieve the code for.",
+					"description": "The define of the typedef to retrieve the code for.",
 				},
 				"rational": map[string]any{
 					"type":        "string",
 					"description": "The rationale for choosing this function call with these parameters",
 				},
 			},
-			"required": []string{"struct_name", "rational"},
+			"required": []string{"typedef_define", "rational"},
 		},
 	},
 }
 
-// GetUnionEntryByName get the union entry by union name
-func GetUnionEntryByName(name string, db *database.Database) (database.Record, error) {
-	entry, err := db.GetUnion(name)
-	if err != nil {
-		return database.Record{}, err
-	}
-	return entry, nil
-}
-
-// ExecGetUnionCodeByName execute the get_union_code_by_name tool call
-func ExecGetUnionCodeByName(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
+// ExecGetTypedefTypeByDefine execute the get_typedef_type_by_define tool call
+func ExecGetTypedefTypeByDefine(tc *llms.ToolCall, th *tools.ToolHelper) (llms.MessageContent, error) {
 	var args struct {
-		UnionName string `json:"union_name"`
-		Rational  string `json:"rational"`
+		TypedefDefine string `json:"typedef_define"`
 	}
 	if err := json.Unmarshal([]byte(tc.FunctionCall.Arguments), &args); err != nil {
 		return llms.MessageContent{}, err
 	}
-	resp, err := GetUnionEntryByName(args.UnionName, th.Db)
+	resp, err := GetTypedefEntryByDefine(args.TypedefDefine, th.Db)
 	var respContent string = ""
 	if err != nil {
 		respContent = err.Error() // likely not found error
 	} else {
-		respContent = resp.Code
+		respContent = resp.Type
 	}
 	tcResp := llms.MessageContent{
 		Role: llms.ChatMessageTypeTool,
@@ -105,24 +96,24 @@ func ExecGetUnionCodeByName(tc *llms.ToolCall, th *ToolHelper) (llms.MessageCont
 	return tcResp, nil
 }
 
-var GetUnionCodeByNameTool = llms.Tool{
+var GetTypedefTypeByDefineTool = llms.Tool{
 	Type: "function",
 	Function: &llms.FunctionDefinition{
-		Name:        "get_union_code_by_name",
-		Description: "Retrieve the code of a union given its name.",
+		Name:        "get_typedef_type_by_define",
+		Description: "Retrieve the type of a typedef given its define.",
 		Parameters: map[string]any{
 			"type": "object",
 			"properties": map[string]any{
-				"union_name": map[string]any{
+				"typedef_define": map[string]any{
 					"type":        "string",
-					"description": "The name of the union to retrieve the code for.",
+					"description": "The define of the typedef to retrieve the type for.",
 				},
 				"rational": map[string]any{
 					"type":        "string",
 					"description": "The rationale for choosing this function call with these parameters",
 				},
 			},
-			"required": []string{"union_name", "rational"},
+			"required": []string{"typedef_define"},
 		},
 	},
 }

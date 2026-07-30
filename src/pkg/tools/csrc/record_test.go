@@ -1,4 +1,4 @@
-package tools_test
+package csrc_test
 
 import (
 	"context"
@@ -7,7 +7,8 @@ import (
 
 	"github.com/Radon10043/cloud/src/pkg/agent"
 	"github.com/Radon10043/cloud/src/pkg/database"
-	myTools "github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools/csrc"
 	"github.com/tmc/langchaingo/llms"
 )
 
@@ -15,13 +16,13 @@ func TestGetStructCodeByName(t *testing.T) {
 	db := database.Database{Path: filepath.Join(root, "data", "database", "linux.db")}
 	db.Connect()
 	defer db.Close()
-	toolMap := map[string]myTools.ToolExec{
-		myTools.GetStructCodeByNameTool.Function.Name: {
-			Tool: myTools.GetStructCodeByNameTool,
-			Exec: myTools.ExecGetStructCodeByName,
+	toolMap := map[string]tools.ToolExec{
+		csrc.GetStructCodeByNameTool.Function.Name: {
+			Tool: csrc.GetStructCodeByNameTool,
+			Exec: csrc.ExecGetStructCodeByName,
 		},
 	}
-	toolHelper := &myTools.ToolHelper{
+	toolHelper := &tools.ToolHelper{
 		Db: &db,
 	}
 	ctx := context.Background()
@@ -55,13 +56,13 @@ func TestGetUnionCodeByName(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	toolMap := map[string]myTools.ToolExec{
-		myTools.GetUnionCodeByNameTool.Function.Name: {
-			Tool: myTools.GetUnionCodeByNameTool,
-			Exec: myTools.ExecGetUnionCodeByName,
+	toolMap := map[string]tools.ToolExec{
+		csrc.GetUnionCodeByNameTool.Function.Name: {
+			Tool: csrc.GetUnionCodeByNameTool,
+			Exec: csrc.ExecGetUnionCodeByName,
 		},
 	}
-	toolHelper := &myTools.ToolHelper{
+	toolHelper := &tools.ToolHelper{
 		Db: &db,
 	}
 	ctx := context.Background()

@@ -39,24 +39,25 @@ import (
 	osu "github.com/Radon10043/cloud/src/pkg/osutil"
 	"github.com/Radon10043/cloud/src/pkg/pool"
 	"github.com/Radon10043/cloud/src/pkg/stage"
-	myTools "github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools/csrc"
 	"github.com/joho/godotenv"
 	"github.com/otiai10/copy"
 	"github.com/tmc/langchaingo/llms/openai"
 )
 
-var availableTools = map[string]myTools.ToolExec{
-	myTools.GetFuncCodeByNameTool.Function.Name:         {Tool: myTools.GetFuncCodeByNameTool, Exec: myTools.ExecGetFuncCodeByName},
-	myTools.GetEnumCodeByEnumeratorTool.Function.Name:   {Tool: myTools.GetEnumCodeByEnumeratorTool, Exec: myTools.ExecGetEnumCodeByEnumerator},
-	myTools.GetEnumCodeBySpecifierTool.Function.Name:    {Tool: myTools.GetEnumCodeBySpecifierTool, Exec: myTools.ExecGetEnumCodeBySpecifier},
-	myTools.GetStructCodeByNameTool.Function.Name:       {Tool: myTools.GetStructCodeByNameTool, Exec: myTools.ExecGetStructCodeByName},
-	myTools.GetUnionCodeByNameTool.Function.Name:        {Tool: myTools.GetUnionCodeByNameTool, Exec: myTools.ExecGetUnionCodeByName},
-	myTools.GetGlobalVarCodeByNameTool.Function.Name:    {Tool: myTools.GetGlobalVarCodeByNameTool, Exec: myTools.ExecGetGlobalVarCodeByName},
-	myTools.GetTypedefCodeByDefineTool.Function.Name:    {Tool: myTools.GetTypedefCodeByDefineTool, Exec: myTools.ExecGetTypedefCodeByDefine},
-	myTools.GetTypedefTypeByDefineTool.Function.Name:    {Tool: myTools.GetTypedefTypeByDefineTool, Exec: myTools.ExecGetTypedefTypeByDefine},
-	myTools.GetMacroDefCodeByNameTool.Function.Name:     {Tool: myTools.GetMacroDefCodeByNameTool, Exec: myTools.ExecGetMacroDefCodeByName},
-	myTools.GetMacroDefCodesByPatternTool.Function.Name: {Tool: myTools.GetMacroDefCodesByPatternTool, Exec: myTools.ExecGetMacroDefCodesByPattern},
-	myTools.GetMacroDefLocByNameTool.Function.Name:      {Tool: myTools.GetMacroDefLocByNameTool, Exec: myTools.ExecGetMacroDefLocByName},
+var availableTools = map[string]tools.ToolExec{
+	csrc.GetFuncCodeByNameTool.Function.Name:         {Tool: csrc.GetFuncCodeByNameTool, Exec: csrc.ExecGetFuncCodeByName},
+	csrc.GetEnumCodeByEnumeratorTool.Function.Name:   {Tool: csrc.GetEnumCodeByEnumeratorTool, Exec: csrc.ExecGetEnumCodeByEnumerator},
+	csrc.GetEnumCodeBySpecifierTool.Function.Name:    {Tool: csrc.GetEnumCodeBySpecifierTool, Exec: csrc.ExecGetEnumCodeBySpecifier},
+	csrc.GetStructCodeByNameTool.Function.Name:       {Tool: csrc.GetStructCodeByNameTool, Exec: csrc.ExecGetStructCodeByName},
+	csrc.GetUnionCodeByNameTool.Function.Name:        {Tool: csrc.GetUnionCodeByNameTool, Exec: csrc.ExecGetUnionCodeByName},
+	csrc.GetGlobalVarCodeByNameTool.Function.Name:    {Tool: csrc.GetGlobalVarCodeByNameTool, Exec: csrc.ExecGetGlobalVarCodeByName},
+	csrc.GetTypedefCodeByDefineTool.Function.Name:    {Tool: csrc.GetTypedefCodeByDefineTool, Exec: csrc.ExecGetTypedefCodeByDefine},
+	csrc.GetTypedefTypeByDefineTool.Function.Name:    {Tool: csrc.GetTypedefTypeByDefineTool, Exec: csrc.ExecGetTypedefTypeByDefine},
+	csrc.GetMacroDefCodeByNameTool.Function.Name:     {Tool: csrc.GetMacroDefCodeByNameTool, Exec: csrc.ExecGetMacroDefCodeByName},
+	csrc.GetMacroDefCodesByPatternTool.Function.Name: {Tool: csrc.GetMacroDefCodesByPatternTool, Exec: csrc.ExecGetMacroDefCodesByPattern},
+	csrc.GetMacroDefLocByNameTool.Function.Name:      {Tool: csrc.GetMacroDefLocByNameTool, Exec: csrc.ExecGetMacroDefLocByName},
 }
 
 // RefEntry is a struct to store reference entry for spec generation,
@@ -593,7 +594,7 @@ func writeJob(tid int, db *database.Database, cfg *ProgConfig, wjs <-chan WriteJ
 }
 
 // createAgent creates an agent instance with the given configuration and database, return the agent instance and error
-func createAgent(cfg *ProgConfig, db *database.Database, availableTools map[string]myTools.ToolExec) (*agent.Agent, error) {
+func createAgent(cfg *ProgConfig, db *database.Database, availableTools map[string]tools.ToolExec) (*agent.Agent, error) {
 	llm, err := openai.New(
 		openai.WithBaseURL(os.Getenv("OPENAI_BASE_URL")),
 		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
@@ -602,7 +603,7 @@ func createAgent(cfg *ProgConfig, db *database.Database, availableTools map[stri
 	if err != nil {
 		return nil, err
 	}
-	toolHelper := &myTools.ToolHelper{
+	toolHelper := &tools.ToolHelper{
 		Db: db,
 	}
 	kAgent := agent.NewAgent(

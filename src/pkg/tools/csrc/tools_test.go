@@ -1,4 +1,4 @@
-package tools_test
+package csrc_test
 
 import (
 	"os"

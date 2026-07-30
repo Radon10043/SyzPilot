@@ -8,7 +8,8 @@ import (
 	"testing"
 
 	"github.com/Radon10043/cloud/src/pkg/agent"
-	myTools "github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools/toy"
 	"github.com/joho/godotenv"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"
@@ -30,10 +31,10 @@ func init() {
 		openai.WithToken(os.Getenv("OPENAI_API_KEY")),
 		openai.WithModel("gemini-3-pro-preview"),
 	)
-	toolMap := make(map[string]myTools.ToolExec)
-	toolMap[myTools.Toys[0].Function.Name] = myTools.ToolExec{
-		Tool: myTools.Toys[0],
-		Exec: myTools.ExecGetCurrentWeather,
+	toolMap := make(map[string]tools.ToolExec)
+	toolMap[toy.Toys[0].Function.Name] = tools.ToolExec{
+		Tool: toy.Toys[0],
+		Exec: toy.ExecGetCurrentWeather,
 	}
 	testAgent = agent.Agent{
 		Ctx:        context.Background(),

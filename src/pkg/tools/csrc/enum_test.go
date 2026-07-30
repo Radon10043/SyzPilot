@@ -1,4 +1,4 @@
-package tools_test
+package csrc_test
 
 import (
 	"context"
@@ -7,7 +7,8 @@ import (
 
 	"github.com/Radon10043/cloud/src/pkg/agent"
 	"github.com/Radon10043/cloud/src/pkg/database"
-	myTools "github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools"
+	"github.com/Radon10043/cloud/src/pkg/tools/csrc"
 	"github.com/tmc/langchaingo/llms"
 )
 
@@ -18,13 +19,13 @@ func TestGetEnumCodeByEnumerator(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	toolMap := map[string]myTools.ToolExec{
-		myTools.GetEnumCodeByEnumeratorTool.Function.Name: {
-			Tool: myTools.GetEnumCodeByEnumeratorTool,
-			Exec: myTools.ExecGetEnumCodeByEnumerator,
+	toolMap := map[string]tools.ToolExec{
+		csrc.GetEnumCodeByEnumeratorTool.Function.Name: {
+			Tool: csrc.GetEnumCodeByEnumeratorTool,
+			Exec: csrc.ExecGetEnumCodeByEnumerator,
 		},
 	}
-	toolHelper := &myTools.ToolHelper{
+	toolHelper := &tools.ToolHelper{
 		Db: &db,
 	}
 	ctx := context.Background()
@@ -58,13 +59,13 @@ func TestGetEnumCodeBySpecifier(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	toolMap := map[string]myTools.ToolExec{
-		myTools.GetEnumCodeBySpecifierTool.Function.Name: {
-			Tool: myTools.GetEnumCodeBySpecifierTool,
-			Exec: myTools.ExecGetEnumCodeBySpecifier,
+	toolMap := map[string]tools.ToolExec{
+		csrc.GetEnumCodeBySpecifierTool.Function.Name: {
+			Tool: csrc.GetEnumCodeBySpecifierTool,
+			Exec: csrc.ExecGetEnumCodeBySpecifier,
 		},
 	}
-	toolHelper := &myTools.ToolHelper{
+	toolHelper := &tools.ToolHelper{
 		Db: &db,
 	}
 	ctx := context.Background()

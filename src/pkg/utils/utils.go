@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io/fs"
+	"path/filepath"
 	"strings"
 
 	"github.com/tmc/langchaingo/llms"
@@ -97,4 +99,21 @@ func PreserveLines(buf *bytes.Buffer, keywords []string) bytes.Buffer {
 		}
 	}
 	return fbuf
+}
+
+// Dirsize calculates size of a specific directory, returns directory size (bytes) and error messages
+func Dirsize(path string) (int64, error) {
+	var size int64
+	err := filepath.WalkDir(path, func(_ string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if !d.IsDir() {
+			if info, err := d.Info(); err == nil {
+				size += info.Size()
+			}
+		}
+		return nil
+	})
+	return size, err
 }

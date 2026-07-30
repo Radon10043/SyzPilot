@@ -1,9 +1,10 @@
-package tools
+package csrc
 
 import (
 	"encoding/json"
 
 	"github.com/Radon10043/cloud/src/pkg/database"
+	"github.com/Radon10043/cloud/src/pkg/tools"
 	"github.com/tmc/langchaingo/llms"
 )
 
@@ -17,7 +18,7 @@ func GetFuncEntryByName(name string, db *database.Database) (database.Function, 
 }
 
 // ExecGetFuncCodeByName execute the get_func_code_by_name tool call
-func ExecGetFuncCodeByName(tc *llms.ToolCall, th *ToolHelper) (llms.MessageContent, error) {
+func ExecGetFuncCodeByName(tc *llms.ToolCall, th *tools.ToolHelper) (llms.MessageContent, error) {
 	var args struct {
 		FunctionName string `json:"function_name"`
 		Rational     string `json:"rational"`
