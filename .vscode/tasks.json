@@ -4,6 +4,11 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "rm -f ./.workdir/debug/fuchsia.db*",
+            "type": "shell",
+            "command": "rm -f ./.workdir/debug/fuchsia.db*",
+        },
+        {
             "label": "make generator syz-utils",
             "type": "shell",
             "command": "make generator syz-utils DEBUG=true",

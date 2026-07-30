@@ -5,6 +5,19 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "go: launch src/fanalyzer/fanalyzer.go",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}/src/fanalyzer/fanalyzer.go",
+            "cwd": "${workspaceFolder}",
+            "args": [
+                "-fidl=${workspaceFolder}/../../kernel/fuchsia/releases.f30/out/x64/fidling/gen/sdk/fidl",
+                "-outdb=${workspaceFolder}/.workdir/debug/fuchsia.db",
+            ],
+            "preLaunchTask": "rm -f ./.workdir/debug/fuchsia.db*"
+        },
+        {
             "name": "go: launch src/rmunused",
             "type": "go",
             "request": "launch",
