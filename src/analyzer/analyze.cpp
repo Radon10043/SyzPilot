@@ -1,6 +1,6 @@
-#include <iostream>
 #include <memory>
 #include <string>
+#include <system_error>
 #include <thread>
 #include <vector>
 
@@ -434,7 +434,10 @@ int main(int argc, const char **argv) {
     /* make extra includes absolute */
     for (auto &inc : ExtraIncludes) {
         llvm::SmallString<256> path(inc);
-        llvm::sys::fs::make_absolute(path);
+        if (std::error_code err = llvm::sys::fs::make_absolute(path)) {
+            errs() << "Failed to make path absolute: " << inc << ", error: " << err.message() << "\n";
+            continue;
+        }
         llvm::sys::path::remove_dots(path, true);
         inc = path.str().str();
     }
