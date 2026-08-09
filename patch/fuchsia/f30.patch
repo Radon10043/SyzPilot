@@ -72,7 +72,7 @@ index 6e7ec931338..6197bbf46a4 100644
 +  starnix_sancov = false
  }
 diff --git a/src/starnix/kernel/BUILD.gn b/src/starnix/kernel/BUILD.gn
-index 4098dc1b3dd..3c5f7dd59ec 100644
+index b31c74fff03..00e96e1b802 100644
 --- a/src/starnix/kernel/BUILD.gn
 +++ b/src/starnix/kernel/BUILD.gn
 @@ -53,6 +53,7 @@ rustc_binary("starnix_kernel_bin") {
@@ -99,7 +99,7 @@ index bfa893681df..94bc89b3bc3 100644
      fruntime::job_default()
          .set_critical(zx::JobCriticalOptions::RETCODE_NONZERO, &fruntime::process_self())
 diff --git a/src/starnix/lib/ebpf/BUILD.gn b/src/starnix/lib/ebpf/BUILD.gn
-index f9f20802c43..509968bebfb 100644
+index 1bbe5189097..c8f8be101fa 100644
 --- a/src/starnix/lib/ebpf/BUILD.gn
 +++ b/src/starnix/lib/ebpf/BUILD.gn
 @@ -41,7 +41,7 @@ rustc_library("ebpf") {
@@ -317,7 +317,7 @@ index 00000000000..c13ecc3c6b8
 +}  // extern "C"
 diff --git a/src/starnix/lib/starnix_sancov/src/lib.rs b/src/starnix/lib/starnix_sancov/src/lib.rs
 new file mode 100644
-index 00000000000..be5dcdbf4d4
+index 00000000000..639cae8f056
 --- /dev/null
 +++ b/src/starnix/lib/starnix_sancov/src/lib.rs
 @@ -0,0 +1,113 @@
@@ -334,7 +334,7 @@ index 00000000000..be5dcdbf4d4
 +//! how the tables reach programs running in the container.
 +
 +use std::sync::OnceLock;
-+use zx::HandleBased as _;
++use zx::{AsHandleRef as _, HandleBased as _};
 +
 +unsafe extern "C" {
 +    fn starnix_sancov_guards_count() -> usize;
@@ -435,7 +435,7 @@ index 00000000000..be5dcdbf4d4
 +    vmo.duplicate_handle(rights)
 +}
 diff --git a/src/starnix/modules/procfs/BUILD.gn b/src/starnix/modules/procfs/BUILD.gn
-index 4571fa8afd5..29ca3e02cd3 100644
+index 0b381995a18..01bd156d9f2 100644
 --- a/src/starnix/modules/procfs/BUILD.gn
 +++ b/src/starnix/modules/procfs/BUILD.gn
 @@ -28,6 +28,7 @@ rustc_library("procfs") {
@@ -446,7 +446,7 @@ index 4571fa8afd5..29ca3e02cd3 100644
      "self_symlink.rs",
      "stat.rs",
      "swaps.rs",
-@@ -62,6 +63,7 @@ rustc_library("procfs") {
+@@ -59,6 +60,7 @@ rustc_library("procfs") {
      "//src/lib/fuchsia-component",
      "//src/starnix/kernel/core",
      "//src/starnix/lib/starnix_logging",
@@ -467,7 +467,7 @@ index d6148f242fe..de2977ad320 100644
  mod stat;
  mod swaps;
 diff --git a/src/starnix/modules/procfs/proc_directory.rs b/src/starnix/modules/procfs/proc_directory.rs
-index dfba6079c28..ca2da0ca77c 100644
+index 3cda7d659be..c112dd5fc22 100644
 --- a/src/starnix/modules/procfs/proc_directory.rs
 +++ b/src/starnix/modules/procfs/proc_directory.rs
 @@ -15,6 +15,7 @@ use crate::misc::MiscFile;
@@ -534,7 +534,7 @@ index 00000000000..362ad6a2df9
 +    Some(dir.into_node(fs, 0o555))
 +}
 diff --git a/src/starnix/runner/BUILD.gn b/src/starnix/runner/BUILD.gn
-index bc8fe73a56d..ccb154e5282 100644
+index a58ddcaf295..8ad43d73e53 100644
 --- a/src/starnix/runner/BUILD.gn
 +++ b/src/starnix/runner/BUILD.gn
 @@ -4,6 +4,7 @@
