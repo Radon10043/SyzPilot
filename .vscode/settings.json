@@ -80,5 +80,20 @@
     "go.testTimeout": "5m",
     "sqliteViewer.maxFileSize": 600,
     "explorer.sortOrder": "type",
-    "workbench.editorLargeFileConfirmation": 200
+    "workbench.editorLargeFileConfirmation": 200,
+    "clangd.arguments": [
+        "--background-index"
+    ],
+    "clangd.fallbackFlags": [
+        "-I/llvm-19/include",
+        "-std=c++17",
+        "-fno-exceptions",
+        "-funwind-tables",
+        "-fno-rtti",
+        "-D_GNU_SOURCE",
+        "-D__STDC_CONSTANT_MACROS",
+        "-D__STDC_FORMAT_MACROS",
+        "-D__STDC_LIMIT_MACROS",
+        "-D__CLANG_RESOURCE_DIR__=\"/llvm-19/lib/clang/19\""
+    ]
 }
