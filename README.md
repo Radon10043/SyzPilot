@@ -315,13 +315,13 @@ To ensure anonymity, we will release all links after the paper is accepted.
 Bugs related to our generated specifications and reported by syzbot:
 
 - CVE-0000-00000, BUG: corrupted list in io_poll_remove_entries
+- CVE-0000-00000, INFO: task hung in nilfs_transaction_begin
 - CVE-0000-00000, KMSAN: uninit-value in vidtv_ts_null_write_into
 - CVE-0000-00000, general protection fault in nilfs_mdt_save_to_shadow_map
 - CVE-0000-00000, memory leak in vidtv_psi_service_desc_init
 - CVE-0000-00000, WARNING in nilfs_btree_mark
 - CVE-0000-00000, WARNING in nilfs_ioctl_prepare_clean_segments
 - BUG: corrupted list in nilfs_lookup_dirty_data_buffers
-- INFO: task hung in nilfs_transaction_begin
 - INFO: trying to register non-static key in as102_dvb_dmx_start_feed
 - KASAN: slab-use-after-free Read in dvb_device_open
 - KASAN: slab-use-after-free Read in dvb_frontend_release
