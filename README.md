@@ -46,9 +46,9 @@ If you do not want to re-synthesize specs, you can [reuse our synthesized specs]
 Download SyzPilot and the associated syzkaller checkout:
 ```bash
 # export SYZPILOT=/vol/SyzPilot
-mkdir /vol/SyzPilot && cd /vol/SyzPilot
+mkdir /vol/SyzPilot
 wget -O /vol/SyzPilot/src.zip https://anonymous.4open.science/api/repo/SyzPilot/zip
-cd SyzPilot && unzip src.zip && rm src.zip
+unzip src.zip && rm src.zip
 git clone https://github.com/google/syzkaller
 cd syzkaller && git checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
 ```
@@ -268,7 +268,7 @@ git apply ../patch/specs-subsystem/*
 
 ## Reproduce evaluation
 
-Please follow [env-setup.md](experiment/docs/env-setup.md) to setup the evaluation environment. You can then reproduce our evaluation using the [Docker Compose files](experiment/docs/docker-compose.md).
+Please follow [setup-env.md](experiment/docs/setup-env.md) to setup the evaluation environment. You can then reproduce our evaluation using the [Docker Compose files](experiment/docs/docker-compose.md).
 
 ## Re-synthesize subsystem specs
 
