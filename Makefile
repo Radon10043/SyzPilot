@@ -51,6 +51,9 @@ analyzer: prepare
 fanalyzer: prepare
 	$(GO) build $(GOFLAGS) -o bin/fanalyzer github.com/Radon10043/cloud/src/fanalyzer/
 
+fidlgen_syzkaller: prepare
+	$(GO) build $(GOFLAGS) -o bin/fidlgen_syzkaller github.com/Radon10043/cloud/experiment/fidlgen_syzkaller/src/
+
 generator: prepare
 	$(GO) build $(GOFLAGS) -o bin/generator github.com/Radon10043/cloud/src/generator/
 
