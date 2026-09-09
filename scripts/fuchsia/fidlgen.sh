@@ -62,9 +62,12 @@ fi
 
 # generate specs
 mkdir -p $OUTDIR
-FIDLGEN_SYZKALLER=$FUCHSIA/out/x64/host_x64/fidlgen_syzkaller
-FIDL_JSONIR_ROOT=$FUCHSIA/out/x64/fidling/gen/sdk/fidl
-FILES=$(find $FIDL_JSONIR_ROOT -maxdepth 2 -name "*.fidl.json")
+FIDLGEN_SYZKALLER=$(realpath $(dirname $0)/../..)/bin/fidlgen_syzkaller
+FIDL_JSONIR_ROOTS=(
+    $FUCHSIA/out/x64/fidling/gen/sdk/fidl
+    $FUCHSIA/out/x64/fidling/gen/src/storage/fxfs/fidl/fuchsia.fxfs
+)
+FILES=$(find "${FIDL_JSONIR_ROOTS[@]}" -maxdepth 2 -name "*.fidl.json")
 NUM_SUCCESS=0
 NUM_FAILED=0
 for file in $FILES; do
