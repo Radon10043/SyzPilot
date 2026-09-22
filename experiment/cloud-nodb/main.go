@@ -3,7 +3,7 @@
 // syscall specs from scratch. The source is duplicated from src/generator/main.go
 // on be85413e. Please note that the implementation of this variant is very dirty
 // and I only use it for quick testing. Please run this program under root
-// directory of cloud :)
+// directory of SyzPilot :)
 
 package main
 

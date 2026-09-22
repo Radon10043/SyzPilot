@@ -24,7 +24,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	wd, err := os.MkdirTemp(os.TempDir(), "cloud-*")
+	wd, err := os.MkdirTemp(os.TempDir(), "syzpilot-*")
 	if err != nil {
 		panic(err)
 	}

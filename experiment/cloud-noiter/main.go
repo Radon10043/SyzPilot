@@ -4,7 +4,7 @@
 // to generate syscall specs. The source of this file is duplicated from
 // src/generator/main.go on be85413e. Please note that the implementation of this
 // variant is very dirty and I only use it for quick testing. Please run this
-// program under root directory of cloud :)
+// program under root directory of SyzPilot :)
 
 package main
 

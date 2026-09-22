@@ -2,7 +2,7 @@
 // whether every designed tool is useful. The source is duplicated from
 // src/generator/main.go on b6592dee with some changes. Please note that the
 // implementation of this variant is very dirty and I only use it for quick
-// testing. Please run this program under root directory of cloud :)
+// testing. Please run this program under root directory of SyzPilot :)
 //
 // following are tools can be disabled:
 // 	- get_enum_code_by_enumerator
