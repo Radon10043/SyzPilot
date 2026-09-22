@@ -1,6 +1,8 @@
-# Example of writing spec for media driver (1)
+# Examples of writing spec for media driver
 
-## Input
+`(Tool call: <tool> <target>)` marks a tool call and the code block after it is the tool result. `/* ... */` marks lines omitted in this example only; real tool results are complete.
+
+Every media example's input is this code block followed by its request line:
 
 ```c
 static const struct media_file_operations media_device_fops = {
@@ -14,81 +16,35 @@ static const struct media_file_operations media_device_fops = {
 }
 ```
 
-Please write specification for initialization syscall `syz_open_dev$media`.
+## Example 1
 
-## Output
+Request: Please write specification for init_syscall `syz_open_dev$media`
 
 ### Thought
 
-**Task**: Define `syz_open_dev$media`.
+Confirm the device node name instead of guessing.
 
-**Identify Device Path**: I need to determine the device path pattern. Based on the name `media`, it is likely a char device under `/dev`. I will check `media_devnode_register` to confirm the naming convention.
-
-(Calling tool to get source code of function `media_devnode_register`)
+(Tool call: get_func_code_by_name `media_devnode_register`)
 
 ```c
 int __must_check media_devnode_register(struct media_device *mdev,
 					struct media_devnode *devnode,
 					struct module *owner)
 {
-	int minor;
-	int ret;
-
-	/* Part 1: Find a free minor number */
-	mutex_lock(&media_devnode_lock);
+	/* ... */
 	minor = find_first_zero_bit(media_devnode_nums, MEDIA_NUM_DEVICES);
-	if (minor == MEDIA_NUM_DEVICES) {
-		mutex_unlock(&media_devnode_lock);
-		pr_err("could not get a free minor\n");
-		kfree(devnode);
-		return -ENFILE;
-	}
-
-	set_bit(minor, media_devnode_nums);
-	mutex_unlock(&media_devnode_lock);
-
-	devnode->minor = minor;
-	devnode->media_dev = mdev;
-
-	/* Part 1: Initialize dev now to use dev.kobj for cdev.kobj.parent */
-	devnode->dev.bus = &media_bus_type;
-	devnode->dev.devt = MKDEV(MAJOR(media_dev_t), devnode->minor);
-	devnode->dev.release = media_devnode_release;
-	if (devnode->parent)
-		devnode->dev.parent = devnode->parent;
+	/* ... */
 	dev_set_name(&devnode->dev, "media%d", devnode->minor);
 	device_initialize(&devnode->dev);
 
 	/* Part 2: Initialize the character device */
 	cdev_init(&devnode->cdev, &media_devnode_fops);
-	devnode->cdev.owner = owner;
-	kobject_set_name(&devnode->cdev.kobj, "media%d", devnode->minor);
-
-	/* Part 3: Add the media and char device */
-	set_bit(MEDIA_FLAG_REGISTERED, &devnode->flags);
-	ret = cdev_device_add(&devnode->cdev, &devnode->dev);
-	if (ret < 0) {
-		clear_bit(MEDIA_FLAG_REGISTERED, &devnode->flags);
-		pr_err("%s: cdev_device_add failed\n", __func__);
-		goto cdev_add_error;
-	}
-
-	return 0;
-
-cdev_add_error:
-	mutex_lock(&media_devnode_lock);
-	clear_bit(devnode->minor, media_devnode_nums);
-	devnode->media_dev = NULL;
-	mutex_unlock(&media_devnode_lock);
-
-	put_device(&devnode->dev);
-	return ret;
+	/* ... */
 }
 ```
 
-**Observation**: The device name format is "media%d", so the path is `/dev/media#`.
-**Resource Definition**: Since this opens a specific device, I should define a resource `fd_media` dependent on `fd`.
-**Syscall Signature**: The syscall `syz_open_dev` handles opening devices by name with an index. It takes `dev` (string), `id` (index), and `flags`.
+- Name format `media%d` → path `/dev/media#`; `syz_open_dev` takes `dev` (string), `id` (index), `flags`.
+- Define resource `fd_media` based on `fd`.
 
 ### Final output
 
@@ -102,100 +58,48 @@ cdev_add_error:
 }
 ```
 
-# Example of writing spec for media driver (2)
+## Example 2
 
-## Input
-
-```c
-static const struct media_file_operations media_device_fops = {
-    .owner = THIS_MODULE,
-    .open = media_device_open,
-    .ioctl = media_device_ioctl,
-#ifdef CONFIG_COMPAT
-    .compat_ioctl = media_device_compat_ioctl,
-#endif /* CONFIG_COMPAT */
-    .release = media_device_close,
-}
-```
-
-Please write specification for syscall `ioctl$MEDIA_IOC_ENUM_LINKS`.
-
-## Output
+Request: Please write specification for syscall `ioctl$MEDIA_IOC_ENUM_LINKS`
 
 ### Thought
 
-**Task:** Create a specification for `ioctl$MEDIA_IOC_ENUM_LINKS`.
+Trace `media_device_ioctl` to the handler of `MEDIA_IOC_ENUM_LINKS`.
 
-**Analyze Handler**: I need to trace `media_device_ioctl` to find the specific handler for `MEDIA_IOC_ENUM_LINKS`.
-
-(Calling tool to get source code of function `media_device_ioctl`)
+(Tool call: get_func_code_by_name `media_device_ioctl`)
 
 ```c
 static long media_device_ioctl(struct file *filp, unsigned int cmd,
 			       unsigned long __arg)
 {
-	struct media_devnode *devnode = media_devnode_data(filp);
-	struct media_device *dev = devnode->media_dev;
-	const struct media_ioctl_info *info;
-	void __user *arg = (void __user *)__arg;
-	char __karg[256], *karg = __karg;
-	long ret;
-
-	if (_IOC_NR(cmd) >= ARRAY_SIZE(ioctl_info)
-	    || ioctl_info[_IOC_NR(cmd)].cmd != cmd)
-		return -ENOIOCTLCMD;
-
+	/* ... */
 	info = &ioctl_info[_IOC_NR(cmd)];
-
-	if (_IOC_SIZE(info->cmd) > sizeof(__karg)) {
-		karg = kmalloc(_IOC_SIZE(info->cmd), GFP_KERNEL);
-		if (!karg)
-			return -ENOMEM;
-	}
-
+	/* ... */
 	if (info->arg_from_user) {
 		ret = info->arg_from_user(karg, arg, cmd);
 		if (ret)
 			goto out_free;
 	}
-
-	if (info->flags & MEDIA_IOC_FL_GRAPH_MUTEX)
-		mutex_lock(&dev->graph_mutex);
-
+	/* ... */
 	ret = info->fn(dev, karg);
-
-	if (info->flags & MEDIA_IOC_FL_GRAPH_MUTEX)
-		mutex_unlock(&dev->graph_mutex);
-
+	/* ... */
 	if (!ret && info->arg_to_user)
 		ret = info->arg_to_user(arg, karg, cmd);
-
-out_free:
-	if (karg != __karg)
-		kfree(karg);
-
-	return ret;
+	/* ... */
 }
 ```
 
-**Inspect Table**: Check `ioctl_info` to find the function pointer.
-
-(Calling tool to get source of `ioctl_info`)
+(Tool call: get_global_var_code_by_name `ioctl_info`)
 
 ```c
 static const struct media_ioctl_info ioctl_info[] = {
-	MEDIA_IOC(DEVICE_INFO, media_device_get_info, MEDIA_IOC_FL_GRAPH_MUTEX),
-	MEDIA_IOC(ENUM_ENTITIES, media_device_enum_entities, MEDIA_IOC_FL_GRAPH_MUTEX),
+	/* ... */
 	MEDIA_IOC(ENUM_LINKS, media_device_enum_links, MEDIA_IOC_FL_GRAPH_MUTEX),
-	MEDIA_IOC(SETUP_LINK, media_device_setup_link, MEDIA_IOC_FL_GRAPH_MUTEX),
-	MEDIA_IOC(G_TOPOLOGY, media_device_get_topology, MEDIA_IOC_FL_GRAPH_MUTEX),
-	MEDIA_IOC(REQUEST_ALLOC, media_device_request_alloc, 0),
+	/* ... */
 };
 ```
 
-**Analyze Specific Handler**: Check `media_device_enum_links` to understand the argument structure and direction.
-
-(Calling tool to get source of function `media_device_enum_links`)
+(Tool call: get_func_code_by_name `media_device_enum_links`)
 
 ```c
 static long media_device_enum_links(struct media_device *mdev, void *arg)
@@ -208,39 +112,18 @@ static long media_device_enum_links(struct media_device *mdev, void *arg)
 		return -EINVAL;
 
 	if (links->pads) {
-		unsigned int p;
-
-		for (p = 0; p < entity->num_pads; p++) {
-			struct media_pad_desc pad;
-
-			memset(&pad, 0, sizeof(pad));
-			media_device_kpad_to_upad(&entity->pads[p], &pad);
+		/* ... */
 			if (copy_to_user(&links->pads[p], &pad, sizeof(pad)))
 				return -EFAULT;
-		}
+		/* ... */
 	}
 
 	if (links->links) {
-		struct media_link *link;
-		struct media_link_desc __user *ulink_desc = links->links;
-
-		list_for_each_entry(link, &entity->links, list) {
-			struct media_link_desc klink_desc;
-
-			/* Ignore backlinks. */
-			if (link->source->entity != entity)
-				continue;
-			memset(&klink_desc, 0, sizeof(klink_desc));
-			media_device_kpad_to_upad(link->source,
-						  &klink_desc.source);
-			media_device_kpad_to_upad(link->sink,
-						  &klink_desc.sink);
-			klink_desc.flags = link->flags;
+		/* ... */
 			if (copy_to_user(ulink_desc, &klink_desc,
 					 sizeof(*ulink_desc)))
 				return -EFAULT;
-			ulink_desc++;
-		}
+		/* ... */
 	}
 	memset(links->reserved, 0, sizeof(links->reserved));
 
@@ -248,11 +131,8 @@ static long media_device_enum_links(struct media_device *mdev, void *arg)
 }
 ```
 
-**Analysis**:
-- The argument type is `struct media_links_enum`.
-- The handler reads `links->entity` to find the target entity, making it `in`.
-- The handler writes back to `links->pads` and `links->links`, making it `out`.
-- Therefore, the pointer direction is `inout`.
+- Argument is `struct media_links_enum`: `links->entity` is read (`in`), `pads`/`links` are written back (`out`) → `ptr[inout, ...]`.
+- `fd_media` (from `syz_open_dev$media`) and struct `media_links_enum` are not defined here → `required`.
 
 ### Final output
 
@@ -269,33 +149,13 @@ static long media_device_enum_links(struct media_device *mdev, void *arg)
 }
 ```
 
-# Example of writing spec for media driver (3)
+## Example 3
 
-## Input
-
-```c
-static const struct media_file_operations media_device_fops = {
-    .owner = THIS_MODULE,
-    .open = media_device_open,
-    .ioctl = media_device_ioctl,
-#ifdef CONFIG_COMPAT
-    .compat_ioctl = media_device_compat_ioctl,
-#endif /* CONFIG_COMPAT */
-    .release = media_device_close,
-}
-```
-
-Please write specification for struct `media_links_enum`.
-
-## Output
+Request: Please write specification for struct `media_links_enum`
 
 ### Thought
 
-**Task**: Define `struct media_links_enum`.
-
-**Inspect Struct**: Get the definition of the struct.
-
-(Calling tool to get source of `struct media_links_enum`)
+(Tool call: get_struct_code_by_name `media_links_enum`)
 
 ```c
 struct media_links_enum {
@@ -308,14 +168,9 @@ struct media_links_enum {
 };
 ```
 
-**Analyze Fields**:
-- `entity`: Used to look up an entity. This should be a resource `media_entity_id`. `find_entity` implies there is logic handling ID validation.
-- `pads`: A pointer to an array of `struct media_pad_desc`. Since the kernel fills this array, it is `out`.
-- `links`: A pointer to an array of `struct media_link_desc`. Also `out`.
+`entity` is passed to `find_entity`; verify it is treated as an ID.
 
-**Check Validation Logic**: Verify `entity` is treated as an ID.
-
-(Calling tool to get source of function `find_entity`)
+(Tool call: get_func_code_by_name `find_entity`)
 
 ```c
 static struct media_entity *find_entity(struct media_device *mdev, u32 id)
@@ -336,7 +191,8 @@ static struct media_entity *find_entity(struct media_device *mdev, u32 id)
 }
 ```
 
-**Conclusion**: Define `media_entity_id` as a resource. `pads` and `links` are pointers to arrays.
+- `entity` → resource `media_entity_id` (special value `MEDIA_ENT_ID_FLAG_NEXT`), `in`.
+- `pads`, `links` → kernel-filled arrays, `ptr[out, array[...]]`; element structs go to `required`.
 
 ### Final output
 
@@ -344,8 +200,8 @@ static struct media_entity *find_entity(struct media_device *mdev, u32 id)
 {
 	"spec": [
 		{"type": "include", "name": "uapi/linux/media.h", "code": "include <uapi/linux/media.h>"},
-		{"type": "resource", "name": "media_entity_id", "code": "resource media_entity_id[int32]: MEDIA_ENT_ID_FLAG_NEXT"}
-		{"type": "struct", "name": "media_links_enum", "code": "media_links_enum {\n\t\tentity\t\tmedia_entity_id\t(in)\n\tpads\t\tptr[out, array[media_pad_desc, 2]]\n\tlinks\t\tptr[out, array[media_link_desc, 2]]\n\treserved\tarray[const[0, int32], 4]\n}"}
+		{"type": "resource", "name": "media_entity_id", "code": "resource media_entity_id[int32]: MEDIA_ENT_ID_FLAG_NEXT"},
+		{"type": "struct", "name": "media_links_enum", "code": "media_links_enum {\n\tentity\t\tmedia_entity_id\t(in)\n\tpads\t\tptr[out, array[media_pad_desc, 2]]\n\tlinks\t\tptr[out, array[media_link_desc, 2]]\n\treserved\tarray[const[0, int32], 4]\n}"}
 	],
 	"required": [
 		{"type": "struct", "name": "media_pad_desc"},
@@ -354,33 +210,13 @@ static struct media_entity *find_entity(struct media_device *mdev, u32 id)
 }
 ```
 
-# Example of writing spec for media driver (4)
+## Example 4
 
-## Input
-
-```c
-static const struct media_file_operations media_device_fops = {
-    .owner = THIS_MODULE,
-    .open = media_device_open,
-    .ioctl = media_device_ioctl,
-#ifdef CONFIG_COMPAT
-    .compat_ioctl = media_device_compat_ioctl,
-#endif /* CONFIG_COMPAT */
-    .release = media_device_close,
-}
-```
-
-Please write specification for struct `media_pad_desc`.
-
-## Output
+Request: Please write specification for struct `media_pad_desc`
 
 ### Thought
 
-**Task**: Define `struct media_pad_desc`.
-
-**Inspect Struct**: Get the definition.
-
-(Calling tool to get source of `struct media_pad_desc`)
+(Tool call: get_struct_code_by_name `media_pad_desc`)
 
 ```c
 struct media_pad_desc {
@@ -391,20 +227,15 @@ struct media_pad_desc {
 };
 ```
 
-**Analyze Fields**:
-- **entity**: Uses `media_entity_id`.
-- **index**: `__u16`. Standard integer.
-- **flags**: Requires a flag set. I need to find macros starting with `MEDIA_PAD_FL_`.
+`entity` → `media_entity_id`; `index` → `media_pad_index`; `flags` needs a flag set from `MEDIA_PAD_FL_*`.
 
-(Calling tool to get source of macros whose prefix is `MEDIA_PAD_FL_`)
+(Tool call: get_macro_def_codes_by_pattern `MEDIA_PAD_FL_*`)
 
 ```c
 #define MEDIA_PAD_FL_SINK			(1 << 0)
 #define MEDIA_PAD_FL_SOURCE			(1 << 1)
 #define MEDIA_PAD_FL_MUST_CONNECT		(1 << 2)
 ```
-
-**Conclusion**: Create `media_pad_flags` with the found macros.
 
 ### Final output
 
@@ -420,33 +251,13 @@ struct media_pad_desc {
 }
 ```
 
-# Example of writing spec for media driver (5)
+## Example 5
 
-## Input
-
-```c
-static const struct media_file_operations media_device_fops = {
-    .owner = THIS_MODULE,
-    .open = media_device_open,
-    .ioctl = media_device_ioctl,
-#ifdef CONFIG_COMPAT
-    .compat_ioctl = media_device_compat_ioctl,
-#endif /* CONFIG_COMPAT */
-    .release = media_device_close,
-}
-```
-
-Please write specification for struct `media_link_desc`.
-
-## Output
+Request: Please write specification for struct `media_link_desc`
 
 ### Thought
 
-**Task**: Define struct `media_link_desc`.
-
-**Inspect Struct**: Get the definition.
-
-(Calling tool to get source of `struct media_link_desc`)
+(Tool call: get_struct_code_by_name `media_link_desc`)
 
 ```c
 struct media_link_desc {
@@ -457,11 +268,9 @@ struct media_link_desc {
 };
 ```
 
-**Analyze Fields**:
-- `source`, `sink`: Use the already defined media_pad_desc.
-- `flags`: Requires a flag set. Look for MEDIA_LNK_FL_.
+`source`/`sink` reuse `media_pad_desc`; `flags` needs a flag set from `MEDIA_LNK_FL_*`.
 
-(Calling tool to get source of macros whose prefix is `MEDIA_LNK_FL_`)
+(Tool call: get_macro_def_codes_by_pattern `MEDIA_LNK_FL_*`)
 
 ```c
 #define MEDIA_LNK_FL_ENABLED			(1 << 0)
@@ -473,9 +282,7 @@ struct media_link_desc {
 #  define MEDIA_LNK_FL_INTERFACE_LINK		(1 << 28)
 ```
 
-**Analysis**:
-- `MEDIA_LNK_FL_LINK_TYPE` is a mask and should not be included directly in the flags list.
-- The specific values `MEDIA_LNK_FL_DATA_LINK` and `MEDIA_LNK_FL_INTERFACE_LINK` should be included.
+`MEDIA_LNK_FL_LINK_TYPE` is a mask → exclude it, but include its values `MEDIA_LNK_FL_DATA_LINK` and `MEDIA_LNK_FL_INTERFACE_LINK`.
 
 ### Final output
 
@@ -484,7 +291,7 @@ struct media_link_desc {
 	"spec": [
 		{"type": "include", "name": "uapi/linux/media.h", "code": "include <uapi/linux/media.h>"},
 		{"type": "flag", "name": "media_link_flags", "code": "media_link_flags = MEDIA_LNK_FL_ENABLED, MEDIA_LNK_FL_IMMUTABLE, MEDIA_LNK_FL_DYNAMIC, MEDIA_LNK_FL_DATA_LINK, MEDIA_LNK_FL_INTERFACE_LINK"},
-		{"type": "struct", "name": "media_link_desc", "code": "media_link_desc {\n\tsource\t\tmedia_pad_desc\n\tsink\t\tmedia_pad_desc\n\tflags\t\tflags[media_link_flags, int32]\n\treserved\tarray[int32, 2]\n}"},
+		{"type": "struct", "name": "media_link_desc", "code": "media_link_desc {\n\tsource\t\tmedia_pad_desc\n\tsink\t\tmedia_pad_desc\n\tflags\t\tflags[media_link_flags, int32]\n\treserved\tarray[int32, 2]\n}"}
 	],
 	"required": []
 }
