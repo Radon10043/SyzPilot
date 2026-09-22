@@ -1,7 +1,7 @@
-# setup cloud and run fuzzing for netbsd kernel
+# setup SyzPilot and run fuzzing for netbsd kernel
 
-this doc instruct to build and run cloud for netbsd kernel on linux host. Please replace following variables via your actual situation:
-- `$CLOUD`: directory for saving cloud source.
+this doc instruct to build and run SyzPilot for netbsd kernel on linux host. Please replace following variables via your actual situation:
+- `$CLOUD`: directory for saving SyzPilot source.
 - `$KERNDIR`: directory for saveing NetBSD kernel sources(s).
 - `$VMDIR`: directory for saving NetBSD image(s).
 
@@ -62,9 +62,9 @@ __EOF__
 reboot
 ```
 
-## cloud setup
+## SyzPilot setup
 
-build cloud and patch syzkaller.
+build SyzPilot and patch syzkaller.
 ```sh
 # run following commands on host
 git clone --recursive https://github.com/Radon10043/cloud
@@ -75,7 +75,7 @@ cd ..
 make all TARGETOS=netbsd SOURCEDIR=$KERNSRC
 ```
 
-download source of netbsd kernel. I use 15e7fbc53d77cd7cc1d62511982b8972c4c0c421 to run cloud for specification generation, which can be built success on linux in 2026 early.
+download source of netbsd kernel. I use 15e7fbc53d77cd7cc1d62511982b8972c4c0c421 to run SyzPilot for specification generation, which can be built success on linux in 2026 early.
 ```sh
 # run following commands on host
 mkdir -p $KERNDIR/15e7fbc5

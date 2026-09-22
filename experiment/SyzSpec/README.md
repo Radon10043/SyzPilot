@@ -3,7 +3,7 @@
 this document shows how to setup SyzSpec and use it for generating syscall specifications and fuzzing.
 
 please replace the following variables according to your actual situation:
-- `$CLOUD`: directory for saveing cloud source
+- `$CLOUD`: directory for saveing SyzPilot source
 - `$SYZSPEC`: directory for saving SyzSpec source
 - `$KERNSRC`: directory for saving linux kernel source
 

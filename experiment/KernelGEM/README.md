@@ -3,7 +3,7 @@
 this document shows how to setup KernelGEM and use it for generating specifications and fuzzing.
 
 please replace the following variables according to your actual situation:
-- `$CLOUD`: directory for saveing cloud source
+- `$CLOUD`: directory for saveing SyzPilot source
 - `$KERNELGEM`: directory for saving KernelGEM source
 - `$LINUX`: directory for saving linux kernel source
 - `$ANDROID`: directory for saving android kernel source

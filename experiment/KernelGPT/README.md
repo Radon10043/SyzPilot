@@ -3,7 +3,7 @@
 this document shows how to setup KernelGPT and use it for generating specifications and fuzzing.
 
 please replace the following variables according to your actual situation:
-- `$CLOUD`: directory for saveing cloud source
+- `$CLOUD`: directory for saveing SyzPilot source
 - `$KERNELGPT`: directory for saving KernelGPT source
 - `$KERNSRC`: directory for saving linux kernel source
 

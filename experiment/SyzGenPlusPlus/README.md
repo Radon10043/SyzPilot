@@ -3,7 +3,7 @@
 this document shows how to setup SyzGenPlusPlus and use it for generating specifications and fuzzing.
 
 please replace the following variables according to your actual situation:
-- `$CLOUD`: directory for saveing cloud source
+- `$CLOUD`: directory for saveing SyzPilot source
 - `$SYZGENPP`: directory for saving SyzGenPlusPlus source
 - `$LINUX`: directory for saving linux kernel source
 - `$ANDROID`: directory for saving android kernel source

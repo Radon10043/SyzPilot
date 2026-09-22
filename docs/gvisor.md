@@ -1,4 +1,4 @@
-# setup cloud and fuzzing gvisor
+# setup SyzPilot and fuzzing gvisor
 
 According to [syzkaller's description of gvisor](https://github.com/google/syzkaller/tree/master/docs/gvisor), we can reuse the specs generated for linux for fuzzing.
 
@@ -9,7 +9,7 @@ The prefix of each description in the doc means the environment that the instruc
 
 Please replace the following variables according to the actual situation:
 - `$GVISOR`: directory for saving gvisor and its artifacts.
-- `$CLOUD`: directory for saveing cloud source.
+- `$CLOUD`: directory for saveing SyzPilot source.
 
 ## setup gvisor build image
 

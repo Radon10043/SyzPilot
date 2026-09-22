@@ -75,4 +75,4 @@ ls sys/linux/cloud*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -
 1. copy syzkaller/sys/$OS/*.txt to a tmp dir
 2. delete related specs
 3. extract consts, run syz-check, manual fix errors, repeat until no error report
-4. run cloud to generate specs
+4. run SyzPilot to generate specs

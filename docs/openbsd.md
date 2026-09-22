@@ -1,9 +1,9 @@
-# setup cloud and run fuzzing for openbsd kernel
+# setup SyzPilot and run fuzzing for openbsd kernel
 
 Please replace the following variables according to the actual situation:
 - `$VMDIR`: directory for saving OpenBSD image(s).
 - `$KERNSRC`: directory for saving OpenBSD kernel source.
-- `$CLOUD`: directory for saving cloud source.
+- `$CLOUD`: directory for saving SyzPilot source.
 - `$WORKDIR`: directory for working.
 
 ## openbsd vm setup
@@ -111,9 +111,9 @@ rcctl -f start vmd
 rcctl enable vmd
 ```
 
-## cloud setup
+## SyzPilot setup
 
-cloud must be setup under openbsd environment, let's download it first:
+SyzPilot must be setup under openbsd environment, let's download it first:
 ```sh
 # run following commands on vm
 cd /root
@@ -121,7 +121,7 @@ git clone --recurse-submodules https://github.com/Radon10043/cloud
 # if you forgot to clone with --recurse-submodules, run `git submodule update --init --recursive` under cloud directory to update submodules
 ```
 
-build cloud:
+build SyzPilot:
 ```sh
 # run following commands on vm
 cd $CLOUD
@@ -366,13 +366,13 @@ sshfs -p 6736 \
     -o compression=no \
     -o idmap=user \
     -o follow_symlinks \
-    root@localhost:$CLOUD ./cloud
+    root@localhost:$CLOUD ./syzpilot
 ```
 
 feel free to unmount it:
 ```bash
 # run following commands on host
-fusermount -u ./cloud
+fusermount -u ./syzpilot
 ```
 
 ## fuzzing latest kernel
@@ -453,5 +453,5 @@ sshfs -p 6736 \
     -o compression=no \
     -o idmap=user \
     -o follow_symlinks \
-    root@localhost:/root/cloud ./mnt/cloud
+    root@localhost:/root/cloud ./mnt/syzpilot
 ```

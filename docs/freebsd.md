@@ -1,11 +1,11 @@
-# setup cloud and run fuzzing for freebsd kernel
+# setup SyzPilot and run fuzzing for freebsd kernel
 
 Please replace the following variables according to the actual situation:
 - `$VMDIR`: directory for saving FreeBSD image(s).
 - `$KERNSRC_HOST`: directory for saving FreeBSD kernel source (host).
 - `$KERNSRC_VM`: directory for saving FreeBSD kernel source (vm).
-- `CLOUD_HOST`: directory for saveing cloud source (host).
-- `CLOUD_VM`: directory for saveing cloud source (vm).
+- `CLOUD_HOST`: directory for saveing SyzPilot source (host).
+- `CLOUD_VM`: directory for saveing SyzPilot source (vm).
 - `$LLVM_HOME`: directory for llvm
 
 ## ubuntu host, qemu vm
@@ -68,9 +68,9 @@ cd ..
 rm -rf flatbuffers-23.5.26 v23.5.26.tar.gz
 ```
 
-### cloud setup
+### SyzPilot setup
 
-download cloud and submodules:
+download SyzPilot and submodules:
 ```sh
 # run following commands on vm
 cd /root
@@ -78,7 +78,7 @@ git clone --recurse-submodules https://github.com/Radon10043/cloud
 # if you forgot to clone with --recurse-submodules, run `git submodule update --init --recursive` under cloud directory to update submodules
 ```
 
-build cloud:
+build SyzPilot:
 ```sh
 # run following commands on vm
 cd $CLOUD_VM
@@ -411,7 +411,7 @@ sshfs -p 3733 \
     -o compression=no \
     -o idmap=user \
     -o follow_symlinks \
-    root@localhost:$CLOUD_VM ./mnt/cloud
+    root@localhost:$CLOUD_VM ./mnt/syzpilot
 ```
 
 ## build and replace freebsd kernel on linux host
@@ -492,7 +492,7 @@ scp -P 3733 \
 
 use sshfs to mount directory:
 ```bash
-mkdir -p mnt/cloud
+mkdir -p mnt/syzpilot
 sshfs -p 3733 \
     -o "StrictHostKeyChecking=no" \
     -o "UserKnownHostsFile=/dev/null" \
@@ -502,10 +502,10 @@ sshfs -p 3733 \
     -o compression=no \
     -o idmap=user \
     -o follow_symlinks \
-    root@localhost:/root/cloud ./mnt/cloud
+    root@localhost:/root/cloud ./mnt/syzpilot
 ```
 
 unmount directory mounted by sshfs:
 ```bash
-fusermount -u mnt/cloud
+fusermount -u mnt/syzpilot
 ```

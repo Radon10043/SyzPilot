@@ -1,11 +1,11 @@
-# setup cloud and run fuzzing for Android kernel
+# setup SyzPilot and run fuzzing for Android kernel
 
 There are two ways for Android kernel fuzzing: [Debian image + Android GKI](#debian-image-android-gki) and [Android GSI + Android GKI](#android-gsi-android-gki). I recommend the former :)
 
 Please replace the following variables according to the actual situation:
 - `$DEBIAN`: Directory for saving Debian image.
 - `$GKI`: Directory for saving Android GKI source.
-- `$CLOUD`: Directory for saveing cloud source.
+- `$CLOUD`: Directory for saveing SyzPilot source.
 
 ## Debian image, Android GKI
 

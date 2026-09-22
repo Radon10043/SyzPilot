@@ -1,4 +1,4 @@
-# cloud
+# SyzPilot
 
 ```bash
 git clone --recurse-submodules https://github.com/Radon10043/cloud

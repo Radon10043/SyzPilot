@@ -1,4 +1,4 @@
-# setup cloud for starnix fuzzing
+# setup SyzPilot for starnix fuzzing
 
 check environment:
 ```bash
