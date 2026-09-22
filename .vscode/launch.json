@@ -84,7 +84,7 @@
             "program": "${workspaceFolder}/experiment/viz/fuzz/main.go",
             "args": [
                 "-expdir=${workspaceFolder}/.workdir/experiment",
-                "-master=cloud",
+                "-master=SyzPilot",
             ],
         },
         {

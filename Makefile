@@ -72,6 +72,6 @@ rmunused: prepare
 	$(GO) build $(GOFLAGS) -o bin/rmunused github.com/Radon10043/cloud/src/rmunused/
 
 ablation: prepare
-	$(GO) build $(GOFLAGS) -o bin/generator-nodb github.com/Radon10043/cloud/experiment/cloud-nodb/
-	$(GO) build $(GOFLAGS) -o bin/generator-noiter github.com/Radon10043/cloud/experiment/cloud-noiter/
-	$(GO) build $(GOFLAGS) -o bin/generator-trimtool github.com/Radon10043/cloud/experiment/cloud-trimtool/
+	$(GO) build $(GOFLAGS) -o bin/generator-nodb github.com/Radon10043/cloud/experiment/SyzPilot-nodb/
+	$(GO) build $(GOFLAGS) -o bin/generator-noiter github.com/Radon10043/cloud/experiment/SyzPilot-noiter/
+	$(GO) build $(GOFLAGS) -o bin/generator-trimtool github.com/Radon10043/cloud/experiment/SyzPilot-trimtool/

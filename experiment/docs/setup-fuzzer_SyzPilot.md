@@ -1,4 +1,4 @@
-# setup fuzzer/cloud
+# setup fuzzer/SyzPilot
 
 ## setup binaries for full kernel fuzzing
 

@@ -13,7 +13,7 @@ x-base: &base
     VMCOUNT: ${EXPERIMENT_VMCOUNT}
     CLOUD: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/cloud
     SYZKALLER: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/cloud/syzkaller
-    OUTROOT: ${EXPERIMENT_ROOT_CONTAINER}/experiment/cloud-noiter
+    OUTROOT: ${EXPERIMENT_ROOT_CONTAINER}/experiment/SyzPilot-noiter
   volumes:
     - /etc/timezone:/etc/timezone:ro
     - /etc/localtime:/etc/localtime:ro
@@ -43,7 +43,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -65,7 +65,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -87,7 +87,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -109,7 +109,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -131,7 +131,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -153,7 +153,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -175,7 +175,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -197,7 +197,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -219,7 +219,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -241,7 +241,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -263,7 +263,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -285,7 +285,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -307,7 +307,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -329,7 +329,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -351,7 +351,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -373,7 +373,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -395,7 +395,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -417,7 +417,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -439,7 +439,7 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1
 
@@ -461,6 +461,6 @@ services:
         mkdir -p $$WORKDIR
         perl -pe 's/__([a-zA-Z0-9_]+)__/$$ENV{$$1}/g' "$$CLOUD/configs/fuzz/$$KERNEL_NAME/kernel.cfg" > /fuzz.cfg
         jq '.syzkaller = "/syzkaller"' /fuzz.cfg > /tmp.cfg && mv /tmp.cfg /fuzz.cfg
-        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/cloud-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
+        jq -s 'add' /fuzz.cfg $$CLOUD/experiment/SyzPilot-noiter/configs/$$KERNEL_NAME/$$SUBSYSTEM.cfg > $$WORKDIR/fuzz.cfg
         cp -r $$SYZKALLER /syzkaller && rm -rf /syzkaller/bin && cp -r $$CLOUD/bin-noiter /syzkaller/bin
         timeout -s KILL 6h /syzkaller/bin/syz-manager -config $$WORKDIR/fuzz.cfg -bench $$WORKDIR/bench.log > $$WORKDIR/fuzz.log 2>&1

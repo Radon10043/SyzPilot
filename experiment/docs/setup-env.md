@@ -72,7 +72,7 @@ git submodule update --init --recursive
 - [setup image/openbsd](setup-image_openbsd.md)
 - [setup image/netbsd](setup-image_netbsd.md)
 - [setup image/debdroid](setup-image_debdroid.md)
-- [setup fuzzer/cloud](setup-fuzzer_cloud.md)
+- [setup fuzzer/SyzPilot](setup-fuzzer_SyzPilot.md)
 - [setup fuzzer/syzkaller](setup-fuzzer_syzkaller.md)
 - [setup fuzzer/KernelGPT](setup-fuzzer_KernelGPT.md)
 - [setup fuzzer/KernelGEM](setup-fuzzer_KernelGEM.md)
@@ -85,5 +85,5 @@ git submodule update --init --recursive
 
 (host) finally, we can perform fuzzing, for example:
 ```bash
-docker compose --env-file ./compose.env -f $EXPERIMENT_ROOT/fuzzer/cloud/experiment/docker-compose/compose.cloud.yaml up linux-v6.18-kernel --scale linux-v6.18-kernel=5 -d
+docker compose --env-file ./compose.env -f $EXPERIMENT_ROOT/fuzzer/cloud/experiment/docker-compose/compose.SyzPilot.yaml up linux-v6.18-kernel --scale linux-v6.18-kernel=5 -d
 ```
