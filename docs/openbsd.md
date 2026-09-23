@@ -141,10 +141,10 @@ git checkout 23290a22d1dee9d1d0b277c2896d441128a32f42
 build kernel and generate `compile_commands.json`:
 ```sh
 # run following commands on vm
-cp $SYZPILOT/configs/kernel/openbsd.config $KERNSRC/sys/arch/amd64/conf/CLOUD
+cp $SYZPILOT/configs/kernel/openbsd.config $KERNSRC/sys/arch/amd64/conf/SYZPILOT
 cd $KERNSRC/sys/arch/amd64/conf
-config CLOUD
-cd ../compile/CLOUD
+config SYZPILOT
+cd ../compile/SYZPILOT
 make depend
 make -j4 | tee make.log
 
@@ -155,7 +155,7 @@ construct database:
 ```sh
 # run following commands on vm
 cd $SYZPILOT
-LD_LIBRARY_PATH=/usr/local/llvm19/lib:$LD_LIBRARY_PATH ./bin/analyzer -i $KERNSRC/sys/arch/amd64/compile/CLOUD/compile_commands.json -j 8 -o data/database/openbsd.db
+LD_LIBRARY_PATH=/usr/local/llvm19/lib:$LD_LIBRARY_PATH ./bin/analyzer -i $KERNSRC/sys/arch/amd64/compile/SYZPILOT/compile_commands.json -j 8 -o data/database/openbsd.db
 ```
 
 feel free to run minitask or generator:
@@ -222,7 +222,7 @@ ssh-copy-id \
 install target version of kernel in fuzz target vm.
 ```sh
 # run following commands on fuzz target vm
-cd $KERNSRC/sys/arch/amd64/compile/CLOUD
+cd $KERNSRC/sys/arch/amd64/compile/SYZPILOT
 make install
 shutdown -p now
 ```
@@ -388,9 +388,9 @@ sysupgrade -s
 compile and install customized latest OpenBSD kernel.
 ```bash
 cd $KERNSRC && git pull
-cp $SYZPILOT/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
-cd sys/arch/amd64/conf && config CLOUD
-cd ../compile/CLOUD
+cp $SYZPILOT/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
+cd sys/arch/amd64/conf && config SYZPILOT
+cd ../compile/SYZPILOT
 make depend && make -j4 && make install
 ```
 

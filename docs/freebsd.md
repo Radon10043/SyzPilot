@@ -95,8 +95,8 @@ git clone -b release/15.0.0 --depth 1 https://github.com/freebsd/freebsd-src bui
 cp -r build extract # former for kernel building, latter for const extraction
 
 cd build/sys/amd64/conf
-cp $SYZPILOT_VM/configs/kernel/freebsd.config CLOUD
-config CLOUD && cd ../compile/CLOUD
+cp $SYZPILOT_VM/configs/kernel/freebsd.config SYZPILOT
+config SYZPILOT && cd ../compile/SYZPILOT
 make cleandepend && make depend
 compiledb make -n
 make -j$(sysctl -n hw.ncpu)
@@ -107,7 +107,7 @@ analyze `compile_commands.json` of FreeBSD and create kernel source database:
 # run following commands on vm
 cd $SYZPILOT_VM
 ./bin/analyzer \
-    -i $KERNSRC_VM/build/15.0.0/sys/amd64/compile/CLOUD/compile_commands.json \
+    -i $KERNSRC_VM/build/15.0.0/sys/amd64/compile/SYZPILOT/compile_commands.json \
     -j 8 \
     -o $SYZPILOT/data/database/freebsd.db
 ```
@@ -183,10 +183,10 @@ ssh -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@loc
 replace kernel in `target.qcow2` with new built kernel:
 ```bash
 # run following commands on host
-cd $KERNSRC/sys/amd64/compile/CLOUD
+cd $KERNSRC/sys/amd64/compile/SYZPILOT
 make install
 reboot
-uname -i # expect is CLOUD
+uname -i # expect is SYZPILOT
 shutdown -p now
 ```
 
@@ -422,12 +422,12 @@ build freebsd kernel:
 ```bash
 # run following command on host
 cd $KERNSRC
-cp $SYZPILOT/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
+cp $SYZPILOT/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
 
 mkdir build dist
 MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 buildworld
-MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 buildkernel KERNCONF=CLOUD
-MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 installkernel KERNCONF=CLOUD DESTDIR=$PWD/dist
+MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 buildkernel KERNCONF=SYZPILOT
+MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 installkernel KERNCONF=SYZPILOT DESTDIR=$PWD/dist
 ```
 
 start freebsd vm:
@@ -442,7 +442,7 @@ install built kernel to vm:
 cd $VMDIR
 scp -P 3733 -r -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no $KERNSRC_HOST/build/15.0.0/dist/* root@localhost:/
 ssh -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost reboot
-ssh -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -i # output should be CLOUD
+ssh -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -i # output should be SYZPILOT
 ```
 
 ## frequently used commands

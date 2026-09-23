@@ -52,11 +52,11 @@ func (o OsType) KernFilePath(prefix string) string {
 	case Linux:
 		return filepath.Join(prefix, "vmlinux")
 	case FreeBSD:
-		return filepath.Join(prefix, "sys", runtime.GOARCH, "compile", "CLOUD", "kernel.full")
+		return filepath.Join(prefix, "sys", runtime.GOARCH, "compile", "SYZPILOT", "kernel.full")
 	case OpenBSD:
-		return filepath.Join(prefix, "sys", "arch", runtime.GOARCH, "compile", "CLOUD", "obj", "bsd.gdb")
+		return filepath.Join(prefix, "sys", "arch", runtime.GOARCH, "compile", "SYZPILOT", "obj", "bsd.gdb")
 	case NetBSD:
-		return filepath.Join(prefix, "sys", "arch", runtime.GOARCH, "compile", "obj", "CLOUD", "netbsd.gdb")
+		return filepath.Join(prefix, "sys", "arch", runtime.GOARCH, "compile", "obj", "SYZPILOT", "netbsd.gdb")
 	case Android:
 		return filepath.Join(prefix, "dist", "vmlinux")
 	default:

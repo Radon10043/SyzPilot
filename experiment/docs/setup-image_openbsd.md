@@ -87,9 +87,9 @@ git remote add origin https://github.com/openbsd/src
 git fetch --depth 1 origin 23290a22d1dee9d1d0b277c2896d441128a32f42
 git checkout 23290a22
 
-cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
-cd sys/arch/amd64/conf && config CLOUD
-cd ../compile/CLOUD
+cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
+cd sys/arch/amd64/conf && config SYZPILOT
+cd ../compile/SYZPILOT
 make depend && make -j$JOBS && make install
 reboot
 ```
@@ -100,7 +100,7 @@ cd $EXPERIMENT_ROOT/image/openbsd
 ssh-copy-id -i ./openbsd.id_rsa.pub -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of the following command should look like:
-#   OpenBSD openbsd.my.domain 7.8 CLOUD#0 amd64 amd64
+#   OpenBSD openbsd.my.domain 7.8 SYZPILOT#0 amd64 amd64
 ssh -i ./openbsd.id_rsa -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -a
 ```
 
@@ -190,9 +190,9 @@ git remote add origin https://github.com/openbsd/src
 git fetch --depth 1 origin 6bf0f93af4a8aa5d28d638525b1eb0c5b2f57941
 git checkout 6bf0f93a
 
-cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
-cd sys/arch/amd64/conf && config CLOUD
-cd ../compile/CLOUD
+cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
+cd sys/arch/amd64/conf && config SYZPILOT
+cd ../compile/SYZPILOT
 make depend && make -j$JOBS && make install
 reboot
 ```
@@ -203,7 +203,7 @@ cd $EXPERIMENT_ROOT/image/openbsd
 ssh-copy-id -i ./openbsd.id_rsa.pub -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of the following command should look like:
-#   OpenBSD openbsd.my.domain 7.8 CLOUD#0 amd64
+#   OpenBSD openbsd.my.domain 7.8 SYZPILOT#0 amd64
 ssh -i ./openbsd.id_rsa -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -a
 ```
 
@@ -293,9 +293,9 @@ git remote add origin https://github.com/openbsd/src
 git fetch --depth 1 origin 6dac8606615b68ce13d259f805724b9d640096fa
 git checkout 6dac8606
 
-cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
-cd sys/arch/amd64/conf && config CLOUD
-cd ../compile/CLOUD
+cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
+cd sys/arch/amd64/conf && config SYZPILOT
+cd ../compile/SYZPILOT
 make depend && make -j$JOBS && make install
 reboot
 ```
@@ -306,7 +306,7 @@ cd $EXPERIMENT_ROOT/image/openbsd
 ssh-copy-id -i ./openbsd.id_rsa.pub -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of the following command should look like:
-#   OpenBSD openbsd.my.domain 7.4 CLOUD#0 amd64
+#   OpenBSD openbsd.my.domain 7.4 SYZPILOT#0 amd64
 ssh -i ./openbsd.id_rsa -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -a
 ```
 

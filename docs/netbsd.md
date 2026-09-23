@@ -89,10 +89,10 @@ build kernel, generate `compile_commands.json` and make it clean.
 ```bash
 # run following commands on host
 cd $KERNDIR/15e7fbc5/src
-cp $SYZPILOT/configs/kernel/netbsd.config sys/arch/amd64/conf/CLOUD
+cp $SYZPILOT/configs/kernel/netbsd.config sys/arch/amd64/conf/SYZPILOT
 ./build.sh -j4 -m amd64 -c clang -U -T ../tools tools
 ./build.sh -j4 -m amd64 -c clang -U -T ../tools -D ../dest distribution
-./build.sh -j4 -m amd64 -c clang -U -T ../tools -N 4 kernel=CLOUD | tee build.log
+./build.sh -j4 -m amd64 -c clang -U -T ../tools -N 4 kernel=SYZPILOT | tee build.log
 compiledb --parse build.log
 
 # make compile_commands.json clean
@@ -105,7 +105,7 @@ analyze `compile_commands_clean.json`.
 cd $SYZPILOT
 ./bin/analyzer \
     -i $KERNDIR/15e7fbc5/src/compile_commands_clean.json \
-    -I $KERNDIR/15e7fbc5/src/sys/arch/amd64/compile/obj/CLOUD \
+    -I $KERNDIR/15e7fbc5/src/sys/arch/amd64/compile/obj/SYZPILOT \
     -o data/database/netbsd.db \
     -j 4
 ```
@@ -166,7 +166,7 @@ copy new-built kernel to vm.
 scp -P 6382 \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
-    $KERNDIR/15e7fbc5/src/sys/arch/amd64/compile/obj/CLOUD/netbsd root@localhost:/netbsd
+    $KERNDIR/15e7fbc5/src/sys/arch/amd64/compile/obj/SYZPILOT/netbsd root@localhost:/netbsd
 ```
 
 load kcov and vhci modules.

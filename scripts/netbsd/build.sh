@@ -52,8 +52,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 cd $SOURCEDIR
-cp $CONFIG sys/arch/amd64/conf/CLOUD
+cp $CONFIG sys/arch/amd64/conf/SYZPILOT
 ./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools tools
 ./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools -D ../dest distribution
-./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools -N 4 kernel=CLOUD | tee build.log
+./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools -N 4 kernel=SYZPILOT | tee build.log
 compiledb --parse build.log

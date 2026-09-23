@@ -49,9 +49,9 @@ cd /root
 git clone https://github.com/Radon10043/cloud
 git clone -b release/15.0.0 --depth 1 https://github.com/freebsd/freebsd-src 15.0.0
 cd 15.0.0
-cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
-cd sys/amd64/conf && config CLOUD
-cd ../compile/CLOUD
+cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
+cd sys/amd64/conf && config SYZPILOT
+cd ../compile/SYZPILOT
 make cleandepend && make depend
 make -j$JOBS && make install
 reboot
@@ -63,7 +63,7 @@ cd $EXPERIMENT_ROOT/image/freebsd
 ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of the following command should look like:
-#   FreeBSD freebsd 15.0-RELEASE FreeBSD 15.0-RELEASE 7aedc8de6446 CLOUD amd64
+#   FreeBSD freebsd 15.0-RELEASE FreeBSD 15.0-RELEASE 7aedc8de6446 SYZPILOT amd64
 ssh -i ./freebsd.id_rsa -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -a
 ```
 
@@ -115,9 +115,9 @@ cd /root
 git clone https://github.com/Radon10043/cloud
 git clone -b release/14.3.0 --depth 1 https://github.com/freebsd/freebsd-src 14.3.0
 cd 14.3.0
-cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
-cd sys/amd64/conf && config CLOUD
-cd ../compile/CLOUD
+cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
+cd sys/amd64/conf && config SYZPILOT
+cd ../compile/SYZPILOT
 make cleandepend && make depend
 make -j$JOBS && make install
 reboot
@@ -129,7 +129,7 @@ cd $EXPERIMENT_ROOT/image/freebsd
 ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of the following command should look like:
-#   FreeBSD freebsd 14.3-RELEASE FreeBSD 14.3-RELEASE 8c9ce319fef7 CLOUD amd64
+#   FreeBSD freebsd 14.3-RELEASE FreeBSD 14.3-RELEASE 8c9ce319fef7 SYZPILOT amd64
 ssh -i ./freebsd.id_rsa -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -a
 ```
 
@@ -181,9 +181,9 @@ cd /root
 git clone https://github.com/Radon10043/cloud
 git clone -b release/14.2.0 --depth 1 https://github.com/freebsd/freebsd-src 14.2.0
 cd 14.2.0
-cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
-cd sys/amd64/conf && config CLOUD
-cd ../compile/CLOUD
+cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
+cd sys/amd64/conf && config SYZPILOT
+cd ../compile/SYZPILOT
 make cleandepend && make depend
 make -j$JOBS && make install
 reboot
@@ -195,7 +195,7 @@ cd $EXPERIMENT_ROOT/image/freebsd
 ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
 
 # output of the following command should look like:
-#   FreeBSD freebsd 14.2-RELEASE FreeBSD 14.2-RELEASE c8918d6c7 CLOUD amd64
+#   FreeBSD freebsd 14.2-RELEASE FreeBSD 14.2-RELEASE c8918d6c7 SYZPILOT amd64
 ssh -i ./freebsd.id_rsa -p 3733 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost uname -a
 ```
 

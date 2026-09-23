@@ -52,7 +52,7 @@ scp -P 6382 \
     -i ./netbsd.id_rsa \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
-    $EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5/src/sys/arch/amd64/compile/obj/CLOUD/netbsd root@localhost:/netbsd
+    $EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5/src/sys/arch/amd64/compile/obj/SYZPILOT/netbsd root@localhost:/netbsd
 ```
 
 (vm) reboot, verify kernel version, load kcov module and poweroff vm:
@@ -60,7 +60,7 @@ scp -P 6382 \
 reboot
 
 # output of the uname command should look like:
-#   NetBSD  10.1_STABLE NetBSD 10.1_STABLE (CLOUD) #1: Sat Mar 28 20:59:39 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/15e7fbc5...
+#   NetBSD  10.1_STABLE NetBSD 10.1_STABLE (SYZPILOT) #1: Sat Mar 28 20:59:39 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/15e7fbc5...
 uname -a
 
 cd /dev
@@ -114,7 +114,7 @@ scp -P 6382 \
     -i ./netbsd.id_rsa \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
-    $EXPERIMENT_ROOT/kernel/netbsd/ceec3d80/src/sys/arch/amd64/compile/obj/CLOUD/netbsd root@localhost:/netbsd
+    $EXPERIMENT_ROOT/kernel/netbsd/ceec3d80/src/sys/arch/amd64/compile/obj/SYZPILOT/netbsd root@localhost:/netbsd
 ```
 
 (vm) reboot, verify kernel version, load kcov module and poweroff vm:
@@ -122,7 +122,7 @@ scp -P 6382 \
 reboot
 
 # output of the uname command should look like:
-#   NetBSD  10.99.12 NetBSD 10.99.12 (CLOUD) #0: Sat Mar 28 22:53:06 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/ceec3d80...
+#   NetBSD  10.99.12 NetBSD 10.99.12 (SYZPILOT) #0: Sat Mar 28 22:53:06 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/ceec3d80...
 uname -a
 
 cd /dev
@@ -176,7 +176,7 @@ scp -P 6382 \
     -i ./netbsd.id_rsa \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
-    $EXPERIMENT_ROOT/kernel/netbsd/3c0f56ea/src/sys/arch/amd64/compile/obj/CLOUD/netbsd root@localhost:/netbsd
+    $EXPERIMENT_ROOT/kernel/netbsd/3c0f56ea/src/sys/arch/amd64/compile/obj/SYZPILOT/netbsd root@localhost:/netbsd
 ```
 
 (vm) reboot, verify kernel version, load kcov module and poweroff vm:
@@ -184,7 +184,7 @@ scp -P 6382 \
 reboot
 
 # output of the uname command should look like:
-#   NetBSD  10.99.10 NetBSD 10.99.10 (CLOUD) #0: Sat Mar 28 21:44:46 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/3c0f56ea...
+#   NetBSD  10.99.10 NetBSD 10.99.10 (SYZPILOT) #0: Sat Mar 28 21:44:46 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/3c0f56ea...
 uname -a
 
 cd /dev
@@ -238,7 +238,7 @@ scp -P 6382 \
     -i ./netbsd.id_rsa \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
-    $EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5-tprof/src/sys/arch/amd64/compile/obj/CLOUD/netbsd root@localhost:/netbsd
+    $EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5-tprof/src/sys/arch/amd64/compile/obj/SYZPILOT/netbsd root@localhost:/netbsd
 ```
 
 (vm) reboot, verify kernel version, load kcov module and poweroff vm:
@@ -246,7 +246,7 @@ scp -P 6382 \
 reboot
 
 # output of the uname command should look like:
-#   NetBSD  10.1_STABLE NetBSD 10.1_STABLE (CLOUD) #1: Sat Mar 28 20:59:39 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/15e7fbc5...
+#   NetBSD  10.1_STABLE NetBSD 10.1_STABLE (SYZPILOT) #1: Sat Mar 28 20:59:39 CST 2026  root@HOSTNAME:/vol/kernel/netbsd/15e7fbc5...
 uname -a
 
 cd /dev
