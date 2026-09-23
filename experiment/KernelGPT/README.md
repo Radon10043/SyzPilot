@@ -3,13 +3,13 @@
 this document shows how to setup KernelGPT and use it for generating specifications and fuzzing.
 
 please replace the following variables according to your actual situation:
-- `$CLOUD`: directory for saveing SyzPilot source
+- `$SYZPILOT`: directory for saveing SyzPilot source
 - `$KERNELGPT`: directory for saving KernelGPT source
 - `$KERNSRC`: directory for saving linux kernel source
 
-create a docker image via `$CLOUD/experiment/KernelGPT/Dockerfile` and enter the container.
+create a docker image via `$SYZPILOT/experiment/KernelGPT/Dockerfile` and enter the container.
 ```bash
-docker build -t kernelgpt:latest --network host -f $CLOUD/experiment/KernelGPT/Dockerfile .
+docker build -t kernelgpt:latest --network host -f $SYZPILOT/experiment/KernelGPT/Dockerfile .
 docker run \
     -d \
     --cpus 16 \
@@ -25,7 +25,7 @@ setup KernelGPT.
 git clone https://github.com/KernelGPT/KernelGPT.git
 cd KernelGPT
 git checkout e3464d23b8d59ffffb1bd5b2f7100c102c48bb3d
-git apply -3 $CLOUD/experiment/KernelGPT/repo.patch
+git apply -3 $SYZPILOT/experiment/KernelGPT/repo.patch
 git submodule update --init --recursive --pdeth 1 --progress
 pip install -r requirements.txt
 ```

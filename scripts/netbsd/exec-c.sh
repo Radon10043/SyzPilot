@@ -4,7 +4,7 @@
 # can trigger the specific bug.
 #
 # usage:
-#   NETBSD=/path/to/netbsd REPRO=/path/to/repro.c SSHKEY=/path/to/freebsd.sshkey $CLOUD/scripts/freebsd/exec-c.sh
+#   NETBSD=/path/to/netbsd REPRO=/path/to/repro.c SSHKEY=/path/to/freebsd.sshkey $SYZPILOT/scripts/freebsd/exec-c.sh
 
 set -e
 

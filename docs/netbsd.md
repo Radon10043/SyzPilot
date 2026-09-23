@@ -1,7 +1,7 @@
 # setup SyzPilot and run fuzzing for netbsd kernel
 
 this doc instruct to build and run SyzPilot for netbsd kernel on linux host. Please replace following variables via your actual situation:
-- `$CLOUD`: directory for saving SyzPilot source.
+- `$SYZPILOT`: directory for saving SyzPilot source.
 - `$KERNDIR`: directory for saveing NetBSD kernel sources(s).
 - `$VMDIR`: directory for saving NetBSD image(s).
 
@@ -69,7 +69,7 @@ build SyzPilot and patch syzkaller.
 # run following commands on host
 git clone --recursive https://github.com/Radon10043/cloud
 
-cd $CLOUD/syzkaller
+cd $SYZPILOT/syzkaller
 git apply ../patch/syzkaller/generic.patch ../patch/syzkaller/netbsd.patch
 cd ..
 make all TARGETOS=netbsd SOURCEDIR=$KERNSRC
@@ -89,7 +89,7 @@ build kernel, generate `compile_commands.json` and make it clean.
 ```bash
 # run following commands on host
 cd $KERNDIR/15e7fbc5/src
-cp $CLOUD/configs/kernel/netbsd.config sys/arch/amd64/conf/CLOUD
+cp $SYZPILOT/configs/kernel/netbsd.config sys/arch/amd64/conf/CLOUD
 ./build.sh -j4 -m amd64 -c clang -U -T ../tools tools
 ./build.sh -j4 -m amd64 -c clang -U -T ../tools -D ../dest distribution
 ./build.sh -j4 -m amd64 -c clang -U -T ../tools -N 4 kernel=CLOUD | tee build.log
@@ -102,7 +102,7 @@ jq 'map(select((.command // (.arguments | join(" "))) | test("mkdep") | not))' c
 analyze `compile_commands_clean.json`.
 ```bash
 # run following commands on host
-cd $CLOUD
+cd $SYZPILOT
 ./bin/analyzer \
     -i $KERNDIR/15e7fbc5/src/compile_commands_clean.json \
     -I $KERNDIR/15e7fbc5/src/sys/arch/amd64/compile/obj/CLOUD \
@@ -113,7 +113,7 @@ cd $CLOUD
 minimize tasks and generate variable list.
 ```bash
 # run following commands on host
-cd $CLOUD
+cd $SYZPILOT
 # this may take a while ...
 ./bin/minitask \
     -db=./data/database/netbsd.db \
@@ -126,7 +126,7 @@ cd $CLOUD
 generate syzlang specs on the basis of minimized tasks.
 ```bash
 # run following commands on host
-cd $CLOUD
+cd $SYZPILOT
 ./bin/generator \
     -db=./data/database/netbsd.db \
     -os=netbsd \
@@ -181,7 +181,7 @@ feel free to run `poweroff` to shutdown vm.
 build syzkaller after patching.
 ```bash
 # run following commands on host
-cd $CLOUD/syzkaller
+cd $SYZPILOT/syzkaller
 make TARGETOS=netbsd SOURCEDIR=$KERNDIR/15e7fbc5 CCFLAGS="-static-libstdc++" CXXFLAGS="-static-libstdc++"
 ```
 
@@ -196,14 +196,14 @@ cp $VMDIR/dev.qcow2 $VMDIR/target.qcow2
 wirte fuzzing config file and start fuzzing.
 ```bash
 # run following commands on host
-cd $CLOUD && mkdir workdir
+cd $SYZPILOT && mkdir workdir
 cat <<__EOF__ > workdir/netbsd.cfg
 {
 	"name": "netbsd",
 	"target": "netbsd/amd64",
 	"http": ":10000",
-	"workdir": "$CLOUD/workdir/out",
-	"syzkaller": "$CLOUD/syzkaller",
+	"workdir": "$SYZPILOT/workdir/out",
+	"syzkaller": "$SYZPILOT/syzkaller",
 	"image": "$VMDIR/target.qcow2",
 	"sshkey": "$VMDIR/netbsd.id_rsa",
 	"sandbox": "none",

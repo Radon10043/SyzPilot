@@ -3,15 +3,15 @@
 this document shows how to setup SyzSpec and use it for generating syscall specifications and fuzzing.
 
 please replace the following variables according to your actual situation:
-- `$CLOUD`: directory for saveing SyzPilot source
+- `$SYZPILOT`: directory for saveing SyzPilot source
 - `$SYZSPEC`: directory for saving SyzSpec source
 - `$KERNSRC`: directory for saving linux kernel source
 
 ## preparation
 
-create a docker image via `$CLOUD/experiment/SyzDescribe/Dockerfile` and enter the container.
+create a docker image via `$SYZPILOT/experiment/SyzDescribe/Dockerfile` and enter the container.
 ```bash
-docker build -t syzspec:latest --network host -f $CLOUD/experiment/SyzDescribe/Dockerfile .
+docker build -t syzspec:latest --network host -f $SYZPILOT/experiment/SyzDescribe/Dockerfile .
 docker run \
     -d \
     --cpus 16 \
@@ -29,7 +29,7 @@ in container, setup SyzSpec:
 git clone https://github.com/seclab-ucr/SyzSpec
 cd SyzSpec
 git checkout 1edbcffd6f56786d914b0c04458bee86abf215ac
-git apply $CLOUD/experiment/SyzSpec/repo.patch
+git apply $SYZPILOT/experiment/SyzSpec/repo.patch
 
 mkdir build && cd build
 cmake .. \
@@ -47,7 +47,7 @@ make -j8
 build linux kernel and generate .bc files.
 ```bash
 cd $KERNSRC # v6.18
-cp $CLOUD/configs/kernel/syzbot.config .config
+cp $SYZPILOT/configs/kernel/syzbot.config .config
 make LLVM=1 \
 	 PATH=/llvm-15/bin:$PATH \
 	 KCFLAGS="-Xclang -no-opaque-pointers -mllvm -opaque-pointers=0" \
@@ -96,7 +96,7 @@ ls sys/linux/syz*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -so
 build android via kleaf, e.g. common-android17-6.18:
 ```bash
 cd "$ANDROID"
-git -C common apply "$CLOUD/patch/android/android17-6.18.common.patch"
+git -C common apply "$SYZPILOT/patch/android/android17-6.18.common.patch"
 tools/bazel run --kasan --defconfig_fragment=//common:debian_image_x86_64_defconfig //common-modules/virtual-device:virtual_device_x86_64_dist -- --destdir=dist
 ```
 

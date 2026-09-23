@@ -5,7 +5,7 @@ There are two ways for Android kernel fuzzing: [Debian image + Android GKI](#deb
 Please replace the following variables according to the actual situation:
 - `$DEBIAN`: Directory for saving Debian image.
 - `$GKI`: Directory for saving Android GKI source.
-- `$CLOUD`: Directory for saveing SyzPilot source.
+- `$SYZPILOT`: Directory for saveing SyzPilot source.
 
 ## Debian image, Android GKI
 
@@ -30,7 +30,7 @@ Patch and build GKI:
 ```bash
 cd $GKI
 # please choose the correct patch according GKI branch
-git -C common apply $CLOUD/patch/android/android17-6.18.common.patch
+git -C common apply $SYZPILOT/patch/android/android17-6.18.common.patch
 tools/bazel run --kasan --defconfig_fragment=//common:debian_image_x86_64_defconfig //common-modules/virtual-device:virtual_device_x86_64_dist -- --destdir=dist
 ```
 
@@ -49,7 +49,7 @@ tools/bazel run --kasan --defconfig_fragment=//common:debian_image_x86_64_defcon
 We use common-android13-5.15 here to describe how to build and generate compile_commands.json for Android kernel. Patch and build GKI:
 ```bash
 cd $GKI
-git -C common apply $CLOUD/patch/android/android13-5.15.common.patch
+git -C common apply $SYZPILOT/patch/android/android13-5.15.common.patch
 DIST_DIR=dist BUILD_CONFIG=common/build.config.gki_kasan_debian.x86_64 build/build.sh
 DIST_DIR=dist BUILD_CONFIG=common-modules/virtual-device/build.config.virtual_device_kasan.x86_64 build/build.sh
 ```
@@ -64,13 +64,13 @@ python3 common/scripts/clang-tools/gen_compile_commands.py -d out/android13-5.15
 
 Build analyzer with Android patch:
 ```bash
-cd $CLOUD
+cd $SYZPILOT
 make TARGETOS=android anayzler
 ```
 
 Analyze compile_commands.json to constrcut a kernel database:
 ```bash
-cd $CLOUD
+cd $SYZPILOT
 ./bin/analyzer -i $GKI/compile_commands.json -o data/database/android.db -j 4
 ```
 
@@ -80,13 +80,13 @@ cd $CLOUD
 
 Run generator to generate specs for android kernel
 ```bash
-$CLOUD/bin/generator \
-	-db=$CLOUD/data/database/android.db \
+$SYZPILOT/bin/generator \
+	-db=$SYZPILOT/data/database/android.db \
 	-os=android \
 	-model=gemini-3-flash-preview \
 	-kernel=$GKI \
 	-outdir=$WORKDIR \
-	-ref=$CLOUD/data/refs/android/test.txt
+	-ref=$SYZPILOT/data/refs/android/test.txt
 ```
 
 ### Start fuzzing
@@ -94,30 +94,30 @@ $CLOUD/bin/generator \
 Create Debian image:
 ```bash
 cd $DEBIAN
-cp $CLOUD/scripts/android/create-image.sh .
+cp $SYZPILOT/scripts/android/create-image.sh .
 chmod +x ./create-image.sh && ./create-image.sh
 ```
 
 Patch and build syzkaller:
 ```bash
-cd $CLOUD/syzkaller
+cd $SYZPILOT/syzkaller
 git apply ../patch/syzkaller/android.patch
 make all
 ```
 
 Start fuzzing:
 ```bash
-cd $CLOUD && mkdir workdir
+cd $SYZPILOT && mkdir workdir
 cat <<__EOF__ > workdir/android.cfg
 {
 	"name": "android",
 	"target": "android/amd64",
 	"http": "127.0.0.1:56741",
-	"workdir": "$CLOUD/workdir",
+	"workdir": "$SYZPILOT/workdir",
 	"kernel_obj": "$GKI/dist",
 	"image": "$IMAGE/bullseye.img",
 	"sshkey": "$IMAGE/bullseye.id_rsa",
-	"syzkaller": "$CLOUD/syzkaller",
+	"syzkaller": "$SYZPILOT/syzkaller",
 	"procs": 8,
 	"type": "qemu",
 	"reproduce": false,

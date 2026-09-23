@@ -3,7 +3,7 @@
 # qemu command used for linux startup, using the same options as syzkaller
 #
 # usage:
-#   $CLOUD/scripts/linux/qemu.sh -i /path/to/bullseye.img -k /path/to/linux
+#   $SYZPILOT/scripts/linux/qemu.sh -i /path/to/bullseye.img -k /path/to/linux
 
 set -euo pipefail
 

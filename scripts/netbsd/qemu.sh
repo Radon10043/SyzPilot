@@ -3,7 +3,7 @@
 # qemu command used for netbsd startup, using the same options as syzkaller
 #
 # usage:
-#   $CLOUD/scripts/netbsd/qemu.sh -i /path/to/netbsd.qcow2
+#   $SYZPILOT/scripts/netbsd/qemu.sh -i /path/to/netbsd.qcow2
 
 set -euo pipefail
 

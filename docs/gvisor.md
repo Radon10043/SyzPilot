@@ -9,7 +9,7 @@ The prefix of each description in the doc means the environment that the instruc
 
 Please replace the following variables according to the actual situation:
 - `$GVISOR`: directory for saving gvisor and its artifacts.
-- `$CLOUD`: directory for saveing SyzPilot source.
+- `$SYZPILOT`: directory for saveing SyzPilot source.
 
 ## setup gvisor build image
 
@@ -75,7 +75,7 @@ bazel --output_user_root=/output build \
 docker run \
     -v $GVISOR/src:/src \
     -v $GVISOR/output:/output \
-	-v $CLOUD:/SyzPilot \
+	-v $SYZPILOT:/SyzPilot \
     -w /SyzPilot \
     --cpus 16 \
     --network host \

@@ -3,7 +3,7 @@
 # qemu command used for freebsd startup, using the same options as syzkaller
 #
 # usage:
-#   $CLOUD/scripts/freebsd/qemu.sh -i /path/to/freebsd.qcow2
+#   $SYZPILOT/scripts/freebsd/qemu.sh -i /path/to/freebsd.qcow2
 
 set -euo pipefail
 

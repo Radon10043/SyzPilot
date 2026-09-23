@@ -3,16 +3,16 @@
 this document shows how to setup KernelGEM and use it for generating specifications and fuzzing.
 
 please replace the following variables according to your actual situation:
-- `$CLOUD`: directory for saveing SyzPilot source
+- `$SYZPILOT`: directory for saveing SyzPilot source
 - `$KERNELGEM`: directory for saving KernelGEM source
 - `$LINUX`: directory for saving linux kernel source
 - `$ANDROID`: directory for saving android kernel source
 
 ## preparation
 
-create a docker image via `$CLOUD/experiment/KernelGEM/Dockerfile` and enter the container.
+create a docker image via `$SYZPILOT/experiment/KernelGEM/Dockerfile` and enter the container.
 ```bash
-docker build -t kernelgpt:latest --network host -f $CLOUD/experiment/KernelGEM/Dockerfile .
+docker build -t kernelgpt:latest --network host -f $SYZPILOT/experiment/KernelGEM/Dockerfile .
 docker run \
     -d \
     --cpus 16 \
@@ -29,7 +29,7 @@ docker exec -it kernelgem-exp bash
 git clone https://github.com/ise-uiuc/KernelGPT.git KernelGEM
 cd KernelGEM
 git checkout e3464d23b8d59ffffb1bd5b2f7100c102c48bb3d
-git apply -3 $CLOUD/experiment/KernelGEM/repo.patch
+git apply -3 $SYZPILOT/experiment/KernelGEM/repo.patch
 git submodule update --init --recursive --depth 1 --progress
 pip install -r requirements.txt
 ```
@@ -39,7 +39,7 @@ pip install -r requirements.txt
 build linux v6.18.
 ```bash
 cd $KERNELGEM
-cp $CLOUD/configs/kernel/linux.config linux/.config
+cp $SYZPILOT/configs/kernel/linux.config linux/.config
 bear -- make CC=clang HOSTCC=clang olddefconfig all -j16
 ```
 

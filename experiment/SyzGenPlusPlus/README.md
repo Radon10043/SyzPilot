@@ -3,16 +3,16 @@
 this document shows how to setup SyzGenPlusPlus and use it for generating specifications and fuzzing.
 
 please replace the following variables according to your actual situation:
-- `$CLOUD`: directory for saveing SyzPilot source
+- `$SYZPILOT`: directory for saveing SyzPilot source
 - `$SYZGENPP`: directory for saving SyzGenPlusPlus source
 - `$LINUX`: directory for saving linux kernel source
 - `$ANDROID`: directory for saving android kernel source
 
 ## preparation
 
-create a docker image via `$CLOUD/experiment/SyzGenPlusPlus/Dockerfile` and enter the container.
+create a docker image via `$SYZPILOT/experiment/SyzGenPlusPlus/Dockerfile` and enter the container.
 ```bash
-docker build -t syzgenpp:latest --network host -f $CLOUD/experiment/SyzGenPlusPlus/Dockerfile .
+docker build -t syzgenpp:latest --network host -f $SYZPILOT/experiment/SyzGenPlusPlus/Dockerfile .
 docker run \
     -d \
     --cpus 16 \
@@ -30,13 +30,13 @@ in the container, run following commands to setup SyzGenPlusPlus and generate sp
 git clone https://github.com/seclab-ucr/SyzGenPlusPlus
 cd SyzGenPlusPlus
 git checkout 7c0838106554796dfdab1c3285858f53d6fd76bb
-git apply $CLOUD/experiment/SyzGenPlusPlus/repo.patch
+git apply $SYZPILOT/experiment/SyzGenPlusPlus/repo.patch
 
 mkdir linux-distro
 python3 scripts/download.py -c "https://raw.githubusercontent.com/google/syzkaller/ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219/dashboard/config/linux/upstream-apparmor-kasan.config" --build -v 6.18
 
 mkdir linux-distro/image && cd linux-distro/image
-cp $CLOUD/scripts/linux/create-image.sh .
+cp $SYZPILOT/scripts/linux/create-image.sh .
 chmod +x ./create-image.sh
 ./create-image.sh
 
@@ -86,7 +86,7 @@ re-create an android-specific debian image:
 ```bash
 cd $SYZGENPP
 rm -rf linux-distro/image/*
-cp $CLOUD/scripts/android/create-image.sh linux-distro/image/
+cp $SYZPILOT/scripts/android/create-image.sh linux-distro/image/
 cd linux-distro/image
 ./create-image.sh
 ```
@@ -103,7 +103,7 @@ cd linux-distro/linux-android17_6.18-fuzz
 cp "$ANDROID/dist/kernel_x86_64_dot_config" .config
 
 export PATH="$ANDROID/prebuilts/clang/host/linux-x86/clang-r547379/bin":$PATH
-scripts/kconfig/merge_config.sh -m .config "$CLOUD/experiment/SyzGenPlusPlus/configs/android.config"
+scripts/kconfig/merge_config.sh -m .config "$SYZPILOT/experiment/SyzGenPlusPlus/configs/android.config"
 make LLVM=1 LLVM_IAS=1 olddefconfig
 make LLVM=1 LLVM_IAS=1 -j$(nproc) all
 ```

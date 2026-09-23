@@ -4,8 +4,8 @@ Please replace the following variables according to the actual situation:
 - `$VMDIR`: directory for saving FreeBSD image(s).
 - `$KERNSRC_HOST`: directory for saving FreeBSD kernel source (host).
 - `$KERNSRC_VM`: directory for saving FreeBSD kernel source (vm).
-- `CLOUD_HOST`: directory for saveing SyzPilot source (host).
-- `CLOUD_VM`: directory for saveing SyzPilot source (vm).
+- `SYZPILOT_HOST`: directory for saveing SyzPilot source (host).
+- `SYZPILOT_VM`: directory for saveing SyzPilot source (vm).
 - `$LLVM_HOME`: directory for llvm
 
 ## ubuntu host, qemu vm
@@ -81,7 +81,7 @@ git clone --recurse-submodules https://github.com/Radon10043/cloud
 build SyzPilot:
 ```sh
 # run following commands on vm
-cd $CLOUD_VM
+cd $SYZPILOT_VM
 gmake
 ```
 
@@ -95,7 +95,7 @@ git clone -b release/15.0.0 --depth 1 https://github.com/freebsd/freebsd-src bui
 cp -r build extract # former for kernel building, latter for const extraction
 
 cd build/sys/amd64/conf
-cp $CLOUD_VM/configs/kernel/freebsd.config CLOUD
+cp $SYZPILOT_VM/configs/kernel/freebsd.config CLOUD
 config CLOUD && cd ../compile/CLOUD
 make cleandepend && make depend
 compiledb make -n
@@ -105,27 +105,27 @@ make -j$(sysctl -n hw.ncpu)
 analyze `compile_commands.json` of FreeBSD and create kernel source database:
 ```sh
 # run following commands on vm
-cd $CLOUD_VM
+cd $SYZPILOT_VM
 ./bin/analyzer \
     -i $KERNSRC_VM/build/15.0.0/sys/amd64/compile/CLOUD/compile_commands.json \
     -j 8 \
-    -o $CLOUD/data/database/freebsd.db
+    -o $SYZPILOT/data/database/freebsd.db
 ```
 
 run spec generator:
 ```sh
 # run following commands on vm
-$CLOUD_VM/bin/generator \
-    -db=$CLOUD_VM/data/dadabase/freebsd.db \
+$SYZPILOT_VM/bin/generator \
+    -db=$SYZPILOT_VM/data/dadabase/freebsd.db \
     -os=freebsd \
-    -outdir=$CLOUD_VM/workdir/gen-specs \
+    -outdir=$SYZPILOT_VM/workdir/gen-specs \
     -kernel=$KERNSRC_VM/build/15.0.0 \
     -model=gemini-2.5-flash \
-    -varlist=$CLOUD_VM/workdir/gen-specs/varlist.txt \
+    -varlist=$SYZPILOT_VM/workdir/gen-specs/varlist.txt \
     -jobs=4 > logs/generator.log 2>&1
 ```
 
-After generator finishes executing, check `$CLOUD_VM/workdir/gen-specs` for details.
+After generator finishes executing, check `$SYZPILOT_VM/workdir/gen-specs` for details.
 
 feel free to shutdown vm:
 ```sh
@@ -154,10 +154,10 @@ ssh-copy-id -i ./freebsd.id_rsa.pub -p 3733 -o UserKnownHostsFile=/dev/null -o S
 in vm, build syzkaller and copy executor programs to host:
 ```sh
 # run following commands on vm
-cd $CLOUD/syzkaller && gmake target
+cd $SYZPILOT/syzkaller && gmake target
 
 # run following commands on host
-scp -i ./freebsd.id_rsa -P 3733 -r -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost:$CLOUD/syzkaller/freebsd_amd64 $CLOUD/syzkaller/bin
+scp -i ./freebsd.id_rsa -P 3733 -r -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost:$SYZPILOT/syzkaller/freebsd_amd64 $SYZPILOT/syzkaller/bin
 ```
 
 shutdown vm:
@@ -193,15 +193,15 @@ shutdown -p now
 run syzkaller:
 ```bash
 # run following commands on host
-cd $CLOUD
+cd $SYZPILOT
 mkdir workdir
 cat <<__EOF__ > workdir/freebsd.cfg
 {
     "name": "freebsd",
     "target": "freebsd/amd64",
     "http": ":10000",
-    "workdir": "$CLOUD/workdir",
-    "syzkaller": "$CLOUD/syzkaller",
+    "workdir": "$SYZPILOT/workdir",
+    "syzkaller": "$SYZPILOT/syzkaller",
     "sshkey": "$VMDIR/freebsd.id_rsa",
     "sandbox": "none",
     "procs": 8,
@@ -411,7 +411,7 @@ sshfs -p 3733 \
     -o compression=no \
     -o idmap=user \
     -o follow_symlinks \
-    root@localhost:$CLOUD_VM ./mnt/SyzPilot
+    root@localhost:$SYZPILOT_VM ./mnt/SyzPilot
 ```
 
 ## build and replace freebsd kernel on linux host
@@ -422,7 +422,7 @@ build freebsd kernel:
 ```bash
 # run following command on host
 cd $KERNSRC
-cp $CLOUD/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
+cp $SYZPILOT/configs/kernel/freebsd.config sys/amd64/conf/CLOUD
 
 mkdir build dist
 MAKEOBJDIRPREFIX=$PWD/build ./tools/build/make.py --cross-bindir=$LLVM_HOME/bin TARGET=amd64 TARGET_ARCH=amd64 buildworld

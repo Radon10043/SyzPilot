@@ -3,16 +3,16 @@
 this document shows how to setup SyzDescribe and use it for generating specifications and fuzzing.
 
 please replace the following variables according to your actual situation:
-- `$CLOUD`: directory for saveing SyzPilot source
+- `$SYZPILOT`: directory for saveing SyzPilot source
 - `$SYZDESCRIBE`: directory for saving SyzDescribe source
 - `$LINUX`: directory for saving linux kernel source
 - `$ANDROID`: directory for saving android kernel source
 
 ## preparation
 
-create a docker image via `$CLOUD/experiment/SyzDescribe/Dockerfile` and enter the container.
+create a docker image via `$SYZPILOT/experiment/SyzDescribe/Dockerfile` and enter the container.
 ```bash
-docker build -t syzdescribe:latest --network host -f "$CLOUD/experiment/SyzDescribe/Dockerfile" .
+docker build -t syzdescribe:latest --network host -f "$SYZPILOT/experiment/SyzDescribe/Dockerfile" .
 docker run \
     -d \
     --cpus 16 \
@@ -30,7 +30,7 @@ in the container, run following commands to setup SyzDescribe and generate speci
 git clone https://github.com/seclab-ucr/SyzDescribe
 cd SyzDescribe
 git checkout a1c0e55bb111c076980ddf64c108cb7cb08dafb9
-git apply "$CLOUD/experiment/SyzDescribe/repo.patch"
+git apply "$SYZPILOT/experiment/SyzDescribe/repo.patch"
 mkdir build && cd build
 cmake -G "Unix Makefiles" -DLLVM_CONFIG_BINARY=/llvm-15/bin/llvm-config ..
 make -j16
@@ -41,7 +41,7 @@ cd ..
 
 ```bash
 cd "$LINUX"
-cp "$CLOUD/configs/kernel/syzbot.config" .config
+cp "$SYZPILOT/configs/kernel/syzbot.config" .config
 PATH=/llvm-15/bin:$PATH make LLVM=1 olddefconfig all -j16
 
 go run "$SYZDESCRIBE/kernelbc/gen.go" -isSaveTemp -toolchain=/llvm-15/bin
@@ -66,7 +66,7 @@ generate specs for subsystems:
 build android via kleaf, e.g. common-android17-6.18:
 ```bash
 cd "$ANDROID"
-git -C common apply "$CLOUD/patch/android/android17-6.18.common.patch"
+git -C common apply "$SYZPILOT/patch/android/android17-6.18.common.patch"
 tools/bazel run --kasan --defconfig_fragment=//common:debian_image_x86_64_defconfig //common-modules/virtual-device:virtual_device_x86_64_dist -- --destdir=dist
 ```
 

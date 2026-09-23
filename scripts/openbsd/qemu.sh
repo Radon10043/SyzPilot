@@ -3,7 +3,7 @@
 # qemu command used for openbsd startup, using the same options as syzkaller
 #
 # usage:
-#   $CLOUD/scripts/openbsd/qemu.sh -i /path/to/openbsd.qcow2
+#   $SYZPILOT/scripts/openbsd/qemu.sh -i /path/to/openbsd.qcow2
 
 set -euo pipefail
 

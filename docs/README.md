@@ -8,7 +8,7 @@ git clone --recurse-submodules https://github.com/Radon10043/cloud
 ## build
 
 ```bash
-cd $CLOUD
+cd $SYZPILOT
 go mod tidy
 make
 ```
@@ -20,14 +20,14 @@ make
 We use linux v6.18 as an example.
 ```bash
 cd $KERNSRC
-cp $CLOUD/configs/kernel/linux.config .config
+cp $SYZPILOT/configs/kernel/linux.config .config
 make CC="ccache clang" olddefconfig modules_prepare all -j16
 python3 scripts/clang-tools/gen_compile_commands.py
 ```
 
 Analyze kernel code:
 ```bash
-cd $CLOUD
+cd $SYZPILOT
 ./bin/analyzer -i $KERNEL/compile_commands.json -o data/database/linux.db -j 16 > logs/analyze.log 2>&1
 ```
 

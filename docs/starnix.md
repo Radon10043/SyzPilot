@@ -43,7 +43,7 @@ source scripts/fx-env.sh && fx-update-path
 patch fuchsia:
 ```bash
 cd $KERNSRC
-git apply $CLOUD/patch/fuchsia/f30.patch
+git apply $SYZPILOT/patch/fuchsia/f30.patch
 ```
 
 build artifacts for starnix:
@@ -69,13 +69,13 @@ fx build
 
 build syzkaller:
 ```bash
-cd $CLOUD/syzkaller
+cd $SYZPILOT/syzkaller
 make TARGETOS=linux TARGETARCH=amd64
 ```
 
 start fuzzing:
 ```bash
-cd $CLOUD
+cd $SYZPILOT
 cat <<__EOF__ > $WORKDIR/starnix.cfg
 {
     "target": "linux/amd64",
@@ -83,7 +83,7 @@ cat <<__EOF__ > $WORKDIR/starnix.cfg
     "workdir": "$WORKDIR",
     "kernel_obj": "$KERNSRC/out/x64/exe.unstripped/starnix_kernel",
     "kernel_src": "$KERNSRC",
-    "syzkaller": "$CLOUD/syzkaller",
+    "syzkaller": "$SYZPILOT/syzkaller",
     "procs": 1,
     "type": "starnix",
     "cover": true,
@@ -94,5 +94,5 @@ cat <<__EOF__ > $WORKDIR/starnix.cfg
 
 __EOF__
 
-$CLOUD/syzkaller/bin/syz-manager -config=$WORKDIR/starnix.cfg
+$SYZPILOT/syzkaller/bin/syz-manager -config=$WORKDIR/starnix.cfg
 ```

@@ -3,7 +3,7 @@
 Please replace the following variables according to the actual situation:
 - `$VMDIR`: directory for saving OpenBSD image(s).
 - `$KERNSRC`: directory for saving OpenBSD kernel source.
-- `$CLOUD`: directory for saving SyzPilot source.
+- `$SYZPILOT`: directory for saving SyzPilot source.
 - `$WORKDIR`: directory for working.
 
 ## openbsd vm setup
@@ -124,7 +124,7 @@ git clone --recurse-submodules https://github.com/Radon10043/cloud
 build SyzPilot:
 ```sh
 # run following commands on vm
-cd $CLOUD
+cd $SYZPILOT
 LLVM_CONFIG=llvm-config-19 gmake
 ```
 
@@ -141,7 +141,7 @@ git checkout 23290a22d1dee9d1d0b277c2896d441128a32f42
 build kernel and generate `compile_commands.json`:
 ```sh
 # run following commands on vm
-cp $CLOUD/configs/kernel/openbsd.config $KERNSRC/sys/arch/amd64/conf/CLOUD
+cp $SYZPILOT/configs/kernel/openbsd.config $KERNSRC/sys/arch/amd64/conf/CLOUD
 cd $KERNSRC/sys/arch/amd64/conf
 config CLOUD
 cd ../compile/CLOUD
@@ -154,7 +154,7 @@ compiledb --parse make.log
 construct database:
 ```sh
 # run following commands on vm
-cd $CLOUD
+cd $SYZPILOT
 LD_LIBRARY_PATH=/usr/local/llvm19/lib:$LD_LIBRARY_PATH ./bin/analyzer -i $KERNSRC/sys/arch/amd64/compile/CLOUD/compile_commands.json -j 8 -o data/database/openbsd.db
 ```
 
@@ -162,20 +162,20 @@ feel free to run minitask or generator:
 ```sh
 # run following commands on vm
 # minitask
-$CLOUD/bin/minitask \
-    -db=$CLOUD/data/database/openbsd.db \
+$SYZPILOT/bin/minitask \
+    -db=$SYZPILOT/data/database/openbsd.db \
     -os=openbsd \
-    -outdir=$CLOUD/workdir/minitask \
+    -outdir=$SYZPILOT/workdir/minitask \
     -model=gemini-2.5-flash > logs/minitask.log 2>&1
 
 # generator
-$CLOUD/bin/generator \
-    -db=$CLOUD/data/database/openbsd.db \
+$SYZPILOT/bin/generator \
+    -db=$SYZPILOT/data/database/openbsd.db \
     -os=openbsd \
-    -outdir=$CLOUD/workdir/out \
+    -outdir=$SYZPILOT/workdir/out \
     -kernel=$KERNSRC \
     -model=gemini-2.5-flash \
-    -varlist=$CLOUD/workdir/out/varlist.txt \
+    -varlist=$SYZPILOT/workdir/out/varlist.txt \
     -jobs=4 > logs/generate.log 2>&1
 ```
 
@@ -237,7 +237,7 @@ cat <<__EOF__ > test.cfg
     "target": "openbsd/amd64",
     "http": ":10000",
     "workdir": "$WORKDIR/out",
-    "syzkaller": "$CLOUD/syzkaller",
+    "syzkaller": "$SYZPILOT/syzkaller",
     "image": "$VM/target.qcow2",
     "sshkey": "$VM/openbsd.id_rsa",
     "sandbox": "none",
@@ -252,7 +252,7 @@ cat <<__EOF__ > test.cfg
 __EOF__
 
 git clone https://github.com/openbsd/src openbsd
-$CLOUD/syzkaller/bin/syz-manager -config=$WORKDIR/test.cfg
+$SYZPILOT/syzkaller/bin/syz-manager -config=$WORKDIR/test.cfg
 ```
 
 ### openbsd host, openbsd vm
@@ -302,16 +302,16 @@ vmctl stop -w syzkaller-1
 
 Now we can start fuzzing:
 ```bash
-cd $CLOUD && mkdir workdir
+cd $SYZPILOT && mkdir workdir
 cat <<__EOF__ > workdir/test.cfg
 {
   "name": "openbsd",
   "target": "openbsd/amd64",
   "http": ":10000",
-  "workdir": "$CLOUD/workdir/out",
+  "workdir": "$SYZPILOT/workdir/out",
   "kernel_obj": "/sys/arch/amd64/compile/SYZKALLER/obj",
   "kernel_src": "/",
-  "syzkaller": "$CLOUD/syzkaller",
+  "syzkaller": "$SYZPILOT/syzkaller",
   "image": "/root/vm.qcow2",
   "sshkey": "/root/vm.sshkey",
   "sandbox": "none",
@@ -366,7 +366,7 @@ sshfs -p 6736 \
     -o compression=no \
     -o idmap=user \
     -o follow_symlinks \
-    root@localhost:$CLOUD ./SyzPilot
+    root@localhost:$SYZPILOT ./SyzPilot
 ```
 
 feel free to unmount it:
@@ -388,7 +388,7 @@ sysupgrade -s
 compile and install customized latest OpenBSD kernel.
 ```bash
 cd $KERNSRC && git pull
-cp $CLOUD/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
+cp $SYZPILOT/configs/kernel/openbsd.config sys/arch/amd64/conf/CLOUD
 cd sys/arch/amd64/conf && config CLOUD
 cd ../compile/CLOUD
 make depend && make -j4 && make install

@@ -4,7 +4,7 @@
 # syzkaller's linux qemu vm startup
 #
 # usage:
-#   $CLOUD/scripts/android/qemu.sh -i /path/to/bullseye.img -k /path/to/android
+#   $SYZPILOT/scripts/android/qemu.sh -i /path/to/bullseye.img -k /path/to/android
 
 set -euo pipefail
 
