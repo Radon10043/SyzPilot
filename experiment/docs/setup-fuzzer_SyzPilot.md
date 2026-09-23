@@ -4,13 +4,13 @@
 
 ### linux binaries
 
-(container.syzpilot): build cloud/syzkaller for linux:
+(container.syzpilot): build SyzPilot/syzkaller for linux:
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer
-git clone --recurse-submodules https://github.com/Radon10043/cloud
-# or git clone https://github.com/Radon10043/cloud && cd cloud && git submodule update --init --recursive
+git clone --recurse-submodules https://github.com/Radon10043/SyzPilot
+# or git clone https://github.com/Radon10043/SyzPilot && cd SyzPilot && git submodule update --init --recursive
 
-cd cloud/syzkaller
+cd SyzPilot/syzkaller
 git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-kern/*
 make all -j$JOBS
@@ -25,7 +25,7 @@ qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/image/freebsd/15.0.0.qco
 
 (vm) build needed binaries for SyzPilot on freebsd vm:
 ```sh
-cd /root/cloud
+cd /root/SyzPilot
 git submodule update --init --recursive
 cd syzkaller
 git apply -3 ../patch/syzkaller/*
@@ -39,7 +39,7 @@ scp -P 3733 \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
     -r \
-    root@localhost:/root/cloud/syzkaller/bin/freebsd_amd64 $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller/bin
+    root@localhost:/root/SyzPilot/syzkaller/bin/freebsd_amd64 $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller/bin
 ```
 
 ### openbsd binaries
@@ -113,7 +113,7 @@ pkg_add ccache sqlite3 bear python py3-pip gdb cmake
 pip3 install compiledb --break-system-packages
 echo "export PATH=/root/go/bin:\$PATH" >> /root/.profile
 
-git clone https://github.com/radon10043/cloud && cd cloud
+git clone https://github.com/Radon10043/SyzPilot && cd SyzPilot
 git submodule update --init --recursive
 
 cd syzkaller
@@ -128,7 +128,7 @@ scp -P 6736 \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
     -r \
-    root@localhost:/root/cloud/syzkaller/bin/openbsd_amd64 $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller/bin
+    root@localhost:/root/SyzPilot/syzkaller/bin/openbsd_amd64 $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller/bin
 ```
 
 (vm) close vm:
@@ -140,15 +140,15 @@ shutdown -p now
 
 (container.syzpilot):
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+cd $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller
 make target TARGETOS=netbsd SOURCEDIR=$EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5 CCFLAGS="-static-libstdc++" CXXFLAGS="-static-libstdc++"
 ```
 
-### fuzzer/cloud/bin-kern
+### fuzzer/SyzPilot/bin-kern
 
-(container.syzpilot): move full kernel fuzzing binaries to cloud/:
+(container.syzpilot): move full kernel fuzzing binaries to SyzPilot/:
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/cloud
+cd $EXPERIMENT_ROOT/fuzzer/SyzPilot
 mv syzkaller/bin bin-kern
 ```
 
@@ -156,9 +156,9 @@ mv syzkaller/bin bin-kern
 
 ### linux binaries
 
-(container.syzpilot): build cloud/syzkaller for linux subsystems:
+(container.syzpilot): build SyzPilot/syzkaller for linux subsystems:
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+cd $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller
 git reset --hard HEAD && git checkout . && git clean -fdx
 git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-subsys/*
@@ -174,7 +174,7 @@ qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/image/freebsd/15.0.0.qco
 
 (vm) build needed binaries for SyzPilot on freebsd vm:
 ```sh
-cd /root/cloud
+cd /root/SyzPilot
 git submodule update --init --recursive
 cd syzkaller
 git apply -3 ../patch/syzkaller/*
@@ -188,7 +188,7 @@ scp -P 3733 \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
     -r \
-    root@localhost:/root/cloud/syzkaller/bin/freebsd_amd64 $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller/bin
+    root@localhost:/root/SyzPilot/syzkaller/bin/freebsd_amd64 $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller/bin
 ```
 
 ### openbsd binaries
@@ -200,7 +200,7 @@ qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./dev.qcow2,
 
 (vm) build the needed binaries on the OpenBSD vm:
 ```sh
-cd /root/cloud/syzkaller
+cd /root/SyzPilot/syzkaller
 git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-subsys/*
 gmake target
@@ -212,7 +212,7 @@ scp -P 6736 \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
     -r \
-    root@localhost:/root/cloud/syzkaller/bin/openbsd_amd64 $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller/bin
+    root@localhost:/root/SyzPilot/syzkaller/bin/openbsd_amd64 $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller/bin
 ```
 
 (vm) close vm:
@@ -224,25 +224,25 @@ shutdown -p now
 
 (container.syzpilot):
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+cd $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller
 make target TARGETOS=netbsd SOURCEDIR=$EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5-tprof CCFLAGS="-static-libstdc++" CXXFLAGS="-static-libstdc++"
 ```
 
-### fuzzer/cloud/bin-subsys
+### fuzzer/SyzPilot/bin-subsys
 
-(container.syzpilot): move subsystem fuzzing binaries to cloud/:
+(container.syzpilot): move subsystem fuzzing binaries to SyzPilot/:
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/cloud
+cd $EXPERIMENT_ROOT/fuzzer/SyzPilot
 mv syzkaller/bin bin-subsys
 ```
 
 ## setup binaries for ablation fuzzing
 
-### fuzzer/cloud/bin-nodb
+### fuzzer/SyzPilot/bin-nodb
 
 (container.syzpilot):
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+cd $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller
 git reset --hard HEAD && git checkout . && git clean -fdx
 git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-ablation/specs-syzkaller-ac3c71e7-linux-v6.18-subsystem-nodb-gemini-3-flash-preview.patch
@@ -250,11 +250,11 @@ make all -j$JOBS
 mv bin ../bin-nodb
 ```
 
-### fuzzer/cloud/bin-noiter
+### fuzzer/SyzPilot/bin-noiter
 
 (container.syzpilot):
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+cd $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller
 git reset --hard HEAD && git checkout . && git clean -fdx
 git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-ablation/specs-syzkaller-ac3c71e7-linux-v6.18-subsystem-noiter-gemini-3-flash-preview.patch
@@ -262,11 +262,11 @@ make all -j$JOBS
 mv bin ../bin-noiter
 ```
 
-### fuzzer/cloud/bin-openllm
+### fuzzer/SyzPilot/bin-openllm
 
 (container.syzpilot):
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+cd $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller
 git reset --hard HEAD && git checkout . && git clean -fdx
 git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-ablation/specs-syzkaller-ac3c71e7-linux-v6.18-subsystem-openllm-qwen3-235b-a22b-instruct-2507.patch
@@ -274,11 +274,11 @@ make all -j$JOBS
 mv bin ../bin-openllm
 ```
 
-### fuzzer/cloud/bin-codex
+### fuzzer/SyzPilot/bin-codex
 
 (container.syzpilot):
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
+cd $EXPERIMENT_ROOT/fuzzer/SyzPilot/syzkaller
 git reset --hard HEAD && git checkout . && git clean -fdx
 git apply -3 ../patch/syzkaller/*
 git apply ../patch/specs-ablation/specs-syzkaller-ac3c71e7-linux-v6.18-subsystem-codex-gpt-5.5-xhigh.patch

@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/Radon10043/cloud/src/pkg/pool"
+	"github.com/Radon10043/SyzPilot/src/pkg/pool"
 )
 
 var (

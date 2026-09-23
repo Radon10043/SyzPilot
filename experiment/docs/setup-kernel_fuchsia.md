@@ -21,9 +21,9 @@ jiri update
 source scripts/fx-env.sh && fx-update-path
 git -C third_party/syzkaller fetch
 git -C third_party/syzkaller checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
-git -C third_party/syzkaller apply -3 "$EXPERIMENT_ROOT"/fuzzer/cloud/patch/syzkaller/*
+git -C third_party/syzkaller apply -3 "$EXPERIMENT_ROOT"/fuzzer/SyzPilot/patch/syzkaller/*
 git -C third_party/syzkaller restore --staged .
-git apply "$EXPERIMENT_ROOT/fuzzer/cloud/patch/fuchsia/f30.patch"
+git apply "$EXPERIMENT_ROOT/fuzzer/SyzPilot/patch/fuchsia/f30.patch"
 
 cd "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f30/third_party/syzkaller"
 make TARGETOS=fuchsia TARGETARCH=amd64 SOURCEDIR="$EXPERIMENT_ROOT/kernel/fuchsia/releases.f30"
@@ -36,7 +36,7 @@ fx --dir "out/x64" set core.x64 \
     --variant=kasan-sancov
 fx build -j$JOBS
 
-"$EXPERIMENT_ROOT/fuzzer/cloud/scripts/fuchsia/refresh.sh" -f "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f30"
+"$EXPERIMENT_ROOT/fuzzer/SyzPilot/scripts/fuchsia/refresh.sh" -f "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f30"
 ```
 
 ## releases/f29
@@ -60,9 +60,9 @@ jiri update
 source scripts/fx-env.sh && fx-update-path
 git -C third_party/syzkaller fetch
 git -C third_party/syzkaller checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
-git -C third_party/syzkaller apply -3 "$EXPERIMENT_ROOT"/fuzzer/cloud/patch/syzkaller/*
+git -C third_party/syzkaller apply -3 "$EXPERIMENT_ROOT"/fuzzer/SyzPilot/patch/syzkaller/*
 git -C third_party/syzkaller restore --staged .
-git apply "$EXPERIMENT_ROOT/fuzzer/cloud/patch/fuchsia/f29.patch"
+git apply "$EXPERIMENT_ROOT/fuzzer/SyzPilot/patch/fuchsia/f29.patch"
 
 cd "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f29/third_party/syzkaller"
 make TARGETOS=fuchsia TARGETARCH=amd64 SOURCEDIR="$EXPERIMENT_ROOT/kernel/fuchsia/releases.f29"
@@ -75,7 +75,7 @@ fx --dir "out/x64" set core.x64 \
     --variant=kasan-sancov
 fx build -j$JOBS
 
-"$EXPERIMENT_ROOT/fuzzer/cloud/scripts/fuchsia/refresh.sh" -f "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f29"
+"$EXPERIMENT_ROOT/fuzzer/SyzPilot/scripts/fuchsia/refresh.sh" -f "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f29"
 ```
 
 ## releases/f28
@@ -99,9 +99,9 @@ jiri update
 source scripts/fx-env.sh && fx-update-path
 git -C third_party/syzkaller fetch
 git -C third_party/syzkaller checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
-git -C third_party/syzkaller apply -3 "$EXPERIMENT_ROOT"/fuzzer/cloud/patch/syzkaller/*
+git -C third_party/syzkaller apply -3 "$EXPERIMENT_ROOT"/fuzzer/SyzPilot/patch/syzkaller/*
 git -C third_party/syzkaller restore --staged .
-git apply "$EXPERIMENT_ROOT/fuzzer/cloud/patch/fuchsia/f28.patch"
+git apply "$EXPERIMENT_ROOT/fuzzer/SyzPilot/patch/fuchsia/f28.patch"
 
 cd "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f28/third_party/syzkaller"
 make TARGETOS=fuchsia TARGETARCH=amd64 SOURCEDIR="$EXPERIMENT_ROOT/kernel/fuchsia/releases.f28"
@@ -114,7 +114,7 @@ fx --dir "out/x64" set core.x64 \
     --variant=kasan-sancov
 fx build -j$JOBS
 
-"$EXPERIMENT_ROOT/fuzzer/cloud/scripts/fuchsia/refresh.sh" -f "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f28"
+"$EXPERIMENT_ROOT/fuzzer/SyzPilot/scripts/fuchsia/refresh.sh" -f "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f28"
 ```
 
 ## releases/f27
@@ -144,9 +144,9 @@ jiri update
 source scripts/fx-env.sh && fx-update-path
 git -C third_party/syzkaller fetch
 git -C third_party/syzkaller checkout ac3c71e7063b1fc3b1ede9f76fd3c3b4ce072219
-git -C third_party/syzkaller apply -3 "$EXPERIMENT_ROOT"/fuzzer/cloud/patch/syzkaller/*
+git -C third_party/syzkaller apply -3 "$EXPERIMENT_ROOT"/fuzzer/SyzPilot/patch/syzkaller/*
 git -C third_party/syzkaller restore --staged .
-git apply "$EXPERIMENT_ROOT/fuzzer/cloud/patch/fuchsia/f27.patch"
+git apply "$EXPERIMENT_ROOT/fuzzer/SyzPilot/patch/fuchsia/f27.patch"
 
 cd "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f27/third_party/syzkaller"
 make TARGETOS=fuchsia TARGETARCH=amd64 SOURCEDIR="$EXPERIMENT_ROOT/kernel/fuchsia/releases.f27"
@@ -159,5 +159,5 @@ fx --dir "out/x64" set core.x64 \
     --variant=kasan-sancov
 fx build -j$JOBS
 
-"$EXPERIMENT_ROOT/fuzzer/cloud/scripts/fuchsia/refresh.sh" -f "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f27"
+"$EXPERIMENT_ROOT/fuzzer/SyzPilot/scripts/fuchsia/refresh.sh" -f "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f27"
 ```

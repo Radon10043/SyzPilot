@@ -19,7 +19,7 @@ jiri import \
 jiri update
 
 source scripts/fx-env.sh && fx-update-path
-git apply "$EXPERIMENT_ROOT/fuzzer/cloud/patch/fuchsia/f30.patch"
+git apply "$EXPERIMENT_ROOT/fuzzer/SyzPilot/patch/fuchsia/f30.patch"
 
 mkdir local
 cat <<__EOF__ > local/BUILD.gn
@@ -59,7 +59,7 @@ jiri import \
 jiri update
 
 source scripts/fx-env.sh && fx-update-path
-git apply "$EXPERIMENT_ROOT/fuzzer/cloud/patch/fuchsia/f29.patch"
+git apply "$EXPERIMENT_ROOT/fuzzer/SyzPilot/patch/fuchsia/f29.patch"
 
 mkdir local
 cat <<__EOF__ > local/BUILD.gn
@@ -99,7 +99,7 @@ jiri import \
 jiri update
 
 source scripts/fx-env.sh && fx-update-path
-git apply "$EXPERIMENT_ROOT/fuzzer/cloud/patch/fuchsia/f28.patch"
+git apply "$EXPERIMENT_ROOT/fuzzer/SyzPilot/patch/fuchsia/f28.patch"
 
 mkdir local
 cat <<__EOF__ > local/BUILD.gn
@@ -145,7 +145,7 @@ git config --global --add \
 jiri update
 
 source scripts/fx-env.sh && fx-update-path
-git apply "$EXPERIMENT_ROOT/fuzzer/cloud/patch/fuchsia/f27.patch"
+git apply "$EXPERIMENT_ROOT/fuzzer/SyzPilot/patch/fuchsia/f27.patch"
 
 mkdir local
 cat <<__EOF__ > local/BUILD.gn

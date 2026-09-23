@@ -5,7 +5,7 @@
 (container.syzpilot):
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/syzkaller
-git apply $EXPERIMENT_ROOT/fuzzer/cloud/patch/syzkaller/openbsd.patch $EXPERIMENT_ROOT/fuzzer/cloud/patch/syzkaller/netbsd.patch
+git apply $EXPERIMENT_ROOT/fuzzer/SyzPilot/patch/syzkaller/openbsd.patch $EXPERIMENT_ROOT/fuzzer/SyzPilot/patch/syzkaller/netbsd.patch
 make all
 ```
 
@@ -21,7 +21,7 @@ qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/image/freebsd/15.0.0.qco
 cd /root
 git clone https://github.com/google/syzkaller && cd syzkaller
 git checkout ac3c71e7
-git apply /root/cloud/patch/syzkaller/freebsd.patch /root/cloud/patch/syzkaller/openbsd.patch
+git apply /root/SyzPilot/patch/syzkaller/freebsd.patch /root/SyzPilot/patch/syzkaller/openbsd.patch
 gmake target
 ```
 
@@ -50,7 +50,7 @@ qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=$EXPERIMENT_
 ```sh
 git clone https://github.com/google/syzkaller && cd syzkaller
 git checkout ac3c71e7
-git apply /root/cloud/patch/syzkaller/freebsd.patch /root/cloud/patch/syzkaller/openbsd.patch
+git apply /root/SyzPilot/patch/syzkaller/freebsd.patch /root/SyzPilot/patch/syzkaller/openbsd.patch
 gmake target
 ```
 

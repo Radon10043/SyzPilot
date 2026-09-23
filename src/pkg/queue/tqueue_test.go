@@ -3,7 +3,7 @@ package queue_test
 import (
 	"testing"
 
-	"github.com/Radon10043/cloud/src/pkg/queue"
+	"github.com/Radon10043/SyzPilot/src/pkg/queue"
 )
 
 func TestPop(t *testing.T) {

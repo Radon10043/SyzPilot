@@ -1,8 +1,8 @@
 # SyzPilot
 
 ```bash
-git clone --recurse-submodules https://github.com/Radon10043/cloud
-# if you forgot to clone with --recurse-submodules, run `git submodule update --init --recursive` under cloud directory to update submodules
+git clone --recurse-submodules https://github.com/Radon10043/SyzPilot
+# if you forgot to clone with --recurse-submodules, run `git submodule update --init --recursive` under SyzPilot directory to update submodules
 ```
 
 ## build

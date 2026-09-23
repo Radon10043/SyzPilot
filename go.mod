@@ -1,4 +1,4 @@
-module github.com/Radon10043/cloud
+module github.com/Radon10043/SyzPilot
 
 go 1.24.4
 

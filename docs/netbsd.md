@@ -67,7 +67,7 @@ reboot
 build SyzPilot and patch syzkaller.
 ```sh
 # run following commands on host
-git clone --recursive https://github.com/Radon10043/cloud
+git clone --recursive https://github.com/Radon10043/SyzPilot
 
 cd $SYZPILOT/syzkaller
 git apply ../patch/syzkaller/generic.patch ../patch/syzkaller/netbsd.patch

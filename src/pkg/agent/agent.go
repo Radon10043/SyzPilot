@@ -7,8 +7,8 @@ import (
 	"os"
 	"reflect"
 
-	myTools "github.com/Radon10043/cloud/src/pkg/tools"
-	"github.com/Radon10043/cloud/src/pkg/utils"
+	myTools "github.com/Radon10043/SyzPilot/src/pkg/tools"
+	"github.com/Radon10043/SyzPilot/src/pkg/utils"
 	"github.com/tmc/langchaingo/llms"
 	"github.com/tmc/langchaingo/llms/openai"
 )

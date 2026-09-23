@@ -46,10 +46,10 @@ ASSUME_ALWAYS_YES=true pkg install bash curl gcc git gmake go golangci-lint llvm
 ASSUME_ALWAYS_YES=true pkg install vim dnsmasq wget tmux ccache pkgconf sqlite3 python3
 
 cd /root
-git clone https://github.com/Radon10043/cloud
+git clone https://github.com/Radon10043/SyzPilot
 git clone -b release/15.0.0 --depth 1 https://github.com/freebsd/freebsd-src 15.0.0
 cd 15.0.0
-cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
+cp /root/SyzPilot/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
 cd sys/amd64/conf && config SYZPILOT
 cd ../compile/SYZPILOT
 make cleandepend && make depend
@@ -112,10 +112,10 @@ ASSUME_ALWAYS_YES=true pkg install bash curl gcc git gmake go golangci-lint llvm
 ASSUME_ALWAYS_YES=true pkg install vim dnsmasq wget tmux ccache pkgconf sqlite3 python3
 
 cd /root
-git clone https://github.com/Radon10043/cloud
+git clone https://github.com/Radon10043/SyzPilot
 git clone -b release/14.3.0 --depth 1 https://github.com/freebsd/freebsd-src 14.3.0
 cd 14.3.0
-cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
+cp /root/SyzPilot/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
 cd sys/amd64/conf && config SYZPILOT
 cd ../compile/SYZPILOT
 make cleandepend && make depend
@@ -178,10 +178,10 @@ ASSUME_ALWAYS_YES=true pkg install bash curl gcc git gmake go golangci-lint llvm
 ASSUME_ALWAYS_YES=true pkg install vim dnsmasq wget tmux ccache pkgconf sqlite3 python3
 
 cd /root
-git clone https://github.com/Radon10043/cloud
+git clone https://github.com/Radon10043/SyzPilot
 git clone -b release/14.2.0 --depth 1 https://github.com/freebsd/freebsd-src 14.2.0
 cd 14.2.0
-cp /root/cloud/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
+cp /root/SyzPilot/configs/kernel/freebsd.config sys/amd64/conf/SYZPILOT
 cd sys/amd64/conf && config SYZPILOT
 cd ../compile/SYZPILOT
 make cleandepend && make depend

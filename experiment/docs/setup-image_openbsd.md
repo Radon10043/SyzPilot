@@ -79,7 +79,7 @@ pkg_add ccache sqlite3 bear python py3-pip gdb cmake
 pip3 install compiledb --break-system-packages
 echo "export PATH=/root/go/bin:\$PATH" >> /root/.profile
 
-git clone https://github.com/Radon10043/cloud
+git clone https://github.com/Radon10043/SyzPilot
 
 mkdir openbsd-23290a22 && cd openbsd-23290a22
 git init .
@@ -87,7 +87,7 @@ git remote add origin https://github.com/openbsd/src
 git fetch --depth 1 origin 23290a22d1dee9d1d0b277c2896d441128a32f42
 git checkout 23290a22
 
-cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
+cp /root/SyzPilot/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
 cd sys/arch/amd64/conf && config SYZPILOT
 cd ../compile/SYZPILOT
 make depend && make -j$JOBS && make install
@@ -182,7 +182,7 @@ pkg_add ccache sqlite3 bear python py3-pip gdb cmake
 pip3 install compiledb --break-system-packages
 echo "export PATH=/root/go/bin:\$PATH" >> /root/.profile
 
-git clone https://github.com/Radon10043/cloud
+git clone https://github.com/Radon10043/SyzPilot
 
 mkdir openbsd-6bf0f93a && cd openbsd-6bf0f93a
 git init .
@@ -190,7 +190,7 @@ git remote add origin https://github.com/openbsd/src
 git fetch --depth 1 origin 6bf0f93af4a8aa5d28d638525b1eb0c5b2f57941
 git checkout 6bf0f93a
 
-cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
+cp /root/SyzPilot/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
 cd sys/arch/amd64/conf && config SYZPILOT
 cd ../compile/SYZPILOT
 make depend && make -j$JOBS && make install
@@ -285,7 +285,7 @@ pkg_add ccache sqlite3 bear python py3-pip gdb cmake
 pip3 install compiledb --break-system-packages
 echo "export PATH=/root/go/bin:\$PATH" >> /root/.profile
 
-git clone https://github.com/Radon10043/cloud
+git clone https://github.com/Radon10043/SyzPilot
 
 mkdir openbsd-6dac8606 && cd openbsd-6dac8606
 git init .
@@ -293,7 +293,7 @@ git remote add origin https://github.com/openbsd/src
 git fetch --depth 1 origin 6dac8606615b68ce13d259f805724b9d640096fa
 git checkout 6dac8606
 
-cp /root/cloud/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
+cp /root/SyzPilot/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
 cd sys/arch/amd64/conf && config SYZPILOT
 cd ../compile/SYZPILOT
 make depend && make -j$JOBS && make install

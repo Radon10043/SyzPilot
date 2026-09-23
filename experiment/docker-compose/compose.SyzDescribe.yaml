@@ -13,7 +13,7 @@ x-base: &base
     VMCOUNT: ${EXPERIMENT_VMCOUNT}
     SYZDESCRIBE: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/SyzDescribe
     SYZKALLER: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/SyzDescribe/syzkaller
-    SYZPILOT: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/cloud
+    SYZPILOT: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/SyzPilot
     OUTROOT: ${EXPERIMENT_ROOT_CONTAINER}/experiment/SyzDescribe
   volumes:
     - /etc/timezone:/etc/timezone:ro

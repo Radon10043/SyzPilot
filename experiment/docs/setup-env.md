@@ -7,13 +7,13 @@ please replace the following variables according to the actual situation:
 
 the prefix of a description means the context that the subsequent operation is performed:
 - `(host)`: the host machine.
-- `(container.syzpilot)`: a container derived from `cloud/docker/Dockerfile` image.
-- `(container.syzkaller)`: a container derived from `cloud/experiment/syzkaller/Dockerfile` image.
-- `(container.kernelgem)`: a container derived from `cloud/experiment/KernelGEM/Dockerfile` image.
-- `(container.kernelgpt)`: a container derived from `cloud/experiment/KernelGPT/Dockerfile` image.
-- `(container.syzdescribe)`: a container derived from `cloud/experiment/SyzDescribe/Dockerfile` image.
-- `(container.syzgenplusplus)`: a container derived from `cloud/experiment/SyzGenPlusPlus/Dockerfile` image.
-- `(container.syzspec)`: a container derived from `cloud/experiment/SyzSpec/Dockerfile` image.
+- `(container.syzpilot)`: a container derived from `SyzPilot/docker/Dockerfile` image.
+- `(container.syzkaller)`: a container derived from `SyzPilot/experiment/syzkaller/Dockerfile` image.
+- `(container.kernelgem)`: a container derived from `SyzPilot/experiment/KernelGEM/Dockerfile` image.
+- `(container.kernelgpt)`: a container derived from `SyzPilot/experiment/KernelGPT/Dockerfile` image.
+- `(container.syzdescribe)`: a container derived from `SyzPilot/experiment/SyzDescribe/Dockerfile` image.
+- `(container.syzgenplusplus)`: a container derived from `SyzPilot/experiment/SyzGenPlusPlus/Dockerfile` image.
+- `(container.syzspec)`: a container derived from `SyzPilot/experiment/SyzSpec/Dockerfile` image.
 - `(vm)`: the virtual machine.
 
 ## preparation
@@ -21,7 +21,7 @@ the prefix of a description means the context that the subsequent operation is p
 (host) prepare ~1T free space, build docker images:
 ```bash
 cd /tmp
-git clone https://github.com/Radon10043/cloud && cd cloud
+git clone https://github.com/Radon10043/SyzPilot && cd SyzPilot
 docker build -t github.com/radon10043/syzpilot:latest --network host -f ./docker/Dockerfile .
 docker build -t github.com/radon10043/kernelgem:latest --network host -f ./experiment/KernelGEM/Dockerfile .
 docker build -t github.com/seclab-ucr/syzdescribe:latest --network host -f ./experiment/SyzDescribe/Dockerfile .
@@ -29,7 +29,7 @@ docker build -t github.com/seclab-ucr/syzgenplusplus:latest --network host -f ./
 docker build -t github.com/seclab-ucr/syzspec:latest --network host -f ./experiment/SyzSpec/Dockerfile .
 docker tag github.com/radon10043/syzpilot:latest github.com/google/syzkaller:latest
 docker tag github.com/radon10043/kernelgem:latest github.com/ise-uiuc/kernelgpt:latest
-cd .. && rm -rf cloud
+cd .. && rm -rf SyzPilot
 ```
 
 (host) startup containers:
@@ -56,7 +56,7 @@ mkdir kernel fuzzer image
 (container.syzpilot) download SyzPilot first, many important artifacts are in this repository:
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer
-git clone https://github.com/Radon10043/cloud && cd cloud
+git clone https://github.com/Radon10043/SyzPilot && cd SyzPilot
 git submodule update --init --recursive
 ```
 
@@ -85,5 +85,5 @@ git submodule update --init --recursive
 
 (host) finally, we can perform fuzzing, for example:
 ```bash
-docker compose --env-file ./compose.env -f $EXPERIMENT_ROOT/fuzzer/cloud/experiment/docker-compose/compose.SyzPilot.yaml up linux-v6.18-kernel --scale linux-v6.18-kernel=5 -d
+docker compose --env-file ./compose.env -f $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/docker-compose/compose.SyzPilot.yaml up linux-v6.18-kernel --scale linux-v6.18-kernel=5 -d
 ```

@@ -11,8 +11,8 @@ x-base: &base
   environment: &env
     TMPDIR: /tmp
     VMCOUNT: ${EXPERIMENT_VMCOUNT}
-    SYZPILOT: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/cloud
-    SYZKALLER: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/cloud/syzkaller
+    SYZPILOT: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/SyzPilot
+    SYZKALLER: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/SyzPilot/syzkaller
     OUTROOT: ${EXPERIMENT_ROOT_CONTAINER}/experiment/SyzPilot-codex
   volumes:
     - /etc/timezone:/etc/timezone:ro

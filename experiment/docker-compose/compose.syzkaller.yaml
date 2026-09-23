@@ -11,7 +11,7 @@ x-base: &base
   environment: &env
     TMPDIR: /tmp
     VMCOUNT: ${EXPERIMENT_VMCOUNT}
-    SYZPILOT: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/cloud
+    SYZPILOT: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/SyzPilot
     SYZKALLER: ${EXPERIMENT_ROOT_CONTAINER}/fuzzer/syzkaller
     OUTROOT: ${EXPERIMENT_ROOT_CONTAINER}/experiment/syzkaller
   volumes:

@@ -74,8 +74,8 @@ download SyzPilot and submodules:
 ```sh
 # run following commands on vm
 cd /root
-git clone --recurse-submodules https://github.com/Radon10043/cloud
-# if you forgot to clone with --recurse-submodules, run `git submodule update --init --recursive` under cloud directory to update submodules
+git clone --recurse-submodules https://github.com/Radon10043/SyzPilot
+# if you forgot to clone with --recurse-submodules, run `git submodule update --init --recursive` under SyzPilot directory to update submodules
 ```
 
 build SyzPilot:
@@ -502,7 +502,7 @@ sshfs -p 3733 \
     -o compression=no \
     -o idmap=user \
     -o follow_symlinks \
-    root@localhost:/root/cloud ./mnt/SyzPilot
+    root@localhost:/root/SyzPilot ./mnt/SyzPilot
 ```
 
 unmount directory mounted by sshfs:
