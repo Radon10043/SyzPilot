@@ -1,6 +1,6 @@
 # setup kernel/netbsd
 
-(container.cloud):
+(container.syzpilot):
 ```bash
 mkdir -p $EXPERIMENT_ROOT/kernel/netbsd && cd $EXPERIMENT_ROOT/kernel/netbsd
 mkdir -p 15e7fbc5/src
@@ -17,7 +17,7 @@ cp $EXPERIMENT_ROOT/fuzzer/cloud/configs/kernel/netbsd.config sys/arch/amd64/con
 ./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=CLOUD
 ```
 
-(container.cloud):
+(container.syzpilot):
 ```bash
 cd $EXPERIMENT_ROOT/kernel/netbsd
 mkdir -p ceec3d80/src
@@ -34,7 +34,7 @@ cp $EXPERIMENT_ROOT/fuzzer/cloud/configs/kernel/netbsd.config sys/arch/amd64/con
 ./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=CLOUD
 ```
 
-(container.cloud):
+(container.syzpilot):
 ```bash
 cd $EXPERIMENT_ROOT/kernel/netbsd
 mkdir -p 3c0f56ea/src
@@ -51,7 +51,7 @@ cp $EXPERIMENT_ROOT/fuzzer/cloud/configs/kernel/netbsd.config sys/arch/amd64/con
 ./build.sh -j$JOBS -m amd64 -c clang -U -T ../tools kernel=CLOUD
 ```
 
-(container.cloud) tprof is not enabled in syzbot's config, so prepare a configuration for targeted fuzzing on it:
+(container.syzpilot) tprof is not enabled in syzbot's config, so prepare a configuration for targeted fuzzing on it:
 ```bash
 cd $EXPERIMENT_ROOT/kernel/netbsd
 mkdir -p 15e7fbc5-tprof/src

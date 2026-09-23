@@ -7,7 +7,7 @@ please replace the following variables according to the actual situation:
 
 the prefix of a description means the context that the subsequent operation is performed:
 - `(host)`: the host machine.
-- `(container.cloud)`: a container derived from `cloud/docker/Dockerfile` image.
+- `(container.syzpilot)`: a container derived from `cloud/docker/Dockerfile` image.
 - `(container.syzkaller)`: a container derived from `cloud/experiment/syzkaller/Dockerfile` image.
 - `(container.kernelgem)`: a container derived from `cloud/experiment/KernelGEM/Dockerfile` image.
 - `(container.kernelgpt)`: a container derived from `cloud/experiment/KernelGPT/Dockerfile` image.
@@ -22,12 +22,12 @@ the prefix of a description means the context that the subsequent operation is p
 ```bash
 cd /tmp
 git clone https://github.com/Radon10043/cloud && cd cloud
-docker build -t github.com/radon10043/cloud:latest --network host -f ./docker/Dockerfile .
+docker build -t github.com/radon10043/syzpilot:latest --network host -f ./docker/Dockerfile .
 docker build -t github.com/radon10043/kernelgem:latest --network host -f ./experiment/KernelGEM/Dockerfile .
 docker build -t github.com/seclab-ucr/syzdescribe:latest --network host -f ./experiment/SyzDescribe/Dockerfile .
 docker build -t github.com/seclab-ucr/syzgenplusplus:latest --network host -f ./experiment/SyzGenPlusPlus/Dockerfile .
 docker build -t github.com/seclab-ucr/syzspec:latest --network host -f ./experiment/SyzSpec/Dockerfile .
-docker tag github.com/radon10043/cloud:latest github.com/google/syzkaller:latest
+docker tag github.com/radon10043/syzpilot:latest github.com/google/syzkaller:latest
 docker tag github.com/radon10043/kernelgem:latest github.com/ise-uiuc/kernelgpt:latest
 cd .. && rm -rf cloud
 ```
@@ -38,22 +38,22 @@ docker run \
     -v $EXPERIMENT_ROOT:$EXPERIMENT_ROOT \
     --cpus $CPUS --network host \
     --privileged -d --rm \
-    --name cloud-build \
-    github.com/radon10043/cloud:latest tail -f /dev/null
+    --name syzpilot-build \
+    github.com/radon10043/syzpilot:latest tail -f /dev/null
 ```
 
-(host) you can run `docker exec -it cloud-build bash` to enter the container.
+(host) you can run `docker exec -it syzpilot-build bash` to enter the container.
 
 > [!NOTE]
-> If you want to re-synthesize specs using specific tools, derive a container from the corresponding image and re-synthesize it within the container; if you only want to build the kernel/image/fuzzer and re-use existing specs for evaluation, derive a container from the cloud image is enough.
+> If you want to re-synthesize specs using specific tools, derive a container from the corresponding image and re-synthesize it within the container; if you only want to build the kernel/image/fuzzer and re-use existing specs for evaluation, derive a container from the SyzPilot image is enough.
 
-(container.cloud) in container, run:
+(container.syzpilot) in container, run:
 ```bash
 cd $EXPERIMENT_ROOT
 mkdir kernel fuzzer image
 ```
 
-(container.cloud) download cloud first, many important artifacts are in this repository:
+(container.syzpilot) download SyzPilot first, many important artifacts are in this repository:
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer
 git clone https://github.com/Radon10043/cloud && cd cloud

@@ -4,7 +4,7 @@
 
 ### linux binaries
 
-(container.cloud): build cloud/syzkaller for linux:
+(container.syzpilot): build cloud/syzkaller for linux:
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer
 git clone --recurse-submodules https://github.com/Radon10043/cloud
@@ -18,7 +18,7 @@ make all -j$JOBS
 
 ### freebsd binaries
 
-(container.cloud): start a freebsd vm, let's add `-snapshot` so that we can do whatever we want on vm:
+(container.syzpilot): start a freebsd vm, let's add `-snapshot` so that we can do whatever we want on vm:
 ```bash
 qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/image/freebsd/15.0.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host -snapshot
 ```
@@ -33,7 +33,7 @@ git apply ../patch/specs-kern/*
 gmake target
 ```
 
-(container.cloud): copy needed binaries to the host:
+(container.syzpilot): copy needed binaries to the host:
 ```bash
 scp -P 3733 \
     -o UserKnownHostsFile=/dev/null \
@@ -44,7 +44,7 @@ scp -P 3733 \
 
 ### openbsd binaries
 
-(container.cloud): setup a new vm for compiling:
+(container.syzpilot): setup a new vm for compiling:
 ```bash
 qemu-img create -f qcow2 dev.qcow2 100G
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./dev.qcow2,format=qcow2 -cdrom ./install78.iso -boot d -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
@@ -92,7 +92,7 @@ Directory does not contain SHA256.sig. Continue without verification? <yes>
 
 (vm) after installation is complete, reboot and press `CTRL-A`, `X` to shutdown vm.
 
-(container.cloud): start up vm:
+(container.syzpilot): start up vm:
 ```bash
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./dev.qcow2,format=qcow2 -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
 ```
@@ -122,7 +122,7 @@ git apply ../patch/specs-kern/*
 gmake target
 ```
 
-(container.cloud): copy needed binaries to the host:
+(container.syzpilot): copy needed binaries to the host:
 ```bash
 scp -P 6736 \
     -o UserKnownHostsFile=/dev/null \
@@ -138,7 +138,7 @@ shutdown -p now
 
 ### netbsd binaries
 
-(container.cloud):
+(container.syzpilot):
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
 make target TARGETOS=netbsd SOURCEDIR=$EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5 CCFLAGS="-static-libstdc++" CXXFLAGS="-static-libstdc++"
@@ -146,7 +146,7 @@ make target TARGETOS=netbsd SOURCEDIR=$EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5 CC
 
 ### fuzzer/cloud/bin-kern
 
-(container.cloud): move full kernel fuzzing binaries to cloud/:
+(container.syzpilot): move full kernel fuzzing binaries to cloud/:
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud
 mv syzkaller/bin bin-kern
@@ -156,7 +156,7 @@ mv syzkaller/bin bin-kern
 
 ### linux binaries
 
-(container.cloud): build cloud/syzkaller for linux subsystems:
+(container.syzpilot): build cloud/syzkaller for linux subsystems:
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
 git reset --hard HEAD && git checkout . && git clean -fdx
@@ -167,7 +167,7 @@ make all -j$JOBS
 
 ### freebsd binaries
 
-(container.cloud): start a freebsd vm, let's add `-snapshot` so that we can do whatever we want on vm:
+(container.syzpilot): start a freebsd vm, let's add `-snapshot` so that we can do whatever we want on vm:
 ```bash
 qemu-system-x86_64 -m 16G -smp 16 -hda $EXPERIMENT_ROOT/image/freebsd/15.0.0.qcow2 -enable-kvm -net nic -net user,hostfwd=tcp::3733-:22 -nographic -cpu host -snapshot
 ```
@@ -182,7 +182,7 @@ git apply ../patch/specs-subsys/*
 gmake target
 ```
 
-(container.cloud): copy needed binaries to the host:
+(container.syzpilot): copy needed binaries to the host:
 ```bash
 scp -P 3733 \
     -o UserKnownHostsFile=/dev/null \
@@ -193,7 +193,7 @@ scp -P 3733 \
 
 ### openbsd binaries
 
-(container.cloud): start up vm with `-snapshot` to avoid modifying its disk image:
+(container.syzpilot): start up vm with `-snapshot` to avoid modifying its disk image:
 ```bash
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./dev.qcow2,format=qcow2 -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic -snapshot
 ```
@@ -206,7 +206,7 @@ git apply ../patch/specs-subsys/*
 gmake target
 ```
 
-(container.cloud): copy needed binaries to the host:
+(container.syzpilot): copy needed binaries to the host:
 ```bash
 scp -P 6736 \
     -o UserKnownHostsFile=/dev/null \
@@ -222,7 +222,7 @@ shutdown -p now
 
 ### netbsd binaries
 
-(container.cloud):
+(container.syzpilot):
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
 make target TARGETOS=netbsd SOURCEDIR=$EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5-tprof CCFLAGS="-static-libstdc++" CXXFLAGS="-static-libstdc++"
@@ -230,7 +230,7 @@ make target TARGETOS=netbsd SOURCEDIR=$EXPERIMENT_ROOT/kernel/netbsd/15e7fbc5-tp
 
 ### fuzzer/cloud/bin-subsys
 
-(container.cloud): move subsystem fuzzing binaries to cloud/:
+(container.syzpilot): move subsystem fuzzing binaries to cloud/:
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud
 mv syzkaller/bin bin-subsys
@@ -240,7 +240,7 @@ mv syzkaller/bin bin-subsys
 
 ### fuzzer/cloud/bin-nodb
 
-(container.cloud):
+(container.syzpilot):
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
 git reset --hard HEAD && git checkout . && git clean -fdx
@@ -252,7 +252,7 @@ mv bin ../bin-nodb
 
 ### fuzzer/cloud/bin-noiter
 
-(container.cloud):
+(container.syzpilot):
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
 git reset --hard HEAD && git checkout . && git clean -fdx
@@ -264,7 +264,7 @@ mv bin ../bin-noiter
 
 ### fuzzer/cloud/bin-openllm
 
-(container.cloud):
+(container.syzpilot):
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
 git reset --hard HEAD && git checkout . && git clean -fdx
@@ -276,7 +276,7 @@ mv bin ../bin-openllm
 
 ### fuzzer/cloud/bin-codex
 
-(container.cloud):
+(container.syzpilot):
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/cloud/syzkaller
 git reset --hard HEAD && git checkout . && git clean -fdx

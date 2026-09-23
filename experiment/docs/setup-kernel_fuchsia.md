@@ -2,7 +2,7 @@
 
 ## releases/f30
 
-(container.cloud):
+(container.syzpilot):
 ```bash
 mkdir -p "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f30"
 curl -s "https://fuchsia.googlesource.com/jiri/+/HEAD/scripts/bootstrap_jiri?format=TEXT" | base64 --decode | bash -s "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f30"
@@ -41,7 +41,7 @@ fx build -j$JOBS
 
 ## releases/f29
 
-(container.cloud):
+(container.syzpilot):
 ```bash
 mkdir -p "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f29"
 curl -s "https://fuchsia.googlesource.com/jiri/+/HEAD/scripts/bootstrap_jiri?format=TEXT" | base64 --decode | bash -s "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f29"
@@ -80,7 +80,7 @@ fx build -j$JOBS
 
 ## releases/f28
 
-(container.cloud):
+(container.syzpilot):
 ```bash
 mkdir -p "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f28"
 curl -s "https://fuchsia.googlesource.com/jiri/+/HEAD/scripts/bootstrap_jiri?format=TEXT" | base64 --decode | bash -s "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f28"
@@ -119,7 +119,7 @@ fx build -j$JOBS
 
 ## releases/f27
 
-(container.cloud):
+(container.syzpilot):
 ```bash
 mkdir -p "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f27"
 curl -s "https://fuchsia.googlesource.com/jiri/+/HEAD/scripts/bootstrap_jiri?format=TEXT" | base64 --decode | bash -s "$EXPERIMENT_ROOT/kernel/fuchsia/releases.f27"

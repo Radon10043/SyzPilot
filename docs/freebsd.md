@@ -411,7 +411,7 @@ sshfs -p 3733 \
     -o compression=no \
     -o idmap=user \
     -o follow_symlinks \
-    root@localhost:$CLOUD_VM ./mnt/syzpilot
+    root@localhost:$CLOUD_VM ./mnt/SyzPilot
 ```
 
 ## build and replace freebsd kernel on linux host
@@ -492,7 +492,7 @@ scp -P 3733 \
 
 use sshfs to mount directory:
 ```bash
-mkdir -p mnt/syzpilot
+mkdir -p mnt/SyzPilot
 sshfs -p 3733 \
     -o "StrictHostKeyChecking=no" \
     -o "UserKnownHostsFile=/dev/null" \
@@ -502,10 +502,10 @@ sshfs -p 3733 \
     -o compression=no \
     -o idmap=user \
     -o follow_symlinks \
-    root@localhost:/root/cloud ./mnt/syzpilot
+    root@localhost:/root/cloud ./mnt/SyzPilot
 ```
 
 unmount directory mounted by sshfs:
 ```bash
-fusermount -u mnt/syzpilot
+fusermount -u mnt/SyzPilot
 ```

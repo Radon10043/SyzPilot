@@ -1,6 +1,6 @@
 # setup image/openbsd
 
-(container.cloud): generate sshkey for openbsd images:
+(container.syzpilot): generate sshkey for openbsd images:
 ```bash
 mkdir -p $EXPERIMENT_ROOT/image/openbsd && cd $EXPERIMENT_ROOT/image/openbsd
 ssh-keygen -t rsa -f openbsd.id_rsa -N ''
@@ -8,7 +8,7 @@ ssh-keygen -t rsa -f openbsd.id_rsa -N ''
 
 ## 23290a22 (2025.12)
 
-(container.cloud): download .iso file, init a qcow2 file:
+(container.syzpilot): download .iso file, init a qcow2 file:
 ```bash
 cd $EXPERIMENT_ROOT/image/openbsd
 wget https://cdn.openbsd.org/pub/OpenBSD/7.8/amd64/install78.iso
@@ -58,7 +58,7 @@ Directory does not contain SHA256.sig. Continue without verification? <yes>
 
 (vm) after installation is complete, reboot and press `CTRL-A`, `X` to shutdown vm.
 
-(container.cloud): start up vm:
+(container.syzpilot): start up vm:
 ```bash
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./2025-23290a22.qcow2,format=qcow2 -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
 ```
@@ -94,7 +94,7 @@ make depend && make -j$JOBS && make install
 reboot
 ```
 
-(container.cloud): install sshkey and verify the kernel version:
+(container.syzpilot): install sshkey and verify the kernel version:
 ```bash
 cd $EXPERIMENT_ROOT/image/openbsd
 ssh-copy-id -i ./openbsd.id_rsa.pub -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
@@ -111,7 +111,7 @@ shutdown -p now
 
 ## 6bf0f93a (2025.11)
 
-(container.cloud): download .iso file, init a qcow2 file:
+(container.syzpilot): download .iso file, init a qcow2 file:
 ```bash
 cd $EXPERIMENT_ROOT/image/openbsd
 # wget https://artfiles.org/openbsd/7.8/amd64/install78.iso
@@ -161,7 +161,7 @@ Directory does not contain SHA256.sig. Continue without verification? <yes>
 
 (vm) after installation is complete, reboot and press `CTRL-A`, `X` to shutdown vm.
 
-(container.cloud): start up vm:
+(container.syzpilot): start up vm:
 ```bash
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./2025.11-6bf0f93a.qcow2,format=qcow2 -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
 ```
@@ -197,7 +197,7 @@ make depend && make -j$JOBS && make install
 reboot
 ```
 
-(container.cloud): install sshkey and verify the kernel version:
+(container.syzpilot): install sshkey and verify the kernel version:
 ```bash
 cd $EXPERIMENT_ROOT/image/openbsd
 ssh-copy-id -i ./openbsd.id_rsa.pub -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost
@@ -214,7 +214,7 @@ shutdown -p now
 
 ## 6dac8606 (2025.10)
 
-(container.cloud): download .iso file, init a qcow2 file:
+(container.syzpilot): download .iso file, init a qcow2 file:
 ```bash
 cd $EXPERIMENT_ROOT/image/openbsd
 # wget https://artfiles.org/openbsd/7.4/amd64/install78.iso
@@ -264,7 +264,7 @@ Directory does not contain SHA256.sig. Continue without verification? <yes>
 
 (vm) after installation is complete, reboot and press `CTRL-A`, `X` to shutdown vm.
 
-(container.cloud): start up vm:
+(container.syzpilot): start up vm:
 ```bash
 qemu-system-x86_64 -enable-kvm -m 16G -smp 16 -cpu host -drive file=./2025.10-6dac8606.qcow2,format=qcow2 -nic user,model=virtio,hostfwd=tcp::6736-:22 -nographic
 ```
@@ -300,7 +300,7 @@ make depend && make -j$JOBS && make install
 reboot
 ```
 
-(container.cloud): install sshkey and verify the kernel version:
+(container.syzpilot): install sshkey and verify the kernel version:
 ```bash
 cd $EXPERIMENT_ROOT/image/openbsd
 ssh-copy-id -i ./openbsd.id_rsa.pub -p 6736 -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@localhost

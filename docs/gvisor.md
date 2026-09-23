@@ -75,13 +75,13 @@ bazel --output_user_root=/output build \
 docker run \
     -v $GVISOR/src:/src \
     -v $GVISOR/output:/output \
-	-v $CLOUD:/cloud \
-    -w /cloud \
+	-v $CLOUD:/SyzPilot \
+    -w /SyzPilot \
     --cpus 16 \
     --network host \
 	--name gvisor-fuzz \
     --privileged \
-    --rm -d cloud:latest tail -f /dev/null
+    --rm -d syzpilot:latest tail -f /dev/null
 docker exec -it bash
 ```
 
@@ -92,14 +92,14 @@ find /output -name runsc_cov -type f | xargs -I {} cp {} /usr/local/bin/
 
 (container.fuzz) setup fuzzing configuration:
 ```bash
-cat <<__EOF__ /cloud/workdir/gvisor.cfg
+cat <<__EOF__ /SyzPilot/workdir/gvisor.cfg
 {
 	"name": "gvisor",
 	"target": "linux/amd64",
 	"http": ":12345",
-	"workdir": "/cloud/workdir",
+	"workdir": "/SyzPilot/workdir",
 	"image": "/usr/local/bin/runsc_cov",
-	"syzkaller": "/cloud/syzkaller",
+	"syzkaller": "/SyzPilot/syzkaller",
 	"procs": 8,
 	"type": "gvisor",
 	"vm": {
@@ -112,9 +112,9 @@ __EOF__
 
 (container.fuzz) build fuzzer and start fuzzing:
 ```bash
-cd /cloud/syzkaller
+cd /SyzPilot/syzkaller
 git apply ../patch/syzkaller/*
 git apply ../patch/specs-kern/*
 make all -j16
-/cloud/syzkaller/bin/syz-manager -config=./workdir/gvisor.cfg
+/SyzPilot/syzkaller/bin/syz-manager -config=./workdir/gvisor.cfg
 ```

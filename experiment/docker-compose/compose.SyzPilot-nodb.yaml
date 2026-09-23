@@ -2,7 +2,7 @@
 ### General configuration ###
 #############################
 x-base: &base
-  image: github.com/radon10043/cloud:latest
+  image: github.com/radon10043/syzpilot:latest
   privileged: true
   cpus: ${EXPERIMENT_CPUS}
   tmpfs:
@@ -22,7 +22,7 @@ x-base: &base
 ####################
 ### Project name ###
 ####################
-name: github.com/Radon10043/cloud-nodb
+name: github.com/Radon10043/SyzPilot-nodb
 
 services:
   linux-v6.18-autofs:

@@ -1,6 +1,6 @@
 # setup fuzzer/SyzGenPlusPlus
 
-(container.cloud): directly use generated specs:
+(container.syzpilot): directly use generated specs:
 ```bash
 cd $EXPERIMENT_ROOT/fuzzer/SyzGenPlusPlus
 git apply -3 $EXPERIMENT_ROOT/fuzzer/cloud/experiment/SyzGenPlusPlus/repo.patch

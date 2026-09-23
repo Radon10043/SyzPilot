@@ -366,13 +366,13 @@ sshfs -p 6736 \
     -o compression=no \
     -o idmap=user \
     -o follow_symlinks \
-    root@localhost:$CLOUD ./syzpilot
+    root@localhost:$CLOUD ./SyzPilot
 ```
 
 feel free to unmount it:
 ```bash
 # run following commands on host
-fusermount -u ./syzpilot
+fusermount -u ./SyzPilot
 ```
 
 ## fuzzing latest kernel
@@ -453,5 +453,5 @@ sshfs -p 6736 \
     -o compression=no \
     -o idmap=user \
     -o follow_symlinks \
-    root@localhost:/root/cloud ./mnt/syzpilot
+    root@localhost:/root/cloud ./mnt/SyzPilot
 ```
