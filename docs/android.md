@@ -1,4 +1,4 @@
-# setup SyzPilot and run fuzzing for Android kernel
+# Setup SyzPilot and run fuzzing for Android kernel
 
 There are two ways for Android kernel fuzzing: [Debian image + Android GKI](#debian-image-android-gki) and [Android GSI + Android GKI](#android-gsi-android-gki). I recommend the former :)
 

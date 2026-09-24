@@ -1,4 +1,4 @@
-# setup SyzPilot and fuzzing gvisor
+# Setup SyzPilot and fuzzing gvisor
 
 According to [syzkaller's description of gvisor](https://github.com/google/syzkaller/tree/master/docs/gvisor), we can reuse the specs generated for linux for fuzzing.
 
@@ -11,9 +11,9 @@ Please replace the following variables according to the actual situation:
 - `$GVISOR`: directory for saving gvisor and its artifacts.
 - `$SYZPILOT`: directory for saveing SyzPilot source.
 
-## setup gvisor build image
+## Setup gvisor build image
 
-(host) build gvisor image via official Dockerfile, let's use `release-20260511.0` as example:
+(host) Build gvisor image via official Dockerfile, let's use `release-20260511.0` as example:
 ```bash
 mkdir $GVISOR
 git clone -b release-20260511.0 --depth 1 https://github.com/google/gvisor $GVISOR/src
@@ -21,11 +21,11 @@ cd $GVISOR/src
 docker build -t gvisor-build:20260511 --network host -f images/default/Dockerfile .
 ```
 
-## build gvisor
+## Build gvisor
 
-you can build gvisor via startup container with build command, or startup container, enter it, and running build command manually. The latter usually for debugging.
+You can build gvisor via startup container with build command, or startup container, enter it, and running build command manually. The latter usually for debugging.
 
-(host) startup a container and build gvisor, the artifacts will be saved under `$GVISOR/output`:
+(host) Startup a container and build gvisor, the artifacts will be saved under `$GVISOR/output`:
 ```bash
 docker run \
     -v $GVISOR/src:/src \
@@ -45,7 +45,7 @@ docker run \
 		--action_env=https_proxy=http://127.0.0.1:7890
 ```
 
-(host, optional) startup a container and build gvisor manually:
+(host, optional) Startup a container and build gvisor manually:
 ```bash
 docker run \
     -v $GVISOR/src:/src \
@@ -68,9 +68,9 @@ bazel --output_user_root=/output build \
 	--action_env=https_proxy=http://127.0.0.1:7890
 ```
 
-## startup fuzzing
+## Startup fuzzing
 
-(host) startup a fuzzing container and enter it:
+(host) Startup a fuzzing container and enter it:
 ```bash
 docker run \
     -v $GVISOR/src:/src \
@@ -85,12 +85,12 @@ docker run \
 docker exec -it bash
 ```
 
-(container.fuzz) in the fuzzing container, install binary:
+(container.fuzz) In the fuzzing container, install binary:
 ```bash
 find /output -name runsc_cov -type f | xargs -I {} cp {} /usr/local/bin/
 ```
 
-(container.fuzz) setup fuzzing configuration:
+(container.fuzz) Setup fuzzing configuration:
 ```bash
 cat <<__EOF__ /SyzPilot/workdir/gvisor.cfg
 {
@@ -110,7 +110,7 @@ cat <<__EOF__ /SyzPilot/workdir/gvisor.cfg
 __EOF__
 ```
 
-(container.fuzz) build fuzzer and start fuzzing:
+(container.fuzz) Build fuzzer and start fuzzing:
 ```bash
 cd /SyzPilot/syzkaller
 git apply ../patch/syzkaller/*

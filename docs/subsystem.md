@@ -1,6 +1,16 @@
-# generate specs for subsystems
+# Synthesize specs for subsystems
 
-linux:
+## How to re-synthesize specs for a subsystem
+
+1. Copy `syzkaller/sys/$OS/*.txt` to a temporary directory.
+2. Delete the related specs and `.const` files.
+3. Extract constants, run `syz-check`, manually fix errors, and repeat until no errors are reported.
+4. Set up the reference file, then run SyzPilot to synthesize specs.
+5. Manually fix errors in the specs if needed, then [extract constants](#extract-constants) and run `make generate` to format the specs.
+
+## Examples
+
+Synthesize specs for the `can` subsystem of the Linux kernel:
 ```bash
 cd $SYZPILOT
 nohup ./bin/generator \
@@ -14,7 +24,7 @@ nohup ./bin/generator \
     -jobs=2 > logs/can.log 2>&1 &
 ```
 
-freebsd:
+Synthesize specs for the `inet_icmp` subsystem of the FreeBSD kernel:
 ```bash
 cd $SYZPILOT
 nohup ./bin/generator \
@@ -28,7 +38,7 @@ nohup ./bin/generator \
     -jobs=1 > logs/inet_icmp.log 2>&1 &
 ```
 
-openbsd:
+Synthesize specs for the `vnd` subsystem of the OpenBSD kernel:
 ```bash
 cd $SYZPILOT
 nohup ./bin/generator \
@@ -42,7 +52,7 @@ nohup ./bin/generator \
     -jobs=1 > logs/vnd.log 2>&1 &
 ```
 
-netbsd:
+Synthesize specs for the `tprof` subsystem of the NetBSD kernel:
 ```bash
 cd $SYZPILOT
 nohup ./bin/generator \
@@ -56,23 +66,19 @@ nohup ./bin/generator \
     -jobs=2 > logs/tprof.log 2>&1 &
 ```
 
-# subsystem fuzzing
+## Extract constants
 
-please merge subsystem's config file to kernel.cfg to test subsystem in target manner, e.g. test linux/ocfs2:
+Extract constants for the synthesized specs, e.g. for Linux:
+```bash
+cd $SYZPILOT/syzkaller
+ls sys/linux/gen#*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$KERNSRC -os=linux -arch=amd64
+```
+
+## Subsystem fuzzing
+
+Merge the subsystem configuration file with `kernel.cfg` to test a subsystem in a targeted manner. For example, to test `linux/ocfs2`:
 ```bash
 cd $SYZPILOT
 jq -s 'add' configs/fuzz/linux/kernel.cfg configs/fuzz/linux/ocfs2.cfg > $WORKDIR/test.cfg
 ./syzkaller/bin/syz-manager -config=$WORKDIR/test.cfg
 ```
-
-extract const:
-```bash
-ls sys/linux/gen#*.txt | xargs -n 1 basename | xargs ./bin/syz-extract -build -sourcedir=$KERNSRC -os=linux -arch=amd64
-```
-
-# how to re-generate specs for other subsystem?
-
-1. copy syzkaller/sys/$OS/*.txt to a tmp dir
-2. delete related specs
-3. extract consts, run syz-check, manual fix errors, repeat until no error report
-4. run SyzPilot to generate specs

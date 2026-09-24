@@ -1,16 +1,15 @@
-# setup SyzPilot and run fuzzing for openbsd kernel
+# Setup SyzPilot and run fuzzing for the OpenBSD kernel
 
-Please replace the following variables according to the actual situation:
+Please replace the following variables according to your environment:
 - `$VMDIR`: directory for saving OpenBSD image(s).
-- `$KERNSRC`: directory for saving OpenBSD kernel source.
-- `$SYZPILOT`: directory for saving SyzPilot source.
-- `$WORKDIR`: directory for working.
+- `$KERNSRC`: directory for saving the OpenBSD kernel source code.
+- `$SYZPILOT`: directory for saving the SyzPilot source code.
+- `$WORKDIR`: working directory.
 
-## openbsd vm setup
+## Setup the OpenBSD vm
 
-Download OpenBSD image from [https://www.openbsd.org/faq/faq4.html#Download](https://www.openbsd.org/faq/faq4.html#Download), I use `install78.iso`.
+(host) Download the OpenBSD image from [https://www.openbsd.org/faq/faq4.html#Download](https://www.openbsd.org/faq/faq4.html#Download). This guide uses `install78.iso`.
 ```bash
-# run following commands on host
 cd $VMDIR
 wget https://cdn.openbsd.org/pub/OpenBSD/7.8/amd64/install78.iso
 qemu-img create -f qcow2 dev.qcow2 200G
@@ -26,13 +25,13 @@ qemu-system-x86_64 \
     -nographic
 ```
 
-in vm, input following contents (be quick!):
+(vm) Enter the following commands quickly:
 ```
 set tty com0
 boot
 ```
 
-during openbsd installation, following contents are different with default:
+(vm) During OpenBSD installation, use the following values where they differ from the defaults:
 ```
 Allow root ssh login? <yes>
 
@@ -66,9 +65,8 @@ Location of set? <cd0>
 Directory does not contain SHA256.sig. Continue without verification? <yes>
 ```
 
-After installation complete, shutdown vm and boot it via:
+(host) After installation completes, shut down the vm and boot it:
 ```bash
-# run following commands on the host
 # both username and password are root
 qemu-system-x86_64 \
     -enable-kvm \
@@ -80,11 +78,9 @@ qemu-system-x86_64 \
     -nographic
 ```
 
-run following commands for basic package installation:
+(vm) Run the following commands to install the basic packages:
 ```sh
-# run following commands on vm
-
-# if you need proxy, uncomment following commands
+# if you need a proxy, uncomment the following commands.
 # echo "export http_proxy=http://10.0.2.2:7890" >> /root/.profile
 # echo "export https_proxy=http://10.0.2.2:7890" >> /root/.profile
 # . ~/.profile
@@ -113,24 +109,21 @@ rcctl enable vmd
 
 ## SyzPilot setup
 
-SyzPilot must be setup under openbsd environment, let's download it first:
+(vm) SyzPilot must be setup in an OpenBSD environment. Download it first:
 ```sh
-# run following commands on vm
 cd /root
 git clone --recurse-submodules https://github.com/Radon10043/SyzPilot
-# if you forgot to clone with --recurse-submodules, run `git submodule update --init --recursive` under SyzPilot directory to update submodules
+# if you forgot to clone with --recurse-submodules, run `git submodule update --init --recursive` under the SyzPilot directory
 ```
 
-build SyzPilot:
+(vm) Build SyzPilot:
 ```sh
-# run following commands on vm
 cd $SYZPILOT
 LLVM_CONFIG=llvm-config-19 gmake
 ```
 
-download source of OpenBSD and checkout to `23290a22`, which is the latest version in 2025:
+(vm) Download the OpenBSD source code and checkout `23290a22`, which is the latest version used in 2025:
 ```sh
-# run following commands on vm
 mkdir -p $KERNSRC
 git clone https://github.com/openbsd/src $KERNSRC
 cd $KERNSRC
@@ -138,9 +131,8 @@ cd $KERNSRC
 git checkout 23290a22d1dee9d1d0b277c2896d441128a32f42
 ```
 
-build kernel and generate `compile_commands.json`:
+(vm) Build the kernel and generate `compile_commands.json`:
 ```sh
-# run following commands on vm
 cp $SYZPILOT/configs/kernel/openbsd.config $KERNSRC/sys/arch/amd64/conf/SYZPILOT
 cd $KERNSRC/sys/arch/amd64/conf
 config SYZPILOT
@@ -151,49 +143,47 @@ make -j4 | tee make.log
 compiledb --parse make.log
 ```
 
-construct database:
+(vm) Construct the database:
 ```sh
-# run following commands on vm
 cd $SYZPILOT
 LD_LIBRARY_PATH=/usr/local/llvm19/lib:$LD_LIBRARY_PATH ./bin/analyzer -i $KERNSRC/sys/arch/amd64/compile/SYZPILOT/compile_commands.json -j 8 -o data/database/openbsd.db
 ```
 
-feel free to run minitask or generator:
+(vm) You can now run `minitask` or `generator`:
 ```sh
-# run following commands on vm
 # minitask
 $SYZPILOT/bin/minitask \
     -db=$SYZPILOT/data/database/openbsd.db \
     -os=openbsd \
     -outdir=$SYZPILOT/workdir/minitask \
-    -model=gemini-2.5-flash > logs/minitask.log 2>&1
+    -model=gemini-3-flash-preview > logs/minitask.log 2>&1
+$SYZPILOT/scripts/reflist.sh $SYZPILOT/workdir/minitask/specs > workdir/minitask/ref.txt
 
 # generator
 $SYZPILOT/bin/generator \
     -db=$SYZPILOT/data/database/openbsd.db \
     -os=openbsd \
-    -outdir=$SYZPILOT/workdir/out \
+    -outdir=$SYZPILOT/workdir/minitask \
     -kernel=$KERNSRC \
-    -model=gemini-2.5-flash \
-    -varlist=$SYZPILOT/workdir/out/varlist.txt \
+    -model=gemini-3-flash-preview \
+    -ref=$SYZPILOT/workdir/minitask/ref.txt \
     -jobs=4 > logs/generate.log 2>&1
 ```
 
 ## syzkaller setup
 
-### ubuntu host, qemu vm
+### ubuntu host, QEMU vm
 
-**NOTE: you can't symbolize openbsd crash reports on linux, but you can copy report to openbsd to symbolize it.**
+> [!NOTE]
+> You cannot symbolize OpenBSD crash reports on Linux, but you can copy the reports to OpenBSD and symbolize them there.
 
-duplicate a vm as the fuzz target.
+(host) Duplicate the vm to use as the fuzzing target.
 ```bash
-# run following commands on host
 cp $VMDIR/dev.qcow2 $VMDIR/target.qcow2
 ```
 
-start and setup fuzz target vm.
+(host) Start and setup the fuzzing target vm.
 ```bash
-# run following commands on host
 qemu-system-x86_64 \
     -enable-kvm \
     -m 16G \
@@ -206,9 +196,8 @@ qemu-system-x86_64 \
     -nographic
 ```
 
-generate and copy ssh key to target vm.
+(host) Generate an SSH key and copy it to the target vm.
 ```bash
-# run following commands on host
 cd $VMDIR
 ssh-keygen -t rsa -f openbsd.id_rsa -N ''
 ssh-copy-id \
@@ -219,17 +208,15 @@ ssh-copy-id \
     root@localhost
 ```
 
-install target version of kernel in fuzz target vm.
+(vm) Install the target kernel version in the fuzzing target vm.
 ```sh
-# run following commands on fuzz target vm
 cd $KERNSRC/sys/arch/amd64/compile/SYZPILOT
 make install
 shutdown -p now
 ```
 
-run syzkaller on ubuntu host and fuzz openbsd kernel with qemu vm.
+(host) Run syzkaller on the Ubuntu host and fuzz the OpenBSD kernel with the QEMU vm.
 ```sh
-# run following comands on host
 cd $WORKDIR
 cat <<__EOF__ > test.cfg
 {
@@ -238,8 +225,8 @@ cat <<__EOF__ > test.cfg
     "http": ":10000",
     "workdir": "$WORKDIR/out",
     "syzkaller": "$SYZPILOT/syzkaller",
-    "image": "$VM/target.qcow2",
-    "sshkey": "$VM/openbsd.id_rsa",
+    "image": "$VMDIR/target.qcow2",
+    "sshkey": "$VMDIR/openbsd.id_rsa",
     "sandbox": "none",
     "procs": 8,
     "type": "qemu",
@@ -251,15 +238,14 @@ cat <<__EOF__ > test.cfg
 }
 __EOF__
 
-git clone https://github.com/openbsd/src openbsd
 $SYZPILOT/syzkaller/bin/syz-manager -config=$WORKDIR/test.cfg
 ```
 
-### openbsd host, openbsd vm
+### OpenBSD host, OpenBSD vm
 
-setup a nest vm for fuzzing.
+Setup a nested vm for fuzzing.
 ```sh
-# run following commands on vm
+# run the following commands on the vm.
 cat <<__EOF__ > /etc/vm.conf
 vm "syzkaller" {
   disable
@@ -283,16 +269,16 @@ make
 wget https://cdn.openbsd.org/pub/OpenBSD/7.8/amd64/install78.iso
 vmctl create -s 10G /root/vm.qcow2
 vmctl start -c -d /root/vm.qcow2 -r install78.iso install_vm
-# install vm ...
-# Some settings diffs from default:
+# install the vm ...
+# some settings differ from the defaults:
 #   Allow root ssh login? (yes, no, prohibit-password): yes
-# After setup finish, run following commands in nest vm:
+# after setup finishes, run the following commands in the nested vm:
 #   ifconfig vio0 autoconf
 #   echo "inet autoconf" > /etc/hostname.vio0
 #   sh /etc/netstart vio0
 #   shutdown -p now
 
-# run vm sliently
+# Run the vm silently.
 vmctl start -t syzkaller -d "/root/vm.qcow2" syzkaller-1
 ssh-keygen -f vm.sshkey
 ssh "root@100.64.2.3" 'cat >~/.ssh/authorized_keys' <vm.sshkey.pub
@@ -328,9 +314,9 @@ __EOF__
 ./syzkaller/bin/syz-manager -config=./workdir/test.cfg
 ```
 
-## development environment setup (optional)
+## Development environment setup (optional)
 
-you can use neovim on vm or vscode+sshfs on host, I use the latter.
+You can use neovim on the vm or vscode with sshfs on the host. This guide uses the latter.
 
 ### neovim
 
@@ -352,9 +338,9 @@ mkdir -p /root/.config/nvim
 git clone https://github.com/Radon10043/nvimcfg /root/.config/nvim
 ```
 
-### vscode+sshfs
+### vscode + sshfs
 
-use following commands to mount file or directory in the vm:
+Use the following commands to mount a file or directory from the vm:
 ```bash
 # run following commands on host
 sshfs -p 6736 \
@@ -369,23 +355,23 @@ sshfs -p 6736 \
     root@localhost:$SYZPILOT ./SyzPilot
 ```
 
-feel free to unmount it:
+Unmount it when needed:
 ```bash
-# run following commands on host
+# run the following commands on the host.
 fusermount -u ./SyzPilot
 ```
 
-## fuzzing latest kernel
+## Fuzzing the latest kernel
 
 > [!CAUTION]
-> If a new kernel is installed with an old user-space, the image may broken! please upgrade use-space and kernel-space first then install the customized kernel for fuzzing.
+> If a new kernel is installed with an old user space, the image may break. Please upgrade both user space and kernel space before installing the customized kernel for fuzzing.
 
-upgrade user-space and kernel-space to the latest snapshot:
+Upgrade user space and kernel space to the latest snapshot:
 ```bash
 sysupgrade -s
 ```
 
-compile and install customized latest OpenBSD kernel.
+Compile and install the customized latest OpenBSD kernel:
 ```bash
 cd $KERNSRC && git pull
 cp $SYZPILOT/configs/kernel/openbsd.config sys/arch/amd64/conf/SYZPILOT
@@ -394,13 +380,13 @@ cd ../compile/SYZPILOT
 make depend && make -j4 && make install
 ```
 
-then we can run fuzzing :)
+Then you can run fuzzing :)
 
-## skills
+## Frequently used commands
 
-Press `~`+`~`+`.` to exit nest VM.
+Press `~`+`~`+`.` to exit nest vm.
 
-run vm silently:
+Run the vm silently:
 ```bash
 qemu-system-x86_64 \
     -enable-kvm \
@@ -413,7 +399,7 @@ qemu-system-x86_64 \
     -daemonize
 ```
 
-start vm.
+Start the vm:
 ```bash
 qemu-system-x86_64 \
     -enable-kvm \
@@ -426,7 +412,7 @@ qemu-system-x86_64 \
     -nographic
 ```
 
-ssh to openbsd vm:
+ssh to the OpenBSD vm:
 ```bash
 ssh -p 6736 \
     -o StrictHostKeyChecking=no \
@@ -434,7 +420,7 @@ ssh -p 6736 \
     root@localhost
 ```
 
-copy file(s) to vm:
+Copy file(s) to the vm:
 ```bash
 scp -P 6736 \
     -o UserKnownHostsFile=/dev/null \
@@ -442,7 +428,7 @@ scp -P 6736 \
     $HOST_PATH root@localhost:$VM_PATH
 ```
 
-use sshfs to mount directory:
+Use sshfs to mount a directory:
 ```bash
 sshfs -p 6736 \
     -o "StrictHostKeyChecking=no" \

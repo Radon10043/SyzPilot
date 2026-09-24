@@ -1,15 +1,14 @@
-# setup SyzPilot and run fuzzing for netbsd kernel
+# Setup SyzPilot and run fuzzing for the NetBSD kernel
 
-this doc instruct to build and run SyzPilot for netbsd kernel on linux host. Please replace following variables via your actual situation:
-- `$SYZPILOT`: directory for saving SyzPilot source.
-- `$KERNDIR`: directory for saveing NetBSD kernel sources(s).
+This document explains how to build and run SyzPilot for the NetBSD kernel on a Linux host. Please replace the following variables according to your environment:
+- `$SYZPILOT`: directory for saving the SyzPilot source code.
+- `$KERNDIR`: directory for saving the NetBSD kernel source code.
 - `$VMDIR`: directory for saving NetBSD image(s).
 
-## netbsd vm setup
+## Setup the NetBSD vm
 
-download iso file and setup vm.
+(host) Download the ISO file and setup the vm.
 ```bash
-# run following commands on host
 wget -P $VMDIR https://cdn.netbsd.org/pub/NetBSD/NetBSD-10.1/images/NetBSD-10.1-amd64.iso
 qemu-img create -f qcow2 $VMDIR/dev.qcow2 200G
 qemu-system-x86_64 \
@@ -25,11 +24,10 @@ qemu-system-x86_64 \
     -display curses
 ```
 
-during installation, select `use serial port com0` when prompt to select bootblocks.
+During installation, select `use serial port com0` when prompted to select bootblocks.
 
-after installation complete, start vm.
+(host) After installation completes, start the vm.
 ```bash
-# run following commands on host
 qemu-system-x86_64 \
     -enable-kvm \
     -m 16G \
@@ -42,9 +40,8 @@ qemu-system-x86_64 \
     -nographic
 ```
 
-run following commands to setup environment of netbsd vm.
+(vm) Run the following commands to setup the NetBSD vm environment.
 ```bash
-# run following commands on vm
 cat <<__EOF__ >> /etc/rc.conf
 
 sshd=YES
@@ -64,20 +61,18 @@ reboot
 
 ## SyzPilot setup
 
-build SyzPilot and patch syzkaller.
+(host) Build SyzPilot and patch syzkaller.
 ```sh
-# run following commands on host
-git clone --recursive https://github.com/Radon10043/SyzPilot
-
+git clone --recursive https://github.com/Radon10043/SyzPilot $SYZPILOT
 cd $SYZPILOT/syzkaller
-git apply ../patch/syzkaller/generic.patch ../patch/syzkaller/netbsd.patch
+git apply -3 ../patch/syzkaller/*
+git reset .
 cd ..
 make all TARGETOS=netbsd SOURCEDIR=$KERNSRC
 ```
 
-download source of netbsd kernel. I use 15e7fbc53d77cd7cc1d62511982b8972c4c0c421 to run SyzPilot for specification generation, which can be built success on linux in 2026 early.
+(host) Download the NetBSD kernel source code. This guide uses `15e7fbc53d77cd7cc1d62511982b8972c4c0c421` to run SyzPilot for specification generation, because it can be built successfully on Linux in early 2026.
 ```sh
-# run following commands on host
 mkdir -p $KERNDIR/15e7fbc5
 cd $KERNDIR/15e7fbc5
 git clone https://github.com/NetBSD/src
@@ -85,9 +80,8 @@ git -C src checkout 15e7fbc5
 cp -r src extract   # for const extraction debugging
 ```
 
-build kernel, generate `compile_commands.json` and make it clean.
+(host) Build the kernel, generate `compile_commands.json`, and clean it up.
 ```bash
-# run following commands on host
 cd $KERNDIR/15e7fbc5/src
 cp $SYZPILOT/configs/kernel/netbsd.config sys/arch/amd64/conf/SYZPILOT
 ./build.sh -j4 -m amd64 -c clang -U -T ../tools tools
@@ -95,13 +89,12 @@ cp $SYZPILOT/configs/kernel/netbsd.config sys/arch/amd64/conf/SYZPILOT
 ./build.sh -j4 -m amd64 -c clang -U -T ../tools -N 4 kernel=SYZPILOT | tee build.log
 compiledb --parse build.log
 
-# make compile_commands.json clean
+# Clean up compile_commands.json.
 jq 'map(select((.command // (.arguments | join(" "))) | test("mkdep") | not))' compile_commands.json > compile_commands_clean.json
 ```
 
-analyze `compile_commands_clean.json`.
+(host) Analyze `compile_commands_clean.json`.
 ```bash
-# run following commands on host
 cd $SYZPILOT
 ./bin/analyzer \
     -i $KERNDIR/15e7fbc5/src/compile_commands_clean.json \
@@ -110,47 +103,43 @@ cd $SYZPILOT
     -j 4
 ```
 
-minimize tasks and generate variable list.
+(host) Minimize tasks and generate references.
 ```bash
-# run following commands on host
 cd $SYZPILOT
 # this may take a while ...
 ./bin/minitask \
     -db=./data/database/netbsd.db \
     -os=netbsd \
     -outdir=./workdir/minitask \
-    -model=gemini-2.5-flash > logs/minitask.log 2>&1
-./script/varlist.sh ./workdir/minitask > ./workdir/minitask/varlist.txt
+    -model=gemini-3-flash-preview > logs/minitask.log 2>&1
+./scripts/reflist.sh ./workdir/minitask > ./workdir/minitask/ref.txt
 ```
 
-generate syzlang specs on the basis of minimized tasks.
+(host) Generate syzlang specs based on the minimized tasks.
 ```bash
-# run following commands on host
 cd $SYZPILOT
 ./bin/generator \
     -db=./data/database/netbsd.db \
     -os=netbsd \
-    -model=gemini-2.5-flash \
+    -model=gemini-3-flash-preview \
     -kernel=$KERNDIR/15e7fbc5/src \
     -outdir=./workdir/minitask \
-    -varlist=./workdir/minitask/varlist.txt \
+    -ref=./workdir/minitask/ref.txt \
     -jobs=4 > logs/generate.log 2>&1
 ```
 
 ## syzkaller setup
 
-generate a ssh key and copy it to vm.
+(host) Generate an ssh key and copy it to the vm.
 ```bash
-# run following commands on host
 cd $VMDIR
 ssh-keygen -t rsa -f netbsd.id_rsa -N ""
 ```
 
-copy content of `netbsd.id_tsa.pub` to `/root/.ssh/authorized_keys` on vm.
+Copy the contents of `netbsd.id_rsa.pub` to `/root/.ssh/authorized_keys` on the vm.
 
-make sure vm can be connected via ssh key.
+(host) Make sure the vm can be accessed with the ssh key.
 ```bash
-# run following commands on host
 ssh -p 6382 \
     -i $VMDIR/netbsd.id_rsa \
     -F /dev/null \
@@ -160,42 +149,37 @@ ssh -p 6382 \
     root@localhost
 ```
 
-copy new-built kernel to vm.
+(host) Copy the newly built kernel to the vm.
 ```bash
-# run following commands on host
 scp -P 6382 \
     -o UserKnownHostsFile=/dev/null \
     -o StrictHostKeyChecking=no \
     $KERNDIR/15e7fbc5/src/sys/arch/amd64/compile/obj/SYZPILOT/netbsd root@localhost:/netbsd
 ```
 
-load kcov and vhci modules.
+(vm) Load the `kcov` and `vhci` modules.
 ```sh
-# run following commands on vm
 cd /dev
 sh MAKEDEV kcov
 ```
 
-feel free to run `poweroff` to shutdown vm.
+Run `poweroff` when you want to shut down the vm.
 
-build syzkaller after patching.
+(host) Build syzkaller after patching.
 ```bash
-# run following commands on host
 cd $SYZPILOT/syzkaller
 make TARGETOS=netbsd SOURCEDIR=$KERNDIR/15e7fbc5 CCFLAGS="-static-libstdc++" CXXFLAGS="-static-libstdc++"
 ```
 
-## fuzzing netbsd kernel
+## Fuzzing the NetBSD kernel
 
-duplicate a vm for fuzzing.
+(host) Duplicate the vm for fuzzing.
 ```bash
-# run following commands on host
 cp $VMDIR/dev.qcow2 $VMDIR/target.qcow2
 ```
 
-wirte fuzzing config file and start fuzzing.
+(host) Write the fuzzing configuration file and start fuzzing.
 ```bash
-# run following commands on host
 cd $SYZPILOT && mkdir workdir
 cat <<__EOF__ > workdir/netbsd.cfg
 {
@@ -219,9 +203,9 @@ __EOF__
 ./syzkaller/bin/syz-manager -config=./workdir/netbsd.cfg
 ```
 
-## frequently used commands
+## Frequently used commands
 
-start netbsd vm silently.
+Start the NetBSD vm silently.
 ```bash
 qemu-system-x86_64 \
     -enable-kvm \
@@ -235,7 +219,7 @@ qemu-system-x86_64 \
     -daemonize
 ```
 
-start vm.
+Start the vm.
 ```bash
 qemu-system-x86_64 \
     -enable-kvm \
@@ -248,7 +232,7 @@ qemu-system-x86_64 \
     -nographic
 ```
 
-copy file(s) to vm:
+Copy file(s) to the vm:
 ```bash
 scp -P 6382 \
     -o UserKnownHostsFile=/dev/null \
