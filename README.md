@@ -1,5 +1,7 @@
 # SyzPilot
 
+**Thank anonymous reviewers for constructive feedback, which led to the acceptance of the paper. This branch is archived, hoping it will serve as a helpful reference for future submissions. During the review, I used an [Anonymous GitHub](https://anonymous.4open.science) link in the paper.**
+
 Thank you for visiting the SyzPilot repository. This document explains how to use SyzPilot to synthesize specifications and run fuzzing for the Linux kernel. SyzPilot also supports [FreeBSD](docs/freebsd.md), [OpenBSD](docs/openbsd.md), and [NetBSD](docs/netbsd.md). Some commands in this document apply only to anonymous review and may differ from those in the release version.
 
 We have uploaded all intermediate data (~30 GB, including LLM query records and fuzzing results) to [Google Drive](https://workspace.google.com/products/drive/). However, we cannot release the link currently since it may leak author information. We will release the link as soon as the paper is accepted.
