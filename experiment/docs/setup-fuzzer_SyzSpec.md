@@ -2,7 +2,9 @@
 
 (container.syzpilot): directly use generated specs:
 ```bash
-cd $EXPERIMENT_ROOT/fuzzer/SyzSpec
+cd $EXPERIMENT_ROOT/fuzzer
+git clone https://github.com/seclab-ucr/SyzSpec
+cd SyzSpec && git checkout 1edbcffd6f56786d914b0c04458bee86abf215ac
 git apply -3 $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/SyzSpec/repo.patch
 git submodule update --init --recursive
 
