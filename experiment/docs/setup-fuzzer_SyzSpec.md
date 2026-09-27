@@ -5,8 +5,9 @@
 cd $EXPERIMENT_ROOT/fuzzer
 git clone https://github.com/seclab-ucr/SyzSpec
 cd SyzSpec && git checkout 1edbcffd6f56786d914b0c04458bee86abf215ac
-git apply -3 $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/SyzSpec/repo.patch
-git submodule update --init --recursive
+git apply $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/SyzSpec/repo.patch
+git clone https://github.com/google/syzkaller
+git -C syzkaller checkout ac3c71e7
 
 # bin-kern
 git -C syzkaller apply $EXPERIMENT_ROOT/fuzzer/SyzPilot/experiment/SyzSpec/specs/linux-v6.18-kernel.patch
